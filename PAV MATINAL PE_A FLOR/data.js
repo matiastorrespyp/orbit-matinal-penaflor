@@ -59,7 +59,12 @@
     fechaCorta: calendario.fecha_corte,
     lastSync: new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
     diasVisita: ["LU","MA","MI","JU","VI","SA"],
-    diaActivo: "MA",
+    diaActivo: (function(){
+      var abrev = ["DO","LU","MA","MI","JU","VI","SA"];
+      var d = new Date((calendario.fecha_corte || new Date().toISOString().split("T")[0]) + "T12:00:00");
+      d.setDate(d.getDate() + 1);
+      return abrev[d.getDay()];
+    })(),
     calendario: calendario,
     modo_datos: "REAL",
     vendedores: vendedores,
