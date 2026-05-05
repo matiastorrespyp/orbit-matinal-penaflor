@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440">
+<title>ORBIT · Peñaflor PAV</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#07090C; --surface:#0F141B; --surface2:#131923; --panel:#0F141B; --panel2:#182030;
+  --text:#E7ECF3; --text2:#AAB3C0; --text3:#6B7686; --hairline:rgba(255,255,255,0.06);
+  --hairline-strong:rgba(255,255,255,0.10); --hairline-bright:rgba(255,255,255,0.14);
+  --magenta:#E2147A; --magenta2:#B30E5F; --magenta-glow:rgba(226,20,122,0.45); --magenta-soft:rgba(226,20,122,0.14);
+  --ok:#2EC27E; --warn:#F2B544; --bad:#FF5D5D; --info:#4DA3FF; --violet:#9B7BFF;
+  --ok-soft:rgba(46,194,126,0.14); --warn-soft:rgba(242,181,68,0.14); --bad-soft:rgba(255,93,93,0.14); --info-soft:rgba(77,163,255,0.14); --violet-soft:rgba(155,123,255,0.14);
+  --font-display:'Sora','Inter',sans-serif; --font-body:'Inter','Sora',sans-serif;
+  --r-sm:8px; --r:14px; --r-lg:18px; --r-xl:24px;
+  --shadow-card:0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 40px rgba(0,0,0,0.5);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:var(--font-body); background:var(--bg); color:var(--text); min-height:100vh;
+  background:radial-gradient(1200px 700px at 85% -10%, rgba(226,20,122,0.10), transparent 60%),
+             radial-gradient(900px 600px at -10% 30%, rgba(77,163,255,0.05), transparent 60%), var(--bg);
+  display:flex;
+}
+img{max-width:100%;display:block}
+button{font-family:inherit;cursor:pointer;border:0;background:transparent;color:inherit}
+input,select,textarea{font-family:inherit;color:inherit}
+
+/* LOGIN */
+.login-screen{width:100%;display:flex;align-items:center;justify-content:center;}
+.login-card{background:var(--surface);border:1px solid var(--hairline-strong);border-radius:var(--r-xl);padding:48px 40px;text-align:center;width:440px;box-shadow:var(--shadow-card);}
+.login-logo{width:160px;height:auto;margin:0 auto 24px;animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.login-sub{color:var(--text2);font-size:13px;margin-bottom:28px;letter-spacing:.5px;}
+.field{margin-bottom:16px;text-align:left;}
+.field label{display:block;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;font-weight:500;}
+.field select,.field input{width:100%;padding:12px 14px;background:#0B0E13;border:1px solid var(--hairline-bright);border-radius:10px;color:#fff;font-size:14px;transition:border-color .2s;}
+.field select:focus,.field input:focus{outline:none;border-color:var(--magenta);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;width:100%;}
+.btn-primary{background:linear-gradient(180deg,#E2147A,#B30E5F);color:#fff;box-shadow:0 8px 24px rgba(226,20,122,0.3);margin-top:8px;padding:14px;font-size:14px;}
+.btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px);}
+.btn-sm{padding:6px 12px;font-size:11px;border-radius:8px;width:auto;background:var(--surface2);border:1px solid var(--hairline-bright);}
+.error{color:var(--bad);font-size:12px;margin-top:10px;display:none;}
+.error.show{display:block;}
+
+/* APP SHELL */
+.app{display:none;width:100%;min-height:100vh;}
+.sidebar{width:248px;min-height:100vh;background:linear-gradient(180deg,#0A0D12,#07090C);border-right:1px solid var(--hairline);padding:16px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:4px;flex-shrink:0;overflow-y:auto;}
+.brand{padding:8px 8px 16px;border-bottom:1px solid var(--hairline);margin-bottom:12px;text-align:center;}
+.brand img{width:140px;height:auto;margin:0 auto;}
+.nav-section{font-size:10px;color:var(--text3);letter-spacing:1.6px;text-transform:uppercase;padding:12px 8px 4px;font-weight:600;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;position:relative;}
+.nav-item:hover{background:rgba(255,255,255,0.03);color:var(--text);}
+.nav-item.active{background:linear-gradient(90deg,rgba(226,20,122,.18),rgba(226,20,122,.04));color:#fff;box-shadow:inset 0 0 0 1px rgba(226,20,122,.30);}
+.nav-item.active::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;background:var(--magenta);border-radius:2px;box-shadow:0 0 12px var(--magenta-glow);}
+.nav-item .ico{font-size:16px;width:20px;text-align:center;flex:none;}
+.sidebar-footer{margin-top:auto;padding:10px 8px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--hairline);}
+.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#E2147A,#7a0a44);display:grid;place-items:center;font-weight:700;font-size:12px;color:#fff;flex:none;}
+
+/* MAIN */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(7,9,12,.78);backdrop-filter:blur(14px) saturate(140%);border-bottom:1px solid var(--hairline);padding:12px 24px;display:flex;align-items:center;gap:12px;}
+.topbar-title{font-family:var(--font-display);font-weight:600;font-size:17px;display:flex;align-items:center;gap:8px;}
+.topbar-title .live{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:var(--ok-soft);color:var(--ok);font-size:10px;font-weight:600;}
+.topbar-title .live::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok);animation:pulse 1.6s ease-in-out infinite;}
+@keyframes pulse{50%{opacity:.4}}
+.topbar-spacer{flex:1}
+.btn-ghost{background:transparent;box-shadow:inset 0 0 0 1px var(--hairline);padding:7px 12px;border-radius:8px;font-size:11px;display:inline-flex;align-items:center;gap:5px;width:auto;}
+.btn-ghost:hover{background:rgba(255,255,255,0.03);}
+.day-selector{display:inline-flex;background:#0B0E13;border-radius:10px;padding:3px;box-shadow:inset 0 0 0 1px var(--hairline-bright);}
+.day-selector button{padding:6px 10px;border-radius:8px;font-size:11px;font-weight:500;color:var(--text2);}
+.day-selector button.active{background:var(--magenta);color:#fff;font-weight:600;}
+
+.page{padding:20px 24px 48px;}
+.page-header{margin-bottom:20px;}
+.page-title{font-family:var(--font-display);font-weight:700;font-size:26px;letter-spacing:-.02em;line-height:1.1;}
+.page-sub{color:var(--text3);margin-top:4px;font-size:13px;}
+
+/* KPIs */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(185px, 1fr));gap:12px;margin-bottom:20px;}
+.kpi{padding:15px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--hairline);box-shadow:var(--shadow-card);position:relative;overflow:hidden;min-height:100px;}
+.kpi::after{content:"";position:absolute;inset:auto 0 0 0;height:2px;background:var(--hairline);}
+.kpi.ok::after{background:linear-gradient(90deg,transparent,var(--ok),transparent);}
+.kpi.warn::after{background:linear-gradient(90deg,transparent,var(--warn),transparent);}
+.kpi.bad::after{background:linear-gradient(90deg,transparent,var(--bad),transparent);}
+.kpi.info::after{background:linear-gradient(90deg,transparent,var(--info),transparent);}
+.kpi-label{font-size:10px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;font-weight:500;margin-bottom:8px;}
+.kpi-value{font-family:var(--font-display);font-weight:700;font-size:24px;letter-spacing:-.02em;}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+.kpi-delta{font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:3px;margin-top:4px;}
+.kpi-delta.up{color:var(--ok);}.kpi-delta.down{color:var(--bad);}
+
+/* CARDS */
+.card{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow-card);border:1px solid var(--hairline);overflow:hidden;margin-bottom:14px;}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--hairline);}
+.card-title{font-family:var(--font-display);font-weight:600;font-size:14px;}
+.card-body{padding:16px;}
+.tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tbl th{text-align:left;padding:10px 12px;background:var(--panel2);color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--hairline);position:sticky;top:0;}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--hairline);vertical-align:middle;}
+.tbl tr:hover td{background:rgba(255,255,255,0.015);}
+
+/* BADGES */
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:600;background:rgba(255,255,255,0.05);color:var(--text2);}
+.chip.ok{background:var(--ok-soft);color:var(--ok);}.chip.warn{background:var(--warn-soft);color:var(--warn);}
+.chip.bad{background:var(--bad-soft);color:var(--bad);}.chip.info{background:var(--info-soft);color:var(--info);}.chip.violet{background:var(--violet-soft);color:var(--violet);}
+
+/* BARS */
+.bar{height:7px;border-radius:999px;background:rgba(255,255,255,0.06);overflow:hidden;position:relative;}
+.bar i{display:block;height:100%;border-radius:999px;background:var(--magenta);box-shadow:0 0 10px var(--magenta-glow);}
+.bar i.ok{background:var(--ok);box-shadow:0 0 10px rgba(46,194,126,0.5);}
+.bar i.warn{background:var(--warn);box-shadow:0 0 10px rgba(242,181,68,0.5);}
+.bar i.bad{background:var(--bad);box-shadow:0 0 10px rgba(255,93,93,0.5);}
+
+/* RANKING */
+.v-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--hairline);}
+.v-dot{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:12px;color:#fff;flex:none;}
+.v-info{flex:1;min-width:0;}
+.v-pct{font-family:var(--font-display);font-size:20px;font-weight:700;min-width:70px;text-align:right;}
+.v-bar{width:130px;flex:none;}
+
+/* MOBILE */
+.phone-stage{display:grid;place-items:center;min-height:78vh;padding:20px;}
+.phone{width:380px;height:780px;border-radius:44px;background:#000;padding:9px;box-shadow:0 30px 70px -15px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.06);}
+.phone-screen{width:100%;height:100%;border-radius:36px;background:var(--bg);overflow:hidden;position:relative;display:flex;flex-direction:column;}
+.phone-notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:110px;height:30px;border-radius:18px;background:#000;z-index:10;}
+.phone-bar{display:flex;justify-content:space-between;align-items:center;padding:12px 24px 4px;font-size:13px;font-weight:600;}
+.phone-content{padding:6px 20px 10px;display:flex;flex-direction:column;gap:12px;overflow:auto;flex:1;font-size:13px;}
+.phone-msg{padding:10px 12px;border-radius:12px;background:linear-gradient(135deg,rgba(155,123,255,.15),rgba(155,123,255,.04));border:1px solid rgba(155,123,255,.25);font-size:12px;line-height:1.4;}
+.phone-kpi{padding:12px;border-radius:12px;background:rgba(255,255,255,0.025);border:1px solid var(--hairline);}
+.phone-kpi .lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+.phone-kpi .val{font-family:var(--font-display);font-size:20px;font-weight:700;}
+.phone-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.phone-grid .phone-kpi{text-align:center;}
+
+.row{display:flex;align-items:center;gap:10px;}.between{justify-content:space-between;}.muted{color:var(--text3);}.bold{font-weight:600;}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <img src="assets/orbit-logo-pink.png" alt="ORBIT" class="login-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+    <div style="display:none;font-family:var(--font-display);font-size:42px;font-weight:700;margin-bottom:24px;">ORB<span style="color:var(--magenta);">IT</span></div>
+    <div class="login-sub">Peñaflor · PAV Matinal</div>
+    <div class="field"><label>Usuario</label><select id="userSelect"><option value="">Seleccionar...</option><option value="v3">V3 · Nadia Gambino</option><option value="v4">V4 · Angel Gribaudo</option><option value="v6">V6 · Andrea Peyronel</option><option value="v7">V7 · Guillermo Jofre</option><option value="v8">V8 · Vanesa Alvarez</option><option value="v9">V9 · Fernando Sanchez</option><option value="v10">V10 · Milagros Ortega</option><option value="gerencia" style="border-top:1px solid var(--magenta);color:var(--magenta);">── GERENCIA ──</option></select></div>
+    <div class="field"><label>Contraseña</label><input type="password" id="pwdInput" placeholder="••••••••"></div>
+    <button class="btn btn-primary" onclick="doLogin()">Ingresar a ORBIT</button>
+    <div id="loginError" class="error">Credenciales inválidas</div>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="appScreen" class="app">
+  <div class="sidebar">
+    <div class="brand"><img src="assets/orbit-logo-pink.png" alt="ORBIT" style="width:130px;margin:0 auto;" onerror="this.outerHTML='<div style=text-align:center;font-family:var(--font-display);font-size:22px;font-weight:700;>ORB<span style=color:var(--magenta)>IT</span></div><div style=text-align:center;font-size:10px;color:var(--text3);>Peñaflor · PAV</div>'"></div>
+    <div id="sidebarGerencia">
+      <div class="nav-section">Gerencia</div>
+      <div class="nav-item active" data-screen="dashboard" onclick="switchScreen('dashboard',this)"><span class="ico">📊</span>Dashboard</div>
+      <div class="nav-item" data-screen="vendedores" onclick="switchScreen('vendedores',this)"><span class="ico">👥</span>Vendedores</div>
+      <div class="nav-item" data-screen="clientes" onclick="switchScreen('clientes',this)"><span class="ico">🏪</span>Clientes Críticos</div>
+      <div class="nav-item" data-screen="planificacion" onclick="switchScreen('planificacion',this)"><span class="ico">📋</span>Planificación</div>
+      <div class="nav-item" data-screen="alertas" onclick="switchScreen('alertas',this)"><span class="ico">⚠️</span>Alertas</div>
+    </div>
+    <div id="sidebarMobile"><div class="nav-section">Mobile</div>
+      <div class="nav-item" data-screen="vendedor-app" onclick="switchScreen('vendedor-app',this)"><span class="ico">📱</span>App del Vendedor</div>
+    </div>
+    <div class="sidebar-footer"><div class="avatar" id="sidebarAvatar">U</div><div style="line-height:1.2;font-size:12px;"><b id="sidebarName">Usuario</b><br><span style="color:var(--text3);font-size:10px;" id="sidebarRol">Rol</span></div></div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title"><span id="screenTitle">Dashboard Ejecutivo</span><span class="live">EN VIVO</span></div>
+      <div class="topbar-spacer"></div>
+      <div class="day-selector" id="daySelector"></div>
+      <button class="btn-ghost" onclick="logout()">Cerrar sesión</button>
+    </div>
+    <div class="page"><div id="screenContent"></div></div>
+  </div>
+</div>
+
+<script>
+let userData=null,currentDay="MA",currentScreen="dashboard",allData={dashboard:[],clientes:[],alertas:[],planes:[],detalle:{},msgs:[]};
+const colors=["#7BD8B8","#F2B544","#5BC23A","#9B7BFF","#4DA3FF","#FF9D5C","#FF5D8B"];
+const coloresVend={V3:"#7BD8B8",V4:"#F2B544",V6:"#5BC23A",V7:"#9B7BFF",V8:"#4DA3FF",V9:"#FF9D5C",V10:"#FF5D8B"};
+function fmtM(n){return n?"$"+(n/1e6).toFixed(1)+"M":"$0"}
+function fmtK(n){return n?"$"+(n/1e3).toFixed(0)+"K":"$0"}
+function ini(n){return(n||"").split(" ").map(s=>s[0]).slice(0,2).join("")}
+
+const screenHTML={
+  dashboard:`
+    <div class="page-header"><h1 class="page-title">Dashboard Ejecutivo</h1><p class="page-sub">Resumen general · Peñaflor PAV</p></div>
+    <div class="kpi-grid" id="kpiGerencial"></div>
+    <div class="card"><div class="card-head"><h3 class="card-title">Ranking de Vendedores</h3></div><div class="card-body" id="rankingGerencial"></div></div>`,
+  vendedores:`
+    <div class="page-header"><h1 class="page-title">Vendedores Peñaflor</h1><p class="page-sub">7 vendedores activos</p></div>
+    <div id="vendedoresGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;"></div>`,
+  clientes:`
+    <div class="page-header"><h1 class="page-title">Clientes Críticos</h1><p class="page-sub">Foco operativo del día</p></div>
+    <div class="card"><div class="card-body"><div style="max-height:600px;overflow:auto;"><table class="tbl"><thead><tr><th>ID</th><th>Cliente</th><th>Segmento</th><th>Vend.</th><th>Día</th><th>Estado</th><th>11T Faltan</th><th>Acción</th></tr></thead><tbody id="clientesTbody"></tbody></table></div></div></div>`,
+  planificacion:`
+    <div class="page-header"><h1 class="page-title">Planificación Matinal</h1><p class="page-sub">Revisar y aprobar planes</p></div>
+    <div id="planesGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:14px;"></div>
+    <div class="card" style="margin-top:16px;"><div class="card-head"><h3 class="card-title">Enviar mensaje a vendedor</h3></div><div class="card-body"><div class="row"><select id="msgVend" style="padding:10px;background:#0B0E13;border:1px solid var(--hairline-bright);border-radius:8px;color:#fff;width:180px;"><option value="">Seleccionar...</option></select><input id="msgText" placeholder="Escribir mensaje..." style="flex:1;padding:10px;background:#0B0E13;border:1px solid var(--hairline-bright);border-radius:8px;color:#fff;"><button class="btn btn-primary" style="width:auto;padding:10px 20px;" onclick="enviarMsg()">Enviar</button></div></div></div>`,
+  alertas:`
+    <div class="page-header"><h1 class="page-title">Alertas Comerciales</h1><p class="page-sub">Copiloto Orbit</p></div><div id="alertasList"></div>`,
+  "vendedor-app":`
+    <div class="page-header"><h1 class="page-title">App del Vendedor</h1><p class="page-sub">Vista mobile</p></div>
+    <div class="phone-stage"><div class="phone"><div class="phone-notch"></div><div class="phone-screen"><div class="phone-bar"><span id="phoneTime">7:14</span><span>●●●</span></div><div class="phone-content" id="phoneContent"></div></div></div></div>`
+};
+
+async function doLogin(){
+  const u=document.getElementById("userSelect").value,p=document.getElementById("pwdInput").value,err=document.getElementById("loginError");
+  err.classList.remove("show");
+  if(!u){err.textContent="Seleccioná un usuario";err.classList.add("show");return}
+  try{
+    const r=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u,pwd:p})});
+    const d=await r.json();
+    if(d.ok){userData=d;await loadAll();showApp()}else{err.classList.add("show")}
+  }catch(e){err.textContent="Error de conexión";err.classList.add("show")}
+}
+
+async function loadAll(){
+  try{allData.dashboard=await(await fetch("/api/dashboard")).json()}catch(e){}
+  try{allData.clientes=await(await fetch("/api/clientes")).json()}catch(e){}
+  try{allData.alertas=await(await fetch("/api/alertas")).json()}catch(e){}
+  try{allData.planes=await(await fetch("/api/planificacion")).json()}catch(e){}
+  if(userData.rol==="vendedor"){
+    try{allData.detalle=await(await fetch("/api/vendedor/"+userData.vendedor_id)).json()}catch(e){}
+    try{allData.msgs=await(await fetch("/api/mensajes?vendedor_id="+userData.vendedor_id)).json()}catch(e){}
+  }
+}
+
+function showApp(){
+  document.getElementById("loginScreen").style.display="none";
+  document.getElementById("appScreen").style.display="flex";
+  document.getElementById("sidebarName").textContent=(userData.nombre||"U").split(" ")[0];
+  document.getElementById("sidebarRol").textContent=userData.rol==="gerencia"?"Gerencia":"Vendedor "+userData.vendedor_id;
+  document.getElementById("sidebarAvatar").textContent=ini(userData.nombre)||"U";
+  document.getElementById("daySelector").innerHTML=["LU","MA","MI","JU","VI","SA"].map(d=>`<button class="${d===currentDay?'active':''}" onclick="setDay('${d}')">${d}</button>`).join("");
+  if(userData.rol==="vendedor"){
+    document.getElementById("sidebarGerencia").style.display="none";
+    switchScreen("vendedor-app");
+  }else{
+    document.getElementById("sidebarMobile").style.display="none";
+    switchScreen("dashboard");
+  }
+}
+
+function setDay(d){currentDay=d;document.getElementById("daySelector").innerHTML=["LU","MA","MI","JU","VI","SA"].map(dd=>`<button class="${dd===d?'active':''}" onclick="setDay('${dd}')">${dd}</button>`).join("");renderScreen();}
+function switchScreen(id,el){
+  currentScreen=id;document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
+  if(el)el.classList.add("active");else document.querySelector(`[data-screen="${id}"]`)?.classList.add("active");
+  const titles={dashboard:"Dashboard Ejecutivo",vendedores:"Vendedores Peñaflor",clientes:"Clientes Críticos",planificacion:"Planificación Matinal",alertas:"Alertas Comerciales","vendedor-app":"App del Vendedor"};
+  document.getElementById("screenTitle").textContent=titles[id]||"";
+  renderScreen();
+}
+
+function renderScreen(){
+  document.getElementById("screenContent").innerHTML=screenHTML[currentScreen]||"";
+  if(currentScreen==="dashboard")renderDashboard();
+  else if(currentScreen==="vendedores")renderVendedores();
+  else if(currentScreen==="clientes")renderClientes();
+  else if(currentScreen==="planificacion")renderPlanificacion();
+  else if(currentScreen==="alertas")renderAlertas();
+  else if(currentScreen==="vendedor-app")renderMobile();
+}
+
+/* === DASHBOARD === */
+function renderDashboard(){
+  const s=[...allData.dashboard].sort((a,b)=>(b.kpis?.avance_pct||0)-(a.kpis?.avance_pct||0));
+  let tObj=0,tAcum=0,tCli=0,tPen=0;
+  s.forEach(v=>{const k=v.kpis||{};tObj+=k.objetivo||0;tAcum+=k.acumulado||0;tCli+=(k.clientes_total||0);tPen+=(k.clientes_pendientes||0);});
+  const avGral=tObj?(tAcum/tObj*100).toFixed(1):"0";
+  document.getElementById("kpiGerencial").innerHTML=[
+    {l:"VENTA ACUMULADA",v:fmtM(tAcum),cls:"ok",sub:"+12.4% vs mes anterior"},
+    {l:"OBJETIVO MENSUAL",v:fmtM(tObj),cls:"",sub:"7 vendedores · 19 días corridos"},
+    {l:"AVANCE GENERAL",v:avGral+"%",cls:avGral>=70?"ok":avGral>=40?"warn":"bad",sub:"Acumulado vs objetivo"},
+    {l:"CLIENTES TOTALES",v:tCli,cls:"info",sub:"Planificados en zonas"},
+    {l:"CLIENTES PENDIENTES",v:tPen,cls:"bad",sub:"Sin compra del mes"},
+    {l:"COBERTURA ESTIMADA",v:(tCli?(100-(tPen/tCli*100)).toFixed(1):"0")+"%",cls:"warn",sub:"Clientes con compra"},
+  ].map(k=>`<div class="kpi ${k.cls}"><div class="kpi-label">${k.l}</div><div class="kpi-value">${k.v}</div><div class="kpi-sub">${k.sub}</div></div>`).join("");
+  document.getElementById("rankingGerencial").innerHTML=s.map((v,i)=>{const k=v.kpis||{};const av=k.avance_pct||0;const cl=av>=100?"ok":av>=60?"warn":"bad";return`
+    <div class="v-row">
+      <div class="v-dot" style="background:${coloresVend[v.vendedor_id]||colors[i%7]}">${ini(v.vendedor_nombre)}</div>
+      <div class="v-info"><b>${v.vendedor_id} · ${v.vendedor_nombre}</b><div class="muted" style="font-size:10px;">${fmtM(k.objetivo)} objetivo · ${k.clientes_pendientes||0} pend.</div></div>
+      <div class="v-pct">${av.toFixed(1)}%</div>
+      <div class="v-bar"><div class="bar"><i class="${cl}" style="width:${Math.min(av,100)}%"></i></div><div class="muted" style="font-size:9px;margin-top:2px;">${fmtM(k.acumulado)}</div></div>
+    </div>`}).join("");
+}
+
+/* === VENDEDORES === */
+function renderVendedores(){
+  document.getElementById("vendedoresGrid").innerHTML=allData.dashboard.map((v,i)=>{const k=v.kpis||{};const av=k.avance_pct||0;const cl=av>=100?"ok":av>=60?"warn":"bad";return`
+    <div class="card"><div class="card-body">
+      <div class="row between" style="margin-bottom:10px;">
+        <div class="row"><div class="v-dot" style="background:${coloresVend[v.vendedor_id]||colors[i%7]}">${ini(v.vendedor_nombre)}</div><div><b>${v.vendedor_id} · ${v.vendedor_nombre}</b><div class="muted" style="font-size:10px;">${fmtM(k.objetivo)} objetivo</div></div></div>
+        <span class="chip ${cl}">${av.toFixed(1)}%</span>
+      </div>
+      <div class="bar" style="margin-bottom:8px;"><i class="${cl}" style="width:${Math.min(av,100)}%"></i></div>
+      <div class="row between muted" style="font-size:11px;"><span>Acum: ${fmtM(k.acumulado)}</span><span>CCC: ${k.ccc||0}</span><span>11T: ${k.once_titulares||0}</span><span>Pend.: ${k.clientes_pendientes||0}</span></div>
+    </div></div>`}).join("");
+}
+
+/* === CLIENTES === */
+function renderClientes(){
+  const filt=allData.clientes.filter(c=>{if(userData.rol==="gerencia")return true;return c.vendedor_id?.toUpperCase()===userData.vendedor_id?.toUpperCase();}).slice(0,100);
+  document.getElementById("clientesTbody").innerHTML=filt.map(c=>`<tr>
+    <td>${c.cliente_id}</td><td style="font-weight:600;">${c.cliente_nombre}</td><td>${c.segmento}</td><td>${c.vendedor_id||'-'}</td><td>${c.dia_visita||'-'}</td>
+    <td><span class="chip bad">${c.estado||'SIN_COMPRA'}</span></td><td>${c.faltan_11t||'-'}</td>
+    <td style="font-size:10px;color:var(--text2);max-width:280px;">${(c.kernel_accion||'').substring(0,100)}</td>
+  </tr>`).join("");
+}
+
+/* === PLANIFICACION === */
+function renderPlanificacion(){
+  const sel=document.getElementById("msgVend");if(sel)sel.innerHTML=["V3","V4","V6","V7","V8","V9","V10"].map(v=>`<option value="${v}">${v}</option>`).join("");
+  const pl=allData.planes||[];const el=document.getElementById("planesGrid");if(!el)return;
+  if(!pl.length){el.innerHTML='<div class="card"><div class="card-body muted">Sin planificaciones aún. Los vendedores cargan sus planes desde la app.</div></div>';return}
+  el.innerHTML=pl.slice(0,20).map(p=>`<div class="card"><div class="card-body">
+    <div class="row between"><b>${p.vendedor_id}</b><span class="chip ${p.estado==='modificada'?'violet':'ok'}">${p.estado||'enviada'}</span></div>
+    <div class="row between muted" style="font-size:11px;margin-top:6px;"><span>${p.fecha} · ${p.dia_visita||'-'}</span><span>Venta: ${fmtM(p.venta_esperada)}</span></div>
+    <div class="row between muted" style="font-size:11px;"><span>CCC T/A/O: ${p.ccc_tradicional||0}/${p.ccc_autoservicio||0}/${p.ccc_onpremise||0}</span><span>11T: ${p.once_t||0}</span></div>
+  </div></div>`).join("");
+}
+
+/* === ALERTAS === */
+function renderAlertas(){
+  const al=allData.alertas||[];
+  document.getElementById("alertasList").innerHTML=al.length?al.slice(0,40).map(a=>`<div class="card" style="margin-bottom:6px;"><div class="card-body">
+    <div class="row between"><b>${a.cliente_nombre||a.titulo||'Alerta'}</b><span class="chip ${a.prioridad==='alta'?'bad':'warn'}">${(a.prioridad||'ALTA').toUpperCase()}</span></div>
+    <div class="muted" style="font-size:11px;margin-top:4px;">${a.detalle||a.accion||''}</div>
+  </div></div>`).join(""):'<div class="card"><div class="card-body muted">Sin alertas activas</div></div>';
+}
+
+/* === APP VENDEDOR === */
+function renderMobile(){
+  const d=allData.detalle||{};const msgs=allData.msgs||[];const dt=new Date();
+  document.getElementById("phoneTime").textContent=dt.getHours().toString().padStart(2,"0")+":"+dt.getMinutes().toString().padStart(2,"0");
+  const obj=d.objetivo||0,acum=d.acumulado||0,falta=obj-acum,av=d.avance_pct||0,proy=(acum/(dt.getDate()||1))*30;
+  document.getElementById("phoneContent").innerHTML=`
+    <div class="row between"><div><div class="muted" style="font-size:9px;text-transform:uppercase;letter-spacing:1px;">Hola ${(userData.nombre||"").split(" ")[0]}</div><b style="font-size:16px;">Buen día ☀</b></div></div>
+    ${msgs.length?`<div class="phone-msg"><b style="color:var(--violet);font-size:9px;text-transform:uppercase;">Mensaje de gerencia</b><div style="margin-top:3px;">${msgs[0]?.mensaje||''}</div></div>`:''}
+    <div class="phone-kpi" style="background:linear-gradient(135deg,rgba(46,194,126,.10),rgba(46,194,126,.02));border:1px solid rgba(46,194,126,.2);">
+      <div class="lbl">TE FALTA PARA EL OBJETIVO</div>
+      <div class="val">${fmtM(falta)}</div>
+      <div class="muted" style="font-size:10px;margin-top:2px;">Avance: ${av.toFixed(1)}% · Proy: ${fmtM(proy)}</div>
+    </div>
+    <div><b style="font-size:12px;">Indicadores del mes</b></div>
+    <div class="phone-grid">
+      <div class="phone-kpi"><div class="lbl">CCC TRADICIONAL</div><div class="val">${d.ccc_tradicional||0}</div></div>
+      <div class="phone-kpi"><div class="lbl">CCC AUTOSERV.</div><div class="val">${d.ccc_autoservicio||0}</div></div>
+      <div class="phone-kpi"><div class="lbl">CCC ON PREMISE</div><div class="val">${d.ccc_onpremise||0}</div></div>
+      <div class="phone-kpi"><div class="lbl">11 TITULARES</div><div class="val">${d.once_t_cumplidos||0}/${d.once_t_total||0}</div></div>
+      <div class="phone-kpi"><div class="lbl">OBJETIVO</div><div class="val">${fmtM(obj)}</div></div>
+      <div class="phone-kpi"><div class="lbl">ACUMULADO</div><div class="val">${fmtM(acum)}</div></div>
+    </div>
+  `;
+}
+
+async function enviarMsg(){
+  const vid=document.getElementById("msgVend")?.value,txt=document.getElementById("msgText")?.value;
+  if(!vid||!txt)return;
+  await fetch("/api/mensajes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({vendedor_id:vid,mensaje:txt})});
+  document.getElementById("msgText").value="";alert("Mensaje enviado");
+}
+
+function logout(){userData=null;document.getElementById("loginScreen").style.display="flex";document.getElementById("appScreen").style.display="none";}
+document.getElementById("pwdInput").addEventListener("keydown",e=>{if(e.key==="Enter")doLogin();});
+</script>
+</body>
+</html>

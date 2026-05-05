@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=1440"/>
+<title>ORBIT Peñaflor · PAV Matinal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=6">
+<style>
+  /* ====== LOADING ====== */
+  #loadingScreen {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; background: #07090C; gap: 16px;
+    font-family: 'Sora', sans-serif; color: #AAB3C0;
+  }
+  #loadingScreen .spinner {
+    width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.1);
+    border-top: 3px solid #E2147A; border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+  .step { font-size: 13px; color: #6B7686; }
+  .step.done { color: #2EC27E; }
+  .step.error { color: #FF5D5D; }
+
+  /* ====== LOGIN ====== */
+  #loginOverlay {
+    display: none; position: fixed; inset: 0; z-index: 9999;
+    background: rgba(7,9,12,0.94); backdrop-filter: blur(12px);
+    align-items: center; justify-content: center;
+  }
+  #loginOverlay .login-card {
+    background: #0F141B; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 24px; padding: 44px 40px; text-align: center; width: 430px;
+  }
+  #loginOverlay img { width: 155px; margin: 0 auto 22px; }
+  #loginOverlay select, #loginOverlay input {
+    width: 100%; padding: 12px 14px; margin: 6px 0; background: #0B0E13;
+    border: 1px solid rgba(255,255,255,0.14); border-radius: 10px; color: #fff;
+    font-size: 14px; font-family: 'Inter', sans-serif;
+  }
+  #loginOverlay .btn-primary {
+    width: 100%; padding: 14px; margin-top: 14px;
+    background: linear-gradient(180deg,#E2147A,#B30E5F); color: #fff;
+    font-weight: 600; border: none; border-radius: 10px; cursor: pointer; font-size: 14px;
+  }
+  #loginOverlay .btn-primary:hover { filter: brightness(1.1); }
+  #loginError { color: #FF5D5D; font-size: 12px; margin-top: 8px; display: none; }
+
+  /* ====== BADGE MODO DATOS ====== */
+  #modoBadge {
+    position: fixed; bottom: 8px; right: 16px; z-index: 9998;
+    font-size: 10px; font-family: 'Inter', sans-serif;
+    padding: 4px 10px; border-radius: 6px;
+    background: rgba(46,194,126,0.1); color: #2EC27E;
+  }
+  #modoBadge.error {
+    background: rgba(255,93,93,0.1); color: #FF5D5D;
+  }
+</style>
+</head>
+<body>
+
+<!-- ====== LOADING ====== -->
+<div id="loadingScreen">
+  <div class="spinner"></div>
+  <div id="step1" class="step">Conectando con el servidor ORBIT...</div>
+  <div id="step2" class="step">Cargando datos reales desde orbit_portal_data.json...</div>
+  <div id="step3" class="step">Verificando integridad de datos...</div>
+  <div id="step4" class="step">Preparando panel...</div>
+</div>
+
+<!-- ====== LOGIN ====== -->
+<div id="loginOverlay">
+  <div class="login-card">
+    <img src="assets/orbit-logo-pink.png" alt="ORBIT"
+         onerror="this.outerHTML='<div style=font-size:42px;font-weight:700;margin-bottom:22px;>ORB<span style=color:#E2147A>IT</span></div>'">
+    <div style="color:#AAB3C0;font-size:13px;margin-bottom:22px;">Peñaflor · PAV Matinal</div>
+    <select id="loginUser">
+      <option value="">Seleccionar perfil...</option>
+      <option value="v3">V3 · Nadia Gambino</option>
+      <option value="v4">V4 · Angel Gribaudo</option>
+      <option value="v6">V6 · Andrea Peyronel</option>
+      <option value="v7">V7 · Guillermo Jofre</option>
+      <option value="v8">V8 · Vanesa Alvarez</option>
+      <option value="v9">V9 · Fernando Sanchez</option>
+      <option value="v10">V10 · Milagros Ortega</option>
+      <option value="gerencia" style="border-top:1px solid #E2147A;color:#E2147A;">── GERENCIA ──</option>
+    </select>
+    <input type="password" id="loginPwd" placeholder="Contraseña" autocomplete="off">
+    <button class="btn-primary" onclick="doLogin()">Ingresar a ORBIT</button>
+    <div id="loginError"></div>
+  </div>
+</div>
+
+<!-- ====== REACT MOUNT ====== -->
+<div id="root"></div>
+<div id="modoBadge"></div>
+<script>
+  window.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      var meta = window.ORBIT_DATA;
+      if (meta && meta.dia_semana && meta.fecha_corte) {
+        var h2 = document.querySelector('h2');
+        if (h2 && h2.textContent.includes('Reunión matinal')) {
+          var partes = meta.fecha_corte.split('-');
+          var fechaCorta = partes[2] + '/' + partes[1];
+          h2.textContent = 'Reunión matinal - ' + meta.dia_semana + ' ' + fechaCorta;
+        }
+      }
+    }, 600);
+  });
+</script>
+<script>
+  window.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      var meta = window.ORBIT_DATA;
+      if (meta && meta.dia_semana && meta.fecha_corte) {
+        // Buscar el contenedor del título (ajustar selectores si es necesario)
+        var h2 = document.querySelector('h2');
+        if (h2 && h2.textContent.includes('Reunión matinal')) {
+          var partes = meta.fecha_corte.split('-'); // YYYY-MM-DD
+          var fechaCorta = partes[2] + '/' + partes[1];
+          h2.textContent = 'Reunión matinal - ' + meta.dia_semana + ' ' + fechaCorta;
+        }
+      }
+    }, 600);
+  });
+</script>
+
+
+<!-- ====== DEPENDENCIAS ====== -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+
+<!-- ====== DATOS REALES (bloqueante) ====== -->
+<script src="data.js?v=6"></script>
+
+<!-- ====== HELPERS ====== -->
+<script src="fmtMoney.js?v=6"></script>
+
+<!-- ====== COMPONENTES REACT ====== -->
+<script type="text/babel" src="icons.jsx?v=6"></script>
+<script type="text/babel" src="charts.jsx?v=6"></script>
+<script type="text/babel" src="screens/dashboard.jsx?v=6"></script>
+<script type="text/babel" src="screens/avance.jsx?v=6"></script>
+<script type="text/babel" src="screens/planificacion.jsx?v=6"></script>
+<script type="text/babel" src="screens/other.jsx?v=6"></script>
+<script type="text/babel" src="screens/vendedor-mobile.jsx?v=6"></script>
+<script type="text/babel" src="app.jsx?v=6"></script>
+
+<!-- ====== APP LOGIC ====== -->
+<script>
+  window.currentUser = null;
+
+  // ========== LOGIN ==========
+  function doLogin() {
+    var u = document.getElementById("loginUser").value;
+    var p = document.getElementById("loginPwd").value;
+    var err = document.getElementById("loginError");
+    err.style.display = "none";
+    if (!u) { err.textContent = "Seleccioná un usuario"; err.style.display = "block"; return; }
+
+    fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user: u, pwd: p })
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (d.ok) {
+        window.currentUser = d;
+        document.getElementById("loginOverlay").style.display = "none";
+        setTimeout(updateSidebar, 500);
+      } else {
+        err.textContent = "Credenciales inválidas";
+        err.style.display = "block";
+      }
+    }).catch(function() {
+      err.textContent = "Error de conexión";
+      err.style.display = "block";
+    });
+  }
+
+  function updateSidebar() {
+    if (!window.currentUser) return;
+    var footer = document.querySelector(".sidebar-footer");
+    if (footer) {
+      footer.querySelector("b").textContent = window.currentUser.nombre.split(" ")[0];
+      footer.querySelector("span").textContent = window.currentUser.rol === "gerencia" ? "Gerencia" : "Vendedor " + window.currentUser.vendedor_id;
+      footer.querySelector(".avatar").textContent = (window.currentUser.nombre || "U")[0];
+    }
+    if (window.currentUser.rol === "vendedor") {
+      document.querySelectorAll(".nav-section-title").forEach(function(e) {
+        if (e.textContent.trim() === "Gerencia") e.parentElement.style.display = "none";
+      });
+      var btn = document.querySelector('[data-screen="vendedor"]');
+      if (btn) setTimeout(function() { btn.click(); }, 400);
+    }
+  }
+
+  document.getElementById("loginPwd").addEventListener("keydown", function(e) {
+    if (e.key === "Enter") doLogin();
+  });
+
+  // ========== INIT ==========
+  (function init() {
+    // Verificar que los datos se cargaron correctamente
+    if (!window.ORBIT_DATA || window.ORBIT_MODE !== "REAL") {
+      document.getElementById("step1").classList.add("error");
+      document.getElementById("step1").textContent = "ERROR: No se pudieron cargar datos reales.";
+      document.getElementById("step2").classList.add("error");
+      document.getElementById("modoBadge").textContent = "● ERROR: Datos no disponibles";
+      document.getElementById("modoBadge").className = "error";
+      return;
+    }
+
+    // Actualizar badge
+    var meta = window.ORBIT_DATA;
+    if (meta.calendario) {
+      document.getElementById("modoBadge").textContent =
+        "● Datos reales · Corte: " + (meta.fechaCorta || meta.calendario.fecha_corte) +
+        " · Días: " + meta.calendario.corridos + "/" + meta.calendario.total;
+    }
+
+    // Ocultar loading y mostrar login
+    document.getElementById("step1").classList.add("done");
+    document.getElementById("step2").classList.add("done");
+    document.getElementById("step3").classList.add("done");
+    document.getElementById("step4").classList.add("done");
+
+    setTimeout(function() {
+      document.getElementById("loadingScreen").style.display = "none";
+      document.getElementById("loginOverlay").style.display = "flex";
+    }, 300);
+  })();
+</script>
+</body>
+</html>

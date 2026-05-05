@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+        <style>
+          :root {
+            --bg: #0A0D12; --surface: #11161E; --text: #E7ECF3; --text2: #AAB3C0;
+            --magenta: #E2147A; --magenta-glow: rgba(226,20,122,0.45);
+            --ok: #2EC27E; --warn: #F2B544; --bad: #FF5D5D; --info: #4DA3FF;
+          }
+          * { margin:0; padding:0; box-sizing:border-box; }
+          body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg); color: var(--text);
+            padding: 24px; min-height: 100vh;
+          }
+          h2 {
+            font-family: 'Sora', sans-serif; font-size: 22px; margin-bottom: 4px;
+          }
+          h3 { font-family: 'Sora', sans-serif; font-size: 14px; color: var(--text2); margin: 20px 0 10px; }
+          .sub { color: var(--text2); font-size: 13px; margin-bottom: 16px; }
+          .cards {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px; margin-bottom: 20px;
+          }
+          .kpi-card {
+            background: var(--surface); border-radius: 14px; padding: 16px;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 1px 0 rgba(255,255,255,0.03) inset;
+          }
+          .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text2); margin-bottom: 6px; }
+          .kpi-value { font-family: 'Sora', sans-serif; font-size: 24px; font-weight: 700; }
+          .kpi-unit { font-size: 12px; color: var(--text2); margin-left: 4px; }
+          .kpi-delta { font-size: 11.5px; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+          .kpi-delta.up { color: var(--ok); }
+          .kpi-delta.down { color: var(--bad); }
+          .bar-bg { height: 8px; background: rgba(255,255,255,0.06); border-radius: 99px; margin-top: 8px; overflow: hidden; }
+          .bar-fill { height: 100%; border-radius: 99px; background: var(--magenta); box-shadow: 0 0 10px var(--magenta-glow); }
+          .bar-fill.ok { background: var(--ok); box-shadow: 0 0 10px rgba(46,194,126,0.5); }
+          .bar-fill.warn { background: var(--warn); box-shadow: 0 0 10px rgba(242,181,68,0.5); }
+          .bar-fill.bad { background: var(--bad); box-shadow: 0 0 10px rgba(255,93,93,0.5); }
+          table { width: 100%; border-collapse: collapse; font-size: 13px; }
+          th { text-align: left; padding: 10px 12px; background: var(--surface); color: var(--text2); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+          td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+          tr:hover td { background: rgba(255,255,255,0.02); }
+          .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; }
+          .badge-critical { background: rgba(255,93,93,0.15); color: var(--bad); }
+          .badge-warning { background: rgba(242,181,68,0.15); color: var(--warn); }
+          .badge-info { background: rgba(77,163,255,0.15); color: var(--info); }
+          .footer { margin-top: 30px; text-align: center; color: var(--text2); font-size: 11px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 14px; }
+        </style>
+        
+</head>
+<body>
+<h2>V6 · PEYRONEL ANDREA</h2>
+<div class="sub">Reporte matinal · 05/05/2026 19:26</div>
+
+<div class="cards">
+  
+        <div class="kpi-card">
+          <div class="kpi-label">OBJETIVO MENSUAL</div>
+          <div class="kpi-value">$43,102,400<span class="kpi-unit"></span></div>
+          
+        </div>
+  
+        <div class="kpi-card">
+          <div class="kpi-label">ACUMULADO</div>
+          <div class="kpi-value">$7,806,975<span class="kpi-unit"></span></div>
+          
+        </div>
+  
+        <div class="kpi-card ok">
+          <div class="kpi-label">AVANCE</div>
+          <div class="kpi-value">144.9<span class="kpi-unit">%</span></div>
+          
+        </div>
+  
+        <div class="kpi-card">
+          <div class="kpi-label">REAL AYER</div>
+          <div class="kpi-value">$2,771,498<span class="kpi-unit"></span></div>
+          
+        </div>
+  
+        <div class="kpi-card">
+          <div class="kpi-label">TENDENCIA</div>
+          <div class="kpi-value">$62,455,801<span class="kpi-unit"></span></div>
+          
+        </div>
+  
+        <div class="kpi-card">
+          <div class="kpi-label">CCC MES</div>
+          <div class="kpi-value">0<span class="kpi-unit"></span></div>
+          
+        </div>
+  
+        <div class="kpi-card">
+          <div class="kpi-label">11T CUMPLIDOS</div>
+          <div class="kpi-value">0/473<span class="kpi-unit"></span></div>
+          
+        </div>
+</div>
+
+<div class="bar-bg"><div class="bar-fill ok" style="width:100%"></div></div>
+
+<h3>Inversión y riesgos</h3>
+<div class="cards">
+  
+        <div class="kpi-card">
+          <div class="kpi-label">INVERSIÓN TOTAL</div>
+          <div class="kpi-value">$4,529<span class="kpi-unit"></span></div>
+          
+        </div>
+  
+        <div class="kpi-card">
+          <div class="kpi-label">REINTEGROS PEND.</div>
+          <div class="kpi-value">7<span class="kpi-unit"></span></div>
+          
+        </div>
+  
+        <div class="kpi-card">
+          <div class="kpi-label">DESC. INEFICIENTES</div>
+          <div class="kpi-value">0<span class="kpi-unit"></span></div>
+          
+        </div>
+</div>
+
+<h3>Clientes foco (44)</h3>
+<table>
+<tr><th>ID</th><th>Cliente</th><th>Motivos</th><th>Faltantes 11T</th><th>Prioridad</th></tr>
+<tr>
+<td>2230</td>
+<td>AGUIRRE DAMIAN</td>
+<td>Falta 11T</td>
+<td>ALMA MORA, CAZADOR, DON DAVID, FOND DE CAVE, FOND DE CAVE RVA, JW BLACK, JW RED, MASCOTA, NC ESPUMANTES, TRAPICHE MEDALLA, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>2658</td>
+<td>AMADO FIAMMA ABIGAIL AYELEN</td>
+<td>Falta 11T</td>
+<td>ALMA MORA, CAZADOR, DON DAVID, FOND DE CAVE, FOND DE CAVE RVA, JW BLACK, JW RED, MASCOTA, NC ESPUMANTES, TRAPICHE MEDALLA, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>2647</td>
+<td>ASOCIACION MUTUAL LIBERTAD BALNEARIA</td>
+<td>Falta 11T</td>
+<td>ALARIS, ALMA MORA, ANTARES, DADA, DON DAVID, FINCA LAS MORAS, GORDON'S FLAVOURS, LOS ARBOLES, SMF ICE, SMIRNOFF FLAVOURS, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>1313</td>
+<td>BAEZ NATALIA EUGENIA</td>
+<td>Falta 11T</td>
+<td>ALMA MORA, CAZADOR, DON DAVID, FOND DE CAVE, FOND DE CAVE RVA, JW BLACK, JW RED, MASCOTA, NC ESPUMANTES, TRAPICHE MEDALLA, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>2063</td>
+<td>BARALE LEONARDO</td>
+<td>Falta 11T</td>
+<td>ALMA MORA, CAZADOR, DON DAVID, FOND DE CAVE, FOND DE CAVE RVA, JW BLACK, JW RED, MASCOTA, NC ESPUMANTES, TRAPICHE MEDALLA, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>383</td>
+<td>BEARZI EVELINA ROXANA</td>
+<td>Falta 11T</td>
+<td>ALMA MORA, CAZADOR, DON DAVID, FOND DE CAVE, FOND DE CAVE RVA, JW BLACK, JW RED, MASCOTA, NC ESPUMANTES, TRAPICHE MEDALLA, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>192</td>
+<td>BRUNETTI DANTE RAUL</td>
+<td>Falta 11T</td>
+<td>ALARIS, ALMA MORA, ANTARES, DADA, DON DAVID, FINCA LAS MORAS, GORDON'S FLAVOURS, LOS ARBOLES, SMF ICE, SMIRNOFF FLAVOURS, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>195</td>
+<td>CABRAL ANDRES JAVIER</td>
+<td>Falta 11T</td>
+<td>ALMA MORA, CAZADOR, DON DAVID, FOND DE CAVE, FOND DE CAVE RVA, JW BLACK, JW RED, MASCOTA, NC ESPUMANTES, TRAPICHE MEDALLA, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>2655</td>
+<td>CAMPANA NORMA BEATRIZ</td>
+<td>Falta 11T</td>
+<td>ALMA MORA, CAZADOR, DON DAVID, FOND DE CAVE, FOND DE CAVE RVA, JW BLACK, JW RED, MASCOTA, NC ESPUMANTES, TRAPICHE MEDALLA, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>2630</td>
+<td>CHEN MEI</td>
+<td>Falta 11T</td>
+<td>ALARIS, ALMA MORA, ANTARES, DADA, DON DAVID, FINCA LAS MORAS, GORDON'S FLAVOURS, LOS ARBOLES, SMF ICE, SMIRNOFF FLAVOURS, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>3521</td>
+<td>DELFIN S.A.</td>
+<td>Falta 11T</td>
+<td>ALARIS, ALMA MORA, ANTARES, DADA, DON DAVID, FINCA LAS MORAS, GORDON'S FLAVOURS, LOS ARBOLES, SMF ICE, SMIRNOFF FLAVOURS, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>2641</td>
+<td>EDGARDO BERNABE LERDA</td>
+<td>Falta 11T</td>
+<td>ALMA MORA, CAZADOR, DON DAVID, FOND DE CAVE, FOND DE CAVE RVA, JW BLACK, JW RED, MASCOTA, NC ESPUMANTES, TRAPICHE MEDALLA, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>1143</td>
+<td>ERCOLE ARRASCAETA NICOLAS JOSE</td>
+<td>Falta 11T</td>
+<td>ALMA MORA, CAZADOR, DON DAVID, FOND DE CAVE, FOND DE CAVE RVA, JW BLACK, JW RED, MASCOTA, NC ESPUMANTES, TRAPICHE MEDALLA, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>2629</td>
+<td>FARCHETTO MAURICIO RAFAEL</td>
+<td>Falta 11T</td>
+<td>ALMA MORA, CAZADOR, DON DAVID, FOND DE CAVE, FOND DE CAVE RVA, JW BLACK, JW RED, MASCOTA, NC ESPUMANTES, TRAPICHE MEDALLA, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>2692</td>
+<td>FENOGLIO MARCELO FABIO</td>
+<td>Falta 11T</td>
+<td>ALMA MORA, CAZADOR, DON DAVID, FOND DE CAVE, FOND DE CAVE RVA, JW BLACK, JW RED, MASCOTA, NC ESPUMANTES, TRAPICHE MEDALLA, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>785</td>
+<td>FERRERO YOHANA JANET</td>
+<td>Falta 11T</td>
+<td>ALMA MORA, CAZADOR, DON DAVID, FOND DE CAVE, FOND DE CAVE RVA, JW BLACK, JW RED, MASCOTA, NC ESPUMANTES, TRAPICHE MEDALLA, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>2693</td>
+<td>FISSORE LORENA</td>
+<td>Falta 11T</td>
+<td>ALARIS, ALMA MORA, ANTARES, DADA, DON DAVID, FINCA LAS MORAS, GORDON'S FLAVOURS, LOS ARBOLES, SMF ICE, SMIRNOFF FLAVOURS, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>1174</td>
+<td>GIRAUDO MAXIMILIANO</td>
+<td>Falta 11T</td>
+<td>ALMA MORA, CAZADOR, DON DAVID, FOND DE CAVE, FOND DE CAVE RVA, JW BLACK, JW RED, MASCOTA, NC ESPUMANTES, TRAPICHE MEDALLA, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>2691</td>
+<td>GONZALEZ ANGEL MARTIN</td>
+<td>Falta 11T</td>
+<td>ALMA MORA, CAZADOR, DON DAVID, FOND DE CAVE, FOND DE CAVE RVA, JW BLACK, JW RED, MASCOTA, NC ESPUMANTES, TRAPICHE MEDALLA, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr><tr>
+<td>3118</td>
+<td>HEREDIA MARIA JOSE</td>
+<td>Falta 11T</td>
+<td>ALMA MORA, CAZADOR, DON DAVID, FOND DE CAVE, FOND DE CAVE RVA, JW BLACK, JW RED, MASCOTA, NC ESPUMANTES, TRAPICHE MEDALLA, TRAPICHE RESERVA</td>
+<td><span class="badge badge-critical">11</span></td>
+</tr></table>
+<div class="footer">ORBIT © 2026 · Propiedad de Torres Matías</div>
+</body></html>

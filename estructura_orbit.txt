@@ -1,0 +1,213 @@
+Listado de rutas de carpetas
+El n£mero de serie del volumen es 325A-FA0E
+C:.
+³   3
+³   app_publish.py
+³   Dict[str
+³   EJECUTAR_ORBIT_DIARIO.bat
+³   estructura_orbit.txt
+³   float
+³   None
+³   ORBIT_ESTADO_ACTUAL.txt
+³   pd.DataFrame
+³   run_orbit.py
+³   str
+³   test_alertas_orbit.py
+³   test_alertas_reales.py
+³   test_copiloto_cliente.py
+³   test_copiloto_gerencia.py
+³   test_copiloto_proactivo.py
+³   test_copiloto_vendedor.py
+³   test_datasets_orbit.py
+³   test_kernel_proactivo.py
+³   test_legacy_run.py
+³   test_pav_pdf.py
+³   test_pav_render.py
+³   
+ÃÄÄÄ00_DROPZONE_DIARIA
+³       resultado.xlsx
+³       ventas.csv
+³       
+ÃÄÄÄ01_INPUTS
+³       avance_objetivos.xlsx
+³       clientes.xlsx
+³       resultado.xlsx
+³       ventas.csv
+³       ventas_diarias.csv
+³       
+ÃÄÄÄ02_HISTORY
+³       historial_ventas.csv
+³       historial_ventas_cliente.csv
+³       
+ÃÄÄÄ03_OUTPUTS
+³       MATINAL_PENA_V42.xlsx
+³       
+ÃÄÄÄ04_DATASETS_ORBIT
+³       clientes_dia.csv
+³       datasets_inventory.csv
+³       hist_cliente_mes.csv
+³       hist_cliente_producto.csv
+³       hist_cliente_resumen.csv
+³       log_motor.csv
+³       mod_11_titulares.csv
+³       mod_alertas_descuentos.csv
+³       mod_ccc_segmento.csv
+³       mod_clientes_11t_10.csv
+³       mod_eficiencia_desc.csv
+³       mod_inversion_desc.csv
+³       mod_reintegros_ctrl.csv
+³       mod_volumen_vendedor.csv
+³       resumen_alertas_vend.csv
+³       
+ÃÄÄÄ05_INTELLIGENCE_ORBIT
+³       alertas_reales.csv
+³       alertas_reales_gerencia.json
+³       alertas_reales_resumen_vendedor.csv
+³       orbit_alertas_priorizadas.csv
+³       orbit_foco_vendedor.csv
+³       perf_resumen_vendedor.csv
+³       perf_segmentos.csv
+³       variables_comerciales.xlsx
+³       
+ÃÄÄÄ05_MASTER_DATA
+³       clientes_master.csv
+³       
+ÃÄÄÄ06_APP_DATA
+ÃÄÄÄ06_COPILOTO_VENDEDOR
+³   ³   copiloto_vendedor_resumen.csv
+³   ³   
+³   ÀÄÄÄmensajes
+³           alvarez_vanesa_kaff.txt
+³           gonzalez_daiana_alejandra.txt
+³           gribaudo_angel.txt
+³           jofre_guillermo_agustin.txt
+³           ortega_milagros_desiree.txt
+³           peyronel_andrea.txt
+³           sanchez_fernando_javier.txt
+³           
+ÃÄÄÄ06_COPILOTO_VENDEDOR_PROACTIVO
+³   ³   mensajes_vendedores_resumen.csv
+³   ³   top_50_caida_vinos_alta_gama.csv
+³   ³   
+³   ÀÄÄÄmensajes
+³           10.txt
+³           4.txt
+³           8.txt
+³           9.txt
+³           
+ÃÄÄÄ06_KERNEL_OUTPUT
+³       kernel_output.csv
+³       kernel_resumen_vendedor.csv
+³       kernel_top20_vendedor.csv
+³       
+ÃÄÄÄ07_PAV_OUTPUT
+³   ³   PAV_GERENCIA.html
+³   ³   
+³   ÃÄÄÄvendedores
+³   ³       V10.html
+³   ³       V3.html
+³   ³       V4.html
+³   ³       V6.html
+³   ³       V7.html
+³   ³       V8.html
+³   ³       V9.html
+³   ³       
+³   ÀÄÄÄwhatsapp
+ÃÄÄÄ08_LOGS
+³       orbit_qa_resumen_latest.json
+³       orbit_qa_resumen_latest.txt
+³       
+ÃÄÄÄ09_CONFIG
+³       acciones_comerciales.csv
+³       reglas_alertas.csv
+³       vendedores_activos.csv
+³       
+ÃÄÄÄLEGACY
+³   ³   orbit_matinal_v42.py
+³   ³   
+³   ÀÄÄÄ__pycache__
+³           orbit_matinal_v42.cpython-312.pyc
+³           orbit_matinal_v42.cpython-314.pyc
+³           
+ÀÄÄÄsrc
+    ÀÄÄÄorbit
+        ÃÄÄÄconfig
+        ³   ³   config_comercial.py
+        ³   ³   
+        ³   ÀÄÄÄ__pycache__
+        ³           config_comercial.cpython-314.pyc
+        ³           
+        ÃÄÄÄcontrol
+        ³       run_orbit_diario.py
+        ³       
+        ÃÄÄÄcopilot
+        ³   ³   copiloto_cliente.py
+        ³   ³   copiloto_cliente_pro.py
+        ³   ³   copiloto_gerencia_orbit.py
+        ³   ³   copiloto_vendedor.py
+        ³   ³   
+        ³   ÀÄÄÄ__pycache__
+        ³           copiloto_cliente.cpython-314.pyc
+        ³           copiloto_vendedor.cpython-312.pyc
+        ³           copiloto_vendedor.cpython-314.pyc
+        ³           
+        ÃÄÄÄdatasets
+        ³   ³   datasets_orbit.py
+        ³   ³   
+        ³   ÀÄÄÄ__pycache__
+        ³           datasets_orbit.cpython-312.pyc
+        ³           datasets_orbit.cpython-314.pyc
+        ³           
+        ÃÄÄÄengine
+        ³       orbit_proactive_engine.py
+        ³       
+        ÃÄÄÄhistory
+        ³       historial_orbit.py
+        ³       
+        ÃÄÄÄingest
+        ³   ³   legacy_penaflor_adapter.py
+        ³   ³   
+        ³   ÀÄÄÄ__pycache__
+        ³           legacy_penaflor_adapter.cpython-312.pyc
+        ³           legacy_penaflor_adapter.cpython-314.pyc
+        ³           
+        ÃÄÄÄintelligence
+        ³   ³   alertas_orbit.py
+        ³   ³   alertas_reales_orbit.py
+        ³   ³   
+        ³   ÀÄÄÄ__pycache__
+        ³           alertas_orbit.cpython-312.pyc
+        ³           alertas_orbit.cpython-314.pyc
+        ³           alertas_reales_orbit.cpython-314.pyc
+        ³           
+        ÃÄÄÄkernel
+        ³       kernel_proactivo.py
+        ³       
+        ÃÄÄÄmaster
+        ³       clientes_master.py
+        ³       
+        ÃÄÄÄperformance
+        ³       perf_engine.py
+        ³       
+        ÃÄÄÄpresentation
+        ³       legacy_penaflor_pdf_bridge.py
+        ³       
+        ÃÄÄÄproactive
+        ³   ³   copiloto_vendedor_proactivo.py
+        ³   ³   orbit_kernel_proactivo.py
+        ³   ³   
+        ³   ÀÄÄÄ__pycache__
+        ³           copiloto_vendedor_proactivo.cpython-314.pyc
+        ³           orbit_kernel_proactivo.cpython-314.pyc
+        ³           
+        ÃÄÄÄqa
+        ³       orbit_qa_auditor.py
+        ³       
+        ÀÄÄÄrender
+            ³   pav_pdf_orbit.py
+            ³   pav_render_orbit.py
+            ³   
+            ÀÄÄÄ__pycache__
+                    pav_pdf_orbit.cpython-314.pyc
+                    pav_render_orbit.cpython-314.pyc
+                    

@@ -1,0 +1,40 @@
+PROYECTO: ORBIT MATINAL PEÑAFLOR
+
+ESTADO ACTUAL:
+- Pipeline completo funcionando (run_orbit.py)
+- QA activo y validando correctamente
+- Alertas reales implementadas
+- Render HTML vendedor y gerencia funcionando
+- WhatsApp generado
+- Historial + master clientes funcionando
+
+PROBLEMAS DETECTADOS:
+1. Render no genera archivos para todos los vendedores
+2. Mezcla archivos viejos y nuevos en carpeta
+3. Alertas incompletas (localidad, impacto)
+4. Alertas de tipo resumen aparecen como alertas reales
+
+OBJETIVO INMEDIATO:
+- Render consistente
+- 1 archivo por vendedor activo
+- Limpieza automática de carpeta
+- Datos completos por alerta
+- Preparar estructura para app (no PDF)
+
+ARQUITECTURA:
+01_INPUTS
+03_OUTPUTS
+04_DATASETS_ORBIT
+05_INTELLIGENCE_ORBIT
+06_COPILOTO
+07_PAV_OUTPUT
+08_LOGS
+09_CONFIG
+
+REGLA CLAVE:
+NO TOCAR MOTORES BASE
+MODIFICAR SOLO CONFIGURACIÓN O CAPAS SUPERIORES
+
+SIGUIENTE PASO:
+- Ajustar render final
+- Migrar a app con login por vendedor

@@ -1,0 +1,5 @@
+tipo_alerta,prioridad_default,prioridad_critica_condicion,top_visible_vendedor,top_visible_gerencia,activa,comentario
+descuento,alta,si_descuento_fuera_parametro,15,20,1,Alertas de descuento
+faltante_11_titulares,media,faltan_8_o_mas,20,25,1,Portfolio/11 titulares
+caida_compra,alta,impacto_mayor_50000,10,20,1,Caída proactiva
+sin_compra_dia,media,segmento_autoservicio_o_vinoteca,15,20,1,Cliente del padrón sin compra

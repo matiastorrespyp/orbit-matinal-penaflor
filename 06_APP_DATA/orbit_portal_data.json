@@ -1,0 +1,449 @@
+{
+  "meta": {
+    "modo_datos": "REAL",
+    "fecha_corte": "2026-05-05",
+    "dia_semana": "Martes",
+    "generado_en": "2026-05-05 19:13:17"
+  },
+  "calendario": {
+    "total": 24,
+    "corridos": 3,
+    "restantes": 21,
+    "fecha_corte": "2026-05-05",
+    "feriados_detectados": 6,
+    "feriados": [
+      "2026-01-01",
+      "2026-05-01",
+      "2026-05-25",
+      "2026-07-09",
+      "2026-12-08",
+      "2026-12-25"
+    ]
+  },
+  "vendedores": [
+    {
+      "id": "V7",
+      "nombre": "JOFRE GUILLERMO",
+      "zona": "",
+      "color": "#9B7BFF",
+      "avance": 22.21,
+      "objetivo": 10868000.0,
+      "acumulado": 301735.19,
+      "ccc": 0,
+      "t11": 0,
+      "t11_total": 0,
+      "clientes": 0,
+      "alertas": 0,
+      "trabaja_autoservicio": true,
+      "segmento_excluye": []
+    },
+    {
+      "id": "V9",
+      "nombre": "SANCHEZ FERNANDO",
+      "zona": "",
+      "color": "#FF9D5C",
+      "avance": 288.58,
+      "objetivo": 46332000.0,
+      "acumulado": 16712863.21,
+      "ccc": 0,
+      "t11": 0,
+      "t11_total": 0,
+      "clientes": 0,
+      "alertas": 0,
+      "trabaja_autoservicio": true,
+      "segmento_excluye": []
+    },
+    {
+      "id": "V8",
+      "nombre": "ALVAREZ VANESA",
+      "zona": "",
+      "color": "#4DA3FF",
+      "avance": 32.75,
+      "objetivo": 107210400.0,
+      "acumulado": 4388957.41,
+      "ccc": 11,
+      "t11": 0,
+      "t11_total": 594,
+      "clientes": 54,
+      "alertas": 0,
+      "trabaja_autoservicio": true,
+      "segmento_excluye": []
+    },
+    {
+      "id": "V3",
+      "nombre": "NADIA GAMBINO",
+      "zona": "",
+      "color": "#7BD8B8",
+      "avance": 9.48,
+      "objetivo": 6001600.0,
+      "acumulado": 71108.75,
+      "ccc": 0,
+      "t11": 0,
+      "t11_total": 517,
+      "clientes": 47,
+      "alertas": 0,
+      "trabaja_autoservicio": false,
+      "segmento_excluye": [
+        "AUTOSERVICIO"
+      ]
+    },
+    {
+      "id": "V4",
+      "nombre": "GRIBAUDO ANGEL",
+      "zona": "",
+      "color": "#F2B544",
+      "avance": 10.55,
+      "objetivo": 60561600.0,
+      "acumulado": 798687.69,
+      "ccc": 0,
+      "t11": 0,
+      "t11_total": 572,
+      "clientes": 52,
+      "alertas": 0,
+      "trabaja_autoservicio": true,
+      "segmento_excluye": []
+    },
+    {
+      "id": "V10",
+      "nombre": "ORTEGA MILAGROS",
+      "zona": "",
+      "color": "#FF5D8B",
+      "avance": 60.34,
+      "objetivo": 55924000.0,
+      "acumulado": 4218410.37,
+      "ccc": 4,
+      "t11": 0,
+      "t11_total": 440,
+      "clientes": 40,
+      "alertas": 0,
+      "trabaja_autoservicio": true,
+      "segmento_excluye": []
+    },
+    {
+      "id": "V6",
+      "nombre": "PEYRONEL ANDREA",
+      "zona": "",
+      "color": "#5BC23A",
+      "avance": 144.9,
+      "objetivo": 43102400.0,
+      "acumulado": 7806975.14,
+      "ccc": 0,
+      "t11": 0,
+      "t11_total": 781,
+      "clientes": 71,
+      "alertas": 0,
+      "trabaja_autoservicio": true,
+      "segmento_excluye": []
+    }
+  ],
+  "gerencia": {
+    "kpis": {
+      "objetivo_mensual": 330000000.0,
+      "venta_acumulada": 34298737.760000005,
+      "avance_pct": 10.393556896969699,
+      "venta_dia": 4411364.78,
+      "objetivo_dia": 13750000.0,
+      "ccc_acumulado": 15,
+      "ccc_dia": 20,
+      "botellas_dia": 878.0,
+      "clientes_compra": 20,
+      "cobertura_general": 7.575757575757576,
+      "cumplimiento_11t": 0.0,
+      "tendencia": 83.14845517575759,
+      "diferencia_objetivo": 295701262.24
+    },
+    "ranking_vendedores": [
+      {
+        "id": "V9",
+        "nombre": "SANCHEZ FERNANDO",
+        "zona": "",
+        "color": "#FF9D5C",
+        "avance": 288.58,
+        "objetivo": 46332000.0,
+        "acumulado": 16712863.21,
+        "ccc": 0,
+        "t11": 0,
+        "t11_total": 0,
+        "clientes": 0,
+        "alertas": 0,
+        "trabaja_autoservicio": true,
+        "segmento_excluye": []
+      },
+      {
+        "id": "V6",
+        "nombre": "PEYRONEL ANDREA",
+        "zona": "",
+        "color": "#5BC23A",
+        "avance": 144.9,
+        "objetivo": 43102400.0,
+        "acumulado": 7806975.14,
+        "ccc": 0,
+        "t11": 0,
+        "t11_total": 781,
+        "clientes": 71,
+        "alertas": 0,
+        "trabaja_autoservicio": true,
+        "segmento_excluye": []
+      },
+      {
+        "id": "V10",
+        "nombre": "ORTEGA MILAGROS",
+        "zona": "",
+        "color": "#FF5D8B",
+        "avance": 60.34,
+        "objetivo": 55924000.0,
+        "acumulado": 4218410.37,
+        "ccc": 4,
+        "t11": 0,
+        "t11_total": 440,
+        "clientes": 40,
+        "alertas": 0,
+        "trabaja_autoservicio": true,
+        "segmento_excluye": []
+      },
+      {
+        "id": "V8",
+        "nombre": "ALVAREZ VANESA",
+        "zona": "",
+        "color": "#4DA3FF",
+        "avance": 32.75,
+        "objetivo": 107210400.0,
+        "acumulado": 4388957.41,
+        "ccc": 11,
+        "t11": 0,
+        "t11_total": 594,
+        "clientes": 54,
+        "alertas": 0,
+        "trabaja_autoservicio": true,
+        "segmento_excluye": []
+      },
+      {
+        "id": "V7",
+        "nombre": "JOFRE GUILLERMO",
+        "zona": "",
+        "color": "#9B7BFF",
+        "avance": 22.21,
+        "objetivo": 10868000.0,
+        "acumulado": 301735.19,
+        "ccc": 0,
+        "t11": 0,
+        "t11_total": 0,
+        "clientes": 0,
+        "alertas": 0,
+        "trabaja_autoservicio": true,
+        "segmento_excluye": []
+      },
+      {
+        "id": "V4",
+        "nombre": "GRIBAUDO ANGEL",
+        "zona": "",
+        "color": "#F2B544",
+        "avance": 10.55,
+        "objetivo": 60561600.0,
+        "acumulado": 798687.69,
+        "ccc": 0,
+        "t11": 0,
+        "t11_total": 572,
+        "clientes": 52,
+        "alertas": 0,
+        "trabaja_autoservicio": true,
+        "segmento_excluye": []
+      },
+      {
+        "id": "V3",
+        "nombre": "NADIA GAMBINO",
+        "zona": "",
+        "color": "#7BD8B8",
+        "avance": 9.48,
+        "objetivo": 6001600.0,
+        "acumulado": 71108.75,
+        "ccc": 0,
+        "t11": 0,
+        "t11_total": 517,
+        "clientes": 47,
+        "alertas": 0,
+        "trabaja_autoservicio": false,
+        "segmento_excluye": [
+          "AUTOSERVICIO"
+        ]
+      }
+    ],
+    "alertas": []
+  },
+  "dailyEvolution": [
+    {
+      "d": 1,
+      "real": 11432912.586666668,
+      "plan": 13750000.0,
+      "hoy": false
+    },
+    {
+      "d": 2,
+      "real": 22865825.173333336,
+      "plan": 27500000.0,
+      "hoy": false
+    },
+    {
+      "d": 3,
+      "real": 34298737.760000005,
+      "plan": 41250000.0,
+      "hoy": true
+    },
+    {
+      "d": 4,
+      "real": null,
+      "plan": 55000000.0,
+      "hoy": false
+    },
+    {
+      "d": 5,
+      "real": null,
+      "plan": 68750000.0,
+      "hoy": false
+    },
+    {
+      "d": 6,
+      "real": null,
+      "plan": 82500000.0,
+      "hoy": false
+    },
+    {
+      "d": 7,
+      "real": null,
+      "plan": 96250000.0,
+      "hoy": false
+    },
+    {
+      "d": 8,
+      "real": null,
+      "plan": 110000000.0,
+      "hoy": false
+    },
+    {
+      "d": 9,
+      "real": null,
+      "plan": 123750000.0,
+      "hoy": false
+    },
+    {
+      "d": 10,
+      "real": null,
+      "plan": 137500000.0,
+      "hoy": false
+    },
+    {
+      "d": 11,
+      "real": null,
+      "plan": 151250000.0,
+      "hoy": false
+    },
+    {
+      "d": 12,
+      "real": null,
+      "plan": 165000000.0,
+      "hoy": false
+    },
+    {
+      "d": 13,
+      "real": null,
+      "plan": 178750000.0,
+      "hoy": false
+    },
+    {
+      "d": 14,
+      "real": null,
+      "plan": 192500000.0,
+      "hoy": false
+    },
+    {
+      "d": 15,
+      "real": null,
+      "plan": 206250000.0,
+      "hoy": false
+    },
+    {
+      "d": 16,
+      "real": null,
+      "plan": 220000000.0,
+      "hoy": false
+    },
+    {
+      "d": 17,
+      "real": null,
+      "plan": 233750000.0,
+      "hoy": false
+    },
+    {
+      "d": 18,
+      "real": null,
+      "plan": 247500000.0,
+      "hoy": false
+    },
+    {
+      "d": 19,
+      "real": null,
+      "plan": 261250000.0,
+      "hoy": false
+    },
+    {
+      "d": 20,
+      "real": null,
+      "plan": 275000000.0,
+      "hoy": false
+    },
+    {
+      "d": 21,
+      "real": null,
+      "plan": 288750000.0,
+      "hoy": false
+    },
+    {
+      "d": 22,
+      "real": null,
+      "plan": 302500000.0,
+      "hoy": false
+    },
+    {
+      "d": 23,
+      "real": null,
+      "plan": 316250000.0,
+      "hoy": false
+    },
+    {
+      "d": 24,
+      "real": null,
+      "plan": 330000000.0,
+      "hoy": false
+    }
+  ],
+  "clientesCriticos": [],
+  "alertas": [],
+  "segmentos": [
+    {
+      "id": "TRADICIONAL",
+      "nombre": "Tradicional",
+      "req": 3,
+      "clientes": 279,
+      "cubiertos": 0,
+      "color": "#5BC23A"
+    },
+    {
+      "id": "AUTOSERVICIO",
+      "nombre": "Autoservicio",
+      "req": 6,
+      "clientes": 43,
+      "cubiertos": 0,
+      "color": "#4DA3FF"
+    },
+    {
+      "id": "ON_PREMISE_VTK",
+      "nombre": "On Premise / Vinoteca",
+      "req": 6,
+      "clientes": 21,
+      "cubiertos": 0,
+      "color": "#9B7BFF"
+    }
+  ],
+  "titulares11": [],
+  "planes": []
+}

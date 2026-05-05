@@ -1,0 +1,9 @@
+tipo_alerta,prioridad,accion_sugerida_default,max_marcas_sugeridas,activa,comentario
+descuento,critica,Revisar de inmediato el descuento y corregir margen antes de cerrar el día.,0,1,Acción crítica por margen
+descuento,alta,Revisar descuento y validar condición comercial con supervisión.,0,1,Acción alta por margen
+faltante_11_titulares,alta,Trabajar portfolio en próxima visita con foco en marcas faltantes prioritarias.,4,1,Portfolio alto
+faltante_11_titulares,media,Intentar completar portfolio con foco corto de marcas faltantes.,3,1,Portfolio medio
+caida_compra,critica,Recuperar compra hoy sin superar el tope sugerido.,0,1,Recuperación crítica
+caida_compra,alta,Activar recuperación comercial en la próxima visita.,0,1,Recuperación alta
+sin_compra_dia,alta,Validar visita y atacar con portfolio corto y cobertura.,0,1,Sin compra alto
+sin_compra_dia,media,Revisar no compra y proponer compra mínima de cobertura.,0,1,Sin compra medio

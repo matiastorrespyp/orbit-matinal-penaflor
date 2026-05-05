@@ -1,0 +1,112 @@
+VENDEDOR: 10
+FOCO PROACTIVO PEÑAFLOR - RECUPERACIÓN ALTA GAMA
+
+CLIENTES CRÍTICOS: 15
+CAÍDA TOTAL DETECTADA: ARS 432,979.80
+TOPE DE RECUPERACIÓN CON DESCUENTO: ARS 34,638.45
+
+ORDEN DE EJECUCIÓN:
+1. WANG JINHUA
+   - Caída semanal premium: ARS 28,865.32
+   - Semana anterior: ARS 28,865.32 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 2,309.23
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.
+
+2. COOPERATIVA DE TAMBEROS, AGRICOLA GANADERA "EL TRA
+   - Caída semanal premium: ARS 28,865.32
+   - Semana anterior: ARS 28,865.32 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 2,309.23
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.
+
+3. JAMAR S.R.L.
+   - Caída semanal premium: ARS 28,865.32
+   - Semana anterior: ARS 28,865.32 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 2,309.23
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.
+
+4. ECO GROUP S.R.L  (EN FORMACION
+   - Caída semanal premium: ARS 28,865.32
+   - Semana anterior: ARS 28,865.32 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 2,309.23
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.
+
+5. WENG LIHUA
+   - Caída semanal premium: ARS 28,865.32
+   - Semana anterior: ARS 28,865.32 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 2,309.23
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.
+
+6. BENEDETTI EDUARDO
+   - Caída semanal premium: ARS 28,865.32
+   - Semana anterior: ARS 28,865.32 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 2,309.23
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.
+
+7. ZHENG HUIJUAN
+   - Caída semanal premium: ARS 28,865.32
+   - Semana anterior: ARS 28,865.32 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 2,309.23
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.
+
+8. SHI JINCHUI
+   - Caída semanal premium: ARS 28,865.32
+   - Semana anterior: ARS 28,865.32 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 2,309.23
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.
+
+9. HECTOR IVAN HERNANDEZ
+   - Caída semanal premium: ARS 28,865.32
+   - Semana anterior: ARS 28,865.32 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 2,309.23
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.
+
+10. SOCIEDAD COSMOPOLITA DE SOCORROS  MUTUOS
+   - Caída semanal premium: ARS 28,865.32
+   - Semana anterior: ARS 28,865.32 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 2,309.23
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.
+
+11. COOP.TAMB.LAS CAÑITAS LTDA.SUC
+   - Caída semanal premium: ARS 28,865.32
+   - Semana anterior: ARS 28,865.32 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 2,309.23
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.
+
+12. LIN AGUSTIN
+   - Caída semanal premium: ARS 28,865.32
+   - Semana anterior: ARS 28,865.32 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 2,309.23
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.
+
+13. FERRERO DANIEL GERMAN  Y FERREROS JUAN JOSE
+   - Caída semanal premium: ARS 28,865.32
+   - Semana anterior: ARS 28,865.32 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 2,309.23
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.
+
+14. EL GURY SRL
+   - Caída semanal premium: ARS 28,865.32
+   - Semana anterior: ARS 28,865.32 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 2,309.23
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.
+
+15. WU DEWANG
+   - Caída semanal premium: ARS 28,865.32
+   - Semana anterior: ARS 28,865.32 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 2,309.23
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.

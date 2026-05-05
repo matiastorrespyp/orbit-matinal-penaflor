@@ -1,0 +1,5 @@
+﻿fecha_ejecucion,fecha_objetivo,dia_objetivo,negocio_id,negocio_nombre,vendedor_codigo,vendedor_nombre,cantidad_alertas,exceso_pct_total,exceso_pct_promedio
+2026-05-05,2026-05-06,Mi,PENIAFLOR,Peñaflor,6,PEYRONEL ANDREA,4,50,12.5
+2026-05-05,2026-05-06,Mi,PENIAFLOR,Peñaflor,9,SANCHEZ FERNANDO JAVIER,4,36,9.0
+2026-05-05,2026-05-06,Mi,PENIAFLOR,Peñaflor,7,JOFRE GUILLERMO AGUSTIN,3,33,11.0
+2026-05-05,2026-05-06,Mi,PENIAFLOR,Peñaflor,8,ALVAREZ VANESA  KAFF,3,24,8.0

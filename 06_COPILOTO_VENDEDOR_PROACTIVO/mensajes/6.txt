@@ -1,0 +1,14 @@
+VENDEDOR: 6
+FOCO PROACTIVO PEÑAFLOR - RECUPERACIÓN ALTA GAMA
+
+CLIENTES CRÍTICOS: 1
+CAÍDA TOTAL DETECTADA: ARS 14,432.66
+TOPE DE RECUPERACIÓN CON DESCUENTO: ARS 1,154.61
+
+ORDEN DE EJECUCIÓN:
+1. VIVAS GABRIELA
+   - Caída semanal premium: ARS 14,432.66
+   - Semana anterior: ARS 14,432.66 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 1,154.61
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.

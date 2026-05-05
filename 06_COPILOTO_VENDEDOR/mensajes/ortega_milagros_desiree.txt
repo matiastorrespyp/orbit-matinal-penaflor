@@ -1,0 +1,19 @@
+VENDEDOR: ORTEGA MILAGROS DESIREE
+
+FOCO DEL DÍA: Resolver alertas críticas
+ALERTAS TOTALES: 2
+ALERTAS CRÍTICAS: 1
+OPORTUNIDADES 11 TITULARES ALTA: 0
+ACCIÓN GENERAL: Revisar alertas activas y ordenar clientes antes de salir a la calle.
+
+PRIORIDADES OPERATIVAS:
+1. [CRITICO] HECTOR IVAN HERNANDEZ
+   Qué pasa: Cliente: HECTOR IVAN HERNANDEZ | Producto: GORDON'S PINK GIN 6X700 | Desc aplicado: 10.0% | Desc objetivo: 6.0% | Excedente: 4.0% | Impacto real: $1044.0
+   Observación base: Revisar si el descuento está justificado, medir excedente y validar retorno comercial.
+   ACCIÓN: CORTAR DESCUENTO. Vender a precio objetivo.
+2. [CONTROLAR] RESUMEN DE CARTERA
+   Qué pasa: ORTEGA MILAGROS DESIREE tiene 1 alertas activas.
+   Qué hacer: CONTROLAR. Seguir de cerca la cartera.
+
+IMPACTO TOTAL DEL DÍA: $1044.0
+ALERTA: REVISAR URGENTE.

@@ -1,0 +1,207 @@
+{
+  "generated_at": "2026-05-05 19:26:22",
+  "ventas_vendedor": [
+    {
+      "vendedor_id": "V10",
+      "vendedor_nombre": "ORTEGA MILAGROS DESIREE",
+      "venta_hoy": 0.0,
+      "mes_actual": 0.0,
+      "mes_anterior": 0.0,
+      "inversion": 0.0,
+      "sin_cargo": 0.0,
+      "ccc": 0,
+      "once_titulares": 0
+    },
+    {
+      "vendedor_id": "V3",
+      "vendedor_nombre": "NADIA GAMBINO",
+      "venta_hoy": 0.0,
+      "mes_actual": 0.0,
+      "mes_anterior": 0.0,
+      "inversion": 0.0,
+      "sin_cargo": 0.0,
+      "ccc": 0,
+      "once_titulares": 0
+    },
+    {
+      "vendedor_id": "V4",
+      "vendedor_nombre": "GRIBAUDO ANGEL",
+      "venta_hoy": 0.0,
+      "mes_actual": 0.0,
+      "mes_anterior": 0.0,
+      "inversion": 0.0,
+      "sin_cargo": 0.0,
+      "ccc": 0,
+      "once_titulares": 0
+    },
+    {
+      "vendedor_id": "V6",
+      "vendedor_nombre": "PEYRONEL ANDREA",
+      "venta_hoy": 0.0,
+      "mes_actual": 0.0,
+      "mes_anterior": 0.0,
+      "inversion": 0.0,
+      "sin_cargo": 0.0,
+      "ccc": 0,
+      "once_titulares": 0
+    },
+    {
+      "vendedor_id": "V8",
+      "vendedor_nombre": "ALVAREZ VANESA  KAFF",
+      "venta_hoy": 0.0,
+      "mes_actual": 0.0,
+      "mes_anterior": 0.0,
+      "inversion": 0.0,
+      "sin_cargo": 0.0,
+      "ccc": 0,
+      "once_titulares": 0
+    }
+  ],
+  "cobertura_segmento": [
+    {
+      "segmento": "AUTOSERVICIO",
+      "clientes": 26,
+      "cubiertos": 0,
+      "pct": 0.0
+    },
+    {
+      "segmento": "ON_PREMISE_VTK",
+      "clientes": 24,
+      "cubiertos": 0,
+      "pct": 0.0
+    },
+    {
+      "segmento": "TRADICIONAL",
+      "clientes": 205,
+      "cubiertos": 0,
+      "pct": 0.0
+    }
+  ],
+  "dashboard": [
+    {
+      "vendedor_id": "V10",
+      "vendedor_nombre": "ORTEGA MILAGROS DESIREE",
+      "zona": "MI",
+      "last_sync": "2026-05-05 19:26:22",
+      "kpis": {
+        "clientes_total": 39,
+        "clientes_visitados": 0,
+        "clientes_pendientes": 39,
+        "cobertura_pct": 0.0,
+        "avance_pct": 60.34,
+        "objetivo": 55924000.0,
+        "acumulado": 0.0,
+        "alertas_criticas": 39,
+        "oportunidades": 39,
+        "ccc": 0,
+        "once_titulares": 0,
+        "venta_hoy_total": 0.0,
+        "venta_mes_actual": 0.0,
+        "venta_mes_anterior": 0.0,
+        "inversion_desc_ars": 0.0,
+        "sin_cargo_ars": 0.0,
+        "impacto_alertas_ars": 28865.32
+      }
+    },
+    {
+      "vendedor_id": "V3",
+      "vendedor_nombre": "NADIA GAMBINO",
+      "zona": "MI",
+      "last_sync": "2026-05-05 19:26:22",
+      "kpis": {
+        "clientes_total": 80,
+        "clientes_visitados": 0,
+        "clientes_pendientes": 80,
+        "cobertura_pct": 0.0,
+        "avance_pct": 9.48,
+        "objetivo": 6001600.0,
+        "acumulado": 0.0,
+        "alertas_criticas": 80,
+        "oportunidades": 80,
+        "ccc": 0,
+        "once_titulares": 0,
+        "venta_hoy_total": 0.0,
+        "venta_mes_actual": 0.0,
+        "venta_mes_anterior": 0.0,
+        "inversion_desc_ars": 0.0,
+        "sin_cargo_ars": 0.0,
+        "impacto_alertas_ars": 0.0
+      }
+    },
+    {
+      "vendedor_id": "V4",
+      "vendedor_nombre": "GRIBAUDO ANGEL",
+      "zona": "MI",
+      "last_sync": "2026-05-05 19:26:22",
+      "kpis": {
+        "clientes_total": 64,
+        "clientes_visitados": 0,
+        "clientes_pendientes": 64,
+        "cobertura_pct": 0.0,
+        "avance_pct": 10.55,
+        "objetivo": 60561600.0,
+        "acumulado": 0.0,
+        "alertas_criticas": 64,
+        "oportunidades": 64,
+        "ccc": 0,
+        "once_titulares": 0,
+        "venta_hoy_total": 0.0,
+        "venta_mes_actual": 0.0,
+        "venta_mes_anterior": 0.0,
+        "inversion_desc_ars": 0.0,
+        "sin_cargo_ars": 0.0,
+        "impacto_alertas_ars": 0.0
+      }
+    },
+    {
+      "vendedor_id": "V6",
+      "vendedor_nombre": "PEYRONEL ANDREA",
+      "zona": "MI",
+      "last_sync": "2026-05-05 19:26:22",
+      "kpis": {
+        "clientes_total": 43,
+        "clientes_visitados": 0,
+        "clientes_pendientes": 43,
+        "cobertura_pct": 0.0,
+        "avance_pct": 144.9,
+        "objetivo": 43102400.0,
+        "acumulado": 0.0,
+        "alertas_criticas": 43,
+        "oportunidades": 43,
+        "ccc": 0,
+        "once_titulares": 0,
+        "venta_hoy_total": 0.0,
+        "venta_mes_actual": 0.0,
+        "venta_mes_anterior": 0.0,
+        "inversion_desc_ars": 0.0,
+        "sin_cargo_ars": 0.0,
+        "impacto_alertas_ars": 0.0
+      }
+    },
+    {
+      "vendedor_id": "V8",
+      "vendedor_nombre": "ALVAREZ VANESA  KAFF",
+      "zona": "MI",
+      "last_sync": "2026-05-05 19:26:22",
+      "kpis": {
+        "clientes_total": 29,
+        "clientes_visitados": 0,
+        "clientes_pendientes": 29,
+        "cobertura_pct": 0.0,
+        "avance_pct": 32.75,
+        "objetivo": 107210400.0,
+        "acumulado": 0.0,
+        "alertas_criticas": 29,
+        "oportunidades": 29,
+        "ccc": 0,
+        "once_titulares": 0,
+        "venta_hoy_total": 0.0,
+        "venta_mes_actual": 0.0,
+        "venta_mes_anterior": 0.0,
+        "inversion_desc_ars": 0.0,
+        "sin_cargo_ars": 0.0,
+        "impacto_alertas_ars": 115461.28
+      }
+    }
+  ]
+}

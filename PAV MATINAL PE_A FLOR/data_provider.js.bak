@@ -1,0 +1,104 @@
+/* ORBIT — Data provider: consume API real, fallback a data.js */
+window.ORBIT_DATA_READY = false;
+
+(async function loadOrbitData() {
+  const resp = {};
+  try {
+    const dashRes = await fetch("/api/dashboard");
+    const dashData = await dashRes.json();
+
+    const colorMap = { V3: "#7BD8B8", V4: "#F2B544", V6: "#5BC23A", V7: "#9B7BFF", V8: "#4DA3FF", V9: "#FF9D5C", V10: "#FF5D8B" };
+    resp.vendedores = dashData.map(v => ({
+      id: v.vendedor_id, nombre: v.vendedor_nombre,
+      zona: v.vendedor_id === "V3" ? "San Fco" : v.vendedor_id === "V4" ? "Morteros" : v.vendedor_id === "V6" ? "Norte" : v.vendedor_id === "V7" ? "Sur" : v.vendedor_id === "V8" ? "Oeste KAFF" : v.vendedor_id === "V9" ? "On Premise" : "Arroyito",
+      color: colorMap[v.vendedor_id] || "#E2147A",
+      avance: v.kpis.avance_pct || 0, objetivo: v.kpis.objetivo || 0,
+      acumulado: v.kpis.acumulado || v.kpis.venta_mes_actual || 0,
+      ccc: v.kpis.ccc || 0, t11: v.kpis.once_titulares || 0,
+      clientes: v.kpis.clientes_total || 0, alertas: v.kpis.clientes_pendientes || 0,
+      segmento_excluye: v.vendedor_id === "V3" ? ["AUTOSERVICIO"] : []
+    }));
+
+    let totalObj = 0, totalAcum = 0;
+    resp.vendedores.forEach(v => { totalObj += v.objetivo; totalAcum += v.acumulado; });
+    resp.kpisGerencia = {
+      objetivo_mes: totalObj, acumulado_mes: totalAcum,
+      avance_pct: totalObj ? (totalAcum / totalObj * 100) : 0,
+      venta_dia: totalAcum * 0.05, objetivo_dia: totalObj * 0.05,
+      ccc_mes: 0, ccc_dia: 0, botellas_dia: 0,
+      clientes_compra: resp.vendedores.reduce((s, v) => s + v.clientes, 0),
+      cobertura_general: 0, cumplimiento_11t: 0, tendencia: 0,
+      diff_objetivo: totalObj - totalAcum,
+    };
+
+    resp.dailyEvolution = Array.from({ length: 30 }, (_, i) => ({
+      d: i + 1, real: i < 5 ? (totalAcum / 30) * (i + 1) : null,
+      plan: (totalObj / 30) * (i + 1), hoy: i === 4
+    }));
+
+    try {
+      const cliRes = await fetch("/api/clientes");
+      const cliData = await cliRes.json();
+      resp.clientesCriticos = cliData.slice(0, 12).map(c => ({
+        id: c.cliente_id, nombre: c.cliente_nombre,
+        segmento: c.segmento === "AUTOSERVICIO" ? "Autoservicio" : c.segmento === "ON_PREMISE_VTK" ? "On Premise" : "Tradicional",
+        vendedor: c.vendedor_id, ultima: "sin compra",
+        brecha: c.impacto_alertas_ars || 0,
+        estado: c.estado === "SIN_COMPRA_MES" ? "sin_compra_mes" : "sin_cobertura",
+        accion: (c.kernel_accion || "").substring(0, 80),
+        prioridad: c.prioridad_label === "ALTA" ? "alta" : "media", t11: c.faltan_11t || 11
+      }));
+    } catch (e) {}
+
+    try {
+      const alRes = await fetch("/api/alertas");
+      const alData = await alRes.json();
+      resp.alertas = alData.slice(0, 8).map((a, i) => ({
+        id: i + 1, prioridad: a.prioridad || "media", tipo: a.tipo || "cliente",
+        titulo: a.cliente_nombre || a.titulo || "Alerta", detalle: a.detalle || "",
+        accion: a.accion || "", responsable: a.vendedor_id || "", impacto: a.impacto_alertas_ars || 0
+      }));
+    } catch (e) {}
+
+    resp.segmentos = [
+      { id: "TRADICIONAL", nombre: "Tradicional", req: 3, clientes: 279, cubiertos: 0, color: "#5BC23A" },
+      { id: "AUTOSERVICIO", nombre: "Autoservicio", req: 6, clientes: 43, cubiertos: 0, color: "#4DA3FF" },
+      { id: "ON_PREMISE_VTK", nombre: "On Premise / Vinoteca", req: 6, clientes: 21, cubiertos: 0, color: "#9B7BFF" },
+    ];
+
+    resp.titulares11 = [
+      { marca: "Trapiche Reserva", producto: "Malbec 750", objetivo: 344, cubiertos: 0, segmento: "Tradicional", responsable: "Todos" },
+      { marca: "Alma Mora", producto: "Malbec 750", objetivo: 298, cubiertos: 0, segmento: "Tradicional", responsable: "Todos" },
+    ];
+
+    try {
+      const planRes = await fetch("/api/planificacion");
+      const planData = await planRes.json();
+      resp.planes = planData.slice(0, 7).map(p => ({
+        vendedor: p.vendedor_id, estado: p.estado || "enviada",
+        submitted: p.created_at ? p.created_at.substring(11, 16) : "",
+        venta_obj: p.venta_esperada || 0, ccc_trad: p.ccc_tradicional || 0,
+        ccc_as: p.ccc_autoservicio || 0, ccc_op: p.ccc_onpremise || 0, t11: p.once_t || 0,
+        clientes_clave: [], marcas: [], obs_vendedor: "", obs_gerencia: ""
+      }));
+    } catch (e) { resp.planes = []; }
+
+    const now = new Date();
+    resp.fecha = now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    resp.lastSync = now.getHours().toString().padStart(2, "0") + ":" + now.getMinutes().toString().padStart(2, "0");
+    resp.diasVisita = ["LU", "MA", "MI", "JU", "VI", "SA"];
+    resp.diaActivo = "MA";
+
+    window.ORBIT_DATA = resp;
+    window.ORBIT_DATA_READY = true;
+    console.log("ORBIT: Datos reales cargados desde API");
+  } catch (e) {
+    console.warn("ORBIT: API no disponible, usando data.js:", e.message);
+    if (typeof window.ORBIT_DATA === "undefined" || !window.ORBIT_DATA.vendedores) {
+      const s = document.createElement("script");
+      s.src = "data.js";
+      s.onload = () => { window.ORBIT_DATA_READY = true; console.log("ORBIT: Fallback a data.js"); };
+      document.head.appendChild(s);
+    }
+  }
+})();

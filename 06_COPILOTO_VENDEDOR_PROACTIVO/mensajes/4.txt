@@ -1,0 +1,35 @@
+VENDEDOR: 4
+FOCO PROACTIVO PEÑAFLOR - RECUPERACIÓN ALTA GAMA
+
+CLIENTES CRÍTICOS: 4
+CAÍDA TOTAL DETECTADA: ARS 57,730.64
+TOPE DE RECUPERACIÓN CON DESCUENTO: ARS 4,618.44
+
+ORDEN DE EJECUCIÓN:
+1. ROMERO ESTELA
+   - Caída semanal premium: ARS 14,432.66
+   - Semana anterior: ARS 14,432.66 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 1,154.61
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.
+
+2. SAYAGO YOHANA AYELEN
+   - Caída semanal premium: ARS 14,432.66
+   - Semana anterior: ARS 14,432.66 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 1,154.61
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.
+
+3. CASAS CAROLINA
+   - Caída semanal premium: ARS 14,432.66
+   - Semana anterior: ARS 14,432.66 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 1,154.61
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.
+
+4. MAZUCCO CARLOS
+   - Caída semanal premium: ARS 14,432.66
+   - Semana anterior: ARS 14,432.66 | Semana actual: ARS 0.00
+   - Línea afectada: TRAPICHE RESERVA MALBEC 6X750
+   - Descuento máximo permitido: 8.0% | Tope ARS 1,154.61
+   - ACCIÓN: recuperar venta premium sin superar el tope autorizado.
