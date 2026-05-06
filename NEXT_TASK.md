@@ -2,13 +2,16 @@
 
 ## Próxima tarea
 
-Corregir vendedores faltantes: V7 (Jofre) y V9 (Sanchez) no aparecen en `clientes_dia.csv` ni en `mod_volumen_vendedor.csv`.
+**Actualizar `clientes.xlsx` para incluir clientes de V7 y V9.**
 
-Están presentes en `resultado.xlsx` y en `ventas.csv`, pero el motor legacy no los procesa.
+Causa raíz identificada: `clientes.xlsx` no tiene ningún cliente con `codven=7` ni `codven=9`. El motor legacy usa este maestro como base — sin clientes, V7 y V9 son invisibles para el pipeline completo.
 
-Rastrear en `LEGACY/orbit_matinal_v42.py` por qué V7 y V9 no generan filas en los datasets. Puede ser un filtro por código de vendedor, un ramo no contemplado o un error de mapeo.
+Clientes de V7 en `ventas.csv`: `7898`, `7931`, `1210`.
+Clientes de V9 en `ventas.csv`: `1094`, `1285`, `8125`, `1362`, `1387`, `8010`, `769`, `388`, `8139`, `1089`, `1093`.
 
-No modificar código hasta identificar la causa raíz.
+Para cada cliente se necesita: `Razon_Social`, `Ramo`, `DiasVisita`, `Localidad`, `SubSegmento`. Obtener del sistema de gestión comercial o de otra exportación del ERP.
+
+Mientras tanto, V7 y V9 aparecen en el portal con visibilidad gerencial (objetivo/acumulado/avance) gracias al fallback en `server_orbit.py`.
 
 ---
 
@@ -30,3 +33,4 @@ No modificar código hasta identificar la causa raíz.
 - ✓ Título de la matinal en `app.jsx` ahora es dinámico → "Miércoles 06/05".
 - ✓ `ccc_dia` ahora toma el valor real de `mod_ccc_segmento`; `ccc_mes` queda en 0 (honesto).
 - ✓ `acumulado=0` corregido en `app_publish.py`: `"acumulado_mes"` agregado como primer candidato en `build_avance_map()`.
+- ✓ V7 y V9 visibles en `/api/dashboard` con fallback desde `resultado.xlsx` (`sin_maestro: true`). Deuda: actualizar `clientes.xlsx`.
