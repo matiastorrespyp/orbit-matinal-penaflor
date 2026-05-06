@@ -29,3 +29,4 @@ No modificar código hasta identificar la causa raíz.
 - ✓ `diaActivo` ahora se calcula desde `fecha_corte + 1 día` → "MI".
 - ✓ Título de la matinal en `app.jsx` ahora es dinámico → "Miércoles 06/05".
 - ✓ `ccc_dia` ahora toma el valor real de `mod_ccc_segmento`; `ccc_mes` queda en 0 (honesto).
+- ✓ `acumulado=0` corregido en `app_publish.py`: `"acumulado_mes"` agregado como primer candidato en `build_avance_map()`.
