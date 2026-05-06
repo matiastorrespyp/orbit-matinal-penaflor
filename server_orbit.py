@@ -11,6 +11,7 @@ BASE = Path(r"C:\Orbit\MATINAL_PENAFLOR")
 APP_DATA = BASE / "06_APP_DATA"
 CONFIG = BASE / "09_CONFIG"
 DATASETS = BASE / "04_DATASETS_ORBIT"
+INPUTS = BASE / "01_INPUTS"
 FRONTEND = BASE / "PAV MATINAL PE_A FLOR"
 DB_PATH = BASE / "orbit.db"
 
@@ -140,6 +141,23 @@ def dashboard():
     ccc_df = read_csv(DATASETS / "mod_ccc_segmento.csv")
     t11_df = read_csv(DATASETS / "mod_11_titulares.csv")
 
+    # Fallback: objetivo/acumulado/avance desde resultado.xlsx para vendedores sin maestro de clientes
+    resultado_fallback = {}
+    resultado_path = INPUTS / "resultado.xlsx"
+    if resultado_path.exists():
+        try:
+            avance_df = pd.read_excel(resultado_path, sheet_name="Avance")
+            for _, r in avance_df.iterrows():
+                cn_r = clean_code(str(r.get("VendedorCodigo", "")))
+                if cn_r:
+                    resultado_fallback[cn_r] = {
+                        "objetivo": float(r.get("ValorObjetivo", 0) or 0),
+                        "acumulado": float(r.get("Acumulado", 0) or 0),
+                        "avance": float(r.get("Avance", 0) or 0),
+                    }
+        except Exception:
+            pass
+
     if vol.empty:
         return jsonify({"error": "No se encontró mod_volumen_vendedor.csv", "modo_datos": "SIN_DATOS"}), 500
 
@@ -158,6 +176,14 @@ def dashboard():
         acum = float(vv["acumulado_mes"].sum()) if not vv.empty else 0
         av = float(vv["avance_pct"].mean()) if not vv.empty else 0
         venta_ayer = float(vv["venta_ayer"].sum()) if not vv.empty else 0
+
+        sin_maestro = False
+        if vv.empty and cn in resultado_fallback:
+            fb = resultado_fallback[cn]
+            obj = fb["objetivo"]
+            acum = fb["acumulado"]
+            av = fb["avance"]
+            sin_maestro = True
         cli_total = int(vv["clientes_planificados"].sum()) if not vv.empty and "clientes_planificados" in vv.columns else 0
         cli_sin = int(vv["clientes_sin_compra_mes"].sum()) if not vv.empty and "clientes_sin_compra_mes" in vv.columns else 0
 
@@ -174,6 +200,7 @@ def dashboard():
         result.append({
             "vendedor_id": cod,
             "vendedor_nombre": nombre,
+            "sin_maestro": sin_maestro,
             "last_sync": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "kpis": {
                 "objetivo": obj, "acumulado": acum, "avance_pct": av,
