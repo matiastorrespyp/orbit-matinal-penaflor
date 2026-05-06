@@ -1,17 +1,29 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
-## Próxima tarea
+## Próxima tarea — sesión 2026-05-05
 
-**Actualizar `clientes.xlsx` para incluir clientes de V7 y V9.**
+### Bloque A — Requiere datos externos (ERP)
+**Actualizar `clientes.xlsx` con clientes de V7 y V9.**
+Causa raíz: `codven=7` y `codven=9` ausentes del maestro. Sin esto, el motor legacy no genera rutas ni métricas de cobertura para estos vendedores.
+- Clientes de V7: `7898`, `7931`, `1210`
+- Clientes de V9: `1094`, `1285`, `8125`, `1362`, `1387`, `8010`, `769`, `388`, `8139`, `1089`, `1093`
+- Datos necesarios por cliente: `Razon_Social`, `Ramo`, `DiasVisita`, `Localidad`, `SubSegmento`
 
-Causa raíz identificada: `clientes.xlsx` no tiene ningún cliente con `codven=7` ni `codven=9`. El motor legacy usa este maestro como base — sin clientes, V7 y V9 son invisibles para el pipeline completo.
+### Bloque B — Frontend, diagnóstico completo (listo para ejecutar)
+Hardcodeados en `dashboard.jsx` y `app.jsx`. Sin tocar backend ni CSV.
+1. `screens/dashboard.jsx` línea 12: `cccSpark = [3,7,9,12,8,15,18,22,19,24]` → reemplazar con `null` (sin fuente de historial CCC)
+2. `screens/dashboard.jsx` línea 61: `spark: React.createElement(Sparkline,{data:cccSpark,...})` → `spark: null`
+3. `screens/dashboard.jsx` línea 46: `"Cierre proyectado al 30/05"` → derivar último día del mes desde `data.fechaCorta`
+4. `app.jsx` líneas 41-44: `"MR"`, `"Manuel R."`, `"Supervisor PyP"` → texto genérico sin nombre de persona
 
-Clientes de V7 en `ventas.csv`: `7898`, `7931`, `1210`.
-Clientes de V9 en `ventas.csv`: `1094`, `1285`, `8125`, `1362`, `1387`, `8010`, `769`, `388`, `8139`, `1089`, `1093`.
+### Bloque C — Pipeline legacy (complejo)
+`clientes_dia.csv` tiene 255 filas para "Mi" pero `importe_mes`, `botellas_mes`, `importe_ayer` = 0 en todas.
+El join con `ventas.csv` en `LEGACY/orbit_matinal_v42.py` no transfiere importes. Investigar causa raíz antes de editar.
 
-Para cada cliente se necesita: `Razon_Social`, `Ramo`, `DiasVisita`, `Localidad`, `SubSegmento`. Obtener del sistema de gestión comercial o de otra exportación del ERP.
-
-Mientras tanto, V7 y V9 aparecen en el portal con visibilidad gerencial (objetivo/acumulado/avance) gracias al fallback en `server_orbit.py`.
+### Bloque D — data.js sin fuente
+- `segmentos.cubiertos = 0` → cruzar con `mod_ccc_segmento.csv` desde el servidor
+- `titulares11` tiene solo 2 de 11 hardcodeados → mapear desde `mod_11_titulares.csv`
+- `ccc_mes = 0` → sin fuente de CCC acumulado del mes disponible en ningún CSV
 
 ---
 
