@@ -139,6 +139,31 @@ El rename es necesario porque el historial normaliza `marca_final`→`marca` y `
 
 ---
 
+## 2026-05-06 — Bloque D: segmentos y titulares11 desde fuente real
+
+**Archivos modificados:**
+- `server_orbit.py` (función `diagnostico()`)
+- `PAV MATINAL PE_A FLOR/data.js`
+
+**Motivo:** `data.js` tenía hardcodeados `segmentos` (clientes=279/43/21, cubiertos=0 para los tres) y `titulares11` (solo 2 marcas con cubiertos=0). Los datos reales existían en `mod_ccc_segmento.csv` y `mod_11_titulares.csv` pero `/api/diagnostico` no los exponía.
+
+**Cambios en `server_orbit.py`:**
+- Se agregan `segmentos` al response de `/api/diagnostico`: lee `mod_ccc_segmento.csv` para `coberturas_logradas` y `clientes_dia.csv` para el total de clientes por segmento.
+- Se agrega `titulares11` al response: agrupa `mod_11_titulares.csv` por `marca_objetivo`, suma `tiene_flag` para cubiertos, ordena por cubiertos descendente.
+
+**Cambios en `data.js`:**
+- `segmentos` → `diag.segmentos || [fallback vacío]`
+- `titulares11` → `diag.titulares11 || []`
+- `ccc_mes: 0` sin cambio (honesto, sin fuente).
+
+**Validación `/api/diagnostico`:**
+- TRADICIONAL: 330 clientes, 12 cubiertos
+- AUTOSERVICIO: 40 clientes, 12 cubiertos
+- ON_PREMISE_VTK: 30 clientes, 1 cubierto
+- titulares11: 28 marcas, top: Alma Mora 66/398, Cazador 19/353
+
+---
+
 ## 2026-05-06 — Bloque B: eliminar datos hardcodeados del frontend
 
 **Archivos modificados:**

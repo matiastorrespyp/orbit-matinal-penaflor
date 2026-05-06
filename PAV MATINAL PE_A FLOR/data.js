@@ -111,15 +111,12 @@
         responsable: a.vendedor_id || "", impacto: a.impacto_alertas_ars || 0
       };
     }),
-    segmentos: [
-      { id: "TRADICIONAL", nombre: "Tradicional", req: 3, clientes: 279, cubiertos: 0, color: "#5BC23A" },
-      { id: "AUTOSERVICIO", nombre: "Autoservicio", req: 6, clientes: 43, cubiertos: 0, color: "#4DA3FF" },
-      { id: "ON_PREMISE_VTK", nombre: "On Premise / Vinoteca", req: 6, clientes: 21, cubiertos: 0, color: "#9B7BFF" },
+    segmentos: diag.segmentos || [
+      { id: "TRADICIONAL", nombre: "Tradicional", req: 3, clientes: 0, cubiertos: 0, color: "#5BC23A" },
+      { id: "AUTOSERVICIO", nombre: "Autoservicio", req: 6, clientes: 0, cubiertos: 0, color: "#4DA3FF" },
+      { id: "ON_PREMISE_VTK", nombre: "On Premise / Vinoteca", req: 6, clientes: 0, cubiertos: 0, color: "#9B7BFF" },
     ],
-    titulares11: [
-      { marca: "Trapiche Reserva", producto: "Malbec 750", objetivo: 344, cubiertos: 0, segmento: "Tradicional", responsable: "Todos" },
-      { marca: "Alma Mora", producto: "Malbec 750", objetivo: 298, cubiertos: 0, segmento: "Tradicional", responsable: "Todos" },
-    ],
+    titulares11: diag.titulares11 || [],
     planes: pl.slice(0, 7).map(function(p) {
       return {
         vendedor: p.vendedor_id, estado: p.estado || "enviada",

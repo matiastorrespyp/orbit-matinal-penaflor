@@ -121,6 +121,37 @@ def diagnostico():
     dias = contar_dias_habiles()
     total_acum = sum(v["acumulado"] for v in vendedores_detectados)
 
+    # Segmentos: coberturas desde mod_ccc_segmento + total clientes desde clientes_dia
+    cdia_df = read_csv(DATASETS / "clientes_dia.csv")
+    seg_ids = [
+        ("TRADICIONAL",    "Tradicional",          3,  "#5BC23A"),
+        ("AUTOSERVICIO",   "Autoservicio",          6,  "#4DA3FF"),
+        ("ON_PREMISE_VTK", "On Premise / Vinoteca", 6,  "#9B7BFF"),
+    ]
+    segmentos = []
+    for sid, snombre, req, color in seg_ids:
+        total_cli = int((cdia_df["segmento_operativo"] == sid).sum()) if not cdia_df.empty else 0
+        cubiertos = int(
+            ccc_df.loc[ccc_df["segmento_operativo"] == sid, "coberturas_logradas"]
+            .apply(pd.to_numeric, errors="coerce").sum()
+        ) if not ccc_df.empty else 0
+        segmentos.append({"id": sid, "nombre": snombre, "req": req,
+                          "clientes": total_cli, "cubiertos": cubiertos, "color": color})
+
+    # Titulares11: agrega tiene_flag por marca desde mod_11_titulares
+    titulares11 = []
+    if not t11_df.empty and "marca_objetivo" in t11_df.columns and "tiene_flag" in t11_df.columns:
+        t11_df["tiene_flag"] = pd.to_numeric(t11_df["tiene_flag"], errors="coerce").fillna(0)
+        agg = (t11_df.groupby("marca_objetivo", dropna=False)
+               .agg(objetivo=("tiene_flag", "count"), cubiertos=("tiene_flag", "sum"))
+               .reset_index())
+        agg["cubiertos"] = agg["cubiertos"].astype(int)
+        for _, row in agg.iterrows():
+            titulares11.append({"marca": row["marca_objetivo"],
+                                 "objetivo": int(row["objetivo"]),
+                                 "cubiertos": row["cubiertos"]})
+        titulares11.sort(key=lambda x: -x["cubiertos"])
+
     return jsonify({
         "modo_datos": "REAL",
         "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -130,7 +161,9 @@ def diagnostico():
         "total_acumulado_csv": total_acum,
         "excluidos": ["V2", "V5"],
         "advertencias": [] if fuentes[0]["estado"] == "OK" else ["Faltan archivos de datos"],
-        "v3_autoservicio": False
+        "v3_autoservicio": False,
+        "segmentos": segmentos,
+        "titulares11": titulares11,
     })
 
 # ====== DASHBOARD REAL ======

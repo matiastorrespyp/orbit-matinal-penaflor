@@ -28,10 +28,16 @@ clientes.xlsx actualizado manualmente (+302 V7, +355 V9). Pipeline motor→adapt
 - Suma importe_mes: $26.608.333
 - `ventas_ayer` sin cambios (correcto)
 
-### Bloque D — data.js sin fuente
-- `segmentos.cubiertos = 0` → cruzar con `mod_ccc_segmento.csv` desde el servidor
-- `titulares11` tiene solo 2 de 11 hardcodeados → mapear desde `mod_11_titulares.csv`
-- `ccc_mes = 0` → sin fuente de CCC acumulado del mes disponible en ningún CSV
+### ~~Bloque D~~ — ✓ Completado 2026-05-06
+`server_orbit.py` expone `segmentos` y `titulares11` desde CSVs reales; `data.js` los consume vía `diag.*`.
+- `segmentos`: TRADICIONAL 330 clientes / 12 cubiertos; AUTOSERVICIO 40 / 12; ON_PREMISE_VTK 30 / 1
+- `titulares11`: 28 marcas, top Alma Mora 66/398, Cazador 19/353
+- `ccc_mes: 0` permanece honesto — sin fuente de CCC acumulado disponible en ningún CSV actual
+
+### Bloque E — Pendiente
+- **`acciones_comerciales.csv`**: integración diferida (bloque separado, no commiteado).
+- **DiasVisita gaps**: 2 clientes V7 y 8 clientes V9 sin DiasVisita en `clientes.xlsx` — deuda menor.
+- **Días hábiles**: `server_orbit.py` no excluye feriados → `feriados.csv` disponible en `09_CONFIG/` pero no integrado.
 
 ---
 
