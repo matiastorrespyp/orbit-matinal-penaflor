@@ -39,9 +39,14 @@ clientes.xlsx actualizado manualmente (+302 V7, +355 V9). Pipeline motor→adapt
 - `reglas_acciones_mayo_2026_orbit.csv` creado: 31 reglas comerciales Mayo 2026 (descuentos por canal/categoría/cantidad).
 - `reglas_acciones_mayo_2026_orbit.json` y `acciones_mayo_2026_formato_gastos_orbit.xlsx` trackeados.
 
-### Bloque F — Pendiente
-- **Consumidor de `reglas_acciones_mayo_2026_orbit.csv`**: ningún módulo del motor cruza las reglas comerciales de Mayo 2026 contra ventas reales todavía. Definir dónde se integra (¿`alertas_reales_orbit.py`? ¿nuevo módulo?).
-- **Gastos por acción**: `02_PLANTILLA_GASTOS` del Excel queda fuera del scope actual. Requiere ventas cruzadas con `accion_id`.
+### ~~Bloque F~~ — ✓ Completado 2026-05-06
+`calcular_descuento_maximo()` ahora lee `reglas_acciones_mayo_2026_orbit.csv` como fuente primaria.
+- AS + VDA + 1–9 cajas → 6.0% (`MAY26-GRAL-AS-VIN-001`) en lugar de 10.0% hardcodeado.
+- `mod_alertas_descuentos`: 103 filas (antes: 14). 91/103 con `fuente_regla = MAY26-...`.
+- Fallback hardcodeado activo para productos/segmentos sin cobertura en CSV (12 filas).
+
+### Bloque G — Pendiente
+- **Gastos por acción**: `02_PLANTILLA_GASTOS` del Excel — cruzar ventas reales con `accion_id` para calcular gasto teórico vs. real. Sin consumidor todavía.
 - **DiasVisita gaps**: 2 clientes V7 y 8 clientes V9 sin `DiasVisita` en `clientes.xlsx` — deuda menor.
 - ~~**Días hábiles**~~: ✓ Resuelto en commit `ef59d83` — `server_orbit.py` ya descuenta `09_CONFIG/feriados.csv`.
 

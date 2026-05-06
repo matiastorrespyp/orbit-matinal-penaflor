@@ -208,3 +208,23 @@ El rename es necesario porque el historial normaliza `marca_final`→`marca` y `
 **No integrado todavía:** consumidor de `reglas_acciones_mayo_2026_orbit.csv` en el motor. `02_PLANTILLA_GASTOS` del Excel queda fuera del scope de este bloque.
 
 **Validación:** `pd.read_csv('09_CONFIG/acciones_comerciales.csv', encoding='latin-1')` devuelve 8 filas con schema correcto. `09_CONFIG/acciones_comerciales.csv` no aparece en `git diff`.
+
+---
+
+## 2026-05-06 — Bloque F: calcular_descuento_maximo lee reglas desde CSV
+
+**Archivo modificado:** `LEGACY/orbit_matinal_v42.py`
+
+**Motivo:** `calcular_descuento_maximo()` usaba dicts hardcodeados (`REGLAS_PRODUCTO_EXACTAS`, `REGLAS_PRODUCTO_FLEX`) y lógica if/elif con máximos incorrectos para Mayo 2026. Ejemplo: Autoservicio + VDA + 1–9 cajas devolvía 10% (incorrecto) en lugar de 6% (regla real del mes).
+
+**Cambio:** Agregados antes de `calcular_descuento_maximo`:
+- `_cargar_reglas_csv()`: carga lazy de `09_CONFIG/reglas_acciones_mayo_2026_orbit.csv`, filtra solo `beneficio_tipo == "DESCUENTO"`, normaliza tipos numéricos.
+- `_SEG_A_CANALES_CSV`: mapeo de `segmento_11t` → valores de canal en el CSV.
+- `_cats_comerciales()`: clasifica artículo/marca en categoría comercial CSV usando helpers existentes.
+- `_buscar_regla_csv()`: lookup por canal + categoría + cajas_eq en rango `[cantidad_min, cantidad_max]`, ordena por `prioridad_regla`. Guarda defensiva: `pct * 100 if pct <= 1` (CSV usa decimales 0.06).
+- `calcular_descuento_maximo()`: llama CSV primero; si no hay match, cae al fallback hardcodeado.
+
+**Validación:** `python LEGACY/orbit_matinal_v42.py` sin error.
+- `mod_alertas_descuentos`: 103 filas (antes: 14). 91/103 con `fuente_regla` = `MAY26-...`.
+- `MAY26-GRAL-AS-VIN-001`: 48 filas, `descuento_maximo_pct = 6.0` ✓ (antes: 10.0).
+- Fallback activo en 12 filas (segmentos sin cobertura en CSV o productos específicos).

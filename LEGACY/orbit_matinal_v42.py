@@ -369,14 +369,91 @@ def es_11t_por_segmento(articulo: str, marca: str, segmento_11t: str) -> bool:
     marcas = MAP_11T_FINE.get(segmento_11t, [])
     return any(match_marca_objetivo(marca, articulo, m) for m in marcas)
 
+# ============================================================
+# REGLAS COMERCIALES DESDE CSV
+# ============================================================
+
+_REGLAS_CSV_PATH = r"09_CONFIG/reglas_acciones_mayo_2026_orbit.csv"
+_REGLAS_CSV_DF = None
+
+def _cargar_reglas_csv() -> pd.DataFrame:
+    global _REGLAS_CSV_DF
+    if _REGLAS_CSV_DF is not None:
+        return _REGLAS_CSV_DF
+    if not os.path.exists(_REGLAS_CSV_PATH):
+        _REGLAS_CSV_DF = pd.DataFrame()
+        return _REGLAS_CSV_DF
+    df = pd.read_csv(_REGLAS_CSV_PATH, encoding="utf-8-sig")
+    df["cantidad_min"] = pd.to_numeric(df["cantidad_min"], errors="coerce").fillna(0)
+    df["cantidad_max"] = pd.to_numeric(df["cantidad_max"], errors="coerce")
+    df["descuento_pct"] = pd.to_numeric(df["descuento_pct"], errors="coerce").fillna(0)
+    df["prioridad_regla"] = pd.to_numeric(df["prioridad_regla"], errors="coerce").fillna(99)
+    df = df[df["beneficio_tipo"] == "DESCUENTO"].copy()
+    _REGLAS_CSV_DF = df.reset_index(drop=True)
+    return _REGLAS_CSV_DF
+
+_SEG_A_CANALES_CSV = {
+    "AUTOSERVICIO":   ["AUTOSERVICIOS"],
+    "TRADICIONAL":    ["TRAD+KIOSCO+ON PREMISE"],
+    "ON_DIA":         ["TRAD+KIOSCO+ON PREMISE"],
+    "ON_NOCHE":       ["ON PREMISE NOCHE; BARES"],
+    "CATERING":       ["TRAD+KIOSCO+ON PREMISE"],
+    "VINOTECAS":      ["VTK/TDB"],
+    "TIENDA_BEBIDAS": ["VTK/TDB"],
+}
+
+def _cats_comerciales(articulo: str, marca: str, ramo: str, subramo: str) -> list:
+    cats = []
+    if es_vinos_vda_vdg_esp_sidra(articulo, marca, ramo, subramo):
+        cats.append("VDA/VDG/ESPUMANTES/SIDRA")
+    if es_frizze(articulo, marca):
+        cats.append("RTD")
+    if es_rtd_latas(articulo, marca):
+        cats.append("RTD LATAS")
+    if es_spirits_importados(articulo, marca):
+        cats.extend(["SPIRITS IMPORTADOS", "SPIRITS"])
+    if es_spirits_locales(articulo, marca):
+        cats.extend(["SPIRITS LOCALES", "SPIRITS"])
+    return cats
+
+def _buscar_regla_csv(seg: str, articulo: str, marca: str, ramo: str, subramo: str, cajas: float) -> tuple:
+    reglas = _cargar_reglas_csv()
+    if reglas.empty:
+        return None, ""
+    cats = _cats_comerciales(articulo, marca, ramo, subramo)
+    if not cats:
+        return None, ""
+    canales = _SEG_A_CANALES_CSV.get(seg, []) + ["TODOS"]
+    mask = (
+        reglas["canal"].isin(canales)
+        & reglas["categoria"].str.upper().isin([c.upper() for c in cats])
+        & (reglas["cantidad_min"] <= cajas)
+        & (reglas["cantidad_max"].isna() | (reglas["cantidad_max"] >= cajas))
+    )
+    candidatas = reglas[mask].copy()
+    if candidatas.empty:
+        return None, ""
+    candidatas["_canal_ord"] = candidatas["canal"].apply(lambda c: 0 if c != "TODOS" else 1)
+    candidatas = candidatas.sort_values(["prioridad_regla", "_canal_ord"])
+    best = candidatas.iloc[0]
+    pct_raw = float(best["descuento_pct"])
+    pct = pct_raw * 100 if pct_raw <= 1 else pct_raw  # CSV usa decimales (0.06 → 6.0)
+    return pct, str(best["accion_id"])
+
 def calcular_descuento_maximo(row) -> tuple:
     articulo = normalize_spaces_upper(row["articulo_final"])
     marca = normalize_spaces_upper(row["marca_final"])
     ramo = normalize_spaces_upper(row["ramo"])
     subramo = normalize_spaces_upper(row["subramo"])
-    seg = row.get("segmento_11t", "")
+    seg = row.get("segmento_11t", "")  # segmento_11t — único en ventas_alerta (merge línea 1065)
     cajas = float(row.get("cajas_eq", 0))
 
+    # CSV lookup primario: canal + categoría + cajas_eq en rango
+    pct_csv, accion_id = _buscar_regla_csv(seg, articulo, marca, ramo, subramo, cajas)
+    if pct_csv is not None:
+        return pct_csv, accion_id
+
+    # Fallback: reglas hardcodeadas por producto específico
     for clave, pct in REGLAS_PRODUCTO_FLEX.items():
         if normalize_spaces_upper(clave) in articulo:
             return float(pct), "PRODUCTO_FLEX"
@@ -404,12 +481,10 @@ def calcular_descuento_maximo(row) -> tuple:
                 return 10.0, "AS_PLAN_10+"
             if cajas >= 1:
                 return 10.0, "AS_PLAN_1+"
-
         elif seg in {"TRADICIONAL", "ON_DIA", "ON_NOCHE", "CATERING"}:
             if cajas >= 4:
                 return 10.0, "TRAD_ON_VDA_4+"
             return 6.0, "TRAD_ON_VDA_0_3"
-
         elif seg in {"VINOTECAS", "TIENDA_BEBIDAS"}:
             if cajas >= 6:
                 return 10.0, "VTK_TDB_VDA_6+"
@@ -418,13 +493,10 @@ def calcular_descuento_maximo(row) -> tuple:
 
     if es_frizze(articulo, marca):
         return 5.0, "FRIZZE"
-
     if es_rtd_latas(articulo, marca):
         return 5.0, "RTD_LATAS"
-
     if es_spirits_locales(articulo, marca):
         return 6.0, "SPIRITS_LOCALES"
-
     if es_spirits_importados(articulo, marca):
         return 3.0, "SPIRITS_IMPORTADOS"
 
