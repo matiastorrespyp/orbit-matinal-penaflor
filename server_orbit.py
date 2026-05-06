@@ -49,15 +49,24 @@ def read_csv(path):
     try: return pd.read_csv(path, encoding="latin1")
     except: return pd.read_csv(path, encoding="utf-8")
 
+def _cargar_feriados():
+    import csv
+    p = CONFIG / "feriados.csv"
+    if not p.exists():
+        return set()
+    with open(p, encoding="utf-8-sig") as f:
+        return {row["fecha"] for row in csv.DictReader(f)}
+
 def contar_dias_habiles(fecha_corte=None):
     if fecha_corte is None:
         fecha_corte = datetime.now()
+    feriados = _cargar_feriados()
     inicio = datetime(fecha_corte.year, fecha_corte.month, 1)
     fin_mes = datetime(fecha_corte.year, fecha_corte.month + 1, 1) - timedelta(days=1)
     total, corridos = 0, 0
     d = inicio
     while d <= fin_mes:
-        if d.weekday() != 6:  # LU=0..SA=5, DO=6
+        if d.weekday() != 6 and d.strftime("%Y-%m-%d") not in feriados:  # excluye DO y feriados
             total += 1
             if d <= fecha_corte:
                 corridos += 1
