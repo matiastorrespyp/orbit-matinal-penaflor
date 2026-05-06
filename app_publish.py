@@ -540,7 +540,7 @@ def build_avance_map(vol_vendedor: pd.DataFrame, kernel_resumen: pd.DataFrame) -
     df = source.copy()
     c_v = first_col(df, ["vendedor_codigo", "codigo_vendedor", "vendedor_id", "vendedor", "codigo"])
     c_obj = first_col(df, ["objetivo", "objetivo_mes", "meta", "objetivo_ars"])
-    c_acum = first_col(df, ["acumulado", "resultado", "real", "venta_mes", "importe_mes", "mes_actual"])
+    c_acum = first_col(df, ["acumulado_mes", "acumulado", "resultado", "real", "venta_mes", "importe_mes", "mes_actual"])
     c_av = first_col(df, ["avance", "avance_pct", "cumplimiento", "cumplimiento_pct"])
 
     out = {}
