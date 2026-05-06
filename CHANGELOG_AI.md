@@ -86,6 +86,36 @@ Reglas:
 
 ---
 
+## 2026-05-06 — Bloque C: corrige importe_mes/botellas_mes = 0 en clientes_dia
+
+**Archivo modificado:** `LEGACY/orbit_matinal_v42.py` (línea 784)
+
+**Causa raíz:** `ventas_mes` se construía desde `ventas_validas` (fuente: `ventas.csv`, solo 2 días: 2026-05-04/05). Los 255 clientes de `clientes_dia` visitan el miércoles; ninguno compró el lunes/martes. El join `clientes_dia.merge(agg_mes, on=["cliente_id","vendedor_codigo"])` devolvía NaN en el 100% de las filas → `fillna(0)` → 0 para todos.
+
+**Dato clave:** el motor ya acumulaba el historial en `02_HISTORY/historial_ventas_cliente.csv` (4.913 filas, desde 2026-03-27 hasta 2026-05-05) pero no lo usaba para `ventas_mes`.
+
+**Cambio:**
+```python
+# ANTES
+ventas_mes = ventas_validas.loc[ventas_validas["fecha_comprobante"] <= fecha_ejecucion].copy()
+
+# DESPUÉS
+ventas_mes = historial_ventas.loc[
+    historial_ventas["fecha_comprobante"] <= fecha_ejecucion.date()
+].copy().rename(columns={"marca": "marca_final", "articulo": "articulo_final"})
+```
+El rename es necesario porque el historial normaliza `marca_final`→`marca` y `articulo_final`→`articulo` al persistir.
+
+**No se modificó:** `ventas_ayer` (sigue usando `ventas_validas` — correcto: representa el día fresco).
+
+**Validación:** `03_OUTPUTS/MATINAL_PENA_V42.xlsx` hoja `clientes_dia`:
+- `importe_mes > 0`: 175/255 (antes: 0/255)
+- `botellas_mes > 0`: 175/255 (antes: 0/255)
+- `importe_ayer > 0`: 0/255 (correcto — clientes MI no compraron el martes)
+- Suma `importe_mes`: $26.608.333
+
+---
+
 ## 2026-05-06 — Bloque B: eliminar datos hardcodeados del frontend
 
 **Archivos modificados:**

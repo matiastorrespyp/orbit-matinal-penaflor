@@ -16,9 +16,11 @@ Eliminados todos los datos hardcodeados del frontend (`dashboard.jsx` y `app.jsx
 - `"MR"` / `"Manuel R."` → `"SV"` / `"Supervisor"`
 - `"Vista mobile · Milagros Ortega"` → `"Vista mobile · vendedor"` (hallazgo adicional)
 
-### Bloque C — Pipeline legacy (complejo)
-`clientes_dia.csv` tiene 255 filas para "Mi" pero `importe_mes`, `botellas_mes`, `importe_ayer` = 0 en todas.
-El join con `ventas.csv` en `LEGACY/orbit_matinal_v42.py` no transfiere importes. Investigar causa raíz antes de editar.
+### ~~Bloque C~~ — ✓ Completado 2026-05-06
+`ventas_mes` ahora se construye desde `historial_ventas` (acumulado) en lugar de `ventas_validas` (solo 2 días).
+- `importe_mes > 0`: 175/255 clientes MI (antes: 0/255)
+- Suma importe_mes: $26.608.333
+- `ventas_ayer` sin cambios (correcto)
 
 ### Bloque D — data.js sin fuente
 - `segmentos.cubiertos = 0` → cruzar con `mod_ccc_segmento.csv` desde el servidor
