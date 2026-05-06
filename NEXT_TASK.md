@@ -37,7 +37,7 @@ clientes.xlsx actualizado manualmente (+302 V7, +355 V9). Pipeline motor→adapt
 ### Bloque E — Pendiente
 - **`acciones_comerciales.csv`**: integración diferida (bloque separado, no commiteado).
 - **DiasVisita gaps**: 2 clientes V7 y 8 clientes V9 sin DiasVisita en `clientes.xlsx` — deuda menor.
-- **Días hábiles**: `server_orbit.py` no excluye feriados → `feriados.csv` disponible en `09_CONFIG/` pero no integrado.
+- ~~**Días hábiles**~~: ✓ Resuelto en commit `ef59d83` — `server_orbit.py` ya descuenta `09_CONFIG/feriados.csv`.
 
 ---
 
