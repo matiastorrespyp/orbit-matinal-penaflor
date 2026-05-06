@@ -34,9 +34,15 @@ clientes.xlsx actualizado manualmente (+302 V7, +355 V9). Pipeline motor→adapt
 - `titulares11`: 28 marcas, top Alma Mora 66/398, Cazador 19/353
 - `ccc_mes: 0` permanece honesto — sin fuente de CCC acumulado disponible en ningún CSV actual
 
-### Bloque E — Pendiente
-- **`acciones_comerciales.csv`**: integración diferida (bloque separado, no commiteado).
-- **DiasVisita gaps**: 2 clientes V7 y 8 clientes V9 sin DiasVisita en `clientes.xlsx` — deuda menor.
+### ~~Bloque E~~ — ✓ Completado 2026-05-06 (registrado, sin integrar consumidor)
+- `acciones_comerciales.csv` restaurado a texto CSV real (8 filas, configuración de alertas para `config_comercial.py`).
+- `reglas_acciones_mayo_2026_orbit.csv` creado: 31 reglas comerciales Mayo 2026 (descuentos por canal/categoría/cantidad).
+- `reglas_acciones_mayo_2026_orbit.json` y `acciones_mayo_2026_formato_gastos_orbit.xlsx` trackeados.
+
+### Bloque F — Pendiente
+- **Consumidor de `reglas_acciones_mayo_2026_orbit.csv`**: ningún módulo del motor cruza las reglas comerciales de Mayo 2026 contra ventas reales todavía. Definir dónde se integra (¿`alertas_reales_orbit.py`? ¿nuevo módulo?).
+- **Gastos por acción**: `02_PLANTILLA_GASTOS` del Excel queda fuera del scope actual. Requiere ventas cruzadas con `accion_id`.
+- **DiasVisita gaps**: 2 clientes V7 y 8 clientes V9 sin `DiasVisita` en `clientes.xlsx` — deuda menor.
 - ~~**Días hábiles**~~: ✓ Resuelto en commit `ef59d83` — `server_orbit.py` ya descuenta `09_CONFIG/feriados.csv`.
 
 ---
