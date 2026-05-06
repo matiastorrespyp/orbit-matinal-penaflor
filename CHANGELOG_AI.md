@@ -83,3 +83,30 @@ Reglas:
 **Validación:** V7 y V9 aparecen en `/api/dashboard` con datos reales de avance. CCC, clientes y ruta quedan en 0 (correcto: sin maestro de clientes).
 
 **Deuda pendiente:** agregar clientes de V7 y V9 a `clientes.xlsx` con codven, Ramo y DiasVisita correctos para que el motor legacy los procese.
+
+---
+
+## 2026-05-06 — Bloque B: eliminar datos hardcodeados del frontend
+
+**Archivos modificados:**
+- `PAV MATINAL PE_A FLOR/screens/dashboard.jsx`
+- `PAV MATINAL PE_A FLOR/app.jsx`
+
+**Motivo:** El frontend contenía cinco datos inventados o con nombre de persona real que violaban la regla "no inventar datos":
+1. `cccSpark = [3,7,9,12,8,15,18,22,19,24]` — array mock sin fuente, mostraba una sparkline inventada en "CCC ACUMULADOS".
+2. Sparkline CCC consumía ese array mock vía `React.createElement(Sparkline,{data:cccSpark,...})`.
+3. `hint:"Cierre proyectado al 30/05"` — fecha de cierre fija, incorrecta si el mes cambia.
+4. Sidebar footer con `"MR"` / `"Manuel R."` / `"Supervisor PyP"` — nombre de persona real.
+5. Topbar con `"Vista mobile · Milagros Ortega"` — nombre de persona real.
+
+**Cambios aplicados:**
+- `dashboard.jsx` línea 12: `cccSpark = null`.
+- `dashboard.jsx` línea 14: agregado `cierreProyectado` calculado desde `data.fechaCorta` — deriva el último día del mes real con `new Date(año, mes+1, 0)`.
+- `dashboard.jsx` línea 46: `hint: cierreProyectado` (dinámico).
+- `dashboard.jsx` línea 61: `spark: null` (no muestra Sparkline sin fuente).
+- `app.jsx` líneas 41-43: avatar `"SV"`, nombre `"Supervisor"` (sin persona real).
+- `app.jsx` línea 59: `"Vista mobile · vendedor"` (sin persona real).
+
+**No se modificó:** backend, `data.js`, CSV, `app_publish.py`.
+
+**Validación:** `git diff` confirma 7 inserciones / 6 borrados exclusivamente en los dos archivos JSX. Sin mock data ni nombres de persona en el frontend.

@@ -9,8 +9,9 @@ function ScreenDashboard({ data, vendedorFiltro }){
   const diff = proyeccion - k.objetivo_mes;
 
   const realSpark = data.dailyEvolution && data.dailyEvolution.filter(d=>d.real!=null).map(d=>d.real) || [];
-  const cccSpark = [3,7,9,12,8,15,18,22,19,24];
+  const cccSpark = null;
 
+  const cierreProyectado = (function(){ var d = new Date((data.fechaCorta||"")+"T12:00:00"); var last = new Date(d.getFullYear(),d.getMonth()+1,0); return "Cierre proyectado al "+String(last.getDate()).padStart(2,"0")+"/"+String(last.getMonth()+1).padStart(2,"0"); })();
   const vendsOrdenados = [...data.vendedores].sort((a,b)=>b.avance-a.avance);
 
   return React.createElement(React.Fragment,null,
@@ -43,7 +44,7 @@ function ScreenDashboard({ data, vendedorFiltro }){
         label:"TENDENCIA PROYECTADA", kind: k.tendencia >= 95 ? "ok" : k.tendencia >= 70 ? "warn" : "bad",
         value: (k.tendencia || 0).toFixed(1), unit:"%",
         icon: React.createElement(Ic.flame,{size:14}),
-        hint:"Cierre proyectado al 30/05"
+        hint: cierreProyectado
       }),
       React.createElement(KpiCard,{
         label:"DIFERENCIA VS OBJ", kind:"bad",
@@ -58,7 +59,7 @@ function ScreenDashboard({ data, vendedorFiltro }){
         label:"CCC ACUMULADOS",
         value: k.ccc_mes,
         icon: React.createElement(Ic.users,{size:14}),
-        spark: React.createElement(Sparkline,{data:cccSpark, w:60, h:22, color:"#4DA3FF"})
+        spark: null
       }),
       React.createElement(KpiCard,{
         label:"CCC DEL DÍA",

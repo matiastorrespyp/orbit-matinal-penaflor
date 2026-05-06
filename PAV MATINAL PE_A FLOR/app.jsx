@@ -38,9 +38,9 @@ function Sidebar({ active, setActive, alertasCount }){
       );
     }),
     React.createElement("div",{className:"sidebar-footer"},
-      React.createElement("div",{className:"avatar"}, "MR"),
+      React.createElement("div",{className:"avatar"}, "SV"),
       React.createElement("div",{className:"user-meta"},
-        React.createElement("b",null, "Manuel R."),
+        React.createElement("b",null, "Supervisor"),
         React.createElement("span",null, "Supervisor PyP"))
     )
   );
@@ -56,7 +56,7 @@ function Topbar({ active, data, dia, setDia, vendedor, setVendedor, onSendMatina
     titulares:["11 Titulares","Cobertura por marca"],
     segmentos:["Segmentos","Cobertura Tradicional / AS / On Premise"],
     alertas:["Alertas Inteligentes","Copiloto comercial"],
-    vendedor:["App del Vendedor","Vista mobile · Milagros Ortega"],
+    vendedor:["App del Vendedor","Vista mobile · vendedor"],
   };
   const [t, sub] = titles[active] || ["",""];
   return React.createElement("header",{className:"topbar"},

@@ -9,12 +9,12 @@ Causa raíz: `codven=7` y `codven=9` ausentes del maestro. Sin esto, el motor le
 - Clientes de V9: `1094`, `1285`, `8125`, `1362`, `1387`, `8010`, `769`, `388`, `8139`, `1089`, `1093`
 - Datos necesarios por cliente: `Razon_Social`, `Ramo`, `DiasVisita`, `Localidad`, `SubSegmento`
 
-### Bloque B — Frontend, diagnóstico completo (listo para ejecutar)
-Hardcodeados en `dashboard.jsx` y `app.jsx`. Sin tocar backend ni CSV.
-1. `screens/dashboard.jsx` línea 12: `cccSpark = [3,7,9,12,8,15,18,22,19,24]` → reemplazar con `null` (sin fuente de historial CCC)
-2. `screens/dashboard.jsx` línea 61: `spark: React.createElement(Sparkline,{data:cccSpark,...})` → `spark: null`
-3. `screens/dashboard.jsx` línea 46: `"Cierre proyectado al 30/05"` → derivar último día del mes desde `data.fechaCorta`
-4. `app.jsx` líneas 41-44: `"MR"`, `"Manuel R."`, `"Supervisor PyP"` → texto genérico sin nombre de persona
+### ~~Bloque B~~ — ✓ Completado 2026-05-06
+Eliminados todos los datos hardcodeados del frontend (`dashboard.jsx` y `app.jsx`):
+- `cccSpark` → `null`; Sparkline CCC → `null`
+- `"Cierre proyectado al 30/05"` → `cierreProyectado` calculado desde `data.fechaCorta`
+- `"MR"` / `"Manuel R."` → `"SV"` / `"Supervisor"`
+- `"Vista mobile · Milagros Ortega"` → `"Vista mobile · vendedor"` (hallazgo adicional)
 
 ### Bloque C — Pipeline legacy (complejo)
 `clientes_dia.csv` tiene 255 filas para "Mi" pero `importe_mes`, `botellas_mes`, `importe_ayer` = 0 en todas.
