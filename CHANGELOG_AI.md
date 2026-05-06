@@ -116,6 +116,29 @@ El rename es necesario porque el historial normaliza `marca_final`→`marca` y `
 
 ---
 
+## 2026-05-06 — Incorporación de V7 y V9 al maestro de clientes
+
+**Archivos modificados:**
+- `01_INPUTS/clientes.xlsx` (actualización manual del usuario)
+- `03_OUTPUTS/MATINAL_PENA_V42.xlsx` (regenerado por motor)
+- `04_DATASETS_ORBIT/*.csv` (regenerados por adaptador)
+
+**Motivo:** V7 (Jofre) y V9 (Sanchez) estaban ausentes del maestro `clientes.xlsx`. El motor los omitía completamente; el fallback en `server_orbit.py` los mostraba con datos de `resultado.xlsx` pero sin rutas, clientes ni cobertura.
+
+**Cambio:** El usuario actualizó manualmente `clientes.xlsx` (+280 filas: 302 clientes para V7, 355 para V9). Se ejecutó el pipeline completo:
+1. `python LEGACY/orbit_matinal_v42.py` → clientes del día: 255→400, vendedores resumidos: 5→7
+2. `python src/orbit/datasets/datasets_orbit.py` → 11 CSVs regenerados en `04_DATASETS_ORBIT/`
+
+**Validación:**
+- `mod_volumen_vendedor.csv`: V7 y V9 con filas propias, sin `[fallback]`
+- `clientes_dia.csv`: V7=132 clientes MI / V9=13 clientes MI
+- `importe_mes > 0`: 196/400 clientes (antes: 175/255)
+- 2 clientes de V7 y 8 de V9 sin `DiasVisita` — deuda menor, no crítica
+
+**Nota:** `acciones_comerciales.csv` detectado como modificado — se integrará en bloque separado.
+
+---
+
 ## 2026-05-06 — Bloque B: eliminar datos hardcodeados del frontend
 
 **Archivos modificados:**

@@ -16,6 +16,12 @@ Eliminados todos los datos hardcodeados del frontend (`dashboard.jsx` y `app.jsx
 - `"MR"` / `"Manuel R."` → `"SV"` / `"Supervisor"`
 - `"Vista mobile · Milagros Ortega"` → `"Vista mobile · vendedor"` (hallazgo adicional)
 
+### ~~Incorporación V7/V9 al maestro~~ — ✓ Completado 2026-05-06
+clientes.xlsx actualizado manualmente (+302 V7, +355 V9). Pipeline motor→adaptador re-ejecutado.
+- Fallback `sin_maestro` de server_orbit.py ya no se activa para V7/V9 (tienen filas reales en mod_volumen_vendedor).
+- Deuda menor: 2 clientes V7 y 8 clientes V9 sin `DiasVisita` en clientes.xlsx.
+- `acciones_comerciales.csv` pendiente de integración (bloque separado).
+
 ### ~~Bloque C~~ — ✓ Completado 2026-05-06
 `ventas_mes` ahora se construye desde `historial_ventas` (acumulado) en lugar de `ventas_validas` (solo 2 días).
 - `importe_mes > 0`: 175/255 clientes MI (antes: 0/255)
