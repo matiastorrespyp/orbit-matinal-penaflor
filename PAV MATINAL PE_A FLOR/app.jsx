@@ -121,8 +121,14 @@ function App(){
     );
   }
 
+  const diaNames = {LU:"Lunes",MA:"Martes",MI:"Miércoles",JU:"Jueves",VI:"Viernes",SA:"Sábado"};
+  const fechaObj = (function(){
+    var d = new Date((data.fechaCorta||"") + "T12:00:00");
+    d.setDate(d.getDate() + 1);
+    return String(d.getDate()).padStart(2,"0") + "/" + String(d.getMonth()+1).padStart(2,"0");
+  })();
   const titles = {
-    dashboard:["Reunión matinal · Lunes 04/05","Equipo Peñaflor · 7 vendedores activos"],
+    dashboard:["Reunión matinal · " + (diaNames[data.diaActivo]||data.diaActivo) + " " + fechaObj,"Equipo Peñaflor · 7 vendedores activos"],
     avance:["Avance contra objetivo","Cumplimiento mensual y proyección al cierre"],
     planificacion:["Planificación de la matinal","Revisar, ajustar y aprobar el plan de cada vendedor"],
     vendedores:["Vendedores Peñaflor","Vista 360° por vendedor"],
