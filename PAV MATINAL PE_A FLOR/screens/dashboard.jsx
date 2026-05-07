@@ -75,7 +75,7 @@ function ScreenDashboard({ data, vendedorFiltro }){
         label:"CLIENTES C/COMPRA",
         value: k.clientes_compra,
         icon: React.createElement(Ic.store,{size:14}),
-        hint:"de " + (k.clientes_compra + (data.vendedores.reduce((s,v)=>s+v.alertas,0) || 0)) + " visitados"
+        hint:"de " + (k.clientes_compra + (data.vendedores.reduce((s,v)=>s+v.alertas,0) || 0)) + " planificados"
       }),
       React.createElement(KpiCard,{
         label:"COBERTURA GENERAL", kind: k.cobertura_general >= 70 ? "ok" : k.cobertura_general >= 50 ? "warn" : "bad",
