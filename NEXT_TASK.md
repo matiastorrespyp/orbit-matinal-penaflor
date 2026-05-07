@@ -54,7 +54,21 @@ clientes.xlsx actualizado manualmente (+302 V7, +355 V9). Pipeline motor→adapt
 - ~~**Días hábiles**~~: ✓ Resuelto en commit `ef59d83`.
 
 ### Bloque H — Pendiente
-- **DiasVisita gaps**: 2 clientes V7 y 8 clientes V9 sin `DiasVisita` en `clientes.xlsx` — deuda menor.
+
+#### DiasVisita gaps — diagnosticado 2026-05-06, sin corrección automática
+10 clientes sin `DiasVisita` en `clientes.xlsx` (V7: 2, V9: 8). Diagnóstico completo ejecutado.
+
+**9 casos cerrados — no corregir:**
+- `402` – CONSUMIDOR FINAL, V7, La Paz: placeholder genérico de venta directa, no es cliente de ruta.
+- `20001` ALMADA BLAS, `20008` VERGARA MARIA JOSE, `20011` AGUSTINA QUIJANO, `20021` BALDO MAXIMILIANO, `20027` CAMBRONERO MIRIAM LORENA, `20029` GRIBAUDO ESTEBAN EDUARDO, `20031` TORRES MATIAS, `20038` MOLINA JUAN ANGEL — todos V9, Ramo=Empleados, SubSegmento=Empleados, Ruta 22=BEBIDAS VD, Frecuencia=Eventual. Compras vía DEPOSITO (codven=20), no visitas programadas. Asignar DiasVisita los convertiría incorrectamente en clientes de ruta.
+
+**1 caso pendiente de confirmación humana:**
+- `8614` – BUSTAMANTE JUAN, V7, San Vicente, TRADITIONAL TRADE / Almacen/Despensa, Ruta 7008=DEPOSITO VILLA DOLORES, Frecuencia=Semanal, sin ventas en período activo ni historial.
+- **Acción**: consultar a Jofre (V7). Si confirma visita regular: completar `DiasVisita` manualmente en `clientes.xlsx` y regenerar pipeline (`python LEGACY/orbit_matinal_v42.py` + adaptador). No asignar día automáticamente.
+
+**Impacto actual**: ninguno. Ninguno de los 10 tiene ventas en `ventas.csv` activo → no afectan motor, CCC, cobertura ni avance.
+
+#### Pendientes adicionales Bloque H
 - **Consumidor `mod_gastos_accion`**: integrar al portal/API (`server_orbit.py` → `data.js`) para mostrar gastos por acción en vista gerencial.
 - **`02_PLANTILLA_GASTOS` del Excel**: pendiente de integración si se necesitan gastos proyectados vs. reales desde la plantilla original.
 
