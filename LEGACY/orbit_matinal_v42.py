@@ -567,6 +567,12 @@ def cargar_clientes(path: str) -> pd.DataFrame:
 
     df = df.loc[~df["vendedor_codigo"].isin(VENDEDORES_EXCLUIDOS)].copy()
     df = df.loc[~df["cliente_id"].isin(_cargar_clientes_excluidos())].copy()
+    # Exclusión dinámica: sin DiasVisita y Ruta contiene DEPOSITO → no son clientes de ruta programada
+    mask_deposito_sin_dia = (
+        df["ruta"].str.contains("DEPOSITO", case=False, na=False) &
+        df["dias_visita"].isin(["", "nan", "NaN", "None", "<NA>"])
+    )
+    df = df.loc[~mask_deposito_sin_dia].copy()
     df["segmento_operativo"] = df.apply(lambda r: clasificar_segmento_operativo(r["ramo"], r["subsegmento"]), axis=1)
     df["segmento_11t"] = df.apply(lambda r: clasificar_segmento_11t(r["ramo"], r["subsegmento"], r["segmento_operativo"]), axis=1)
     df["umbral_cobertura"] = df["segmento_operativo"].map(threshold_cobertura)
