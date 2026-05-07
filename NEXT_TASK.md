@@ -76,8 +76,12 @@ clientes.xlsx actualizado manualmente (+302 V7, +355 V9). Pipeline motor→adapt
 - `detalle`: 26 filas completas. Sin NaN. Sin cambios a endpoints existentes.
 - Pendiente: consumo desde `data.js` para vista gerencial del portal.
 
+#### ~~`data.js` → portal gerencial~~ — ✓ Completado 2026-05-06
+`window.ORBIT_DATA.gastosAccion` disponible. Dashboard muestra 3 cards al final:
+resumen (exceso total, gasto real, vendedores, clientes), top 5 acciones y top 5 vendedores.
+Se oculta automáticamente si no hay datos. Commit `c3f7813`.
+
 #### Pendientes adicionales Bloque H
-- **`data.js` → portal gerencial**: llamar a `/api/gastos_accion` y mostrar `top_acciones` y `top_vendedores` en la vista gerencial.
 - **`02_PLANTILLA_GASTOS` del Excel**: pendiente de integración si se necesitan gastos proyectados vs. reales desde la plantilla original.
 
 ---

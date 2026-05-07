@@ -211,6 +211,26 @@ El rename es necesario porque el historial normaliza `marca_final`→`marca` y `
 
 ---
 
+## 2026-05-06 — Bloque H (portal): gastosAccion en data.js y dashboard.jsx
+
+**Archivos modificados:** `PAV MATINAL PE_A FLOR/data.js`, `PAV MATINAL PE_A FLOR/screens/dashboard.jsx`
+
+**Motivo:** Conectar `/api/gastos_accion` al portal gerencial para mostrar exceso de descuentos por acción y por vendedor en la vista Dashboard.
+
+**Cambio en `data.js`:** Agrega `fetchSync("/api/gastos_accion")` y expone `window.ORBIT_DATA.gastosAccion` con `resumen`, `top_acciones` y `top_vendedores`.
+
+**Cambio en `dashboard.jsx`:** Nuevo bloque IIFE al final de `ScreenDashboard` con 3 cards en `grid cols-12`:
+- Card resumen: exceso total ($231.133), gasto real ($444.782), vendedores alertados (4), clientes afectados (38), acciones CSV/fallback.
+- Card top 5 acciones: `accion_id` abreviado, canal, categoría, exceso en pesos.
+- Card top 5 vendedores: código, nombre, exceso en pesos, cantidad de acciones con exceso.
+- Se oculta automáticamente si `resumen.filas_con_exceso` es falsy (cero o ausente).
+
+**Validación:** `/api/dashboard` y `/api/diagnostico` sin cambios. `window.ORBIT_DATA.gastosAccion.top_acciones.length === 5`, `top_vendedores.length === 4`.
+
+**Commit:** `c3f7813`
+
+---
+
 ## 2026-05-06 — Bloque H: /api/gastos_accion en server_orbit.py
 
 **Archivo modificado:** `server_orbit.py`
