@@ -259,17 +259,43 @@ def dashboard():
 # ====== CLIENTES, ALERTAS ======
 @app.route("/api/clientes")
 def clientes():
-    p = APP_DATA / "clientes_hoy.json"
-    if p.exists():
-        with open(p, "r", encoding="utf-8") as f: return jsonify(json.load(f))
-    return jsonify([])
+    df = read_csv(DATASETS / "clientes_dia.csv")
+    if df.empty: return jsonify([])
+    df.columns = [c.lstrip("﻿") for c in df.columns]
+    for col in ["vendedor_codigo", "cliente_id", "botellas_ayer", "botellas_mes",
+                "importe_ayer", "importe_mes", "compra_ayer_flag", "compra_mes_flag",
+                "ccc_ayer_flag", "ccc_mes_flag", "cobertura_ayer_flag", "cobertura_mes_flag"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+    df["vendedor_id"] = "V" + df["vendedor_codigo"].astype("Int64").astype(str)
+    df["segmento"] = df["segmento_operativo"]
+    df["estado"] = df["estado_cliente"]
+    df["prioridad_label"] = df["prioridad_comercial"]
+    df["impacto_alertas_ars"] = df["importe_mes"].fillna(0)
+    df["faltan_11t"] = 11
+    df["kernel_accion"] = ""
+    return jsonify(df.where(pd.notnull(df), None).to_dict(orient="records"))
 
 @app.route("/api/alertas")
 def alertas():
-    p = APP_DATA / "alertas_app.json"
-    if p.exists():
-        with open(p, "r", encoding="utf-8") as f: return jsonify(json.load(f))
-    return jsonify([])
+    df = read_csv(DATASETS / "mod_alertas_descuentos.csv")
+    if df.empty: return jsonify([])
+    df.columns = [c.lstrip("﻿") for c in df.columns]
+    for col in ["vendedor_codigo", "cliente_id", "cant_base", "cajas_eq",
+                "descuento_aplicado_pct", "descuento_maximo_pct", "exceso_pct",
+                "importe_neto", "valor_descuento"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+    df["vendedor_id"] = "V" + df["vendedor_codigo"].astype("Int64").astype(str)
+    df["prioridad"] = "alta"
+    df["tipo"] = "descuento"
+    df["titulo"] = df["cliente_nombre"]
+    df["detalle"] = (df["articulo"].fillna("") + " — descuento aplicado: " +
+                     df["descuento_aplicado_pct"].fillna(0).astype(str) + "% / máximo: " +
+                     df["descuento_maximo_pct"].fillna(0).astype(str) + "%")
+    df["accion"] = "Revisar descuento con " + df["fuente_regla"].fillna("regla fallback")
+    df["impacto_alertas_ars"] = (df["valor_descuento"].fillna(0) * df["cant_base"].fillna(0))
+    return jsonify(df.where(pd.notnull(df), None).to_dict(orient="records"))
 
 @app.route("/api/planificacion", methods=["GET","POST"])
 def planificacion():
