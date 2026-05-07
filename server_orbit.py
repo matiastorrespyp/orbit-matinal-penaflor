@@ -152,6 +152,9 @@ def diagnostico():
                                  "cubiertos": row["cubiertos"]})
         titulares11.sort(key=lambda x: -x["cubiertos"])
 
+    botellas_dia = int(pd.to_numeric(ccc_df["botellas_vendidas"], errors="coerce").sum()) if not ccc_df.empty and "botellas_vendidas" in ccc_df.columns else 0
+    botellas_mes = int(pd.to_numeric(cdia_df["botellas_mes"], errors="coerce").sum()) if not cdia_df.empty and "botellas_mes" in cdia_df.columns else 0
+
     return jsonify({
         "modo_datos": "REAL",
         "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -164,6 +167,8 @@ def diagnostico():
         "v3_autoservicio": False,
         "segmentos": segmentos,
         "titulares11": titulares11,
+        "botellas_dia": botellas_dia,
+        "botellas_mes": botellas_mes,
     })
 
 # ====== DASHBOARD REAL ======
