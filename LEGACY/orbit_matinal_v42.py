@@ -34,6 +34,24 @@ NEGOCIO_NOMBRE = "Peñaflor"
 VENDEDORES_EXCLUIDOS = [2, 5]
 TOLERANCIA_EXCESO_PCT = 0.20
 
+_EXCLUIDOS_CLI_IDS = None
+
+def _cargar_clientes_excluidos() -> set:
+    global _EXCLUIDOS_CLI_IDS
+    if _EXCLUIDOS_CLI_IDS is not None:
+        return _EXCLUIDOS_CLI_IDS
+    path = os.path.join("09_CONFIG", "clientes_excluidos.csv")
+    if not os.path.exists(path):
+        _EXCLUIDOS_CLI_IDS = set()
+        return _EXCLUIDOS_CLI_IDS
+    try:
+        df = pd.read_csv(path, sep=",", encoding="utf-8", dtype={"cliente_id": str})
+        ids = pd.to_numeric(df["cliente_id"], errors="coerce").dropna().astype(int)
+        _EXCLUIDOS_CLI_IDS = set(ids.tolist())
+    except Exception:
+        _EXCLUIDOS_CLI_IDS = set()
+    return _EXCLUIDOS_CLI_IDS
+
 # ============================================================
 # 11 TITULARES FINOS
 # ============================================================
@@ -548,6 +566,7 @@ def cargar_clientes(path: str) -> pd.DataFrame:
     df["subsegmento"] = df["SubSegmento"].astype(str).fillna("").str.strip()
 
     df = df.loc[~df["vendedor_codigo"].isin(VENDEDORES_EXCLUIDOS)].copy()
+    df = df.loc[~df["cliente_id"].isin(_cargar_clientes_excluidos())].copy()
     df["segmento_operativo"] = df.apply(lambda r: clasificar_segmento_operativo(r["ramo"], r["subsegmento"]), axis=1)
     df["segmento_11t"] = df.apply(lambda r: clasificar_segmento_11t(r["ramo"], r["subsegmento"], r["segmento_operativo"]), axis=1)
     df["umbral_cobertura"] = df["segmento_operativo"].map(threshold_cobertura)
@@ -591,6 +610,7 @@ def cargar_ventas(path: str) -> pd.DataFrame:
     df["ruta_preventa"] = df["RutaPreventa"].astype(str).fillna("").str.strip()
 
     df = df.loc[~df["vendedor_codigo"].isin(VENDEDORES_EXCLUIDOS)].copy()
+    df = df.loc[~df["cliente_id"].isin(_cargar_clientes_excluidos())].copy()
 
     df["marca_limpia"] = df["marca"].apply(limpiar_texto_comercial)
     df["articulo_limpio"] = df["articulo"].apply(limpiar_texto_comercial)

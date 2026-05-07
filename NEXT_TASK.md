@@ -84,6 +84,12 @@ Se oculta automáticamente si no hay datos. Commit `c3f7813`.
 #### Pendientes adicionales Bloque H
 - **`02_PLANTILLA_GASTOS` del Excel**: pendiente de integración si se necesitan gastos proyectados vs. reales desde la plantilla original.
 
+- **Archivo de exclusión de clientes** (`09_CONFIG/clientes_excluidos.csv`): crear para que el motor y el adaptador puedan filtrar sistemáticamente clientes que no deben aparecer en ningún análisis comercial (CCC, cobertura, alertas, gastos, 11T).
+  - Columnas requeridas: `cliente_id`, `razon_social`, `motivo_exclusion`, `aplica_a`
+  - `aplica_a = TODO_ANALISIS_COMERCIAL` para los casos de empleados/depósito ya identificados.
+  - Candidatos iniciales: códigos `402`, `20001`, `20008`, `20011`, `20021`, `20027`, `20029`, `20031`, `20038` (empleados V9 / placeholder V7).
+  - Hasta que exista este archivo, los clientes empleados quedan excluidos de facto por ausencia de `DiasVisita` y `Frecuencia=Eventual`, pero no hay garantía si cambia el motor.
+
 ---
 
 ## Problemas pendientes detectados en auditoría (2026-05-05)
