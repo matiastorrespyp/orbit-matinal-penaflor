@@ -480,3 +480,42 @@ __pycache__/
 ```
 
 **Commit:** `b242b7c`
+
+---
+
+## 2026-05-07 — Validación funcional completa del portal
+
+**Archivos modificados:** ninguno (auditoría con servidor activo, sin cambios de código)
+
+**Método:** todos los endpoints probados con `Invoke-WebRequest` contra servidor en puerto 8502. Sin mock activo en ningún bloque auditado.
+
+**Estado por endpoint:**
+
+| Endpoint | Estado | Items | Detalle |
+|---|---|---|---|
+| `/api/diagnostico` | ✓ REAL | — | calendario, botellas, segmentos, titulares OK |
+| `/api/dashboard` | ✓ REAL | 7 vendedores | sin_maestro=False en todos |
+| `/api/clientes` | ✓ REAL | 340 | 141 SIN_COMPRA_MES + 199 COBERTURA_OK |
+| `/api/alertas` | ✓ REAL | 103 | descuentos excesivos, detalle real por artículo |
+| `/api/gastos_accion` | ✓ REAL | 26 filas | exceso total $231.133 |
+| `/` (index.html) | ✓ HTTP 200 | 10.061 bytes | portal carga correctamente |
+| `/data.js` | ✓ HTTP 200 | 5.869 bytes | sin mock, sin hardcode |
+| `/api/planificacion` | ⚠ VACÍO | 0 | esperado — sin fuente real aún |
+
+**`/api/diagnostico` valores clave al 2026-05-07:**
+- `total=24`, `corridos=5`, `restantes=19`, `fecha_corte=2026-05-07`
+- `feriados_detectados_del_mes=["2026-05-01","2026-05-25"]`
+- `botellas_dia=1406`, `botellas_mes=9050`
+- TRADICIONAL: 265 clientes / 18 cubiertos; AUTOSERVICIO: 47/11; ON_PREMISE: 28/1
+- titulares11: 28 marcas; top ALMA MORA 126/337, CAZADOR 32/288
+
+**Decisiones confirmadas (no requieren cambio de código):**
+- **Sábados = días comerciales** en Peñaflor. `contar_dias_habiles()` excluye solo domingos y feriados. `corridos=5` al 2026-05-07 es correcto: Sáb 02/05 + Lun-Jue 04-07/05.
+- **`/api/alertas` no mezcla SIN_COMPRA_MES** — los 141 clientes sin compra están en `/api/clientes` (prioridad=ALTA). Son canales distintos en el frontend. No mezclar hasta decisión explícita.
+- **`/api/planificacion` vacío es esperado** si los vendedores no enviaron planes. No es un bug.
+
+**Pendientes funcionales detectados en auditoría (no bloquean portal):**
+1. `vendedor_codigo` en `top_vendedores` de `/api/gastos_accion` llega numérico (`"10"`) en lugar de formato `"V10"`. Color de las cards de gastos cae a magenta default.
+2. `ccc_mes: 0` — honesto; ningún CSV actual tiene CCC acumulado del mes.
+3. **Bloque A** — algunos clientes V7/V9 con datos faltantes en `clientes.xlsx` (requiere datos ERP externos).
+4. **Automatización regeneración** — `ABRIR_CLAUDE_ORBIT.bat` solo abre el portal. El pipeline de regeneración (`run_orbit.py` + `datasets_orbit.py`) sigue siendo manual. Decisión futura: automatizar o mantener separado.

@@ -27,10 +27,40 @@
 - `LEGACY/orbit_matinal_v42.py` — motor estable, no tocar sin nueva tarea específica
 - `09_CONFIG/clientes_excluidos.csv` — 10 exclusiones formalizadas, estable
 
-### Próximo bloque recomendado
-1. **Bloque A** — `clientes.xlsx` incompleto: algunos clientes V7/V9 aún con datos faltantes (requiere datos ERP externos)
-2. **`ccc_mes: 0`** — pendiente fuente real de CCC acumulado (ningún CSV actual lo tiene)
-3. **`02_PLANTILLA_GASTOS`** — integración gastos proyectados vs reales desde plantilla original (bajo cuando se necesite)
+### Validación funcional — 2026-05-07 (servidor activo, sin cambios de código)
+
+**Portal operativo. Sin mock activo en ningún bloque auditado.**
+
+| Endpoint | Estado | Detalle |
+|---|---|---|
+| `/api/diagnostico` | ✓ REAL | total=24, corridos=5, botellas 1406/9050, 3 segmentos, 28 titulares |
+| `/api/dashboard` | ✓ REAL | 7 vendedores, sin_maestro=False todos |
+| `/api/clientes` | ✓ REAL | 340 items, estados y prioridades reales |
+| `/api/alertas` | ✓ REAL | 103 items, descuentos reales por artículo |
+| `/api/gastos_accion` | ✓ REAL | 26 filas, exceso $231k |
+| `/` + `/data.js` | ✓ HTTP 200 | portal y contrato de datos cargan |
+| `/api/planificacion` | ⚠ VACÍO | esperado — sin fuente real aún |
+
+**Decisiones confirmadas — no cambiar sin nueva instrucción:**
+- Sábados cuentan como días comerciales. `corridos=5` al 2026-05-07 es correcto.
+- `/api/alertas` no mezcla SIN_COMPRA_MES. Los clientes sin compra están en `/api/clientes`.
+- `/api/planificacion` vacío es esperado si no hay fuente real.
+
+### Pendientes funcionales (no bloquean portal)
+
+1. **`vendedor_codigo` en gastos_accion** — llega como `"10"` en lugar de `"V10"`. Cards de gastos pierden color de vendedor (cae a magenta). Fix menor en `server_orbit.py`.
+2. **`ccc_mes: 0`** — honesto; ningún CSV actual tiene CCC acumulado del mes.
+3. **Bloque A (ERP externo)** — completar `clientes.xlsx` con datos faltantes de algunos clientes V7/V9. Requiere datos externos, no tiene código pendiente.
+4. **Automatización de regeneración** — `ABRIR_CLAUDE_ORBIT.bat` solo abre el portal. El pipeline (`run_orbit.py` + `datasets_orbit.py`) sigue siendo manual. Decidir si automatizar con un segundo BAT o integrar en el mismo.
+
+### Qué NO tocar sin confirmación
+- `server_orbit.py` — estable, 7 vendedores, todos los endpoints funcionando
+- `PAV MATINAL PE_A FLOR/screens/dashboard.jsx` — sin mock, sin hardcode
+- `PAV MATINAL PE_A FLOR/data.js` — contrato de datos real
+- `ABRIR_CLAUDE_ORBIT.bat` — launcher correcto
+- `01_INPUTS/` — solo el usuario actualiza estos archivos
+- `LEGACY/orbit_matinal_v42.py` — motor estable
+- `09_CONFIG/clientes_excluidos.csv` — 10 exclusiones formalizadas
 
 ---
 
