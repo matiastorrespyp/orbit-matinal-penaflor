@@ -65,14 +65,32 @@ def contar_dias_habiles(fecha_corte=None):
     inicio = datetime(fecha_corte.year, fecha_corte.month, 1)
     fin_mes = datetime(fecha_corte.year, fecha_corte.month + 1, 1) - timedelta(days=1)
     total, corridos = 0, 0
+    feriados_del_mes = []
     d = inicio
     while d <= fin_mes:
-        if d.weekday() != 6 and d.strftime("%Y-%m-%d") not in feriados:  # excluye DO y feriados
+        fecha_str = d.strftime("%Y-%m-%d")
+        es_domingo = d.weekday() == 6
+        es_feriado = fecha_str in feriados
+        if es_feriado:
+            feriados_del_mes.append(fecha_str)
+        if not es_domingo and not es_feriado:
             total += 1
             if d <= fecha_corte:
                 corridos += 1
         d += timedelta(days=1)
-    return {"total": total, "corridos": corridos, "restantes": total - corridos, "fecha_corte": fecha_corte.strftime("%Y-%m-%d")}
+    print(f"[ORBIT calendario] fecha_corte={fecha_corte.strftime('%Y-%m-%d')} | "
+          f"total_comerciales={total} | corridos={corridos} | "
+          f"feriados_mes={feriados_del_mes}")
+    return {
+        "total": total,
+        "corridos": corridos,
+        "restantes": total - corridos,
+        "fecha_corte": fecha_corte.strftime("%Y-%m-%d"),
+        "total_dias_comerciales_mes": total,
+        "dias_comerciales_corridos": corridos,
+        "feriados_detectados_del_mes": feriados_del_mes,
+        "fecha_corte_calendario": fecha_corte.strftime("%Y-%m-%d"),
+    }
 
 # ====== STATIC ======
 @app.route("/")
