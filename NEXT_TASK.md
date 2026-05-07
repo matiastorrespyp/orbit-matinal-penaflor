@@ -96,7 +96,7 @@ Se oculta automáticamente si no hay datos. Commit `c3f7813`.
 3. **Acumulado=0** en `dashboard_vendedor.json` → `app_publish.py` busca columna `acumulado` pero `mod_volumen_vendedor.csv` tiene `acumulado_mes` → retorna 0 para todos.
 4. **Datos hardcodeados** en frontend: sparkline CCC en `dashboard.jsx` (mock inventado), usuario "Manuel R." en sidebar de `app.jsx`.
 5. **`orbit_portal_data.json`** tiene estructura distinta a la que genera `tools/orbit_truth_audit.py` — fue generado por otra herramienta anterior.
-6. **Importes = 0 en clientes_dia.csv** → `importe_mes`, `botellas_mes`, `importe_ayer` = 0 para las 255 filas. El join con `ventas.csv` en el motor legacy no está transfiriendo datos.
+6. ~~**Importes = 0 en clientes_dia.csv**~~ → ✓ Resuelto (Bloque C + botellas expuestas en commit `c1124b5`). `importe_mes > 0` en 199/400 clientes. `botellas_dia=1406`, `botellas_mes=9050` en `kpisGerencia`.
 7. **`ccc_mes: 0`** en `data.js` — correcto y honesto pero pendiente: necesita fuente real de CCC acumulado del mes (no existe en ningún CSV actual).
 8. **Segmentos `cubiertos: 0`** hardcodeados en `data.js` — los datos existen en `mod_ccc_segmento.csv` pero no se cruzan con el total de clientes del universo.
 9. **`titulares11` incompleto** en `data.js` — solo 2 de 11 hardcodeados; los reales están en `mod_11_titulares.csv` pero no se mapean al array.

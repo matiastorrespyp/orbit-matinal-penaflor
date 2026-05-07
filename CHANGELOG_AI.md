@@ -362,3 +362,34 @@ Aplicado después del filtro `_cargar_clientes_excluidos()`. No aplica a `cargar
 - Motor y adaptador: exit code 0 ✓
 
 **Commit:** `fe913dd`
+
+---
+
+## 2026-05-07 — botellas_dia y botellas_mes expuestos en /api/diagnostico y data.js
+
+**Archivos modificados:**
+- `server_orbit.py` (+5 líneas en `diagnostico()`)
+- `PAV MATINAL PE_A FLOR/data.js` (+2/-1 líneas en `kpisGerencia`)
+
+**Motivo:** `kpisGerencia.botellas_dia` estaba hardcodeado en 0 en `data.js`. El dato real existe en `mod_ccc_segmento.botellas_vendidas` (1.406 botellas del día) y `clientes_dia.botellas_mes` (9.050 botellas del mes), pero ningún endpoint los exponía.
+
+**Cambio en `server_orbit.py` — `diagnostico()`:**
+```python
+botellas_dia = int(pd.to_numeric(ccc_df["botellas_vendidas"], errors="coerce").sum()) if not ccc_df.empty and "botellas_vendidas" in ccc_df.columns else 0
+botellas_mes = int(pd.to_numeric(cdia_df["botellas_mes"], errors="coerce").sum()) if not cdia_df.empty and "botellas_mes" in cdia_df.columns else 0
+```
+Agregados al `return jsonify({...})` de `/api/diagnostico`.
+
+**Cambio en `data.js` — `kpisGerencia`:**
+```js
+botellas_dia: diag.botellas_dia || 0,   // antes: 0 hardcodeado
+botellas_mes: diag.botellas_mes || 0,   // nuevo campo
+```
+
+**Validación:**
+- `/api/diagnostico`: `botellas_dia: 1406`, `botellas_mes: 9050` ✓
+- `/api/dashboard`: 7 vendedores sin cambios ✓
+- `/api/gastos_accion`: `modo_datos=REAL`, 26 filas sin cambios ✓
+- Ningún otro endpoint ni KPI afectado ✓
+
+**Commit:** `c1124b5`
