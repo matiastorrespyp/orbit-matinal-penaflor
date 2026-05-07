@@ -18,6 +18,7 @@
   var cli  = fetchSync("/api/clientes") || [];
   var al   = fetchSync("/api/alertas") || [];
   var pl   = fetchSync("/api/planificacion") || [];
+  var ga   = fetchSync("/api/gastos_accion") || {};
 
   var colorMap = { V3: "#7BD8B8", V4: "#F2B544", V6: "#5BC23A", V7: "#9B7BFF", V8: "#4DA3FF", V9: "#FF9D5C", V10: "#FF5D8B" };
   var calendario = diag.calendario || { total: 24, corridos: 2, restantes: 22, fecha_corte: new Date().toISOString().split("T")[0] };
@@ -117,6 +118,11 @@
       { id: "ON_PREMISE_VTK", nombre: "On Premise / Vinoteca", req: 6, clientes: 0, cubiertos: 0, color: "#9B7BFF" },
     ],
     titulares11: diag.titulares11 || [],
+    gastosAccion: {
+      resumen:        ga.resumen        || {},
+      top_acciones:   ga.top_acciones   || [],
+      top_vendedores: ga.top_vendedores || []
+    },
     planes: pl.slice(0, 7).map(function(p) {
       return {
         vendedor: p.vendedor_id, estado: p.estado || "enviada",

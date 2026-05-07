@@ -193,7 +193,112 @@ function ScreenDashboard({ data, vendedorFiltro }){
           })
         )
       )
-    )
+    ),
+
+    (function(){
+      const ga = data.gastosAccion || {};
+      const rs = ga.resumen || {};
+      const topAcc  = ga.top_acciones   || [];
+      const topVend = ga.top_vendedores || [];
+      if (!rs.filas_con_exceso) return null;
+
+      const rowStyle = {display:"flex",justifyContent:"space-between",alignItems:"center",
+                        padding:"6px 0",borderBottom:"1px solid rgba(255,255,255,.06)",fontSize:12};
+      const labelStyle = {color:"var(--text-2)",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"};
+      const valStyle   = {color:"var(--bad)",fontVariantNumeric:"tabular-nums",fontWeight:600,whiteSpace:"nowrap"};
+
+      return React.createElement("div",{className:"grid cols-12",style:{marginTop:14,gap:14}},
+
+        React.createElement("div",{className:"card",style:{gridColumn:"span 4"}},
+          React.createElement("div",{className:"card-head"},
+            React.createElement("div",null,
+              React.createElement("h3",{className:"card-title"}, "Gastos por acción"),
+              React.createElement("div",{className:"card-sub"}, "Descuentos excedidos · período")
+            )
+          ),
+          React.createElement("div",{className:"card-body",style:{display:"flex",flexDirection:"column",gap:14}},
+            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}},
+              React.createElement("div",null,
+                React.createElement("div",{className:"muted",style:{fontSize:10,letterSpacing:1.2,textTransform:"uppercase"}}, "Exceso total"),
+                React.createElement("div",{className:"f-display tnum",style:{fontSize:18,fontWeight:700,color:"var(--bad)",marginTop:3}},
+                  fmtMoney(rs.exceso_pesos_total||0))
+              ),
+              React.createElement("div",null,
+                React.createElement("div",{className:"muted",style:{fontSize:10,letterSpacing:1.2,textTransform:"uppercase"}}, "Gasto real"),
+                React.createElement("div",{className:"f-display tnum",style:{fontSize:18,fontWeight:700,color:"var(--warn)",marginTop:3}},
+                  fmtMoney(rs.gasto_real_total||0))
+              ),
+              React.createElement("div",null,
+                React.createElement("div",{className:"muted",style:{fontSize:10,letterSpacing:1.2,textTransform:"uppercase"}}, "Vend. alertados"),
+                React.createElement("div",{className:"f-display tnum",style:{fontSize:18,fontWeight:700,marginTop:3}},
+                  rs.vendedores_alertados||0)
+              ),
+              React.createElement("div",null,
+                React.createElement("div",{className:"muted",style:{fontSize:10,letterSpacing:1.2,textTransform:"uppercase"}}, "Clientes afect."),
+                React.createElement("div",{className:"f-display tnum",style:{fontSize:18,fontWeight:700,marginTop:3}},
+                  rs.clientes_afectados_total||0)
+              )
+            ),
+            React.createElement("div",{className:"muted",style:{fontSize:11,marginTop:4}},
+              (rs.acciones_csv||0)+" acciones CSV · "+(rs.acciones_fallback||0)+" fallback")
+          )
+        ),
+
+        React.createElement("div",{className:"card",style:{gridColumn:"span 4"}},
+          React.createElement("div",{className:"card-head"},
+            React.createElement("div",null,
+              React.createElement("h3",{className:"card-title"}, "Top acciones · exceso"),
+              React.createElement("div",{className:"card-sub"}, "Por acción comercial")
+            )
+          ),
+          React.createElement("div",{className:"card-body",style:{paddingTop:4}},
+            topAcc.length === 0
+              ? React.createElement("div",{className:"muted",style:{textAlign:"center",padding:20}}, "Sin datos")
+              : topAcc.map((a,i)=>
+                  React.createElement("div",{key:i,style:rowStyle},
+                    React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,minWidth:0}},
+                      React.createElement("span",{className:"muted",style:{fontSize:11,minWidth:14}}, (i+1)+"."),
+                      React.createElement("div",{style:labelStyle},
+                        React.createElement("div",{style:{fontWeight:600,fontSize:12}},
+                          (a.accion_id||"").replace(/MAY26-GRAL-/,"").replace(/MAY26-/,"")),
+                        React.createElement("div",{className:"muted",style:{fontSize:10,marginTop:1}},
+                          (a.canal||"").split(" ")[0]+" · "+(a.categoria||"").split("/")[0])
+                      )
+                    ),
+                    React.createElement("span",{style:valStyle}, fmtMoney(a.exceso_pesos_total||0))
+                  )
+                )
+          )
+        ),
+
+        React.createElement("div",{className:"card",style:{gridColumn:"span 4"}},
+          React.createElement("div",{className:"card-head"},
+            React.createElement("div",null,
+              React.createElement("h3",{className:"card-title"}, "Top vendedores · exceso"),
+              React.createElement("div",{className:"card-sub"}, "Por vendedor")
+            )
+          ),
+          React.createElement("div",{className:"card-body",style:{paddingTop:4}},
+            topVend.length === 0
+              ? React.createElement("div",{className:"muted",style:{textAlign:"center",padding:20}}, "Sin datos")
+              : topVend.map((v,i)=>
+                  React.createElement("div",{key:i,style:rowStyle},
+                    React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,minWidth:0}},
+                      React.createElement("span",{className:"muted",style:{fontSize:11,minWidth:14}}, (i+1)+"."),
+                      React.createElement("div",{style:labelStyle},
+                        React.createElement("div",{style:{fontWeight:600,fontSize:12}},
+                          "V"+(v.vendedor_codigo||"")+" · "+((v.vendedor_nombre||"").split(" ")[0])),
+                        React.createElement("div",{className:"muted",style:{fontSize:10,marginTop:1}},
+                          (v.acciones_con_exceso||0)+" acciones con exceso")
+                      )
+                    ),
+                    React.createElement("span",{style:valStyle}, fmtMoney(v.exceso_pesos_total||0))
+                  )
+                )
+          )
+        )
+      );
+    })()
   );
 }
 window.ScreenDashboard = ScreenDashboard;
