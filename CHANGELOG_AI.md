@@ -298,3 +298,33 @@ El rename es necesario porque el historial normaliza `marca_final`→`marca` y `
 - `mod_alertas_descuentos`: 103 filas (antes: 14). 91/103 con `fuente_regla` = `MAY26-...`.
 - `MAY26-GRAL-AS-VIN-001`: 48 filas, `descuento_maximo_pct = 6.0` ✓ (antes: 10.0).
 - Fallback activo en 12 filas (segmentos sin cobertura en CSV o productos específicos).
+
+---
+
+## 2026-05-07 — Bloque H: exclusión formal de clientes no comerciales
+
+**Archivos modificados:**
+- `LEGACY/orbit_matinal_v42.py` (+18 líneas)
+- `09_CONFIG/clientes_excluidos.csv` (nuevo, 9 filas)
+
+**Motivo:** 9 códigos de cliente estaban presentes en `clientes.xlsx` pero no deben aparecer en ningún análisis comercial: un placeholder de venta directa (`402 CONSUMIDOR FINAL`) y 8 empleados de Peñaflor (`20001`–`20038`, Ramo=Empleados, codven=9, Ruta=BEBIDAS VD, Frecuencia=Eventual). Sin exclusión explícita, si algún día se les agrega `DiasVisita` o aparecen en ventas activas, entrarían en clientes_dia, CCC, cobertura, alertas, 11T y gastos.
+
+**Cambio en `orbit_matinal_v42.py`:**
+- Función `_cargar_clientes_excluidos()`: carga lazy de `09_CONFIG/clientes_excluidos.csv`, devuelve set de enteros. Fallback silencioso a `set()` si el archivo no existe o falla.
+- Global `_EXCLUIDOS_CLI_IDS = None` para cachear entre llamadas (mismo patrón que `_EXCLUIDOS_REGLAS_CSV`).
+- Filtro agregado en `cargar_clientes()` justo después del filtro `VENDEDORES_EXCLUIDOS`.
+- Filtro agregado en `cargar_ventas()` justo después del filtro `VENDEDORES_EXCLUIDOS`.
+
+**`09_CONFIG/clientes_excluidos.csv`:** columnas `cliente_id, razon_social, motivo_exclusion, aplica_a`. Los 9 registros llevan `aplica_a = TODO_ANALISIS_COMERCIAL`.
+
+Códigos excluidos: `402`, `20001`, `20008`, `20011`, `20021`, `20027`, `20029`, `20031`, `20038`.
+
+**Impacto actual:** cero — ninguno de los 9 tiene ventas en `ventas.csv` activo ni `DiasVisita`, por lo que no aparecían en ningún output de todos modos. La exclusión es defensiva.
+
+**Validación post-motor + adaptador:**
+- `mod_alertas_descuentos`: ninguno de los 9 códigos presente ✓
+- `clientes_dia`: ninguno de los 9 códigos presente ✓
+- `mod_gastos_accion`: 26 filas sin cambio ✓
+- Motor y adaptador: exit code 0, sin errores ✓
+
+**Commit:** `97993d2`
