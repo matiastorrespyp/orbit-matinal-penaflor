@@ -45,10 +45,18 @@ clientes.xlsx actualizado manualmente (+302 V7, +355 V9). Pipeline motor→adapt
 - `mod_alertas_descuentos`: 103 filas (antes: 14). 91/103 con `fuente_regla = MAY26-...`.
 - Fallback hardcodeado activo para productos/segmentos sin cobertura en CSV (12 filas).
 
-### Bloque G — Pendiente
-- **Gastos por acción**: `02_PLANTILLA_GASTOS` del Excel — cruzar ventas reales con `accion_id` para calcular gasto teórico vs. real. Sin consumidor todavía.
+### ~~Bloque G~~ — ✓ Completado 2026-05-06
+`mod_gastos_accion` generado en `MATINAL_PENA_V42.xlsx` y exportado a `04_DATASETS_ORBIT/` por `datasets_orbit.py`.
+- 26 filas (fuente_regla × vendedor), 0 NaN/Inf, `gasto_real > gasto_teorico` garantizado.
+- Mayor exceso: `MAY26-GRAL-TRAD-SPI-LOC-001` V10 → $83.166 | `MAY26-GRAL-AS-VIN-001` V9 → $58.982.
+- Diagnóstico clave: `valor_descuento` ERP = por unidad (no por línea); correcto es `× cant_base`.
+- Sin consumidor en portal todavía — deuda separada.
+- ~~**Días hábiles**~~: ✓ Resuelto en commit `ef59d83`.
+
+### Bloque H — Pendiente
 - **DiasVisita gaps**: 2 clientes V7 y 8 clientes V9 sin `DiasVisita` en `clientes.xlsx` — deuda menor.
-- ~~**Días hábiles**~~: ✓ Resuelto en commit `ef59d83` — `server_orbit.py` ya descuenta `09_CONFIG/feriados.csv`.
+- **Consumidor `mod_gastos_accion`**: integrar al portal/API (`server_orbit.py` → `data.js`) para mostrar gastos por acción en vista gerencial.
+- **`02_PLANTILLA_GASTOS` del Excel**: pendiente de integración si se necesitan gastos proyectados vs. reales desde la plantilla original.
 
 ---
 

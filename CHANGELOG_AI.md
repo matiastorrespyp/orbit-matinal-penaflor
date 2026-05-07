@@ -211,6 +211,33 @@ El rename es necesario porque el historial normaliza `marca_final`→`marca` y `
 
 ---
 
+## 2026-05-06 — Bloque G: mod_gastos_accion — gasto real vs teórico por acción
+
+**Archivo modificado:** `LEGACY/orbit_matinal_v42.py`
+
+**Motivo:** Analizar cuánto gasto en descuentos genera cada acción comercial por vendedor, comparando el gasto real (descuento efectivamente aplicado) contra el gasto teórico (máximo permitido por la regla). Prerequisito: Bloque F ya generaba `fuente_regla` = `accion_id` en `mod_alertas_descuentos`.
+
+**Diagnóstico previo:** `valor_descuento` del ERP (`valorDescuento`) es un valor **por unidad** (por botella), no por línea. Validado cruzando con `ImporteItem` (que incluye IVA 21%) e `ImporteNetoItem` (neto sin IVA). La fórmula correcta es `valor_descuento × cant_base` para el total de la línea.
+
+**Cambio:** Nuevo bloque `MOD GASTOS POR ACCION` después de `MOD_ALERTAS_DESCUENTOS_GENERADO`:
+- `gasto_real = valor_descuento × cant_base` (total descuento de la línea, neto IVA, desde ERP)
+- `gasto_teorico = gasto_real × descuento_maximo_pct / descuento_aplicado_pct` (escala proporcional)
+- `exceso_pesos = gasto_real - gasto_teorico` (siempre positivo: solo filas donde se excede el máximo)
+- Agrupa por `(fuente_regla, vendedor_codigo, vendedor_nombre)` → columnas: `clientes_afectados`, `lineas_alertadas`, `gasto_real_total`, `gasto_teorico_total`, `exceso_pesos_total`, `exceso_pct_promedio`
+- Join a `reglas_acciones_mayo_2026_orbit.csv` para enriquecer `canal` y `categoria`; fallbacks con `es_regla_csv=False`, `canal="FALLBACK"`
+- Filtro: solo filas con `exceso_pesos_total > 0`
+- Nueva hoja `mod_gastos_accion` en `MATINAL_PENA_V42.xlsx`; `datasets_orbit.py` exporta automáticamente a `04_DATASETS_ORBIT/mod_gastos_accion.csv`
+
+**Validación:** `python LEGACY/orbit_matinal_v42.py` sin error.
+- Hoja `mod_gastos_accion`: 26 filas, 0 NaN, 0 Inf
+- `MAY26-GRAL-AS-VIN-001` presente ✓
+- `gasto_real > gasto_teorico` en todas las filas ✓
+- Mayor exceso: `MAY26-GRAL-TRAD-SPI-LOC-001` V10 → $83.166 | `MAY26-GRAL-AS-VIN-001` V9 → $58.982
+
+**Commit:** `895de3f`
+
+---
+
 ## 2026-05-06 — Bloque F: calcular_descuento_maximo lee reglas desde CSV
 
 **Archivo modificado:** `LEGACY/orbit_matinal_v42.py`
