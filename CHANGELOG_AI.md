@@ -417,3 +417,66 @@ botellas_mes: diag.botellas_mes || 0,   // nuevo campo
 - `/api/gastos_accion`: `REAL`, 26 filas sin cambios ✓
 
 **Commit:** `7a4f7e8`
+
+---
+
+## 2026-05-07 — fix: calcular dias comerciales con feriados reales
+
+**Archivo modificado:** `server_orbit.py` (+12 líneas en `contar_dias_habiles()`)
+
+**Motivo:** `/api/diagnostico` devolvía `total=26` y `corridos=4` porque `contar_dias_habiles()` no leía `09_CONFIG/feriados.csv`. Mayo 2026 tiene 2 feriados: `2026-05-01` (Día del Trabajador) y `2026-05-25` (Revolución de Mayo). El total correcto es 24 días comerciales. Sin este fix el frontend mostraba días incorrectos en todas las métricas de avance y tendencia.
+
+**Cambio:** `contar_dias_habiles()` enriquecida:
+- Lee y aplica feriados desde `09_CONFIG/feriados.csv`
+- Expone `feriados_detectados_del_mes` en el response
+- Expone `total_dias_comerciales_mes` y `dias_comerciales_corridos` como aliases
+- Log en consola: `[ORBIT calendario] fecha_corte=... | total_comerciales=... | corridos=... | feriados_mes=[...]`
+
+**Validación:** `/api/diagnostico` devuelve `total=24`, `corridos=3`, `feriados_detectados_del_mes=["2026-05-01"]`. Log visible en consola del servidor.
+
+**Commit:** `076db05`
+
+---
+
+## 2026-05-07 — fix: corregir etiqueta de clientes planificados
+
+**Archivo modificado:** `PAV MATINAL PE_A FLOR/screens/dashboard.jsx` (1 línea)
+
+**Motivo:** El hint de la card "CLIENTES C/COMPRA" decía `"N de X visitados"`. La expresión `clientes_compra + alertas` suma clientes con compra más pendientes = universo **planificado** del día. No son "visitados" porque al momento de la matinal aún no ocurrió la visita.
+
+**Cambio:** `"visitados"` → `"planificados"` (línea ~78). Sin cambio en lógica ni en otros archivos.
+
+**Commit:** `a24d34f`
+
+---
+
+## 2026-05-07 — feat: agregar launcher portal ORBIT
+
+**Archivo creado:** `ABRIR_CLAUDE_ORBIT.bat`
+
+**Motivo:** El BAT anterior solo abría la CLI de Claude Code. No existía un launcher que arrancara `server_orbit.py`, mostrara URLs de diagnóstico en consola y abriera el navegador en el portal correcto (`http://localhost:8502/`).
+
+**Cambio:**
+- Muestra URLs: Portal / Diagnóstico / Dashboard antes de arrancar
+- `start /b cmd /c "timeout /t 3 ... && start http://localhost:8502/"` — abre navegador 3s después (background)
+- `python server_orbit.py` — Flask en primer plano, logs visibles
+
+**No hace:** no corre `run_orbit.py`, no corre `app_publish.py`, no genera archivos estáticos, no depende de `06_APP_DATA/`.
+
+**Commit:** `67a62b7`
+
+---
+
+## 2026-05-07 — chore: ignorar cache de python
+
+**Archivo creado:** `.gitignore`
+
+**Motivo:** `__pycache__/` aparecía permanentemente como untracked. No existía `.gitignore` en el repositorio.
+
+**Contenido:**
+```
+__pycache__/
+*.pyc
+```
+
+**Commit:** `b242b7c`

@@ -1,5 +1,39 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Estado sesión 2026-05-07 — Auditoría portal
+
+### Commits realizados en esta sesión
+| Hash | Descripción | Archivo(s) |
+|---|---|---|
+| `7a4f7e8` | `/api/clientes` y `/api/alertas` → CSVs reales | `server_orbit.py` |
+| `076db05` | Días comerciales con feriados reales | `server_orbit.py` |
+| `8e6bd78` | Documentación: estado real de auditoría | `CHANGELOG_AI.md`, `NEXT_TASK.md` |
+| `a24d34f` | Etiqueta "visitados" → "planificados" | `dashboard.jsx` |
+| `67a62b7` | Launcher portal ORBIT | `ABRIR_CLAUDE_ORBIT.bat` |
+| `b242b7c` | `.gitignore` para `__pycache__/` | `.gitignore` |
+
+### Datos de entrada sin commitear (no son errores)
+- `01_INPUTS/resultado.xlsx` — modificado (datos ERP del día, actualización diaria normal)
+- `01_INPUTS/ventas.csv` — modificado (ventas del día, actualización diaria normal)
+- Estos archivos **no deben commitearse** sin confirmación explícita del usuario.
+
+### Qué NO tocar sin confirmación
+- `server_orbit.py` — endpoint Flask estable, 7 vendedores, todos los KPIs funcionando
+- `PAV MATINAL PE_A FLOR/screens/dashboard.jsx` — JSX limpio, sin mock, sin hardcode
+- `PAV MATINAL PE_A FLOR/data.js` — contrato de datos real, sin mock
+- `ABRIR_CLAUDE_ORBIT.bat` — launcher correcto recién creado
+- `.gitignore` — recién creado
+- `01_INPUTS/` — datos de entrada, solo el usuario los actualiza
+- `LEGACY/orbit_matinal_v42.py` — motor estable, no tocar sin nueva tarea específica
+- `09_CONFIG/clientes_excluidos.csv` — 10 exclusiones formalizadas, estable
+
+### Próximo bloque recomendado
+1. **Bloque A** — `clientes.xlsx` incompleto: algunos clientes V7/V9 aún con datos faltantes (requiere datos ERP externos)
+2. **`ccc_mes: 0`** — pendiente fuente real de CCC acumulado (ningún CSV actual lo tiene)
+3. **`02_PLANTILLA_GASTOS`** — integración gastos proyectados vs reales desde plantilla original (bajo cuando se necesite)
+
+---
+
 ## Próxima tarea — sesión 2026-05-05
 
 ### Bloque A — Requiere datos externos (ERP)
@@ -92,14 +126,14 @@ Se oculta automáticamente si no hay datos. Commit `c3f7813`.
 ## Problemas pendientes detectados en auditoría (2026-05-05)
 
 1. **V7 y V9 ausentes** en datasets (ver arriba).
-2. **Días hábiles en `server_orbit.py`** no excluye feriados → `/api/diagnostico` devuelve total=26/corridos=4 en vez de 24/3.
+2. ~~**Días hábiles en `server_orbit.py`**~~ → ✓ Resuelto commit `076db05`. `total=24`, `corridos=3`, feriados leídos desde `09_CONFIG/feriados.csv`.
 3. **Acumulado=0** en `dashboard_vendedor.json` → `app_publish.py` busca columna `acumulado` pero `mod_volumen_vendedor.csv` tiene `acumulado_mes` → retorna 0 para todos.
-4. **Datos hardcodeados** en frontend: sparkline CCC en `dashboard.jsx` (mock inventado), usuario "Manuel R." en sidebar de `app.jsx`.
+4. ~~**Datos hardcodeados en frontend**~~ → ✓ Resuelto (Bloque B + commit `a24d34f`). Sin mock, sin nombres de persona, etiqueta "planificados" correcta.
 5. ~~**`orbit_portal_data.json`** tiene estructura distinta~~ → No bloqueante: ningún endpoint activo lo consume. JSONs estáticos de `app_publish.py` (`clientes_hoy.json`, `alertas_app.json`) reemplazados por CSVs reales en commit `7a4f7e8`.
 6. ~~**Importes = 0 en clientes_dia.csv**~~ → ✓ Resuelto (Bloque C + botellas expuestas en commit `c1124b5`). `importe_mes > 0` en 199/400 clientes. `botellas_dia=1406`, `botellas_mes=9050` en `kpisGerencia`.
 7. **`ccc_mes: 0`** en `data.js` — correcto y honesto pero pendiente: necesita fuente real de CCC acumulado del mes (no existe en ningún CSV actual).
-8. **Segmentos `cubiertos: 0`** hardcodeados en `data.js` — los datos existen en `mod_ccc_segmento.csv` pero no se cruzan con el total de clientes del universo.
-9. **`titulares11` incompleto** en `data.js` — solo 2 de 11 hardcodeados; los reales están en `mod_11_titulares.csv` pero no se mapean al array.
+8. ~~**Segmentos `cubiertos: 0`**~~ → ✓ Resuelto (Bloque D). `server_orbit.py` expone segmentos reales desde `mod_ccc_segmento.csv`; `data.js` consume `diag.segmentos`.
+9. ~~**`titulares11` incompleto**~~ → ✓ Resuelto (Bloque D). 28 marcas reales desde `mod_11_titulares.csv`; `data.js` consume `diag.titulares11`.
 
 ## Resueltos en esta sesión (2026-05-05)
 - ✓ `data.js` restaurado como JavaScript válido (era código Python).
