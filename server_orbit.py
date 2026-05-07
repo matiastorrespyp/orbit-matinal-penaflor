@@ -45,6 +45,21 @@ def clean_code(v):
     s = str(v).upper().replace("V","").strip()
     return "".join(filter(str.isdigit, s))
 
+def normalizar_vendedor_codigo(valor):
+    if valor is None:
+        return ""
+    s = str(valor).strip().upper()
+    if not s or s in ("NONE", "NAN"):
+        return ""
+    if s.startswith("V"):
+        n = s[1:].strip()
+    else:
+        n = s
+    try:
+        return f"V{int(float(n))}"
+    except Exception:
+        return s
+
 def read_csv(path):
     if not path.exists(): return pd.DataFrame()
     try: return pd.read_csv(path, encoding="latin1")
@@ -421,7 +436,7 @@ def gastos_accion():
     )
     top_vendedores = [
         {
-            "vendedor_codigo":    int(r["vendedor_codigo"]),
+            "vendedor_codigo":    normalizar_vendedor_codigo(r["vendedor_codigo"]),
             "vendedor_nombre":    str(r["vendedor_nombre"]),
             "gasto_real_total":   round(float(r["gasto_real_total"]), 2),
             "gasto_teorico_total":round(float(r["gasto_teorico_total"]), 2),
