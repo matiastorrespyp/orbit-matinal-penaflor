@@ -305,6 +305,94 @@ def mensajes():
     conn.commit(); conn.close()
     return jsonify([dict(r) for r in rows])
 
+# ====== GASTOS POR ACCION COMERCIAL ======
+@app.route("/api/gastos_accion")
+def gastos_accion():
+    df = read_csv(DATASETS / "mod_gastos_accion.csv")
+    if df.empty:
+        return jsonify({"modo_datos": "SIN_DATOS", "detalle": [], "resumen": {}, "top_acciones": [], "top_vendedores": []})
+
+    for col in ["gasto_real_total", "gasto_teorico_total", "exceso_pesos_total", "exceso_pct_promedio",
+                "clientes_afectados", "lineas_alertadas", "vendedor_codigo"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
+    resumen = {
+        "filas_con_exceso":      int(len(df)),
+        "gasto_real_total":      round(float(df["gasto_real_total"].sum()), 2),
+        "gasto_teorico_total":   round(float(df["gasto_teorico_total"].sum()), 2),
+        "exceso_pesos_total":    round(float(df["exceso_pesos_total"].sum()), 2),
+        "exceso_pct_promedio":   round(float(df["exceso_pct_promedio"].mean()), 2),
+        "vendedores_alertados":  int(df["vendedor_codigo"].nunique()),
+        "clientes_afectados_total": int(df["clientes_afectados"].sum()),
+        "acciones_csv":          int(df["es_regla_csv"].astype(str).str.upper().eq("TRUE").sum()),
+        "acciones_fallback":     int(df["es_regla_csv"].astype(str).str.upper().ne("TRUE").sum()),
+    }
+
+    top_acc = (
+        df.groupby(["accion_id", "canal", "categoria"], dropna=False)
+        .agg(
+            gasto_real_total   =("gasto_real_total",    "sum"),
+            gasto_teorico_total=("gasto_teorico_total", "sum"),
+            exceso_pesos_total =("exceso_pesos_total",  "sum"),
+            clientes_afectados =("clientes_afectados",  "sum"),
+            lineas_alertadas   =("lineas_alertadas",    "sum"),
+            vendedores         =("vendedor_codigo",     "nunique"),
+        )
+        .reset_index()
+        .sort_values("exceso_pesos_total", ascending=False)
+        .head(5)
+    )
+    top_acciones = [
+        {
+            "accion_id":          str(r["accion_id"]),
+            "canal":              str(r["canal"]),
+            "categoria":          str(r["categoria"]),
+            "gasto_real_total":   round(float(r["gasto_real_total"]), 2),
+            "gasto_teorico_total":round(float(r["gasto_teorico_total"]), 2),
+            "exceso_pesos_total": round(float(r["exceso_pesos_total"]), 2),
+            "clientes_afectados": int(r["clientes_afectados"]),
+            "lineas_alertadas":   int(r["lineas_alertadas"]),
+            "vendedores":         int(r["vendedores"]),
+        }
+        for _, r in top_acc.iterrows()
+    ]
+
+    top_vend = (
+        df.groupby(["vendedor_codigo", "vendedor_nombre"], dropna=False)
+        .agg(
+            gasto_real_total   =("gasto_real_total",   "sum"),
+            gasto_teorico_total=("gasto_teorico_total","sum"),
+            exceso_pesos_total =("exceso_pesos_total", "sum"),
+            acciones_con_exceso=("accion_id",          "count"),
+        )
+        .reset_index()
+        .sort_values("exceso_pesos_total", ascending=False)
+        .head(5)
+    )
+    top_vendedores = [
+        {
+            "vendedor_codigo":    int(r["vendedor_codigo"]),
+            "vendedor_nombre":    str(r["vendedor_nombre"]),
+            "gasto_real_total":   round(float(r["gasto_real_total"]), 2),
+            "gasto_teorico_total":round(float(r["gasto_teorico_total"]), 2),
+            "exceso_pesos_total": round(float(r["exceso_pesos_total"]), 2),
+            "acciones_con_exceso":int(r["acciones_con_exceso"]),
+        }
+        for _, r in top_vend.iterrows()
+    ]
+
+    detalle = df.replace({float("nan"): None}).to_dict(orient="records")
+
+    return jsonify({
+        "modo_datos":    "REAL",
+        "generado_en":   datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "resumen":       resumen,
+        "top_acciones":  top_acciones,
+        "top_vendedores":top_vendedores,
+        "detalle":       detalle,
+    })
+
 # ====== ORBIT DATA para el frontend ======
 @app.route("/api/orbit-data")
 def orbit_data():
