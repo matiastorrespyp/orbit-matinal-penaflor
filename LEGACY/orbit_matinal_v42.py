@@ -1189,6 +1189,75 @@ def main():
     build_log(log_rows, "MOD_ALERTAS_DESCUENTOS_GENERADO", len(mod_alertas_descuentos))
 
     # =========================
+    # MOD GASTOS POR ACCION
+    # =========================
+
+    mod_gastos_accion = pd.DataFrame(columns=[
+        "fecha_ejecucion","fecha_objetivo","dia_objetivo","negocio_id","negocio_nombre",
+        "accion_id","es_regla_csv","canal","categoria",
+        "vendedor_codigo","vendedor_nombre",
+        "clientes_afectados","lineas_alertadas",
+        "gasto_real_total","gasto_teorico_total","exceso_pesos_total","exceso_pct_promedio"
+    ])
+
+    if len(mod_alertas_descuentos) > 0:
+        gasto_src = mod_alertas_descuentos.copy()
+
+        # valor_descuento del ERP es por unidad; cant_base da el total de la línea (neto de IVA)
+        gasto_src["gasto_real"]    = gasto_src["valor_descuento"] * gasto_src["cant_base"]
+        # gasto_teorico usando la misma base bruta implícita (escala proporcional al pct máximo)
+        gasto_src["gasto_teorico"] = gasto_src["gasto_real"] * (
+            gasto_src["descuento_maximo_pct"] / gasto_src["descuento_aplicado_pct"].replace(0, np.nan)
+        )
+        gasto_src["exceso_pesos"]  = gasto_src["gasto_real"] - gasto_src["gasto_teorico"]
+
+        grp = (
+            gasto_src.groupby(["fuente_regla", "vendedor_codigo", "vendedor_nombre"], dropna=False)
+            .agg(
+                clientes_afectados=("cliente_id", "nunique"),
+                lineas_alertadas=("articulo", "count"),
+                gasto_real_total=("gasto_real", "sum"),
+                gasto_teorico_total=("gasto_teorico", "sum"),
+                exceso_pesos_total=("exceso_pesos", "sum"),
+                exceso_pct_promedio=("exceso_pct", "mean"),
+            )
+            .reset_index()
+        )
+
+        grp = grp[grp["exceso_pesos_total"] > 0].copy()
+
+        reglas_ref = _cargar_reglas_csv()
+        if not reglas_ref.empty and "accion_id" in reglas_ref.columns:
+            canal_map     = reglas_ref.drop_duplicates("accion_id").set_index("accion_id")["canal"].to_dict()
+            categoria_map = reglas_ref.drop_duplicates("accion_id").set_index("accion_id")["categoria"].to_dict()
+        else:
+            canal_map = {}
+            categoria_map = {}
+
+        grp["accion_id"]    = grp["fuente_regla"]
+        grp["es_regla_csv"] = grp["fuente_regla"].str.startswith("MAY26-")
+        grp["canal"]        = grp["fuente_regla"].map(canal_map).fillna("FALLBACK")
+        grp["categoria"]    = grp["fuente_regla"].map(categoria_map).fillna("")
+
+        grp["fecha_ejecucion"] = fecha_ejecucion.date()
+        grp["fecha_objetivo"]  = fecha_objetivo.date()
+        grp["dia_objetivo"]    = dia_objetivo_abbr
+        grp["negocio_id"]      = NEGOCIO_ID
+        grp["negocio_nombre"]  = NEGOCIO_NOMBRE
+
+        mod_gastos_accion = grp[[
+            "fecha_ejecucion","fecha_objetivo","dia_objetivo","negocio_id","negocio_nombre",
+            "accion_id","es_regla_csv","canal","categoria",
+            "vendedor_codigo","vendedor_nombre",
+            "clientes_afectados","lineas_alertadas",
+            "gasto_real_total","gasto_teorico_total","exceso_pesos_total","exceso_pct_promedio"
+        ]].copy()
+
+        mod_gastos_accion.sort_values(by=["exceso_pesos_total"], ascending=False, inplace=True)
+
+    build_log(log_rows, "MOD_GASTOS_ACCION_GENERADO", len(mod_gastos_accion))
+
+    # =========================
     # RESUMEN ALERTAS VENDEDOR
     # =========================
 
@@ -1553,6 +1622,7 @@ def main():
         mod_clientes_compra_11t_desc.to_excel(writer, sheet_name="mod_clientes_11t_10", index=False)
         mod_eficiencia_desc.to_excel(writer, sheet_name="mod_eficiencia_desc", index=False)
         mod_reintegros_control.to_excel(writer, sheet_name="mod_reintegros_ctrl", index=False)
+        mod_gastos_accion.to_excel(writer, sheet_name="mod_gastos_accion", index=False)
         log_motor.to_excel(writer, sheet_name="log_motor", index=False)
 
     print("OK - Archivo generado correctamente:")
