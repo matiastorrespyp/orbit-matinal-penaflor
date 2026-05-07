@@ -328,3 +328,37 @@ Códigos excluidos: `402`, `20001`, `20008`, `20011`, `20021`, `20027`, `20029`,
 - Motor y adaptador: exit code 0, sin errores ✓
 
 **Commit:** `97993d2`
+
+---
+
+## 2026-05-07 — Bloque H: 8614 excluido + regla dinámica Ruta DEPOSITO
+
+**Archivos modificados:**
+- `LEGACY/orbit_matinal_v42.py` (+6 líneas)
+- `09_CONFIG/clientes_excluidos.csv` (+1 fila, total 10)
+
+**Motivo:** `8614 BUSTAMANTE JUAN` (V7, Ruta=DEPOSITO VILLA DOLORES, sin `DiasVisita`, sin ventas activas) quedaba fuera del CSV de exclusión del commit anterior. Adicionalmente, se detectó que la exclusión por CSV es reactiva: requiere agregar manualmente cada caso nuevo. Se incorporó una regla defensiva dinámica para cubrir futuros clientes en la misma condición.
+
+**Cambio en `09_CONFIG/clientes_excluidos.csv`:**
+- Nueva fila: `8614, BUSTAMANTE JUAN, sin_diasvisita_ruta_deposito, TODO_ANALISIS_COMERCIAL`
+
+**Cambio en `orbit_matinal_v42.py` — `cargar_clientes()`:**
+```python
+mask_deposito_sin_dia = (
+    df["ruta"].str.contains("DEPOSITO", case=False, na=False) &
+    df["dias_visita"].isin(["", "nan", "NaN", "None", "<NA>"])
+)
+df = df.loc[~mask_deposito_sin_dia].copy()
+```
+Aplicado después del filtro `_cargar_clientes_excluidos()`. No aplica a `cargar_ventas()` porque `ventas.csv` no contiene columna `Ruta` del maestro.
+
+**Regla:** todo cliente con Ruta que contiene "DEPOSITO" y sin `DiasVisita` queda excluido de todo análisis comercial, sin necesidad de estar en el CSV.
+
+**Validación post-motor + adaptador:**
+- `clientes_dia`: ninguno de los 10 IDs presente ✓
+- `mod_alertas_descuentos`: ninguno de los 10 IDs presente ✓
+- `mod_gastos_accion`: 26 filas sin cambio ✓
+- Regla dinámica: 0 clientes legítimos afectados (ningún cliente con Ruta DEPOSITO tiene `DiasVisita` válido) ✓
+- Motor y adaptador: exit code 0 ✓
+
+**Commit:** `fe913dd`

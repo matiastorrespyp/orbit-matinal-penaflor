@@ -55,18 +55,15 @@ clientes.xlsx actualizado manualmente (+302 V7, +355 V9). Pipeline motor→adapt
 
 ### Bloque H — Pendiente
 
-#### DiasVisita gaps — diagnosticado 2026-05-06, sin corrección automática
-10 clientes sin `DiasVisita` en `clientes.xlsx` (V7: 2, V9: 8). Diagnóstico completo ejecutado.
+#### ~~DiasVisita gaps~~ — ✓ Resuelto 2026-05-07
+10 clientes sin `DiasVisita` en `clientes.xlsx` (V7: 2, V9: 8). Todos cerrados formalmente.
 
-**9 casos cerrados — no corregir:**
-- `402` – CONSUMIDOR FINAL, V7, La Paz: placeholder genérico de venta directa, no es cliente de ruta.
-- `20001` ALMADA BLAS, `20008` VERGARA MARIA JOSE, `20011` AGUSTINA QUIJANO, `20021` BALDO MAXIMILIANO, `20027` CAMBRONERO MIRIAM LORENA, `20029` GRIBAUDO ESTEBAN EDUARDO, `20031` TORRES MATIAS, `20038` MOLINA JUAN ANGEL — todos V9, Ramo=Empleados, SubSegmento=Empleados, Ruta 22=BEBIDAS VD, Frecuencia=Eventual. Compras vía DEPOSITO (codven=20), no visitas programadas. Asignar DiasVisita los convertiría incorrectamente en clientes de ruta.
+**10 casos cerrados — excluidos de todo análisis comercial:**
+- `402` – CONSUMIDOR FINAL, V7, Ruta=DEPOSITO VILLA DOLORES: placeholder de venta directa, no es cliente de ruta. En `clientes_excluidos.csv` + regla dinámica.
+- `20001`–`20038` (8 empleados V9, Ramo=Empleados, Ruta=BEBIDAS VD, Frecuencia=Eventual): compras vía DEPOSITO (codven=20), no visitas programadas. En `clientes_excluidos.csv`.
+- `8614` – BUSTAMANTE JUAN, V7, Ruta=DEPOSITO VILLA DOLORES, sin ventas activas ni historial: excluido por CSV + regla dinámica. Commit `fe913dd`.
 
-**1 caso pendiente de confirmación humana:**
-- `8614` – BUSTAMANTE JUAN, V7, San Vicente, TRADITIONAL TRADE / Almacen/Despensa, Ruta 7008=DEPOSITO VILLA DOLORES, Frecuencia=Semanal, sin ventas en período activo ni historial.
-- **Acción**: consultar a Jofre (V7). Si confirma visita regular: completar `DiasVisita` manualmente en `clientes.xlsx` y regenerar pipeline (`python LEGACY/orbit_matinal_v42.py` + adaptador). No asignar día automáticamente.
-
-**Impacto actual**: ninguno. Ninguno de los 10 tiene ventas en `ventas.csv` activo → no afectan motor, CCC, cobertura ni avance.
+**Regla dinámica activa:** todo cliente con Ruta que contiene "DEPOSITO" y sin `DiasVisita` queda excluido automáticamente en `cargar_clientes()`, sin necesidad de estar en el CSV.
 
 #### ~~Consumidor `mod_gastos_accion`~~ — ✓ Completado 2026-05-06
 `/api/gastos_accion` expuesto en `server_orbit.py` (commit `4867990`).
@@ -82,9 +79,10 @@ resumen (exceso total, gasto real, vendedores, clientes), top 5 acciones y top 5
 Se oculta automáticamente si no hay datos. Commit `c3f7813`.
 
 #### ~~Clientes no comerciales excluidos formalmente~~ — ✓ Completado 2026-05-07
-`09_CONFIG/clientes_excluidos.csv` creado (9 filas). Filtro aplicado en `cargar_clientes()` y `cargar_ventas()` de `orbit_matinal_v42.py`. Commit `97993d2`.
-- Excluidos: `402`, `20001`, `20008`, `20011`, `20021`, `20027`, `20029`, `20031`, `20038`
-- Validación: ninguno en `mod_alertas_descuentos` ni `clientes_dia` post-regeneración.
+`09_CONFIG/clientes_excluidos.csv` (10 filas) + regla dinámica por Ruta DEPOSITO sin DiasVisita. Commits `97993d2`, `fe913dd`.
+- Excluidos por CSV: `402`, `20001`, `20008`, `20011`, `20021`, `20027`, `20029`, `20031`, `20038`, `8614`
+- Regla dinámica en `cargar_clientes()`: Ruta contains DEPOSITO & DiasVisita vacío → excluido automáticamente
+- Validación: ninguno de los 10 en `mod_alertas_descuentos`, `clientes_dia` ni outputs post-regeneración.
 
 #### Pendientes adicionales Bloque H
 - **`02_PLANTILLA_GASTOS` del Excel**: pendiente de integración si se necesitan gastos proyectados vs. reales desde la plantilla original.
