@@ -393,3 +393,27 @@ botellas_mes: diag.botellas_mes || 0,   // nuevo campo
 - Ningún otro endpoint ni KPI afectado ✓
 
 **Commit:** `c1124b5`
+
+---
+
+## 2026-05-07 — /api/clientes y /api/alertas desde CSVs reales (elimina JSONs estáticos)
+
+**Archivo modificado:** `server_orbit.py` (+34/-8 líneas)
+
+**Motivo:** `/api/clientes` leía `06_APP_DATA/clientes_hoy.json` (255 filas, generado el 2026-05-05 por `app_publish.py`). `/api/alertas` leía `06_APP_DATA/alertas_app.json` (255 filas, mismo origen). Ambos JSONs estáticos no se actualizan con el pipeline nuevo. El pipeline genera `clientes_dia.csv` (340 filas) y `mod_alertas_descuentos.csv` (103 filas) en `04_DATASETS_ORBIT/` en cada ejecución.
+
+**Cambio en `/api/clientes`:**
+- Lee `04_DATASETS_ORBIT/clientes_dia.csv` vía `read_csv()`.
+- Construye `vendedor_id`, `segmento`, `estado`, `prioridad_label`, `impacto_alertas_ars`, `faltan_11t`, `kernel_accion` desde columnas reales del CSV.
+
+**Cambio en `/api/alertas`:**
+- Lee `04_DATASETS_ORBIT/mod_alertas_descuentos.csv` vía `read_csv()`.
+- Construye `vendedor_id`, `prioridad`, `tipo`, `titulo`, `detalle` (artículo + descuento aplicado vs máximo), `accion`, `impacto_alertas_ars` desde columnas reales del CSV.
+
+**Validación:**
+- `/api/clientes`: **340 items** (antes: 255), `estado` real, `prioridad_label` real ✓
+- `/api/alertas`: **103 items** (antes: 255), `detalle` con descuento real ✓
+- `/api/dashboard`: 7 vendedores sin cambios ✓
+- `/api/gastos_accion`: `REAL`, 26 filas sin cambios ✓
+
+**Commit:** `7a4f7e8`
