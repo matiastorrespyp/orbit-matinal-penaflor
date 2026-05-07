@@ -515,7 +515,46 @@ __pycache__/
 - **`/api/planificacion` vacío es esperado** si los vendedores no enviaron planes. No es un bug.
 
 **Pendientes funcionales detectados en auditoría (no bloquean portal):**
-1. `vendedor_codigo` en `top_vendedores` de `/api/gastos_accion` llega numérico (`"10"`) en lugar de formato `"V10"`. Color de las cards de gastos cae a magenta default.
+1. ~~`vendedor_codigo` numérico en `top_vendedores`~~ → ✓ Resuelto commit `4cbbbee`.
 2. `ccc_mes: 0` — honesto; ningún CSV actual tiene CCC acumulado del mes.
 3. **Bloque A** — algunos clientes V7/V9 con datos faltantes en `clientes.xlsx` (requiere datos ERP externos).
 4. **Automatización regeneración** — `ABRIR_CLAUDE_ORBIT.bat` solo abre el portal. El pipeline de regeneración (`run_orbit.py` + `datasets_orbit.py`) sigue siendo manual. Decisión futura: automatizar o mantener separado.
+
+---
+
+## 2026-05-07 — fix: normalizar vendedor_codigo en gastos accion
+
+**Archivo modificado:** `server_orbit.py` (+16 líneas)
+
+**Motivo:** `/api/gastos_accion` devolvía `vendedor_codigo` como entero (`10`, `9`) en lugar de formato `"V10"`, `"V9"`. Las cards de gastos del portal perdían el color del vendedor (caían al magenta default) porque el colorMap de `data.js` espera claves `"V10"`, `"V9"`, etc.
+
+**Cambio:** nueva función helper `normalizar_vendedor_codigo(valor)` junto a `clean_code()` (línea 48). Reemplaza el `int(r["vendedor_codigo"])` inline en `top_vendedores`.
+
+**Lógica de la función:**
+- `None` → `""`
+- `""` / `"NONE"` / `"NAN"` → `""`
+- Prefijo `"V"` o `"v"` → extrae la parte numérica, aplica `int(float(n))`
+- Sin prefijo → aplica `int(float(n))` directamente
+- Fallback: si no parsea, devuelve el string tal cual
+
+**Casos validados (9/9):**
+
+| Input | Resultado |
+|---|---|
+| `10` | `V10` |
+| `10.0` | `V10` |
+| `"10.0"` | `V10` |
+| `"V10"` | `V10` |
+| `"v10"` | `V10` |
+| `"V10.0"` | `V10` |
+| `"v10.0"` | `V10` |
+| `None` | `""` |
+| `""` | `""` |
+
+**Validación `/api/gastos_accion` — HTTP 200:**
+- V10 Ortega `$93.169`, V9 Sanchez `$81.042`, V8 Alvarez `$54.012`, V3 Gambino `$2.908` ✓
+- V4, V6, V7 ausentes (sin excesos en `mod_gastos_accion.csv`) ✓
+- V2 y V5 ausentes (excluidos por motor) ✓
+- Importes sin cambio ✓
+
+**Commit:** `4cbbbee`

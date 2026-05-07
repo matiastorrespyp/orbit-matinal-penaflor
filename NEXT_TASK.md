@@ -48,7 +48,7 @@
 
 ### Pendientes funcionales (no bloquean portal)
 
-1. **`vendedor_codigo` en gastos_accion** — llega como `"10"` en lugar de `"V10"`. Cards de gastos pierden color de vendedor (cae a magenta). Fix menor en `server_orbit.py`.
+1. ~~**`vendedor_codigo` en gastos_accion**~~ → ✓ Resuelto commit `4cbbbee`. Función `normalizar_vendedor_codigo()` — 9/9 casos validados. HTTP 200, V10/V9/V8/V3 correctos, importes sin cambio.
 2. **`ccc_mes: 0`** — honesto; ningún CSV actual tiene CCC acumulado del mes.
 3. **Bloque A (ERP externo)** — completar `clientes.xlsx` con datos faltantes de algunos clientes V7/V9. Requiere datos externos, no tiene código pendiente.
 4. **Automatización de regeneración** — `ABRIR_CLAUDE_ORBIT.bat` solo abre el portal. El pipeline (`run_orbit.py` + `datasets_orbit.py`) sigue siendo manual. Decidir si automatizar con un segundo BAT o integrar en el mismo.
