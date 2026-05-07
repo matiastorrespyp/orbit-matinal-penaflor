@@ -68,8 +68,16 @@ clientes.xlsx actualizado manualmente (+302 V7, +355 V9). Pipeline motor→adapt
 
 **Impacto actual**: ninguno. Ninguno de los 10 tiene ventas en `ventas.csv` activo → no afectan motor, CCC, cobertura ni avance.
 
+#### ~~Consumidor `mod_gastos_accion`~~ — ✓ Completado 2026-05-06
+`/api/gastos_accion` expuesto en `server_orbit.py` (commit `4867990`).
+- `resumen`: exceso total $231.133, 4 vendedores alertados, 26 filas, 18 acciones CSV + 8 fallback.
+- `top_acciones`: top 5 por exceso_pesos agrupado por accion_id.
+- `top_vendedores`: top 5 — V10 Ortega $93.169, V9 Sánchez $81.043.
+- `detalle`: 26 filas completas. Sin NaN. Sin cambios a endpoints existentes.
+- Pendiente: consumo desde `data.js` para vista gerencial del portal.
+
 #### Pendientes adicionales Bloque H
-- **Consumidor `mod_gastos_accion`**: integrar al portal/API (`server_orbit.py` → `data.js`) para mostrar gastos por acción en vista gerencial.
+- **`data.js` → portal gerencial**: llamar a `/api/gastos_accion` y mostrar `top_acciones` y `top_vendedores` en la vista gerencial.
 - **`02_PLANTILLA_GASTOS` del Excel**: pendiente de integración si se necesitan gastos proyectados vs. reales desde la plantilla original.
 
 ---

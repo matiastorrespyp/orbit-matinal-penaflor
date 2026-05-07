@@ -211,6 +211,29 @@ El rename es necesario porque el historial normaliza `marca_final`→`marca` y `
 
 ---
 
+## 2026-05-06 — Bloque H: /api/gastos_accion en server_orbit.py
+
+**Archivo modificado:** `server_orbit.py`
+
+**Motivo:** Exponer `mod_gastos_accion.csv` vía API para que el portal gerencial pueda mostrar gastos por acción comercial. El CSV ya existía (generado por `datasets_orbit.py` desde el Excel del motor), sin consumidor hasta esta sesión.
+
+**Cambio:** Nuevo endpoint `GET /api/gastos_accion` agregado antes de `/api/orbit-data`:
+- Lee `04_DATASETS_ORBIT/mod_gastos_accion.csv` con el helper `read_csv()` existente.
+- Convierte columnas numéricas con `pd.to_numeric(..., errors='coerce')`.
+- `resumen`: totales globales (gasto_real, gasto_teorico, exceso_pesos, vendedores_alertados, acciones_csv vs fallback).
+- `top_acciones`: top 5 agrupados por `accion_id` ordenados por `exceso_pesos_total`.
+- `top_vendedores`: top 5 agrupados por `vendedor_codigo` ordenados por `exceso_pesos_total`.
+- `detalle`: 26 filas completas con NaN → `null`.
+- Sin modificaciones a ningún endpoint existente.
+
+**Validación:** Servidor arranca sin error en puerto 8502.
+- `/api/gastos_accion`: `modo_datos=REAL`, 26 filas, top1=`MAY26-GRAL-TRAD-SPI-LOC-001` $83.166, V10 Ortega $93.169 exceso.
+- `/api/diagnostico`: sin cambios — 7 vendedores, 3 segmentos, 28 titulares.
+
+**Commit:** `4867990`
+
+---
+
 ## 2026-05-06 — Bloque G: mod_gastos_accion — gasto real vs teórico por acción
 
 **Archivo modificado:** `LEGACY/orbit_matinal_v42.py`
