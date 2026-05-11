@@ -1,2 +1,5 @@
 __pycache__/
 *.pyc
+99_LOGS_ORBIT/
+99_BACKUPS_ORBIT/
+*.bak_antes_crlf
