@@ -62,8 +62,10 @@ def normalizar_vendedor_codigo(valor):
 
 def read_csv(path):
     if not path.exists(): return pd.DataFrame()
-    try: return pd.read_csv(path, encoding="latin1")
-    except: return pd.read_csv(path, encoding="utf-8")
+    try: return pd.read_csv(path, encoding="utf-8-sig")
+    except:
+        try: return pd.read_csv(path, encoding="latin1")
+        except: return pd.read_csv(path, encoding="utf-8")
 
 def _cargar_feriados():
     import csv
