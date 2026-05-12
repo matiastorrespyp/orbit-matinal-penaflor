@@ -1,0 +1,94 @@
+﻿codigo_producto,descripcion_art,bodega,segmento,linea_comercial,categoria,lts_x_caja,uxc,lts_por_unidad,clasificacion_vda,fuente_clasificacion
+20250,SUTER VARIETAL CABERNET 6X750,Suter,Medio,Varietales Suter,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+20251,SUTER VARIETAL MALBEC 6X750,Suter,Medio,Varietales Suter,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+20255,SUTER VARIETAL C.TARDIA  6X750,Suter,Medio,Varietales Suter,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+20301,SUTER ETIQ MARRON DNAT 6X750,Suter,Medio,Etiqueta Marron Suter,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+80002,SAN TELMO SEL CAB SAUV 6X750,San Telmo,Medio,San Telmo,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+80004,SAN TELMO SEL MALBEC 6X750,San Telmo,Medio,San Telmo,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+70750,TRAPICHE ALARIS CABSAUV 6X750,Trapiche,Medio Alto,Alaris,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+70751,TRAPICHE ALARIS CHARD 6X750,Trapiche,Medio Alto,Alaris,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+71704,TRAPICHE ALARIS MALBEC 6X750,Trapiche,Medio Alto,Alaris,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+71716,ALARIS RED BLEND 6X750,Trapiche,Medio Alto,Alaris,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+71706,TRAPICHE ALARIS SBLANC 6X750,Trapiche,Medio Alto,Alaris,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+72541,TRAPICHE ALARIS MERLOT 6X750,Trapiche,Medio Alto,Alaris,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74058,TRAPICHE ALARIS SYRAH 6X750,Trapiche,Medio Alto,Alaris,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74263,TRAPICHE ALARIS TORRNTES 6X750,Trapiche,Medio Alto,Alaris,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74188,TRAPICHE DULCE COSECHA 6X750,Trapiche,Medio Alto,Alaris,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74478,TRAPICHE DULCE COSECHA ROSÉ,Trapiche,Medio Alto,Alaris,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+72857,F.LAS MORAS CABSAU 6X750,Finca Las Moras,Medio Alto,Finca Las Moras,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+72858,F.LAS MORAS SYRAH 6X750,Finca Las Moras,Medio Alto,Finca Las Moras,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+72859,F.LAS MORAS MALBEC 6X750,Finca Las Moras,Medio Alto,Finca Las Moras,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74735,F.LAS MORAS RED BLEND 6X750,Finca Las Moras,Medio Alto,Finca Las Moras,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74167,F.LAS MORAS SAUV.BLANC 6X750,Finca Las Moras,Medio Alto,Finca Las Moras,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74509,F.LAS MORAS BCO.DLCE 6X750,Finca Las Moras,Medio Alto,Finca Las Moras,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74510,F.LAS MORAS ROSADO 6X750,Finca Las Moras,Medio Alto,Finca Las Moras,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+80007,LOS ARBOLES SEL CABERNET 6X750,Navarro Correas,Medio Alto,Los Arboles,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+80008,LOS ARBOLES SEL CHARD 6X750,Navarro Correas,Medio Alto,Los Arboles,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+80010,LOS ARBOLES SEL MALBEC 6X750,Navarro Correas,Medio Alto,Los Arboles,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+80089,LOS ARBOLES SEL RED BLEND 6X750,Navarro Correas,Medio Alto,Los Arboles,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74814,CAZADOR MALBEC 6X750,Mascota,Alto,El Cazador,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74815,CAZADOR CAB. SAU 6X750,Mascota,Alto,El Cazador,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74816,CAZADOR BLANCO DULCE 6X750,Mascota,Alto,El Cazador,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+14507,EL BAUTISMO MALBEC 6X750,La Liga de los Enologos,Medio Alto,El Bautismo,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+14508,EL BAUTISMO BLEND TINTAS 6X750,La Liga de los Enologos,Medio Alto,El Bautismo,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+14509,EL BAUTISMO BLEND B.DLCE 6X750,La Liga de los Enologos,Medio Alto,El Bautismo,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74786,EL BAUTISMO CABERNET 6X750,La Liga de los Enologos,Medio Alto,El Bautismo,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74726,ORIGEN BY TRAPICHE MALBEC 6X750,Trapiche,Alto,Origen By Trapiche,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74727,ORIGEN BY TRAPICHE CABERNET SUAVIGNON 6X750,Trapiche,Alto,Origen By Trapiche,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+42101,ELEMENTOS CABSAUV 6X750,Elementos,Alto,ELEMENTOS,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+42102,ELEMENTOS MALBEC 6X750,Elementos,Alto,ELEMENTOS,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+44395,ELEMENTOS RED BLEND X 750,Elementos,Alto,ELEMENTOS,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+42103,ELEMENTOS SYRAH 6X750,Elementos,Alto,ELEMENTOS,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+42104,ELEMENTOS TANNAT 6X750,Elementos,Alto,ELEMENTOS,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+42105,ELEMENTOS TORRONTES 6X750,Elementos,Alto,ELEMENTOS,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+42107,ELEMENTOS CHARDONNAY 6X750,Elementos,Alto,ELEMENTOS,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+42113,ELEMENTOS TORRONTES DLCE 6X750,Elementos,Alto,ELEMENTOS,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+44314,ELEMENTOS RDO DE TORRONTES 6X750,Elementos,Alto,ELEMENTOS,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74208,ALMA MORA CABSAUV6X750,Finca Las Moras,Alto,Alma Mora,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74209,ALMA MORA SYRAH 6X750,Finca Las Moras,Alto,Alma Mora,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74210,ALMA MORA MALBEC 6X750,Finca Las Moras,Alto,Alma Mora,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74211,ALMA MORA CHARD 6X750,Finca Las Moras,Alto,Alma Mora,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74827,ALMA MORA BLANCO DULCE LOW    6X750,Finca Las Moras,Alto,Alma Mora,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74397,ALMA MORA VIOGN DLCE 6X750,Finca Las Moras,Alto,Alma Mora,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74398,ALMA MORA SYRAH ROSE 6X750,Finca Las Moras,Alto,Alma Mora,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74437,ALMA MORA BLEND TINTO 6X750,Finca Las Moras,Alto,Alma Mora,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74438,ALMA MORA BLEND BLANCO 6X750,Finca Las Moras,Alto,Alma Mora,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74736,ALMA MORA MERLOT 6X750,Finca Las Moras,Alto,Alma Mora,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74393,DADA FMORAS N°1 6X750,Finca Las Moras,Alto,Dada,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74748,DADA N°9 CARAMEL 6X750,Finca Las Moras,Alto,Dada,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74394,DADA FMORAS N°3 6X750,Finca Las Moras,Alto,Dada,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74395,DADA FMORAS N°2 6X750,Finca Las Moras,Alto,Dada,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74504,DADA ART MALBEC 6X750,Finca Las Moras,Alto,Dada,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74505,DADA ART CABERNET 6X750,Finca Las Moras,Alto,Dada,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74569,DADA N° 8 Chocolate 6X750,Finca Las Moras,Alto,Dada,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74636,DADA N° 6 Honey 6X750,Finca Las Moras,Alto,Dada,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74714,DADA WHITE MALBEC 6X750,Finca Las Moras,Alto,Dada,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74722,FAIR FOR LIFE CAB.SAUV 6X750 ,Finca Las Moras,Alto,FINCA LAS MORAS FFL,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74721,FAIR FOR LIFE MALBEC 6X750 ,Finca Las Moras,Alto,FINCA LAS MORAS FFL,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+41681,D.DAVID TANNAT 6X750,El Esteco,Superior,Don David,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+41682,D.DAVID MALBEC 6X750,El Esteco,Superior,Don David,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+42376,DON DAVID RED BLEND 6X750,El Esteco,Superior,Don David,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+41687,D.DAVID SYRAH 6X750,El Esteco,Superior,Don David,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+42373,D.DAVID CABERNET 6X750,El Esteco,Superior,Don David,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+42374,D.DAVID CHARDONNAY 6X750,El Esteco,Superior,Don David,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+42375,D.DAVID TORRONTES 6X750,El Esteco,Superior,Don David,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+44389,DON DAVID PINOT NOIR 6X750 ,El Esteco,Superior,Don David,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+70201,FOND CAVE CABSAU 6X750,Trapiche,Superior,Fond de Cave,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+70202,FOND CAVE CHARD 6X750,Trapiche,Superior,Fond de Cave,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74146,FOND CAVE MALBEC 6X750,Trapiche,Superior,Fond de Cave,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74147,FOND CAVE SYRAH 6X750,Trapiche,Superior,Fond de Cave,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74415,TRAPICHE RESERVA CABSAU 6X750,Trapiche,Superior,Trapiche Reserva,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74419,TRAPICHE RESERVA MALBEC 6X750,Trapiche,Superior,Trapiche Reserva,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74737,TRAPICHE RESERVA REDBLEND 6X750,Trapiche,Superior,Trapiche Reserva,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74420,TRAPICHE RESERVA SYRAH 6X750,Trapiche,Superior,Trapiche Reserva,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74421,TRAPICHE RESERVA CHARD 6X750,Trapiche,Superior,Trapiche Reserva,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74422,TRAPICHE RESERVA MERLOT 6X750,Trapiche,Superior,Trapiche Reserva,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74608,ALMA MORA SEL RVE MALBEC 6X750 (74608),Finca Las Moras,Superior,Alma Mora Rva,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74609,ALMA MORA SEL RVE CABER 6X750 (74609),Finca Las Moras,Superior,Alma Mora Rva,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74610,ALMA MORA SEL RVE BLEND 6X750 (74610),Finca Las Moras,Superior,Alma Mora Rva,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+74611,ALMA MORA SEL RVE CHARDO 6X750 (74611),Finca Las Moras,Superior,Alma Mora Rva,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+80015,COLECC PRIV BLEND 6X750,Navarro Correas,Superior,Coleccion Privada,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+80018,COLECC PRIV CAB SAUV 6X750,Navarro Correas,Superior,Coleccion Privada,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+80020,COLECC PRIV CHARD 6X750,Navarro Correas,Superior,Coleccion Privada,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+80022,COLECC PRIV MALBEC 6X750,Navarro Correas,Superior,Coleccion Privada,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria
+80025,COLECC PRIV PINOT 6X750,Navarro Correas,Superior,Coleccion Privada,Vinos del año,4.5,6,0.75,VDA,maestro_productos_categoria

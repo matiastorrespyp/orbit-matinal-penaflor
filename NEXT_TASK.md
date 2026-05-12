@@ -1,5 +1,47 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-05-12 — Módulo VDA completado (PROMPT_004)
+
+### Estado final
+- Todos los datasets VDA generados con datos reales (57,280 filas VDA, 764 clientes)
+- Mes actual (mayo) incompleto — datos hasta 2026-05-11; balance negativo es esperado
+- V20 en ranking VDA — no figura en la lista de vendedores activos Peñaflor; validar con usuario
+
+### Próximas acciones VDA (Fase 2)
+
+1. **Validar V20** — ¿Es un vendedor activo no registrado? ¿Error de datos?
+2. **Integrar módulo VDA en pipeline diario** — agregar llamada a `_tmp_auditoria_vda.py` (o extraer función) desde `orbit_matinal_v42.py`.
+3. **Exponer `/api/vda`** en `server_orbit.py` sirviendo `vda_clientes_ganados.json`.
+4. **Agregar hoja VDA** a `MATINAL_PENA_V42.xlsx` para exportación automática.
+5. **Resolver encoding `producto activos.xlsx`** — exportar desde Gescom con UTF-8.
+
+---
+
+## Sesión 2026-05-12 — Auditoría total (PROMPT_003)
+
+Auditoría completa ejecutada. Ver `AUDITORIA_ORBIT_MATINAL_2026-05-12.md` para diagnóstico completo.
+
+### Próximas acciones por fase (resultado de la auditoría)
+
+#### FASE 1 — Inmediato (sin código)
+1. **Exportar `producto activos.xlsx`** desde Gescom → colocar en `01_INPUTS/`. Sin esto, 11 Titulares usa mapa hardcodeado.
+2. **Resolver `portal.html` vs `index.html`**: portal.html fue actualizado 2026-05-11 22:41 pero Flask sirve index.html. ¿Cuál es el activo?
+3. **Eliminar archivos basura** raíz: `3`, `float`, `None`, `str`, `pd.DataFrame`, `Dict[str]` (creados 2026-04-10).
+
+#### FASE 2 — Motor (requiere código)
+4. Implementar `ccc_mes` acumulado desde `historial_ventas_cliente.csv` en `orbit_matinal_v42.py`.
+5. Exportar como CSV `mod_ccc_mes.csv` en `04_DATASETS_ORBIT/`.
+6. Exponer `ccc_mes` en `/api/diagnostico` y `/api/dashboard`.
+7. Actualizar `data.js` para consumir `ccc_mes` real.
+
+#### FASE 3 — Limpieza
+8. Deprecar `app_publish.py` (genera JSONs obsoletos, no forma parte del pipeline).
+9. Desactivar o actualizar `/api/orbit-data` en `server_orbit.py`.
+10. Archivar `06_APP_DATA/*.json` obsoletos (generados 2026-05-05).
+11. Mover `src/orbit/` a `LEGACY/` si no tiene consumidor activo.
+
+---
+
 ## Estado sesión 2026-05-07 — Auditoría portal
 
 ### Commits realizados en esta sesión

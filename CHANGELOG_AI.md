@@ -12,6 +12,37 @@ Reglas:
 
 ---
 
+## 2026-05-12 — Módulo VDA completo (PROMPT_004)
+
+**Archivos creados:**
+- `_tmp_auditoria_vda.py` — script temporal de análisis VDA (lectura pura, no modifica portal ni Flask)
+- `04_DATASETS_ORBIT/diagnostico_productos_activos.md`
+- `04_DATASETS_ORBIT/mod_vda_productos.csv` — 93 productos VDA
+- `04_DATASETS_ORBIT/mod_vda_productos_revision_necesaria.csv` — 160 no-VDA
+- `04_DATASETS_ORBIT/mod_vda_ventas_base.csv` — 57,280 filas VDA (historial + ventas actuales)
+- `04_DATASETS_ORBIT/mod_vda_resumen_mensual.csv`
+- `04_DATASETS_ORBIT/mod_vda_clientes_detalle.csv` — 764 clientes
+- `04_DATASETS_ORBIT/mod_vda_ranking_vendedor.csv` — 8 vendedores
+- `06_APP_DATA/vda_clientes_ganados.json`
+- `MODULO_VDA_CLIENTES_GANADOS_2026-05-12.md`
+
+**Motivo:** PROMPT_004. Validar `producto activos.xlsx` y generar módulo VDA (clientes ganados/perdidos/retenidos).
+
+**Bugs encontrados y resueltos:**
+1. `decimal=","` faltaba en `read_csv_safe()` — sin él, `ImporteNetoItem` leía `"15491,87"` como string → NaN → solo 838/129k filas pasaban el filtro `> 0`. Con el fix: 103,508 filas válidas y 57,280 VDA.
+2. Type mismatch en `isin()` — `cli_act/cli_ant` eran `set(str)` pero `detalle["cliente"]` era float → todos los estados resultaban `"sin_compra_vda"`. Fix: normalizar a `set(int)` con `.dropna().astype(int)`.
+
+**Resultados finales:**
+- Mes actual (2026-05, parcial): **152 clientes VDA**, $20,649,331, 4,957.5 L
+- Mes anterior (2026-04): **727 clientes VDA**, $62,056,558, 15,288.75 L
+- Ganados/recuperados: **37** · Perdidos: **612** · Retenidos: **115** · Balance: **-575**
+- Alerta: balance negativo esperado (mayo incompleto al 12/05)
+- Anomalía: V20 aparece con 2 clientes VDA — no está en la lista de vendedores activos, requiere validación
+
+**Validación:** Script ejecutado sin errores. Todos los archivos generados con datos reales.
+
+---
+
 ## 2026-05-05 — Restaurar data.js (JavaScript)
 
 **Archivo modificado:** `PAV MATINAL PE_A FLOR/data.js`
@@ -558,3 +589,23 @@ __pycache__/
 - Importes sin cambio ✓
 
 **Commit:** `4cbbbee`
+
+---
+
+## 2026-05-12 — Auditoría total ORBIT Matinal Peñaflor
+
+**Archivo creado:** `AUDITORIA_ORBIT_MATINAL_2026-05-12.md`
+
+**Motivo:** Ejecución del PROMPT_003_AUDITORIA_TOTAL_MATINAL_PENAFLOR. Diagnóstico completo del estado del proyecto antes de cualquier modificación de diseño o funcionalidad.
+
+**Metodología:** Solo lectura de archivos. Sin modificación de código. Sin datos mock. Inspección de todos los archivos del proyecto, logs del motor, CSVs de salida, endpoints Flask, frontend y configuración.
+
+**Hallazgos críticos:**
+1. `01_INPUTS/producto activos.xlsx` **no existe** → motor registra `PRODUCTOS_CARGADOS=0` → 11 Titulares usa mapa hardcodeado `MAP_11T_FINE` sin validar contra ERP.
+2. **CCC acumulado del mes** no tiene fuente → `ccc_mes: 0` honesto pero KPI faltante importante.
+3. `06_APP_DATA/orbit_portal_data.json` obsoleto (2026-05-05) → `/api/orbit-data` activo en Flask, datos incorrectos.
+4. `dailyEvolution` en `data.js` es interpolación lineal, no datos reales por día.
+
+**Sin mock activo en el flujo principal** (Flask → data.js → portal). 7 vendedores correctos. V2/V5 excluidos. V3 sin autoservicios. Días comerciales correctos.
+
+**No se modificó ningún archivo del proyecto durante esta auditoría.**
