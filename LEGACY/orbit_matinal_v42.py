@@ -28,6 +28,8 @@ OUTPUT_FILE = os.path.join(OUTPUT_DIR, "MATINAL_PENA_V42.xlsx")
 HISTORY_DIR = r"02_HISTORY"
 HISTORY_FILE = os.path.join(HISTORY_DIR, "historial_ventas_cliente.csv")
 
+FERIADOS_PATH = "09_CONFIG/feriados.csv"
+
 NEGOCIO_ID = "PENIAFLOR"
 NEGOCIO_NOMBRE = "Peñaflor"
 
@@ -247,6 +249,40 @@ def parse_pct(value):
 
 def map_day_abbr(fecha: pd.Timestamp) -> str:
     return {0: "Lu", 1: "Ma", 2: "Mi", 3: "Ju", 4: "Vi", 5: "Sa", 6: "Do"}.get(fecha.weekday(), "")
+
+def cargar_feriados() -> set:
+    try:
+        df = pd.read_csv(FERIADOS_PATH, parse_dates=["fecha"])
+        return set(df["fecha"].dt.date)
+    except Exception:
+        return set()
+
+def siguiente_dia_operativo(
+    fecha: pd.Timestamp,
+    clientes_df: pd.DataFrame,
+    feriados_set: set
+) -> pd.Timestamp:
+    tiene_sabado = (
+        clientes_df["dias_visita"]
+        .astype(str)
+        .str.upper()
+        .str.contains(r"\bSA\b", regex=True)
+        .any()
+    )
+    candidate = fecha + timedelta(days=1)
+    for _ in range(14):
+        wd = candidate.weekday()
+        if wd == 6:
+            candidate += timedelta(days=1)
+            continue
+        if candidate.date() in feriados_set:
+            candidate += timedelta(days=1)
+            continue
+        if wd == 5 and not tiene_sabado:
+            candidate += timedelta(days=1)
+            continue
+        return candidate
+    return candidate
 
 def limpiar_texto_comercial(value: str) -> str:
     s = normalize_spaces_upper(value)
@@ -863,7 +899,8 @@ def main():
     if pd.isna(fecha_ejecucion):
         raise ValueError("No se pudo detectar fecha_ejecucion desde ventas.csv")
 
-    fecha_objetivo = fecha_ejecucion + timedelta(days=1)
+    feriados_set = cargar_feriados()
+    fecha_objetivo = siguiente_dia_operativo(fecha_ejecucion, clientes, feriados_set)
     dia_objetivo_abbr = map_day_abbr(fecha_objetivo)
 
     build_log(log_rows, "FECHA_EJECUCION", fecha_ejecucion.strftime("%Y-%m-%d"))

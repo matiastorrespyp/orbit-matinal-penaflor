@@ -188,6 +188,22 @@ def diagnostico():
     botellas_dia = int(pd.to_numeric(ccc_df["botellas_vendidas"], errors="coerce").sum()) if not ccc_df.empty and "botellas_vendidas" in ccc_df.columns else 0
     botellas_mes = int(pd.to_numeric(cdia_df["botellas_mes"], errors="coerce").sum()) if not cdia_df.empty and "botellas_mes" in cdia_df.columns else 0
 
+    fecha_datos = None
+    fecha_obj_str = None
+    dia_op = None
+    modo_fecha = "SIN_DATOS"
+    if not vol.empty:
+        try:
+            if "fecha_ejecucion" in vol.columns:
+                fecha_datos = str(vol["fecha_ejecucion"].iloc[0])
+            if "fecha_objetivo" in vol.columns:
+                fecha_obj_str = str(vol["fecha_objetivo"].iloc[0])
+            if "dia_objetivo" in vol.columns:
+                dia_op = str(vol["dia_objetivo"].iloc[0]).upper()
+            modo_fecha = "REAL"
+        except Exception:
+            pass
+
     return jsonify({
         "modo_datos": "REAL",
         "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -202,6 +218,12 @@ def diagnostico():
         "titulares11": titulares11,
         "botellas_dia": botellas_dia,
         "botellas_mes": botellas_mes,
+        "fecha_datos": fecha_datos,
+        "fecha_corte": fecha_datos,
+        "fecha_objetivo": fecha_obj_str,
+        "fecha_matinal": fecha_obj_str,
+        "dia_operativo": dia_op,
+        "modo_fecha": modo_fecha,
     })
 
 # ====== DASHBOARD REAL ======

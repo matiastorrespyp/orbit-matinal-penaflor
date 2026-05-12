@@ -177,12 +177,13 @@ input,select,textarea{font-family:inherit;color:inherit}
       <div class="day-selector" id="daySelector"></div>
       <button class="btn-ghost" onclick="logout()">Cerrar sesión</button>
     </div>
+    <div id="contextBanner" style="display:none;padding:6px 24px;font-size:11px;color:var(--text3);background:rgba(7,9,12,.5);border-bottom:1px solid var(--hairline);letter-spacing:.3px;"></div>
     <div class="page"><div id="screenContent"></div></div>
   </div>
 </div>
 
 <script>
-let userData=null,currentDay="MA",currentScreen="dashboard",allData={dashboard:[],clientes:[],alertas:[],planes:[],detalle:{},msgs:[]};
+let userData=null,currentDay=null,currentScreen="dashboard",allData={dashboard:[],clientes:[],alertas:[],planes:[],detalle:{},msgs:[]};
 const colors=["#7BD8B8","#F2B544","#5BC23A","#9B7BFF","#4DA3FF","#FF9D5C","#FF5D8B"];
 const coloresVend={V3:"#7BD8B8",V4:"#F2B544",V6:"#5BC23A",V7:"#9B7BFF",V8:"#4DA3FF",V9:"#FF9D5C",V10:"#FF5D8B"};
 function fmtM(n){return n?"$"+(n/1e6).toFixed(1)+"M":"$0"}
@@ -223,6 +224,7 @@ async function doLogin(){
 }
 
 async function loadAll(){
+  try{const diag=await(await fetch("/api/diagnostico")).json();allData.diagnostico=diag;if(diag.dia_operativo)currentDay=diag.dia_operativo.toUpperCase();}catch(e){}
   try{allData.dashboard=await(await fetch("/api/dashboard")).json()}catch(e){}
   try{allData.clientes=await(await fetch("/api/clientes")).json()}catch(e){}
   try{allData.alertas=await(await fetch("/api/alertas")).json()}catch(e){}
@@ -239,7 +241,9 @@ function showApp(){
   document.getElementById("sidebarName").textContent=(userData.nombre||"U").split(" ")[0];
   document.getElementById("sidebarRol").textContent=userData.rol==="gerencia"?"Gerencia":"Vendedor "+userData.vendedor_id;
   document.getElementById("sidebarAvatar").textContent=ini(userData.nombre)||"U";
-  document.getElementById("daySelector").innerHTML=["LU","MA","MI","JU","VI","SA"].map(d=>`<button class="${d===currentDay?'active':''}" onclick="setDay('${d}')">${d}</button>`).join("");
+  document.getElementById("daySelector").innerHTML=["LU","MA","MI","JU","VI","SA"].map(d=>`<button class="${d===currentDay?'active':''}" title="Día operativo actual">${d}</button>`).join("");
+  const diag=allData.diagnostico||{};const bannerEl=document.getElementById("contextBanner");
+  if(bannerEl){const txt=diag.fecha_datos?`Datos al ${diag.fecha_datos} · Corte: ${diag.fecha_corte||'–'} · Matinal: ${diag.dia_operativo||'–'} ${diag.fecha_matinal||''} · ${diag.modo_fecha||''}`:null;if(txt){bannerEl.textContent=txt;bannerEl.style.display="block";}}
   if(userData.rol==="vendedor"){
     document.getElementById("sidebarGerencia").style.display="none";
     switchScreen("vendedor-app");
