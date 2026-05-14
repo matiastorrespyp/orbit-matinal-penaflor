@@ -1,5 +1,31 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-05-14 — Cierre confirmado (commit c67e70e)
+
+### Estado final
+- `portal.html` rediseñado y commiteado. Dos portales activos: gerencial desktop + vendedor mobile.
+- `server_orbit.py`: endpoint `/api/vendedor/{id}` implementado y funcionando con datos reales.
+- `test_portal.py` y `test_kpis.py` creados y commiteados.
+- V3 Nadia Gambino: regla autoservicio aplicada en servidor y en portal (columna AUTOSERV. oculta).
+- 11 Titulares: usa datos por vendedor del nuevo endpoint.
+
+### Pendientes próxima sesión (no bloquean operación diaria)
+
+1. **Revisar portal visualmente en navegador** — validación visual humana del diseño (gerencia en desktop, vendedor en mobile/devtools 390px). Los screenshots de Playwright confirman carga técnica pero no aprobación visual final.
+
+2. **Validar con datos reales del próximo cierre operativo** — la próxima vez que se actualicen `ventas.csv` y `resultado.xlsx`, regenerar datasets y verificar que todos los KPIs del portal reflejan los nuevos valores correctamente.
+
+3. **Favicon** — agregar `favicon.ico` en `PAV MATINAL PE_A FLOR/` para eliminar el 404 cosmético de browser.
+
+4. **Decidir limpieza de archivos no commiteados:**
+   - `PAV MATINAL PE_A FLOR/portal.html.bak.2026-05-14` — backup del rediseño (se puede borrar cuando el diseño esté aprobado).
+   - `screenshots/` — capturas de validación (se puede limpiar o gitignorear).
+   - `CHANGELOG_AI.md` y `NEXT_TASK.md` — pendientes de commit cuando el usuario lo indique.
+
+5. **Resolver conflicto portal.html vs index.html** — Flask sirve `index.html` en `/` pero el portal activo es `portal.html`. Evaluar si redirigir `/` → `portal.html` o unificar en un solo archivo.
+
+---
+
 ## Sesión 2026-05-12 — Módulo VDA completado (PROMPT_004)
 
 ### Estado final

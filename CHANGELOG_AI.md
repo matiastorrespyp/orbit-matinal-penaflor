@@ -1,5 +1,64 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-14 — Cierre de sesión: rediseño portal + endpoint vendedor real
+
+**Commit:** `c67e70e feat(matinal): rediseñar portal y agregar endpoint vendedor real`
+
+**Archivos commiteados:**
+- `PAV MATINAL PE_A FLOR/portal.html` — rediseño completo del portal
+- `server_orbit.py` — nuevo endpoint `/api/vendedor/{id}`
+- `test_portal.py` — script Playwright: 8 screenshots de flujo completo
+- `test_kpis.py` — script Playwright: validación KPIs vendedor V3
+
+**Archivos excluidos del commit (no productivos):**
+- `PAV MATINAL PE_A FLOR/portal.html.bak.2026-05-14` — backup previo al rediseño
+- `01_INPUTS/` — datos ERP del día (actualización diaria, no se commitean)
+- `02_HISTORY/` — historial de ventas (actualización diaria, no se commitea)
+- `screenshots/` — capturas de validación Playwright
+- `.claude/settings.local.json` — configuración local de sesión
+
+**Qué se logró:**
+1. Rediseño completo de `portal.html`: dos portales distintos (gerencial desktop-first + vendedor mobile-first 390px), login unificado con routing por rol, design system dark con magenta #E2147A, Sora + Inter, semáforos ok/wn/bd.
+2. Nuevo endpoint `GET /api/vendedor/{id}` en `server_orbit.py`: devuelve KPIs reales por vendedor (objetivo, acumulado, avance_pct, CCC por segmento, 11 Titulares por vendedor, clientes). Fuentes: `mod_volumen_vendedor.csv`, `mod_ccc_segmento.csv`, `mod_11_titulares.csv`, `vendedores_activos.csv`.
+3. Regla V3 aplicada en servidor: `ccc_autoservicio = 0`, `trabaja_autoservicio = false`. El portal oculta la columna AUTOSERV. en el grid CCC cuando `trabaja_autoservicio === false`.
+4. 11 Titulares ahora usa `D.det.titulares11` (por vendedor, del nuevo endpoint) con fallback a `D.diag.titulares11` (empresa).
+5. Corrección de field names API: `ccc_total`, `once_titulares_cumplidos`, `titulares11.marca`, `titulares11.cubiertos`, `titulares11.objetivo`.
+
+**Validación ejecutada:**
+- `test_portal.py`: 8 screenshots OK — login, gerencia (dashboard/vendedores/alertas), vendedor (inicio/ruta/KPIs/alertas).
+- `test_kpis.py` V3: TRADICIONAL OK | AUTOSERV FALTA (correcto, V3 no trabaja AS) | Avance vs OK | 11 Titulares OK.
+- `/api/vendedor/V3`: vendedor_nombre=NADIA GAMBINO, ccc_tradicional=2, ccc_autoservicio=0, trabaja_autoservicio=false, titulares11=11 marcas, modo_datos=REAL.
+- Único error JS: `404 /favicon.ico` — cosmético, aprobado.
+
+---
+
+## 2026-05-14 — Rediseño completo portal.html (frontend-design)
+
+**Archivo modificado:**
+- `PAV MATINAL PE_A FLOR/portal.html` — rediseño total del portal web
+
+**Backup creado:**
+- `PAV MATINAL PE_A FLOR/portal.html.bak.2026-05-14`
+
+**Motivo:**
+- El portal anterior tenía diseño funcional pero básico (emojis como iconos de nav, KPI cards sin semáforo, vista vendedor como phone-stage estático).
+- Se rediseñó para soporte de dos portales distintos: Gerencial (desktop-first) y Vendedor (mobile-first).
+
+**Cambios realizados:**
+- Login: nuevo diseño premium con gradiente radial, fuentes Sora/Inter, botón magenta con glow.
+- Portal Gerencial: sidebar oscura con nav activo (barra magenta), topbar con breadcrumb + selector de día + selector de vendedor, 6 KPIs reales en header, ranking de vendedores con progress bars y semáforo ok/wn/bd, cobertura por segmento, alertas críticas, clientes sin compra.
+- Portal Vendedor: mobile 390px con header personal, bottom nav (Inicio/Ruta/KPIs/Alertas), KPI "Te falta para el objetivo", grid 2×2 con CCC/11T/Pendientes/Total, lista de clientes de ruta ordenada sin-compra primero, oportunidades sugeridas, 11 Titulares con semáforo por marca.
+- Corrección de nombres de campo reales de la API: `ccc_total`, `once_titulares_cumplidos`, `titulares11.marca`, `titulares11.cubiertos`, `titulares11.objetivo`.
+- Fallback para `/api/vendedor/{id}` (404): usa datos del dashboard para CCC por segmento.
+
+**Validación ejecutada:**
+- Playwright con Chrome del sistema: 8 screenshots capturados.
+- HTTP 200 en login, dashboard, vendedores, alertas, inicio vendedor, ruta, KPIs, alertas vendedor.
+- Errores JS: 2 errores 404 no funcionales (favicon.ico + /api/vendedor/id — endpoint pendiente de implementar en servidor).
+- Datos reales verificados: $106.1M acumulado compañía, 7 vendedores, ranking con avances reales, 31 alertas, segmentos TRAD/AS/OP.
+
+---
+
 ## Baseline
 
 Se creó baseline inicial del proyecto antes de trabajar con Claude Code.
