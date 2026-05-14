@@ -34,7 +34,8 @@
       objetivo: k.objetivo || 0,
       acumulado: k.acumulado || k.venta_mes_actual || 0,
       venta_ayer: k.venta_hoy_total || 0,
-      ccc: k.ccc_total || (k.ccc_tradicional||0) + (k.ccc_autoservicio||0) + (k.ccc_onpremise||0),
+      ccc: k.ccc_total || 0,
+      ccc_dia: k.ccc_dia_total || 0,
       t11: k.once_titulares_cumplidos || 0,
       t11_total: k.once_titulares_total || 0,
       clientes: k.clientes_total || 0,
@@ -46,10 +47,12 @@
   });
 
   // KPIs gerenciales
-  var tObj=0, tAcum=0, tVentaAyer=0, tCli=0, tPen=0, tCCC=0, t11C=0, t11T=0;
+  var tObj=0, tAcum=0, tVentaAyer=0, tCli=0, tPen=0, tCCC=0, tCCC_DIA=0, t11C=0, t11T=0;
   vendedores.forEach(function(v) {
     tObj += v.objetivo; tAcum += v.acumulado; tVentaAyer += v.venta_ayer;
-    tCli += v.clientes; tPen += v.alertas; tCCC += v.ccc;
+    tCli += v.clientes; tPen += v.alertas;
+    tCCC += v.ccc;          // CCC mes
+    tCCC_DIA += v.ccc_dia;  // CCC día (ayer)
     t11C += v.t11; t11T += v.t11_total;
   });
 
@@ -75,8 +78,8 @@
       avance_pct: avancePct,
       venta_dia: tVentaAyer,
       objetivo_dia: tObj / calendario.total,
-      ccc_mes: 0,
-      ccc_dia: tCCC,
+      ccc_mes: tCCC,
+      ccc_dia: tCCC_DIA,
       botellas_dia: diag.botellas_dia || 0,
       botellas_mes: diag.botellas_mes || 0,
       clientes_compra: tCli - tPen,

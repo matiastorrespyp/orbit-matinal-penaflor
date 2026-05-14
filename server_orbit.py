@@ -67,6 +67,107 @@ def read_csv(path):
         try: return pd.read_csv(path, encoding="latin1")
         except: return pd.read_csv(path, encoding="utf-8")
 
+_VENDEDORES_EXCLUIDOS = {2, 5}
+
+def _parse_num_ar(valor):
+    """Parsea número en formato argentino (punto=miles, coma=decimal)."""
+    try:
+        s = str(valor).strip().replace(" ", "")
+        s = s.replace(".", "").replace(",", ".")
+        return float(s)
+    except Exception:
+        return 0.0
+
+def _clasificar_segmento(ramo: str, subsegmento: str) -> str:
+    texto = f"{str(ramo).upper()} | {str(subsegmento).upper()}"
+    auto = ["AUTOSERVICIO","CADENA REGIONAL","SAR","LARGE FORMAT","PROXIMITY",
+            "CASH&CARRY","CASH & CARRY","MAYORISTA","MAYORISTAS","TIENDA DE BEBIDAS"]
+    if any(k in texto for k in auto):
+        return "AUTOSERVICIO"
+    on = ["ON PREMISE","AWAY FROM HOME","VINOTECA","VINOTECAS","BAR",
+          "RESTAURANT","RESTAURANTE","ESTACION DE SERVICIO","ESTACIONES DE SERVICIO",
+          "EVENTOS","TEMPORADA","CATERING","ON DIA","ON NOCHE"]
+    if any(k in texto for k in on):
+        return "ON_PREMISE_VTK"
+    trad = ["TRADITIONAL TRADE","ALMACEN","DESPENSA","KIOSCO","MAXIKIOSCO",
+            "FIAMBRERIA","CARNICERIA","GRANJA","PANADERIA","CASA DE PASTAS","TRADICIONAL"]
+    if any(k in texto for k in trad):
+        return "TRADICIONAL"
+    return "OTROS"
+
+def _cargar_ventas_mes_actual() -> pd.DataFrame:
+    """
+    Lee ventas.csv, filtra al mes calendario actual, ImporteNetoItem > 0,
+    excluye vendedores 2 y 5.
+    Devuelve DataFrame con: cliente_id, vendedor_codigo, segmento_operativo.
+    """
+    path = INPUTS / "ventas.csv"
+    if not path.exists():
+        return pd.DataFrame()
+
+    df = pd.DataFrame()
+    for enc in ("latin1", "utf-8-sig", "utf-8"):
+        try:
+            df = pd.read_csv(path, sep=";", encoding=enc)
+            break
+        except Exception:
+            continue
+
+    if df.empty:
+        return pd.DataFrame()
+
+    req = {"Cliente", "CodVendedor", "ImporteNetoItem", "FechaComprobante", "Ramo", "Subramo"}
+    if not req.issubset(set(df.columns)):
+        return pd.DataFrame()
+
+    df = df.copy()
+    df["cliente_id"]      = pd.to_numeric(df["Cliente"], errors="coerce")
+    df["vendedor_codigo"] = pd.to_numeric(df["CodVendedor"], errors="coerce")
+    df["importe_neto"]    = df["ImporteNetoItem"].apply(_parse_num_ar)
+    df["fecha"]           = pd.to_datetime(df["FechaComprobante"], dayfirst=True, errors="coerce")
+    df["segmento_operativo"] = df.apply(
+        lambda r: _clasificar_segmento(str(r.get("Ramo", "")), str(r.get("Subramo", ""))), axis=1
+    )
+
+    hoy       = datetime.now()
+    mes_inicio = hoy.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    df = df[df["fecha"] >= mes_inicio]
+    df = df[df["importe_neto"] > 0]
+    df = df[~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
+    df = df.dropna(subset=["cliente_id", "vendedor_codigo"])
+
+    return df[["cliente_id", "vendedor_codigo", "segmento_operativo"]].copy()
+
+def _ccc_mes_por_vendedor(ventas_mes: pd.DataFrame) -> dict:
+    """
+    Calcula CCC Compradores Mes por vendedor y segmento.
+    Retorna dict keyed por int(vendedor_codigo):
+      {tradicional, autoservicio, onpremise, total}
+    V3 tiene autoservicio=0 por regla de negocio.
+    """
+    if ventas_mes.empty:
+        return {}
+
+    # Un cliente puede aparecer en múltiples líneas → deduplicate por cliente+vendedor
+    buyers = ventas_mes.drop_duplicates(subset=["cliente_id", "vendedor_codigo"]).copy()
+
+    result = {}
+    for cod, grp in buyers.groupby("vendedor_codigo"):
+        cod_int = int(cod)
+        trad  = int((grp["segmento_operativo"] == "TRADICIONAL").sum())
+        aas   = int((grp["segmento_operativo"] == "AUTOSERVICIO").sum())
+        op    = int((grp["segmento_operativo"] == "ON_PREMISE_VTK").sum())
+        if cod_int == 3:  # V3 no trabaja autoservicio
+            aas = 0
+        result[cod_int] = {
+            "tradicional": trad,
+            "autoservicio": aas,
+            "onpremise":   op,
+            "total":       trad + aas + op,
+        }
+    return result
+
 def _cargar_feriados():
     import csv
     p = CONFIG / "feriados.csv"
@@ -231,10 +332,14 @@ def diagnostico():
 # ====== DASHBOARD REAL ======
 @app.route("/api/dashboard")
 def dashboard():
-    vol = read_csv(DATASETS / "mod_volumen_vendedor.csv")
-    vend = read_csv(CONFIG / "vendedores_activos.csv")
-    ccc_df = read_csv(DATASETS / "mod_ccc_segmento.csv")
-    t11_df = read_csv(DATASETS / "mod_11_titulares.csv")
+    vol     = read_csv(DATASETS / "mod_volumen_vendedor.csv")
+    vend    = read_csv(CONFIG  / "vendedores_activos.csv")
+    ccc_df  = read_csv(DATASETS / "mod_ccc_segmento.csv")   # CCC día (ayer)
+    t11_df  = read_csv(DATASETS / "mod_11_titulares.csv")
+
+    # CCC Compradores Mes — desde ventas.csv del mes actual (no clientes_dia)
+    ventas_mes = _cargar_ventas_mes_actual()
+    ccc_mes_map = _ccc_mes_por_vendedor(ventas_mes)
 
     # Fallback: objetivo/acumulado/avance desde resultado.xlsx para vendedores sin maestro de clientes
     resultado_fallback = {}
@@ -282,15 +387,30 @@ def dashboard():
         cli_total = int(vv["clientes_planificados"].sum()) if not vv.empty and "clientes_planificados" in vv.columns else 0
         cli_sin = int(vv["clientes_sin_compra_mes"].sum()) if not vv.empty and "clientes_sin_compra_mes" in vv.columns else 0
 
-        ccc_trad = int(cv[cv["segmento_operativo"].astype(str).str.upper().str.contains("TRADICIONAL", na=False)]["clientes_con_compra"].sum()) if not cv.empty else 0
-        ccc_as = int(cv[cv["segmento_operativo"].astype(str).str.upper().str.contains("AUTOSERVICIO", na=False)]["clientes_con_compra"].sum()) if not cv.empty else 0
-        ccc_op = int(cv[cv["segmento_operativo"].astype(str).str.upper().str.contains("ON_PREMISE|VTK", na=False)]["clientes_con_compra"].sum()) if not cv.empty else 0
+        # CCC Compradores Mes — desde ventas.csv del mes actual
+        cod_int = int(cn) if cn.isdigit() else 0
+        ccc_mes = ccc_mes_map.get(cod_int, {"tradicional": 0, "autoservicio": 0, "onpremise": 0, "total": 0})
+        ccc_mes_trad = ccc_mes["tradicional"]
+        ccc_mes_as   = ccc_mes["autoservicio"]   # ya es 0 para V3 por regla en _ccc_mes_por_vendedor
+        ccc_mes_op   = ccc_mes["onpremise"]
+
+        # CCC DÍA — desde mod_ccc_segmento (clientes con compra ayer)
+        def _ccc_dia_seg(df, seg_pattern):
+            if df.empty:
+                return 0
+            mask = df["segmento_operativo"].astype(str).str.upper().str.contains(seg_pattern, na=False)
+            return int(df.loc[mask, "clientes_con_compra"].sum())
+
+        ccc_dia_trad = _ccc_dia_seg(cv, "TRADICIONAL")
+        ccc_dia_as   = _ccc_dia_seg(cv, "AUTOSERVICIO")
+        ccc_dia_op   = _ccc_dia_seg(cv, "ON_PREMISE|VTK")
 
         t11_cumplidos = int(tv["tiene_flag"].sum()) if not tv.empty and "tiene_flag" in tv.columns else 0
         t11_total = len(tv)
 
+        # V3 no trabaja autoservicio (ccc_mes_as ya es 0; refuerzo ccc_dia)
         if cod.upper() == "V3":
-            ccc_as = 0
+            ccc_dia_as = 0
 
         result.append({
             "vendedor_id": cod,
@@ -301,8 +421,12 @@ def dashboard():
                 "objetivo": obj, "acumulado": acum, "avance_pct": av,
                 "venta_hoy_total": venta_ayer, "venta_mes_actual": acum,
                 "clientes_total": cli_total, "clientes_pendientes": cli_sin,
-                "ccc_tradicional": ccc_trad, "ccc_autoservicio": ccc_as, "ccc_onpremise": ccc_op,
-                "ccc_total": ccc_trad + ccc_as + ccc_op,
+                # CCC Compradores Mes — fuente: ventas.csv mes actual, ImporteNetoItem > 0
+                "ccc_tradicional": ccc_mes_trad, "ccc_autoservicio": ccc_mes_as, "ccc_onpremise": ccc_mes_op,
+                "ccc_total": ccc_mes_trad + ccc_mes_as + ccc_mes_op,
+                # CCC Compradores Día — fuente: mod_ccc_segmento (ayer)
+                "ccc_dia_tradicional": ccc_dia_trad, "ccc_dia_autoservicio": ccc_dia_as, "ccc_dia_onpremise": ccc_dia_op,
+                "ccc_dia_total": ccc_dia_trad + ccc_dia_as + ccc_dia_op,
                 "once_titulares_cumplidos": t11_cumplidos, "once_titulares_total": t11_total,
                 "cobertura_pct": cli_total and (100 - (cli_sin/cli_total*100)) or 0,
                 "alertas_criticas": 0, "oportunidades": 0,
@@ -382,14 +506,31 @@ def vendedor_detalle(vid):
     cli_total = int(vv["clientes_planificados"].sum()) if not vv.empty and "clientes_planificados" in vv.columns else 0
     cli_sin   = int(vv["clientes_sin_compra_mes"].sum()) if not vv.empty and "clientes_sin_compra_mes" in vv.columns else 0
 
-    # CCC por segmento
+    # CCC Compradores Mes — desde ventas.csv del mes actual
+    ventas_mes_vd = _cargar_ventas_mes_actual()
+    ccc_mes_map_vd = _ccc_mes_por_vendedor(ventas_mes_vd)
+    cod_int = int(cn) if cn.isdigit() else 0
+    ccc_mes_vd = ccc_mes_map_vd.get(cod_int, {"tradicional": 0, "autoservicio": 0, "onpremise": 0, "total": 0})
+    ccc_trad = ccc_mes_vd["tradicional"]
+    ccc_as   = ccc_mes_vd["autoservicio"]   # ya es 0 para V3
+    ccc_op   = ccc_mes_vd["onpremise"]
+
+    # CCC Compradores Día — desde mod_ccc_segmento (ayer)
     ccc_df = read_csv(DATASETS / "mod_ccc_segmento.csv")
     cv = ccc_df[ccc_df["vendedor_codigo"].astype(str).apply(clean_code) == cn] if not ccc_df.empty else pd.DataFrame()
-    ccc_trad = int(cv[cv["segmento_operativo"].astype(str).str.upper().str.contains("TRADICIONAL",  na=False)]["clientes_con_compra"].sum()) if not cv.empty else 0
-    ccc_as   = int(cv[cv["segmento_operativo"].astype(str).str.upper().str.contains("AUTOSERVICIO", na=False)]["clientes_con_compra"].sum()) if not cv.empty else 0
-    ccc_op   = int(cv[cv["segmento_operativo"].astype(str).str.upper().str.contains("ON_PREMISE|VTK", na=False)]["clientes_con_compra"].sum()) if not cv.empty else 0
+
+    def _ccc_dia(df, pat):
+        if df.empty:
+            return 0
+        return int(df.loc[df["segmento_operativo"].astype(str).str.upper().str.contains(pat, na=False), "clientes_con_compra"].sum())
+
+    ccc_dia_trad = _ccc_dia(cv, "TRADICIONAL")
+    ccc_dia_as   = _ccc_dia(cv, "AUTOSERVICIO")
+    ccc_dia_op   = _ccc_dia(cv, "ON_PREMISE|VTK")
+
+    # V3 no trabaja autoservicio (ccc_as ya es 0; refuerzo ccc_dia)
     if vid_norm == "V3":
-        ccc_as = 0  # V3 no trabaja autoservicio
+        ccc_dia_as = 0
 
     # 11 Titulares por vendedor — agrupados por marca
     t11_df = read_csv(DATASETS / "mod_11_titulares.csv")
@@ -421,10 +562,16 @@ def vendedor_detalle(vid):
         "venta_hoy":         venta_hoy,
         "clientes_total":    cli_total,
         "clientes_pendientes": cli_sin,
+        # CCC Compradores Mes — fuente: ventas.csv mes actual, ImporteNetoItem > 0
         "ccc_tradicional":   ccc_trad,
         "ccc_autoservicio":  ccc_as,
         "ccc_onpremise":     ccc_op,
         "ccc_total":         ccc_trad + ccc_as + ccc_op,
+        # CCC Compradores Día — fuente: mod_ccc_segmento (ayer)
+        "ccc_dia_tradicional": ccc_dia_trad,
+        "ccc_dia_autoservicio": ccc_dia_as,
+        "ccc_dia_onpremise": ccc_dia_op,
+        "ccc_dia_total":     ccc_dia_trad + ccc_dia_as + ccc_dia_op,
         "once_t_cumplidos":  once_t_cumplidos,
         "once_t_total":      once_t_total,
         "titulares11":       titulares11,
