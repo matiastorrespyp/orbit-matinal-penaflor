@@ -354,6 +354,84 @@ def alertas():
     df["impacto_alertas_ars"] = (df["valor_descuento"].fillna(0) * df["cant_base"].fillna(0))
     return jsonify(df.where(pd.notnull(df), None).to_dict(orient="records"))
 
+# ====== DETALLE VENDEDOR ======
+@app.route("/api/vendedor/<vid>")
+def vendedor_detalle(vid):
+    vid_norm = normalizar_vendedor_codigo(vid)
+    cn = clean_code(vid_norm)
+
+    vend = read_csv(CONFIG / "vendedores_activos.csv")
+    nombre = vid_norm
+    if not vend.empty:
+        activos = vend[vend["activo"] == 1]
+        fila = activos[activos["codigo_vendedor"].astype(str).apply(clean_code) == cn]
+        if fila.empty:
+            return jsonify({"error": f"Vendedor {vid} no encontrado o inactivo"}), 404
+        nombre = str(fila.iloc[0]["nombre_vendedor"])
+
+    # Regla de negocio: V3 no trabaja autoservicio
+    trabaja_as = (vid_norm != "V3")
+
+    # KPIs volumen
+    vol = read_csv(DATASETS / "mod_volumen_vendedor.csv")
+    vv = vol[vol["vendedor_codigo"].astype(str).apply(clean_code) == cn] if not vol.empty else pd.DataFrame()
+    obj   = float(vv["objetivo_mes"].sum())          if not vv.empty else 0
+    acum  = float(vv["acumulado_mes"].sum())         if not vv.empty else 0
+    av    = float(vv["avance_pct"].mean())           if not vv.empty else 0
+    venta_hoy = float(vv["venta_ayer"].sum())        if not vv.empty else 0
+    cli_total = int(vv["clientes_planificados"].sum()) if not vv.empty and "clientes_planificados" in vv.columns else 0
+    cli_sin   = int(vv["clientes_sin_compra_mes"].sum()) if not vv.empty and "clientes_sin_compra_mes" in vv.columns else 0
+
+    # CCC por segmento
+    ccc_df = read_csv(DATASETS / "mod_ccc_segmento.csv")
+    cv = ccc_df[ccc_df["vendedor_codigo"].astype(str).apply(clean_code) == cn] if not ccc_df.empty else pd.DataFrame()
+    ccc_trad = int(cv[cv["segmento_operativo"].astype(str).str.upper().str.contains("TRADICIONAL",  na=False)]["clientes_con_compra"].sum()) if not cv.empty else 0
+    ccc_as   = int(cv[cv["segmento_operativo"].astype(str).str.upper().str.contains("AUTOSERVICIO", na=False)]["clientes_con_compra"].sum()) if not cv.empty else 0
+    ccc_op   = int(cv[cv["segmento_operativo"].astype(str).str.upper().str.contains("ON_PREMISE|VTK", na=False)]["clientes_con_compra"].sum()) if not cv.empty else 0
+    if vid_norm == "V3":
+        ccc_as = 0  # V3 no trabaja autoservicio
+
+    # 11 Titulares por vendedor — agrupados por marca
+    t11_df = read_csv(DATASETS / "mod_11_titulares.csv")
+    tv = t11_df[t11_df["vendedor_codigo"].astype(str).apply(clean_code) == cn] if not t11_df.empty else pd.DataFrame()
+    titulares11 = []
+    if not tv.empty and "marca_objetivo" in tv.columns and "tiene_flag" in tv.columns:
+        tv = tv.copy()
+        tv["tiene_flag"] = pd.to_numeric(tv["tiene_flag"], errors="coerce").fillna(0)
+        agg = (tv.groupby("marca_objetivo", dropna=False)
+                 .agg(objetivo=("tiene_flag", "count"), cubiertos=("tiene_flag", "sum"))
+                 .reset_index())
+        agg["cubiertos"] = agg["cubiertos"].astype(int)
+        for _, row in agg.iterrows():
+            titulares11.append({"marca": row["marca_objetivo"],
+                                 "objetivo": int(row["objetivo"]),
+                                 "cubiertos": row["cubiertos"]})
+        titulares11.sort(key=lambda x: -x["cubiertos"])
+
+    once_t_cumplidos = sum(1 for t in titulares11 if t["cubiertos"] > 0)
+    once_t_total     = len(titulares11)
+
+    return jsonify({
+        "vendedor_id":       vid_norm,
+        "vendedor_nombre":   nombre,
+        "trabaja_autoservicio": trabaja_as,
+        "objetivo":          obj,
+        "acumulado":         acum,
+        "avance_pct":        round(av, 2),
+        "venta_hoy":         venta_hoy,
+        "clientes_total":    cli_total,
+        "clientes_pendientes": cli_sin,
+        "ccc_tradicional":   ccc_trad,
+        "ccc_autoservicio":  ccc_as,
+        "ccc_onpremise":     ccc_op,
+        "ccc_total":         ccc_trad + ccc_as + ccc_op,
+        "once_t_cumplidos":  once_t_cumplidos,
+        "once_t_total":      once_t_total,
+        "titulares11":       titulares11,
+        "modo_datos":        "REAL",
+        "generado_en":       datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    })
+
 @app.route("/api/planificacion", methods=["GET","POST"])
 def planificacion():
     vid = request.args.get("vendedor_id")
