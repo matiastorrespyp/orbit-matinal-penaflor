@@ -17,3 +17,12 @@ screenshots/
 08_LOGS/*.log
 08_LOGSserver_*.log
 *.bak.*
+
+# ORBIT - outputs regenerables seguros
+03_OUTPUTS/
+06_KERNEL_OUTPUT/
+07_PAV_OUTPUT/
+08_LOGS/
+
+# ORBIT - auditorias locales
+ESTADO_ARCHIVOS_GENERADOS_PENDIENTES.txt
