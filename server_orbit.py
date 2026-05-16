@@ -257,22 +257,51 @@ def diagnostico():
     dias = contar_dias_habiles()
     total_acum = sum(v["acumulado"] for v in vendedores_detectados)
 
-    # Segmentos: coberturas desde mod_ccc_segmento + total clientes desde clientes_dia
-    cdia_df = read_csv(DATASETS / "clientes_dia.csv")
+    # Segmentos: denominadores desde cartera real (clientes.xlsx); cubiertos desde mod_ccc_segmento (ayer)
     seg_ids = [
         ("TRADICIONAL",    "Tradicional",          3,  "#5BC23A"),
         ("AUTOSERVICIO",   "Autoservicio",          6,  "#4DA3FF"),
         ("ON_PREMISE_VTK", "On Premise / Vinoteca", 6,  "#9B7BFF"),
     ]
+    cartera_real_total = 0
+    cartera_segs_real = {sid: 0 for sid, *_ in seg_ids}
+    cli_path = INPUTS / "clientes.xlsx"
+    if cli_path.exists():
+        try:
+            cli_df = pd.read_excel(cli_path)
+            cli_df.columns = cli_df.columns.str.strip()
+            vcol = next((c for c in cli_df.columns if "cod" in c.lower() and "vend" in c.lower()), None)
+            if vcol is None:
+                vcol = next((c for c in cli_df.columns if "vend" in c.lower()), None)
+            ramo_col = next((c for c in cli_df.columns if c.lower() == "ramo"), None)
+            sub_col  = next((c for c in cli_df.columns if "subramo" in c.lower() or "subseg" in c.lower()), None)
+            if vcol:
+                cli_df["_vnum"] = pd.to_numeric(cli_df[vcol], errors="coerce")
+                cli_df = cli_df[~cli_df["_vnum"].isin(_VENDEDORES_EXCLUIDOS)]
+                cartera_real_total = len(cli_df)
+                if ramo_col:
+                    cli_df["_seg"] = cli_df.apply(
+                        lambda r: _clasificar_segmento(
+                            str(r.get(ramo_col, "")),
+                            str(r.get(sub_col, "") if sub_col else "")
+                        ), axis=1
+                    )
+                    for sid, *_ in seg_ids:
+                        cartera_segs_real[sid] = int((cli_df["_seg"] == sid).sum())
+        except Exception:
+            pass
+    cdia_df = read_csv(DATASETS / "clientes_dia.csv")
     segmentos = []
     for sid, snombre, req, color in seg_ids:
-        total_cli = int((cdia_df["segmento_operativo"] == sid).sum()) if not cdia_df.empty else 0
+        total_cli = cartera_segs_real.get(sid) or \
+                    (int((cdia_df["segmento_operativo"] == sid).sum()) if not cdia_df.empty else 0)
         cubiertos = int(
             ccc_df.loc[ccc_df["segmento_operativo"] == sid, "coberturas_logradas"]
             .apply(pd.to_numeric, errors="coerce").sum()
         ) if not ccc_df.empty else 0
         segmentos.append({"id": sid, "nombre": snombre, "req": req,
-                          "clientes": total_cli, "cubiertos": cubiertos, "color": color})
+                          "clientes": total_cli, "cubiertos": cubiertos, "color": color,
+                          "cubiertos_label": "ayer"})
 
     # Titulares11: agrega tiene_flag por marca desde mod_11_titulares
     titulares11 = []
@@ -289,7 +318,7 @@ def diagnostico():
         titulares11.sort(key=lambda x: -x["cubiertos"])
 
     botellas_dia = int(pd.to_numeric(ccc_df["botellas_vendidas"], errors="coerce").sum()) if not ccc_df.empty and "botellas_vendidas" in ccc_df.columns else 0
-    botellas_mes = int(pd.to_numeric(cdia_df["botellas_mes"], errors="coerce").sum()) if not cdia_df.empty and "botellas_mes" in cdia_df.columns else 0
+    botellas_mes = None  # clientes_dia es solo zona Vi; omitir para evitar botellas_dia > botellas_mes
 
     fecha_datos = None
     fecha_obj_str = None
@@ -321,6 +350,8 @@ def diagnostico():
         "titulares11": titulares11,
         "botellas_dia": botellas_dia,
         "botellas_mes": botellas_mes,
+        "cartera_real_total": cartera_real_total,
+        "dia_snapshot": dia_op,
         "fecha_datos": fecha_datos,
         "fecha_corte": fecha_datos,
         "fecha_objetivo": fecha_obj_str,
@@ -340,6 +371,9 @@ def dashboard():
     # CCC Compradores Mes — desde ventas.csv del mes actual (no clientes_dia)
     ventas_mes = _cargar_ventas_mes_actual()
     ccc_mes_map = _ccc_mes_por_vendedor(ventas_mes)
+    dias = contar_dias_habiles()
+    _corridos = max(dias["corridos"], 1)
+    _total    = dias["total"]
 
     # Fallback: objetivo/acumulado/avance desde resultado.xlsx para vendedores sin maestro de clientes
     resultado_fallback = {}
@@ -384,6 +418,7 @@ def dashboard():
             acum = fb["acumulado"]
             av = fb["avance"]
             sin_maestro = True
+        tendencia_pct = round((acum / _corridos) * _total / obj * 100, 2) if obj else 0
         cli_total = int(vv["clientes_planificados"].sum()) if not vv.empty and "clientes_planificados" in vv.columns else 0
         cli_sin = int(vv["clientes_sin_compra_mes"].sum()) if not vv.empty and "clientes_sin_compra_mes" in vv.columns else 0
 
@@ -418,7 +453,7 @@ def dashboard():
             "sin_maestro": sin_maestro,
             "last_sync": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "kpis": {
-                "objetivo": obj, "acumulado": acum, "avance_pct": av,
+                "objetivo": obj, "acumulado": acum, "avance_pct": av, "tendencia_pct": tendencia_pct,
                 "venta_hoy_total": venta_ayer, "venta_mes_actual": acum,
                 "clientes_total": cli_total, "clientes_pendientes": cli_sin,
                 # CCC Compradores Mes — fuente: ventas.csv mes actual, ImporteNetoItem > 0
@@ -505,6 +540,8 @@ def vendedor_detalle(vid):
     venta_hoy = float(vv["venta_ayer"].sum())        if not vv.empty else 0
     cli_total = int(vv["clientes_planificados"].sum()) if not vv.empty and "clientes_planificados" in vv.columns else 0
     cli_sin   = int(vv["clientes_sin_compra_mes"].sum()) if not vv.empty and "clientes_sin_compra_mes" in vv.columns else 0
+    dias_vd          = contar_dias_habiles()
+    tendencia_pct_vd = round((acum / max(dias_vd["corridos"], 1)) * dias_vd["total"] / obj * 100, 2) if obj else 0
 
     # CCC Compradores Mes — desde ventas.csv del mes actual
     ventas_mes_vd = _cargar_ventas_mes_actual()
@@ -559,6 +596,7 @@ def vendedor_detalle(vid):
         "objetivo":          obj,
         "acumulado":         acum,
         "avance_pct":        round(av, 2),
+        "tendencia_pct":    tendencia_pct_vd,
         "venta_hoy":         venta_hoy,
         "clientes_total":    cli_total,
         "clientes_pendientes": cli_sin,

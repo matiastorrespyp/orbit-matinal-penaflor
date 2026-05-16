@@ -742,7 +742,8 @@ function gDashboard(p){
   let tO=0,tA=0,tC=0,tP=0,tCCC=0,t11=0;
   dash.forEach(v=>{const k=v.kpis||{}; tO+=k.objetivo||0; tA+=k.acumulado||0; tC+=k.clientes_total||0; tP+=k.clientes_pendientes||0; tCCC+=k.ccc_total||0; t11+=k.once_titulares_cumplidos||0; });
   const avG=tO?tA/tO*100:0, cobG=tC?(1-tP/tC)*100:0, altaN=al.filter(a=>a.prioridad==='alta').length;
-  const dC=cal.corridos||1, dT=cal.total||24, dR=cal.restantes||(dT-dC);
+  const dC=cal.corridos||1, dT=cal.total||24
+  const tenG = tO ? ((tA / Math.max(dC,1)) * dT / tO * 100) : 0, dR=cal.restantes||(dT-dC);
 
   // Page header
   p.insertAdjacentHTML('beforeend',`
@@ -752,7 +753,7 @@ function gDashboard(p){
         <div class="gph-sub">${dash.length} vendedores activos · ${dC} de ${dT} días hábiles · ${diag.fecha_datos||''}</div>
       </div>
       <div class="gph-chips">
-        <span class="chip ${pcol(avG)}">${avG.toFixed(1)}% avance</span>
+        <span class="chip ${pcol(tenG)}">${tenG.toFixed(1)}% tendencia</span>
         <span class="chip">${dR} días restantes</span>
       </div>
     </div>`);
@@ -765,25 +766,25 @@ function gDashboard(p){
         <div class="kv">${fmtM(tA)}</div>
         <div class="kh">Objetivo: ${fmtM(tO)}</div>
       </div>
-      <div class="kcard ${pcol(avG)}">
-        <div class="kl">Avance general</div>
-        <div class="kv">${avG.toFixed(1)}<span class="ku">%</span></div>
+      <div class="kcard ${pcol(tenG)}">
+        <div class="kl">Tendencia %</div>
+        <div class="kv">${tenG.toFixed(1)}<span class="ku">%</span></div>
         <div class="kh">${dR} días hábiles restantes</div>
       </div>
-      <div class="kcard ${cobG>=80?'ok':cobG>=50?'wn':'bd'}">
-        <div class="kl">Cobertura</div>
-        <div class="kv">${cobG.toFixed(0)}<span class="ku">%</span></div>
-        <div class="kh">${tC-tP} de ${tC} clientes</div>
+      <div class="kcard info">
+        <div class="kl">Planificados Vi</div>
+        <div class="kv">${tC}</div>
+        <div class="kh">Sin compra Vi: ${tP}</div>
       </div>
       <div class="kcard info">
-        <div class="kl">CCC acumulado</div>
+        <div class="kl">CCC Compradores Mes</div>
         <div class="kv">${tCCC}</div>
         <div class="kh">Clientes con compra neta &gt;0</div>
       </div>
       <div class="kcard wn">
-        <div class="kl">Clientes pendientes</div>
+        <div class="kl">Sin compra zona Vi</div>
         <div class="kv">${tP}</div>
-        <div class="kh">Sin compra del mes</div>
+        <div class="kh">Sin compra planificados Vi</div>
       </div>
       <div class="kcard ${altaN>10?'bd':altaN>3?'wn':'ok'}">
         <div class="kl">Alertas críticas</div>
@@ -796,17 +797,17 @@ function gDashboard(p){
   const grid=document.createElement('div'); grid.className='g2'; grid.style.alignItems='start';
 
   // left: ranking + cobertura segmento
-  const sorted=[...dash].sort((a,b)=>(b.kpis?.avance_pct||0)-(a.kpis?.avance_pct||0));
+  const sorted=[...dash].sort((a,b)=>((b.kpis?.tendencia_pct??0)-(a.kpis?.tendencia_pct??0)));
   let left=`<div>
     <div class="card">
       <div class="card-hd"><span class="card-title">🏆 Ranking de Vendedores</span><span class="chip">${sorted.length} vendedores</span></div>
       <div class="card-body">
-        ${sorted.map(v=>{const k=v.kpis||{},av=k.avance_pct||0,cl=pcol(av),col=CV[v.vendedor_id]||'#888';
+        ${sorted.map(v=>{const k=v.kpis||{},av=k.tendencia_pct??0,cl=pcol(av),col=CV[v.vendedor_id]||'#888';
           return `<div class="rrow">
             <div class="rdot" style="background:${col}">${ini(v.vendedor_nombre)}</div>
             <div class="rinfo">
               <b>${v.vendedor_id} · ${v.vendedor_nombre}</b>
-              <div class="rsub">${fmtM(k.acumulado)} / ${fmtM(k.objetivo)} · CCC: ${k.ccc_total||0} · 11T: ${k.once_titulares_cumplidos||0} · Pend: ${k.clientes_pendientes||0}</div>
+              <div class="rsub">${fmtM(k.acumulado)} / ${fmtM(k.objetivo)} · CCC Mes: ${k.ccc_total||0} · 11T: ${k.once_titulares_cumplidos||0} · S/C Vi: ${k.clientes_pendientes||0}</div>
               <div style="margin-top:5px;"><div class="bar"><div class="bar-f ${cl}" style="width:${clamp(av,0,100)}%"></div></div></div>
             </div>
             <div class="rpct" style="color:var(--${cl})">${av.toFixed(1)}%</div>
@@ -817,13 +818,13 @@ function gDashboard(p){
   const segs=D.diag?.segmentos||[];
   if(segs.length){
     left+=`<div class="card">
-      <div class="card-hd"><span class="card-title">📦 Cobertura por Segmento</span></div>
+      <div class="card-hd"><span class="card-title">📦 Cobertura día sobre cartera total</span></div>
       <div class="card-body">
         ${segs.map(s=>{const pct=s.clientes?Math.round(s.cubiertos/s.clientes*100):0,cl=pct>=80?'ok':pct>=50?'wn':'bd';
           return `<div class="srow">
             <div class="srow-hd"><span class="srow-name">${s.nombre||s.id}</span><span class="chip ${cl}">${pct}%</span></div>
             <div class="bar" style="height:5px;"><div class="bar-f ${cl}" style="width:${pct}%"></div></div>
-            <div class="xs m3 mt4">${s.cubiertos||0} cubiertos de ${s.clientes||0} · mín. ${s.req||'–'} bot.</div>
+            <div class="xs m3 mt4">${s.cubiertos||0} cubiertos ayer de ${s.clientes||0} · mín. ${s.req||'–'} bot.</div>
           </div>`;}).join('')}
       </div>
     </div>`;
@@ -876,7 +877,7 @@ function gVendedores(p){
   const grid=document.createElement('div');
   grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:13px;';
   grid.innerHTML=filt.map((v,i)=>{
-    const k=v.kpis||{},av=k.avance_pct||0,cl=pcol(av),col=CV[v.vendedor_id]||'#888';
+    const k=v.kpis||{},av=k.tendencia_pct??0,cl=pcol(av),col=CV[v.vendedor_id]||'#888';
     return `<div class="card">
       <div class="card-hd">
         <div class="row gap10">
@@ -889,10 +890,10 @@ function gVendedores(p){
         <div class="bar" style="height:6px;margin-bottom:10px;"><div class="bar-f ${cl}" style="width:${clamp(av,0,100)}%"></div></div>
         <div class="row-b xs m3 mb12"><span>Acum: ${fmtM(k.acumulado)}</span><span>Obj: ${fmtM(k.objetivo)}</span></div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;text-align:center;">
-          <div><div class="xs m3">CCC</div><b>${k.ccc_total||0}</b></div>
+          <div><div class="xs m3">CCC Mes</div><b>${k.ccc_total||0}</b></div>
           <div><div class="xs m3">11T ✓</div><b>${k.once_titulares_cumplidos||0}</b></div>
-          <div><div class="xs m3">Total</div><b>${k.clientes_total||0}</b></div>
-          <div><div class="xs m3">Pend.</div><b style="color:var(--bd)">${k.clientes_pendientes||0}</b></div>
+          <div><div class="xs m3">Plan.Vi</div><b>${k.clientes_total||0}</b></div>
+          <div><div class="xs m3">S/C Vi</div><b style="color:var(--bd)">${k.clientes_pendientes||0}</b></div>
         </div>
       </div>
     </div>`;}).join('');
@@ -1002,7 +1003,7 @@ function vInicio(){
   const d=D.det||{}, msgs=D.msgs||[], diag=D.diag||{};
   const vk=(D.dash||[]).find(v=>v.vendedor_id===(userData.vendedor_id||'').toUpperCase())?.kpis||{};
   const obj=d.objetivo||vk.objetivo||0, acum=d.acumulado||vk.acumulado||0;
-  const falta=Math.max(0,obj-acum), av=d.avance_pct||vk.avance_pct||0, cl=pcol(av);
+  const falta=Math.max(0,obj-acum), av=d.tendencia_pct??vk.tendencia_pct??0, cl=pcol(av);
   const hoy=new Date(), fecha=hoy.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
   const opors=(D.cli||[]).filter(c=>(c.vendedor_id||'').toUpperCase()===(userData.vendedor_id||'').toUpperCase()&&(c.estado||'').toLowerCase().includes('sin')).slice(0,3);
   let h=`
@@ -1011,7 +1012,7 @@ function vInicio(){
       <div class="vhdr-date">${fecha} · Zona del día: <b style="color:var(--mg)">${currentDay||diag.dia_operativo||'–'}</b></div>
       <div class="vhdr-chips">
         <span class="chip">${diag.fecha_datos||'–'}</span>
-        <span class="chip ${cl}">${av.toFixed(1)}% avance</span>
+        <span class="chip ${cl}">${av.toFixed(1)}% tendencia</span>
         ${diag.calendario?`<span class="chip">${diag.calendario.restantes||'–'} días restantes</span>`:''}
       </div>
     </div>`;
@@ -1024,10 +1025,10 @@ function vInicio(){
     <div class="row-b xs m3 mt4"><span>0%</span><span>Meta 100%</span></div></div>
   </div>
   <div class="vkrow">
-    <div class="vkcard info"><div class="vkl">CCC Total</div><div class="vkv">${vk.ccc_total||0}</div><div class="vkh">Clientes con compra</div></div>
-    <div class="vkcard ok"><div class="vkl">11 Titulares</div><div class="vkv">${d.once_t_cumplidos||vk.once_titulares_cumplidos||0}</div><div class="vkh">de ${d.once_t_total||vk.once_titulares_total||'–'}</div></div>
-    <div class="vkcard wn"><div class="vkl">Pendientes</div><div class="vkv">${vk.clientes_pendientes||0}</div><div class="vkh">Sin compra del mes</div></div>
-    <div class="vkcard mg"><div class="vkl">Total clientes</div><div class="vkv">${vk.clientes_total||0}</div><div class="vkh">Zona ${currentDay||'–'}</div></div>
+    <div class="vkcard info"><div class="vkl">CCC Mes</div><div class="vkv">${vk.ccc_total||0}</div><div class="vkh">Compradores mes</div></div>
+    <div class="vkcard ok"><div class="vkl">Marcas 11T</div><div class="vkv">${d.once_t_cumplidos||vk.once_titulares_cumplidos||0}</div><div class="vkh">marcas cubiertas</div></div>
+    <div class="vkcard wn"><div class="vkl">Sin compra</div><div class="vkv">${vk.clientes_pendientes||0}</div><div class="vkh">Sin compra del mes</div></div>
+    <div class="vkcard mg"><div class="vkl">Clientes Vi</div><div class="vkv">${vk.clientes_total||0}</div><div class="vkh">Zona ${currentDay||'–'}</div></div>
   </div>`;
   if(opors.length){
     h+=`<div class="sm bold" style="margin:2px 0 9px;">🎯 Oportunidades del día</div>`;
@@ -1080,10 +1081,10 @@ function vKpis(){
   const d=D.det||{};
   const vk=(D.dash||[]).find(v=>v.vendedor_id===(userData.vendedor_id||'').toUpperCase())?.kpis||{};
   const tits=D.det?.titulares11||D.diag?.titulares11||[];
-  const obj=d.objetivo||vk.objetivo||0, acum=d.acumulado||vk.acumulado||0, av=d.avance_pct||vk.avance_pct||0, cl=pcol(av);
+  const obj=d.objetivo||vk.objetivo||0, acum=d.acumulado||vk.acumulado||0, av=d.tendencia_pct??vk.tendencia_pct??0, cl=pcol(av);
   let h=`<div class="vsh">Mis Indicadores</div>
     <div class="card">
-      <div class="card-hd"><span class="card-title">📊 Avance vs. Objetivo</span></div>
+      <div class="card-hd"><span class="card-title">📊 Tendencia vs. Objetivo</span></div>
       <div class="card-body">
         <div class="row-b mb12">
           <div><div class="xs m3">Acumulado</div><div style="font-family:var(--f-dis);font-size:24px;font-weight:700;">${fmtM(acum)}</div></div>
