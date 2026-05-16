@@ -8,3 +8,12 @@ __pycache__/
 01_INPUTS/04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx
 01_INPUTS/RAW_PRODUCTOS/
 02_HISTORY/_BACKUP_ANTES_MODULO_VDA_2026-05-12/
+
+# ORBIT - archivos locales / temporales
+.claude/settings.local.json
+diff_*.txt
+screenshots/
+*.log
+08_LOGS/*.log
+08_LOGSserver_*.log
+*.bak.*
