@@ -26,3 +26,13 @@ screenshots/
 
 # ORBIT - auditorias locales
 ESTADO_ARCHIVOS_GENERADOS_PENDIENTES.txt
+
+# ORBIT - outputs mixtos no críticos
+04_DATASETS_ORBIT/datasets_inventory.csv
+04_DATASETS_ORBIT/log_motor.csv
+05_INTELLIGENCE_ORBIT/*.csv
+05_INTELLIGENCE_ORBIT/*.json
+!05_INTELLIGENCE_ORBIT/modulo_vda_clientes_ganados.py
+!05_INTELLIGENCE_ORBIT/variables_comerciales.xlsx
+06_COPILOTO_VENDEDOR_PROACTIVO/mensajes/
+06_COPILOTO_VENDEDOR_PROACTIVO/mensajes_vendedores_resumen.csv
