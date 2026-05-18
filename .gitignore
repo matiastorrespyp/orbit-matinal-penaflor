@@ -36,3 +36,6 @@ ESTADO_ARCHIVOS_GENERADOS_PENDIENTES.txt
 !05_INTELLIGENCE_ORBIT/variables_comerciales.xlsx
 06_COPILOTO_VENDEDOR_PROACTIVO/mensajes/
 06_COPILOTO_VENDEDOR_PROACTIVO/mensajes_vendedores_resumen.csv
+
+# ORBIT - reportes locales de auditoria
+ESTADO_*.txt
