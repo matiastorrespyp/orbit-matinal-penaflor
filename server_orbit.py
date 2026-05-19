@@ -223,6 +223,10 @@ def contar_dias_habiles(fecha_corte=None):
         "fecha_corte_calendario": fecha_corte.strftime("%Y-%m-%d"),
     }
 
+@app.route("/favicon.ico")
+def favicon():
+    return "", 204
+
 # ====== STATIC ======
 @app.route("/")
 @app.route("/<path:filename>")
