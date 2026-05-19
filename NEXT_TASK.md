@@ -46,6 +46,32 @@ Comparar estos dos números en el mismo contexto es semánticamente incorrecto.
 
 **Restricciones:** proponer diseño primero, alineado con sistema visual existente. No implementar sin aprobación.
 
+### Próximo paso — Prioridad 2: Módulo Innovaciones Peñaflor + Plan AS
+
+**Innovaciones Peñaflor + Plan AS:**
+- Auditoría completada 2026-05-19.
+- Innovaciones activas actuales: 17.
+- Antares P770 y Antares P330 quedan Pendiente stock / Próximo ingreso.
+- No cuentan como 0%, no son incumplimiento y no entran en el denominador actual.
+- Se activan cuando haya stock/código/ventas confirmadas.
+- Frizze Manxana va con X.
+- Frizze Manxana = FRIZZE MANXANA POP 6X1000, código 14620.
+- Antares XPA = ANTARES XPA LATA 6X473, código 60020.
+- El resto con EAN se mapea por Código normalizado sin ceros.
+
+**Plan AS:**
+- 28 clientes.
+- 23 Inicial + 5 Silver.
+- Sin compra mayo: clientes 172 y 2689.
+- Fuente: `01_INPUTS/INNOVACIONES/Innovaciones.xlsx`.
+
+**Pendiente (no tocar código hasta aprobación):**
+1. Motor: `mod_innovaciones_plan_as.csv`.
+2. Endpoints gerencia/vendedor.
+3. Bloque portal gerencia.
+4. Sección perfil vendedor.
+5. Playwright QA.
+
 ---
 
 ## Sesión 2026-05-14 — Cierre confirmado (commit c67e70e)
