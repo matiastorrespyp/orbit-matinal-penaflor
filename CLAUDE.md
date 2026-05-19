@@ -21,7 +21,8 @@ Primero precisión de datos, después diseño.
 ## Reglas comerciales Peñaflor
 
 - Vendedores activos Peñaflor: V3, V4, V6, V7, V8, V9, V10.
-- Excluir siempre V2 y V5 de todos los reportes Peñaflor.
+- Excluir siempre V2, V5 y V20 de todos los reportes Peñaflor.
+- V20 = DEPOSITO / venta directa / no es vendedor de ruta Peñaflor.
 - V3 es Nadia Gambino.
 - V3 no trabaja Autoservicios.
 - No calcular objetivos, penalizaciones ni métricas de Autoservicio para V3.

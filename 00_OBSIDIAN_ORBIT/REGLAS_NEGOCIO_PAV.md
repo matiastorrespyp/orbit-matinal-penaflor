@@ -10,10 +10,11 @@ Fuente de verdad para cálculos comerciales. Toda lógica en scripts, endpoints 
 V3, V4, V6, V7, V8, V9, V10
 
 ### Excluidos — siempre
-V2 y V5 se excluyen de **todos** los reportes, filtros, sumas y denominadores.
-- En `ventas.csv`: filtrar `CodVendedor not in {2, 5}`.
-- En `clientes.xlsx`: filtrar `CodVendedor not in {2, 5}`.
-- En datasets intermedios: verificar que no incluyan filas de V2/V5.
+V2, V5 y V20 se excluyen de **todos** los reportes, filtros, sumas y denominadores.
+- En `ventas.csv`: filtrar `CodVendedor not in {2, 5, 20}`.
+- En `clientes.xlsx`: filtrar `CodVendedor not in {2, 5, 20}`.
+- En datasets intermedios: verificar que no incluyan filas de V2/V5/V20.
+- **V20 = DEPOSITO**: venta directa de depósito, no es vendedor de ruta Peñaflor. Aparece en fuentes ERP crudas con ramos `CASH&CARRY`, `AWAY FROM HOME`, `Empleados`, `MAYORISTAS`.
 
 ### V3 — Nadia Gambino
 - No trabaja el canal Autoservicio.
