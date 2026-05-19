@@ -916,8 +916,10 @@ def main():
     ventas_ayer = ventas_validas.loc[ventas_validas["fecha_comprobante"] == fecha_ejecucion].copy()
     build_log(log_rows, "VENTAS_VALIDAS_DIA", len(ventas_ayer))
 
+    _primer_dia_mes = fecha_ejecucion.replace(day=1).date()
     ventas_mes = historial_ventas.loc[
-        historial_ventas["fecha_comprobante"] <= fecha_ejecucion.date()
+        (historial_ventas["fecha_comprobante"] >= _primer_dia_mes) &
+        (historial_ventas["fecha_comprobante"] <= fecha_ejecucion.date())
     ].copy().rename(columns={"marca": "marca_final", "articulo": "articulo_final"})
     build_log(log_rows, "VENTAS_VALIDAS_MES", len(ventas_mes))
 
