@@ -495,6 +495,51 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 :root {
   --cv3:#5BDED4; --cv4:#F2B544; --cv6:#5BC23A; --cv7:#9B7BFF; --cv8:#4DA3FF; --cv9:#FF9D5C; --cv10:#FF5D8B;
 }
+
+/* ── plan form (vendedor) ─────────────────────────────────── */
+.pf-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+.pf-full { grid-column:1/-1; }
+.pf-field label { display:block; font-size:9.5px; color:var(--text3); text-transform:uppercase; letter-spacing:1.4px; margin-bottom:5px; font-weight:700; }
+.pf-field input, .pf-field textarea {
+  width:100%; padding:10px 12px; background:rgba(0,0,0,.4);
+  border:1px solid var(--bs); border-radius:var(--r-sm); color:var(--text);
+  font-size:13px; font-family:inherit; font-variant-numeric:tabular-nums;
+}
+.pf-field input:focus, .pf-field textarea:focus { outline:none; border-color:var(--mg); box-shadow:0 0 0 2px rgba(226,20,122,.15); }
+.pf-field textarea { resize:vertical; min-height:60px; }
+.pf-ok { padding:10px; background:var(--ok-s); border:1px solid rgba(46,194,126,.3);
+  border-radius:var(--r-sm); color:var(--ok); font-size:12px; text-align:center;
+  margin-top:10px; display:none; }
+
+/* ── plan vs real (gerencia) ─────────────────────────────── */
+.pvr-wrap { overflow-x:auto; }
+.pvr-tbl th, .pvr-tbl td { white-space:nowrap; }
+.pvr-pos { color:var(--ok); font-weight:700; }
+.pvr-neg { color:var(--bd); font-weight:700; }
+.pvr-none { color:var(--text3); font-style:italic; font-size:11px; }
+
+/* ── modal edición gerencia ──────────────────────────────── */
+.emod-bg {
+  display:none; position:fixed; inset:0; z-index:100;
+  background:rgba(0,0,0,.72); backdrop-filter:blur(8px);
+  align-items:center; justify-content:center; padding:20px;
+}
+.emod-bg.open { display:flex; }
+.emod-card {
+  background:var(--surf); border:1px solid var(--bs); border-radius:var(--r-xl);
+  padding:28px; width:100%; max-width:500px;
+  box-shadow:0 32px 80px rgba(0,0,0,.6); max-height:90vh; overflow-y:auto;
+}
+.emod-title { font-family:var(--f-dis); font-size:17px; font-weight:700; margin-bottom:18px; }
+.emod-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+.emod-full { grid-column:1/-1; }
+.emod-sel {
+  width:100%; padding:10px 12px; background:rgba(0,0,0,.4);
+  border:1px solid var(--bs); border-radius:var(--r-sm); color:var(--text);
+  font-size:13px; font-family:inherit; appearance:none;
+}
+.emod-sel option { background:#111820; }
+.emod-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:18px; }
 </style>
 </head>
 <body>
@@ -550,6 +595,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       <div class="gs-item" data-sc="vendedores"  onclick="gSw('vendedores',this)"><span class="gs-ico">👥</span>Vendedores</div>
       <div class="gs-item" data-sc="clientes"    onclick="gSw('clientes',this)"><span class="gs-ico">🏪</span>Clientes Críticos</div>
       <div class="gs-item" data-sc="planificacion" onclick="gSw('planificacion',this)"><span class="gs-ico">📋</span>Planificación</div>
+      <div class="gs-item" data-sc="planvsreal"   onclick="gSw('planvsreal',this)"><span class="gs-ico">📊</span>Plan vs Real</div>
       <div class="gs-item" data-sc="alertas"    onclick="gSw('alertas',this)">
         <span class="gs-ico">⚡</span>Alertas
         <span class="gs-badge" id="gAlertBadge" style="display:none">0</span>
@@ -608,12 +654,14 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
   <div class="vcont active" id="vT-inicio"></div>
   <div class="vcont" id="vT-ruta"></div>
   <div class="vcont" id="vT-kpis"></div>
+  <div class="vcont" id="vT-plan"></div>
   <div class="vcont" id="vT-alertas"></div>
 
   <nav class="vbnav">
     <div class="vtab active" onclick="vSw('inicio',this)"><span class="vtab-ico">🏠</span><span>Inicio</span></div>
     <div class="vtab" onclick="vSw('ruta',this)"><span class="vtab-ico">📍</span><span>Ruta</span></div>
     <div class="vtab" onclick="vSw('kpis',this)"><span class="vtab-ico">📈</span><span>KPIs</span></div>
+    <div class="vtab" onclick="vSw('plan',this)"><span class="vtab-ico">📋</span><span>Mi Plan</span></div>
     <div class="vtab" onclick="vSw('alertas',this)">
       <span class="vtab-ico">⚡</span><span>Alertas</span>
       <div class="vtab-badge" id="vBadge"></div>
@@ -626,7 +674,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 
 /* ── estado ── */
 let userData = null, currentDay = null, gFiltro = "", gScreen = "dashboard";
-let D = { diag:{}, dash:[], cli:[], al:[], plan:[], det:{}, msgs:[] };
+let D = { diag:{}, dash:[], cli:[], al:[], plan:[], pvr:{}, det:{}, msgs:[] };
 
 const CV = { V3:'#5BDED4', V4:'#F2B544', V6:'#5BC23A', V7:'#9B7BFF', V8:'#4DA3FF', V9:'#FF9D5C', V10:'#FF5D8B' };
 const DAYS = ['LU','MA','MI','JU','VI','SA'];
@@ -654,15 +702,17 @@ async function doLogin(){
 
 /* ── carga datos ── */
 async function loadAll(){
-  const [diag,dash,cli,al,plan] = await Promise.all([
+  const [diag,dash,cli,al,plan,pvr] = await Promise.all([
     safe('/api/diagnostico'), safe('/api/dashboard'),
-    safe('/api/clientes'), safe('/api/alertas'), safe('/api/planificacion')
+    safe('/api/clientes'), safe('/api/alertas'),
+    safe('/api/planificacion'), safe('/api/matinal/resumen')
   ]);
   if(diag){ D.diag=diag; if(diag.dia_operativo) currentDay=diag.dia_operativo.toUpperCase(); }
   if(dash) D.dash=Array.isArray(dash)?dash:[];
   if(cli)  D.cli =Array.isArray(cli) ?cli :[];
   if(al)   D.al  =Array.isArray(al)  ?al  :[];
   if(plan) D.plan=Array.isArray(plan)?plan:[];
+  if(pvr)  D.pvr =pvr;
   if(userData?.rol==='vendedor'){
     const [det,msgs]=await Promise.all([
       safe('/api/vendedor/'+userData.vendedor_id),
@@ -723,7 +773,7 @@ function gSw(id,el){
   gScreen=id;
   document.querySelectorAll('.gs-item').forEach(n=>n.classList.remove('active'));
   (el||document.querySelector(`[data-sc="${id}"]`))?.classList.add('active');
-  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',planificacion:'Planificación',alertas:'Alertas Comerciales'};
+  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',planificacion:'Planificación',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales'};
   document.getElementById('gTopTitle').textContent=tt[id]||'';
   gRender();
 }
@@ -733,6 +783,7 @@ function gRender(){
   else if(gScreen==='vendedores')    gVendedores(p);
   else if(gScreen==='clientes')      gClientes(p);
   else if(gScreen==='planificacion') gPlanificacion(p);
+  else if(gScreen==='planvsreal')    gPlanVsReal(p);
   else if(gScreen==='alertas')       gAlertas(p);
 }
 
@@ -928,20 +979,47 @@ function gClientes(p){
 
 /* — Planificación — */
 function gPlanificacion(p){
-  const pl=D.plan||[];
-  let html=`<div class="gph"><div><div class="gph-title">Planificación Matinal</div><div class="gph-sub">Revisar, ajustar y aprobar planes de vendedores</div></div></div>`;
+  const hoy = new Date().toISOString().split('T')[0];
+  const pl  = (D.plan||[]).filter(r => r.fecha === hoy);
+  const aprobados  = pl.filter(r=>r.estado==='aprobada').length;
+  const enviados   = pl.filter(r=>r.estado==='enviada').length;
+  const modificados= pl.filter(r=>r.estado==='modificada').length;
+
+  let html=`<div class="gph">
+    <div><div class="gph-title">Planificación Matinal</div>
+    <div class="gph-sub">${hoy} · ${pl.length} planes recibidos de ${D.dash.length} vendedores</div></div>
+    <div class="gph-chips">
+      <span class="chip ok">${aprobados} aprobados</span>
+      <span class="chip info">${enviados} enviados</span>
+      ${modificados?`<span class="chip vio">${modificados} modificados</span>`:''}
+    </div>
+  </div>`;
+
   if(!pl.length){
-    html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">📋</div><p>Sin planificaciones cargadas aún.<br>Los vendedores envían sus planes desde la app.</p></div></div></div>`;
+    html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">📋</div><p>Sin planes recibidos hoy.<br>Los vendedores los envían desde la app.</p></div></div></div>`;
   } else {
     html+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:11px;">`;
-    html+=pl.slice(0,14).map(pl=>`<div class="pcard">
-      <div class="pcard-hd"><span class="pcard-name">${pl.vendedor_id}</span><span class="chip ${pl.estado==='modificada'?'vio':'ok'}">${pl.estado||'enviada'}</span></div>
-      <div class="xs m3 mb12">${pl.fecha||'–'} · Zona: ${pl.dia_visita||'–'}</div>
-      <div class="row-b sm m2"><span>Venta obj.: ${fmtM(pl.venta_esperada)}</span><span>11T: ${pl.once_t||0}</span></div>
-      <div class="row-b xs m3 mt4"><span>CCC T/A/O: ${pl.ccc_tradicional||0}/${pl.ccc_autoservicio||0}/${pl.ccc_onpremise||0}</span></div>
-    </div>`).join('');
+    html+=pl.map(r=>{
+      const scl = r.estado==='aprobada'?'ok':r.estado==='modificada'?'vio':'info';
+      const col = CV[r.vendedor_id]||'var(--text2)';
+      return `<div class="pcard">
+        <div class="pcard-hd">
+          <span class="pcard-name" style="color:${col}">${r.vendedor_id}</span>
+          <span class="chip ${scl}">${r.estado||'enviada'}</span>
+        </div>
+        <div class="row-b sm m2 mb8"><span>Venta obj.</span><b>${fmtM(r.venta_esperada)}</b></div>
+        <div class="row-b xs m3 mb4"><span>CCC T/A/O</span><span>${r.ccc_tradicional||0}/${r.ccc_autoservicio||0}/${r.ccc_onpremise||0}</span></div>
+        <div class="row-b xs m3 mb8"><span>11T plan</span><span>${r.once_t||0}</span></div>
+        ${r.acciones?`<div class="xs m3 mb8" style="line-height:1.35;font-style:italic;">"${(r.acciones||'').substring(0,70)}"</div>`:''}
+        ${r.comentario_gerencia?`<div class="xs mt4 mb8" style="color:var(--vio);line-height:1.35;">Gerencia: ${(r.comentario_gerencia||'').substring(0,60)}</div>`:''}
+        <div class="row gap8" style="margin-top:10px;">
+          ${r.estado!=='aprobada'?`<button class="g-prim" style="flex:1;font-size:11px;padding:6px 4px;" onclick="aprobarPlan(${r.id})">✓ Aprobar</button>`:''}
+          <button class="g-ghost" style="flex:1;font-size:11px;padding:6px 4px;" onclick="editarPlan(${r.id})">✏️ Editar</button>
+        </div>
+      </div>`;}).join('');
     html+=`</div>`;
   }
+
   html+=`<div class="card" style="margin-top:14px;">
     <div class="card-hd"><span class="card-title">💬 Enviar mensaje a vendedor</span></div>
     <div class="card-body">
@@ -996,7 +1074,7 @@ function vSw(tab,el){
   el.classList.add('active');
 }
 
-function vRenderAll(){ vInicio(); vRuta(); vKpis(); vAlertas(); }
+function vRenderAll(){ vInicio(); vRuta(); vKpis(); vPlan(); vAlertas(); }
 
 /* — Inicio — */
 function vInicio(){
@@ -1144,6 +1222,211 @@ function vAlertas(){
       </div>`;}).join('');
   }
   document.getElementById('vT-alertas').innerHTML=h;
+}
+
+/* ════ PLAN VS REAL (gerencia) ════ */
+function gPlanVsReal(p){
+  const pvr  = D.pvr||{};
+  const data = pvr.resumen||[];
+  let h=`<div class="gph">
+    <div><div class="gph-title">Plan vs Real</div>
+    <div class="gph-sub">Plan cargado ayer (${pvr.fecha_plan||'–'}) vs venta real del día</div></div>
+    <div class="gph-chips">
+      <span class="chip">${data.filter(v=>v.tiene_plan).length}/${data.length} con plan</span>
+      <span class="chip ok">${data.filter(v=>v.pct_cumplimiento!=null&&v.pct_cumplimiento>=90).length} en meta</span>
+    </div>
+  </div>`;
+  if(!data.length){
+    h+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">📊</div><p>Sin planes cargados ayer para comparar.</p></div></div></div>`;
+    p.innerHTML=h; return;
+  }
+  h+=`<div class="card">
+    <div class="card-hd"><span class="card-title">📊 Comparación por vendedor</span></div>
+    <div class="card-body nop pvr-wrap">
+      <table class="tbl pvr-tbl">
+        <thead><tr>
+          <th>Vendedor</th><th>Plan venta</th><th>Real ayer</th><th>Delta</th><th>Cumpl %</th>
+          <th>CCC T</th><th>CCC A</th><th>CCC O</th><th>11T plan</th><th>Estado plan</th>
+        </tr></thead>
+        <tbody>${data.map(v=>{
+          const dc=v.delta>=0?'pvr-pos':'pvr-neg';
+          const pct=v.pct_cumplimiento!=null?v.pct_cumplimiento.toFixed(1)+'%':'–';
+          const pctCl=v.pct_cumplimiento==null?'':v.pct_cumplimiento>=90?'ok':v.pct_cumplimiento>=60?'wn':'bd';
+          const col=CV[v.vendedor_id]||'var(--text2)';
+          const esV3=v.vendedor_id==='V3';
+          return `<tr>
+            <td><span class="chip" style="color:${col}">${v.vendedor_id}</span> ${v.vendedor_nombre}</td>
+            <td>${v.tiene_plan?fmtM(v.plan_venta):'<span class="pvr-none">sin plan</span>'}</td>
+            <td>${fmtM(v.real_ayer)}</td>
+            <td class="${v.tiene_plan?dc:''}">${v.tiene_plan?(v.delta>=0?'+':'')+fmtM(v.delta):'–'}</td>
+            <td><span class="chip ${pctCl}">${pct}</span></td>
+            <td>${v.plan_ccc_trad||'–'}</td>
+            <td>${esV3?'<span class="pvr-none">N/A</span>':(v.plan_ccc_as||'–')}</td>
+            <td>${v.plan_ccc_op||'–'}</td>
+            <td>${v.plan_once_t||'–'}</td>
+            <td><span class="chip ${v.plan_estado==='aprobada'?'ok':v.plan_estado==='modificada'?'vio':v.plan_estado==='enviada'?'info':''}">${v.plan_estado||'–'}</span></td>
+          </tr>`;}).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+  p.innerHTML=h;
+}
+
+/* ════ MODAL EDICIÓN PLAN (gerencia) ════ */
+function editarPlan(id){
+  const plan=(D.plan||[]).find(r=>r.id===id); if(!plan) return;
+  const esV3=(plan.vendedor_id||'').toUpperCase()==='V3';
+  document.getElementById('emodBg')?.remove();
+  const div=document.createElement('div');
+  div.className='emod-bg open'; div.id='emodBg';
+  div.innerHTML=`<div class="emod-card">
+    <div class="emod-title">Editar plan · <span style="color:${CV[plan.vendedor_id]||'var(--text2)'}">${plan.vendedor_id}</span></div>
+    <div class="emod-grid">
+      <div class="pf-field"><label>Venta esperada</label>
+        <input type="number" id="em_venta" value="${plan.venta_esperada||0}" min="0"></div>
+      <div class="pf-field"><label>Estado</label>
+        <select id="em_estado" class="emod-sel">
+          <option value="enviada"   ${plan.estado==='enviada'  ?'selected':''}>Enviada</option>
+          <option value="modificada"${plan.estado==='modificada'?'selected':''}>Modificada</option>
+          <option value="aprobada"  ${plan.estado==='aprobada' ?'selected':''}>Aprobada</option>
+        </select></div>
+      <div class="pf-field"><label>CCC Tradicional</label>
+        <input type="number" id="em_trad" value="${plan.ccc_tradicional||0}" min="0"></div>
+      <div class="pf-field"><label>CCC ${esV3?'Auto (V3 N/A)':'Autoservicio'}</label>
+        <input type="number" id="em_as" value="${esV3?0:(plan.ccc_autoservicio||0)}" min="0" ${esV3?'disabled style="opacity:.45;"':''}></div>
+      <div class="pf-field"><label>CCC On Premise</label>
+        <input type="number" id="em_op" value="${plan.ccc_onpremise||0}" min="0"></div>
+      <div class="pf-field"><label>11 Titulares</label>
+        <input type="number" id="em_11t" value="${plan.once_t||0}" min="0"></div>
+      <div class="pf-field emod-full"><label>Acciones del día</label>
+        <textarea id="em_acciones" class="pf-field" style="width:100%;padding:10px 12px;background:rgba(0,0,0,.4);border:1px solid var(--bs);border-radius:var(--r-sm);color:var(--text);font-family:inherit;resize:vertical;min-height:56px;">${plan.acciones||''}</textarea></div>
+      <div class="pf-field emod-full"><label>Comentario gerencia</label>
+        <input type="text" id="em_com" value="${plan.comentario_gerencia||''}" placeholder="Observaciones para el vendedor..."></div>
+    </div>
+    <div class="emod-actions">
+      <button class="g-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="g-prim" onclick="guardarEditPlan(${id},${esV3})">Guardar →</button>
+    </div>
+  </div>`;
+  document.body.appendChild(div);
+  div.addEventListener('click',e=>{if(e.target===div) closeModal();});
+}
+
+function closeModal(){ document.getElementById('emodBg')?.remove(); }
+
+async function guardarEditPlan(id,esV3){
+  const payload={
+    venta_esperada: parseFloat(document.getElementById('em_venta')?.value||0),
+    estado:         document.getElementById('em_estado')?.value,
+    ccc_tradicional:parseInt(document.getElementById('em_trad')?.value||0),
+    ccc_autoservicio: esV3?0:parseInt(document.getElementById('em_as')?.value||0),
+    ccc_onpremise:  parseInt(document.getElementById('em_op')?.value||0),
+    once_t:         parseInt(document.getElementById('em_11t')?.value||0),
+    acciones:       document.getElementById('em_acciones')?.value||'',
+    comentario_gerencia: document.getElementById('em_com')?.value||'',
+    editado_por:    userData?.nombre||'Gerencia',
+  };
+  try{
+    const r=await fetch(`/api/planificacion/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json();
+    if(d.ok){
+      closeModal();
+      const pl=await safe('/api/planificacion'); if(pl) D.plan=Array.isArray(pl)?pl:[];
+      gRender();
+    }
+  }catch(e){}
+}
+
+async function aprobarPlan(id){
+  try{
+    const r=await fetch(`/api/planificacion/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({estado:'aprobada',editado_por:userData?.nombre||'Gerencia'})});
+    const d=await r.json();
+    if(d.ok){
+      const pl=await safe('/api/planificacion'); if(pl) D.plan=Array.isArray(pl)?pl:[];
+      gRender();
+    }
+  }catch(e){}
+}
+
+/* ════ MI PLAN (vendedor) ════ */
+function vPlan(){
+  const hoy = new Date().toISOString().split('T')[0];
+  const vid = (userData?.vendedor_id||'').toUpperCase();
+  const esV3 = vid==='V3';
+  const planHoy = (D.plan||[]).find(r=>r.fecha===hoy && r.vendedor_id===vid)||{};
+  const scl = planHoy.id?(planHoy.estado==='aprobada'?'ok':planHoy.estado==='modificada'?'vio':'info'):'';
+
+  let h=`<div class="vsh">Mi Plan del Día</div>`;
+
+  if(planHoy.id){
+    h+=`<div class="card" style="margin-bottom:12px;">
+      <div class="card-hd"><span class="card-title">Plan cargado hoy</span><span class="chip ${scl}">${(planHoy.estado||'enviada').toUpperCase()}</span></div>
+      <div class="card-body">
+        <div class="row-b sm m2 mb8"><span>Venta esperada</span><b>${fmtM(planHoy.venta_esperada)}</b></div>
+        <div class="row-b xs m3 mb4"><span>CCC Trad</span><span>${planHoy.ccc_tradicional||0}</span></div>
+        ${!esV3?`<div class="row-b xs m3 mb4"><span>CCC Auto</span><span>${planHoy.ccc_autoservicio||0}</span></div>`:''}
+        <div class="row-b xs m3 mb4"><span>CCC On Premise</span><span>${planHoy.ccc_onpremise||0}</span></div>
+        <div class="row-b xs m3 mb4"><span>11 Titulares</span><span>${planHoy.once_t||0}</span></div>
+        ${planHoy.acciones?`<div class="xs m3 mt4" style="line-height:1.4;">${planHoy.acciones}</div>`:''}
+        ${planHoy.comentario_gerencia?`<div class="vmsg" style="margin-top:10px;">
+          <div class="vmsg-from">Comentario Gerencia</div>
+          <div class="vmsg-txt">${planHoy.comentario_gerencia}</div>
+        </div>`:''}
+      </div>
+    </div>`;
+  }
+
+  h+=`<div class="card">
+    <div class="card-hd"><span class="card-title">${planHoy.id?'✏️ Actualizar plan':'📋 Cargar mi plan'}</span></div>
+    <div class="card-body">
+      <div class="pf-grid">
+        <div class="pf-field pf-full"><label>Venta esperada ($)</label>
+          <input type="number" id="pf_venta" placeholder="0" min="0" value="${planHoy.venta_esperada||''}"></div>
+        <div class="pf-field"><label>CCC Tradicional</label>
+          <input type="number" id="pf_trad" placeholder="0" min="0" value="${planHoy.ccc_tradicional||''}"></div>
+        ${!esV3?`<div class="pf-field"><label>CCC Autoservicio</label>
+          <input type="number" id="pf_as" placeholder="0" min="0" value="${planHoy.ccc_autoservicio||''}"></div>`:''}
+        <div class="pf-field"><label>CCC On Premise</label>
+          <input type="number" id="pf_op" placeholder="0" min="0" value="${planHoy.ccc_onpremise||''}"></div>
+        <div class="pf-field"><label>11 Titulares</label>
+          <input type="number" id="pf_11t" placeholder="0" min="0" value="${planHoy.once_t||''}"></div>
+        <div class="pf-field pf-full"><label>Acciones del día</label>
+          <textarea id="pf_acciones" placeholder="Clientes prioritarios, acciones planificadas...">${planHoy.acciones||''}</textarea></div>
+      </div>
+      <button class="g-prim" style="width:100%;" onclick="submitPlan('${vid}')">
+        ${planHoy.id?'Actualizar plan':'Enviar plan'} →
+      </button>
+      <div class="pf-ok" id="pfOk">✓ Plan enviado correctamente</div>
+    </div>
+  </div>`;
+
+  document.getElementById('vT-plan').innerHTML=h;
+}
+
+async function submitPlan(vid){
+  const esV3=vid==='V3';
+  const payload={
+    fecha:           new Date().toISOString().split('T')[0],
+    vendedor_id:     vid,
+    venta_esperada:  parseFloat(document.getElementById('pf_venta')?.value||0),
+    ccc_tradicional: parseInt(document.getElementById('pf_trad')?.value||0),
+    ccc_autoservicio:esV3?0:parseInt(document.getElementById('pf_as')?.value||0),
+    ccc_onpremise:   parseInt(document.getElementById('pf_op')?.value||0),
+    once_t:          parseInt(document.getElementById('pf_11t')?.value||0),
+    acciones:        document.getElementById('pf_acciones')?.value||'',
+  };
+  try{
+    const r=await fetch('/api/planificacion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json();
+    if(d.ok){
+      const ok=document.getElementById('pfOk');
+      if(ok){ok.style.display='block'; setTimeout(()=>ok.style.display='none',3000);}
+      const pl=await safe('/api/planificacion'); if(pl) D.plan=Array.isArray(pl)?pl:[];
+      vPlan();
+    }
+  }catch(e){}
 }
 
 /* ── mensajes ── */

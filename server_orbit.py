@@ -34,7 +34,19 @@ def init_db():
         zona TEXT, dia_visita TEXT, venta_esperada REAL, ccc_tradicional INTEGER,
         ccc_autoservicio INTEGER, ccc_onpremise INTEGER, once_t INTEGER,
         marcas TEXT, clientes_clave TEXT, acciones TEXT, estado TEXT DEFAULT 'enviada',
+        editado_por TEXT, comentario_gerencia TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
+    # Migración: agregar columnas si no existen (tabla puede ser anterior)
+    for col, defn in [("editado_por", "TEXT"), ("comentario_gerencia", "TEXT")]:
+        try:
+            c.execute(f"ALTER TABLE planificacion ADD COLUMN {col} {defn}")
+        except Exception:
+            pass
+    # Unique constraint para UPSERT por (fecha, vendedor_id)
+    try:
+        c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_plan_fecha_vend ON planificacion(fecha, vendedor_id)")
+    except Exception:
+        pass
     c.execute("""CREATE TABLE IF NOT EXISTS mensajes(
         id INTEGER PRIMARY KEY AUTOINCREMENT, vendedor_id TEXT NOT NULL,
         mensaje TEXT NOT NULL, leido INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
@@ -67,7 +79,8 @@ def read_csv(path):
         try: return pd.read_csv(path, encoding="latin1")
         except: return pd.read_csv(path, encoding="utf-8")
 
-_VENDEDORES_EXCLUIDOS = {2, 5}
+_VENDEDORES_EXCLUIDOS = {2, 5, 20}
+_VENDEDORES_ACTIVOS_PLAN = {"V3","V4","V6","V7","V8","V9","V10"}
 
 def _parse_num_ar(valor):
     """Parsea número en formato argentino (punto=miles, coma=decimal)."""
@@ -367,6 +380,7 @@ def dashboard():
     vend    = read_csv(CONFIG  / "vendedores_activos.csv")
     ccc_df  = read_csv(DATASETS / "mod_ccc_segmento.csv")   # CCC día (ayer)
     t11_df  = read_csv(DATASETS / "mod_11_titulares.csv")
+    cdia_df = read_csv(DATASETS / "clientes_dia.csv")        # para oportunidades
 
     # CCC Compradores Mes — desde ventas.csv del mes actual (no clientes_dia)
     ventas_mes = _cargar_ventas_mes_actual()
@@ -447,6 +461,15 @@ def dashboard():
         if cod.upper() == "V3":
             ccc_dia_as = 0
 
+        # Oportunidades: clientes sin compra del día (V3 excluye AS)
+        oportunidades = 0
+        if not cdia_df.empty and "estado_cliente" in cdia_df.columns and "vendedor_codigo" in cdia_df.columns:
+            opv = cdia_df[cdia_df["vendedor_codigo"].astype(str).apply(clean_code) == cn]
+            omask = opv["estado_cliente"].astype(str).str.lower().str.contains("sin", na=False)
+            if cod.upper() == "V3" and "segmento_operativo" in opv.columns:
+                omask = omask & (opv["segmento_operativo"].astype(str).str.upper() != "AUTOSERVICIO")
+            oportunidades = int(omask.sum())
+
         result.append({
             "vendedor_id": cod,
             "vendedor_nombre": nombre,
@@ -464,7 +487,7 @@ def dashboard():
                 "ccc_dia_total": ccc_dia_trad + ccc_dia_as + ccc_dia_op,
                 "once_titulares_cumplidos": t11_cumplidos, "once_titulares_total": t11_total,
                 "cobertura_pct": cli_total and (100 - (cli_sin/cli_total*100)) or 0,
-                "alertas_criticas": 0, "oportunidades": 0,
+                "alertas_criticas": 0, "oportunidades": oportunidades,
                 "inversion_desc_ars": 0.0, "sin_cargo_ars": 0.0,
                 "impacto_alertas_ars": 0.0, "venta_mes_anterior": 0.0,
                 "trabaja_autoservicio": cod.upper() != "V3"
@@ -619,25 +642,108 @@ def vendedor_detalle(vid):
 
 @app.route("/api/planificacion", methods=["GET","POST"])
 def planificacion():
-    vid = request.args.get("vendedor_id")
-    conn = sqlite3.connect(str(DB_PATH)); conn.row_factory = sqlite3.Row
+    fecha_q = request.args.get("fecha")
+    vid_q   = request.args.get("vendedor_id")
+    conn = sqlite3.connect(str(DB_PATH), timeout=10, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+
     if request.method == "POST":
-        d = request.get_json()
-        conn.execute("""INSERT INTO planificacion (fecha,vendedor_id,zona,dia_visita,venta_esperada,
-            ccc_tradicional,ccc_autoservicio,ccc_onpremise,once_t,marcas,clientes_clave,acciones)
-            VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
-            (d.get("fecha",datetime.now().strftime("%Y-%m-%d")), d.get("vendedor_id"), d.get("zona"),
-             d.get("dia_visita"), d.get("venta_esperada"), d.get("ccc_tradicional"),
-             d.get("ccc_autoservicio"), d.get("ccc_onpremise"), d.get("once_t"),
+        d = request.get_json() or {}
+
+        # Normalizar y validar vendedor_id
+        vid_raw = normalizar_vendedor_codigo(d.get("vendedor_id",""))
+        if vid_raw not in _VENDEDORES_ACTIVOS_PLAN:
+            conn.close()
+            return jsonify({"ok": False, "error": f"Vendedor {vid_raw} no autorizado"}), 400
+
+        # Regla: V3 no trabaja autoservicio
+        ccc_as = 0 if vid_raw == "V3" else int(d.get("ccc_autoservicio") or 0)
+        fecha  = d.get("fecha") or datetime.now().strftime("%Y-%m-%d")
+
+        conn.execute("""
+            INSERT INTO planificacion
+              (fecha, vendedor_id, zona, dia_visita, venta_esperada,
+               ccc_tradicional, ccc_autoservicio, ccc_onpremise,
+               once_t, marcas, clientes_clave, acciones, estado, updated_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'enviada',CURRENT_TIMESTAMP)
+            ON CONFLICT(fecha, vendedor_id) DO UPDATE SET
+              zona=excluded.zona, dia_visita=excluded.dia_visita,
+              venta_esperada=excluded.venta_esperada,
+              ccc_tradicional=excluded.ccc_tradicional,
+              ccc_autoservicio=excluded.ccc_autoservicio,
+              ccc_onpremise=excluded.ccc_onpremise,
+              once_t=excluded.once_t, marcas=excluded.marcas,
+              clientes_clave=excluded.clientes_clave, acciones=excluded.acciones,
+              estado='enviada', updated_at=CURRENT_TIMESTAMP""",
+            (fecha, vid_raw, d.get("zona"), d.get("dia_visita"),
+             float(d.get("venta_esperada") or 0),
+             int(d.get("ccc_tradicional") or 0), ccc_as,
+             int(d.get("ccc_onpremise") or 0), int(d.get("once_t") or 0),
              d.get("marcas"), d.get("clientes_clave"), d.get("acciones")))
         conn.commit(); conn.close()
-        return jsonify({"ok":True})
-    if vid:
-        rows = conn.execute("SELECT * FROM planificacion WHERE vendedor_id=? ORDER BY fecha DESC", (vid,)).fetchall()
+        return jsonify({"ok": True, "vendedor_id": vid_raw, "fecha": fecha})
+
+    # GET — filtros opcionales por fecha y/o vendedor_id
+    if fecha_q and vid_q:
+        rows = conn.execute(
+            "SELECT * FROM planificacion WHERE fecha=? AND vendedor_id=? ORDER BY updated_at DESC",
+            (fecha_q, vid_q.upper())).fetchall()
+    elif fecha_q:
+        rows = conn.execute(
+            "SELECT * FROM planificacion WHERE fecha=? ORDER BY vendedor_id",
+            (fecha_q,)).fetchall()
+    elif vid_q:
+        rows = conn.execute(
+            "SELECT * FROM planificacion WHERE vendedor_id=? ORDER BY fecha DESC LIMIT 30",
+            (vid_q.upper(),)).fetchall()
     else:
-        rows = conn.execute("SELECT * FROM planificacion ORDER BY fecha DESC").fetchall()
+        rows = conn.execute(
+            "SELECT * FROM planificacion ORDER BY fecha DESC, vendedor_id LIMIT 100").fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
+
+
+@app.route("/api/planificacion/<int:plan_id>", methods=["PATCH"])
+def planificacion_patch(plan_id):
+    d = request.get_json() or {}
+    _ESTADOS = {"enviada", "modificada", "aprobada"}
+
+    estado = d.get("estado")
+    if estado and estado not in _ESTADOS:
+        return jsonify({"ok": False, "error": f"Estado '{estado}' inválido. Válidos: {sorted(_ESTADOS)}"}), 400
+
+    conn = sqlite3.connect(str(DB_PATH), timeout=10, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    row = conn.execute("SELECT * FROM planificacion WHERE id=?", (plan_id,)).fetchone()
+    if not row:
+        conn.close()
+        return jsonify({"ok": False, "error": f"Plan {plan_id} no encontrado"}), 404
+
+    vid_row = (dict(row).get("vendedor_id") or "").upper()
+    fields, vals = [], []
+
+    for f in ["zona","dia_visita","venta_esperada","ccc_tradicional",
+              "ccc_onpremise","once_t","marcas","clientes_clave","acciones"]:
+        if f in d:
+            fields.append(f"{f}=?"); vals.append(d[f])
+
+    if "ccc_autoservicio" in d:
+        val_as = 0 if vid_row == "V3" else int(d.get("ccc_autoservicio") or 0)
+        fields.append("ccc_autoservicio=?"); vals.append(val_as)
+
+    if estado:
+        fields.append("estado=?"); vals.append(estado)
+    if "editado_por" in d:
+        fields.append("editado_por=?"); vals.append(d["editado_por"])
+    if "comentario_gerencia" in d:
+        fields.append("comentario_gerencia=?"); vals.append(d["comentario_gerencia"])
+
+    fields.append("updated_at=CURRENT_TIMESTAMP")
+    conn.execute(f"UPDATE planificacion SET {', '.join(fields)} WHERE id=?", vals + [plan_id])
+    conn.commit()
+    updated = dict(conn.execute("SELECT * FROM planificacion WHERE id=?", (plan_id,)).fetchone())
+    conn.close()
+    return jsonify({"ok": True, "plan": updated})
 
 @app.route("/api/mensajes", methods=["GET","POST"])
 def mensajes():
@@ -753,6 +859,299 @@ def orbit_data():
     with open(p, "r", encoding="utf-8") as f:
         data = json.load(f)
     return jsonify(data)
+
+# ====== MATINAL RESUMEN: plan ayer vs real ayer ======
+@app.route("/api/matinal/resumen")
+def matinal_resumen():
+    """Compara plan de fecha solicitada (default: ayer) con venta_ayer del CSV."""
+    ayer = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    fecha_plan = request.args.get("fecha", ayer)
+
+    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    planes = {row["vendedor_id"]: dict(row)
+              for row in conn.execute(
+                  "SELECT * FROM planificacion WHERE fecha=?", (fecha_plan,)).fetchall()}
+    conn.close()
+
+    vol  = read_csv(DATASETS / "mod_volumen_vendedor.csv")
+    vend = read_csv(CONFIG   / "vendedores_activos.csv")
+
+    resultado = []
+    if not vend.empty:
+        for _, v in vend[vend["activo"] == 1].iterrows():
+            cod    = str(v["codigo_vendedor"]).strip()
+            cn     = clean_code(cod)
+            nombre = str(v["nombre_vendedor"]).strip()
+
+            vv = vol[vol["vendedor_codigo"].astype(str).apply(clean_code) == cn] \
+                 if not vol.empty else pd.DataFrame()
+            real_ayer = float(vv["venta_ayer"].sum()) if not vv.empty else 0
+
+            plan = planes.get(cod, {})
+            plan_venta = float(plan.get("venta_esperada") or 0)
+            delta = real_ayer - plan_venta
+            pct   = round(real_ayer / plan_venta * 100, 1) if plan_venta else None
+
+            resultado.append({
+                "vendedor_id":      cod,
+                "vendedor_nombre":  nombre,
+                "fecha_plan":       fecha_plan,
+                "plan_venta":       plan_venta,
+                "real_ayer":        round(real_ayer, 2),
+                "delta":            round(delta, 2),
+                "pct_cumplimiento": pct,
+                "plan_ccc_trad":    int(plan.get("ccc_tradicional") or 0),
+                "plan_ccc_as":      int(plan.get("ccc_autoservicio") or 0),
+                "plan_ccc_op":      int(plan.get("ccc_onpremise") or 0),
+                "plan_once_t":      int(plan.get("once_t") or 0),
+                "plan_acciones":    plan.get("acciones") or "",
+                "plan_estado":      plan.get("estado") or "sin_plan",
+                "plan_id":          plan.get("id"),
+                "tiene_plan":       bool(plan),
+            })
+
+    return jsonify({
+        "fecha_plan":   fecha_plan,
+        "generado_en":  datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "resumen":      resultado,
+    })
+
+
+# ====== GERENCIA: CCC EMPRESA ======
+@app.route("/api/gerencia/ccc_empresa")
+def gerencia_ccc_empresa():
+    """CCC mensual total empresa y por segmento, desglosado por vendedor activo.
+    Fuente: ventas.csv (mes actual, ImporteNetoItem > 0). V3 sin AUTOSERVICIO."""
+    ventas_mes = _cargar_ventas_mes_actual()
+    ccc_map    = _ccc_mes_por_vendedor(ventas_mes)
+
+    vend = read_csv(CONFIG / "vendedores_activos.csv")
+    por_vendedor = []
+    tot_trad, tot_as, tot_op = 0, 0, 0
+
+    if not vend.empty:
+        for _, v in vend[vend["activo"] == 1].iterrows():
+            cn     = clean_code(str(v["codigo_vendedor"]))
+            cod_int = int(cn) if cn.isdigit() else 0
+            if cod_int in _VENDEDORES_EXCLUIDOS:
+                continue
+            nombre = str(v["nombre_vendedor"]).strip()
+            ccc    = ccc_map.get(cod_int, {"tradicional": 0, "autoservicio": 0, "onpremise": 0, "total": 0})
+            por_vendedor.append({
+                "vendedor_id":   f"V{cn}",
+                "vendedor_nombre": nombre,
+                "tradicional":  ccc["tradicional"],
+                "autoservicio": ccc["autoservicio"],
+                "onpremise":    ccc["onpremise"],
+                "total":        ccc["total"],
+            })
+            tot_trad += ccc["tradicional"]
+            tot_as   += ccc["autoservicio"]
+            tot_op   += ccc["onpremise"]
+
+    return jsonify({
+        "generado_en":   datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "empresa": {
+            "tradicional":  tot_trad,
+            "autoservicio": tot_as,
+            "onpremise":    tot_op,
+            "total":        tot_trad + tot_as + tot_op,
+        },
+        "por_vendedor": por_vendedor,
+    })
+
+
+# ====== GERENCIA: 11 TITULARES POR MARCA ======
+@app.route("/api/gerencia/once_titulares")
+def gerencia_once_titulares():
+    """11 Titulares acumulados en el mes por marca a nivel empresa.
+    Fuente: mod_11_titulares.csv (tiene_flag=1 por marca_objetivo).
+    Excluye V2, V5, V20."""
+    df = read_csv(DATASETS / "mod_11_titulares.csv")
+    if df.empty:
+        return jsonify({"generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "marcas": []})
+
+    df.columns = [c.lstrip("﻿") for c in df.columns]
+    for col in ["vendedor_codigo", "tiene_flag", "falta_flag", "botellas_mes", "importe_mes"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    # Excluir vendedores no activos
+    df = df[~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
+
+    if "marca_objetivo" not in df.columns or "tiene_flag" not in df.columns:
+        return jsonify({"error": "Columnas esperadas no encontradas", "columnas": list(df.columns)}), 500
+
+    # Una fila por vendedor×cliente×marca: tiene_flag=1 si ese cliente ya compró esa marca este mes
+    # clientes_con_compra = clientes únicos con tiene_flag=1 por marca
+    tiene = df[df["tiene_flag"] == 1]
+    resumen = (
+        tiene.groupby("marca_objetivo", as_index=False)
+             .agg(clientes_con_compra=("cliente_id", "nunique"),
+                  botellas_mes=("botellas_mes", "sum"),
+                  importe_mes=("importe_mes", "sum"))
+             .sort_values("clientes_con_compra", ascending=False)
+    )
+
+    marcas = resumen.rename(columns={"marca_objetivo": "marca"}).to_dict(orient="records")
+    for m in marcas:
+        m["botellas_mes"] = round(float(m["botellas_mes"]), 0)
+        m["importe_mes"]  = round(float(m["importe_mes"]), 2)
+
+    return jsonify({
+        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "total_marcas_con_compra": len(marcas),
+        "marcas": marcas,
+    })
+
+
+# ====== GERENCIA: COBERTURA POR SEGMENTO ======
+@app.route("/api/gerencia/cobertura_segmento")
+def gerencia_cobertura_segmento():
+    """Cobertura acumulada del mes por vendedor × segmento.
+    Fuente: clientes_dia.csv (cobertura_mes_flag).
+    Excluye V2, V5, V20. V3 sin AUTOSERVICIO."""
+    df = read_csv(DATASETS / "clientes_dia.csv")
+    if df.empty:
+        return jsonify({"generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "vendedores": []})
+
+    df.columns = [c.lstrip("﻿") for c in df.columns]
+    for col in ["vendedor_codigo", "cobertura_mes_flag"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    df = df[~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
+    # V3 no trabaja autoservicio
+    mask_v3_as = (df["vendedor_codigo"] == 3) & (df["segmento_operativo"].astype(str).str.upper() == "AUTOSERVICIO")
+    df = df[~mask_v3_as]
+
+    if "segmento_operativo" not in df.columns or "cobertura_mes_flag" not in df.columns:
+        return jsonify({"error": "Columnas esperadas no encontradas", "columnas": list(df.columns)}), 500
+
+    resultado = []
+    for (cod, seg), grp in df.groupby(["vendedor_codigo", "segmento_operativo"]):
+        cod_int = int(cod) if pd.notnull(cod) else 0
+        total      = len(grp)
+        con_cob    = int(grp["cobertura_mes_flag"].fillna(0).sum())
+        pct        = round(con_cob / total * 100, 1) if total else 0
+        nombre_col = str(grp.iloc[0].get("vendedor_nombre", f"V{cod_int}")) if "vendedor_nombre" in grp.columns else f"V{cod_int}"
+        resultado.append({
+            "vendedor_id":      f"V{cod_int}",
+            "vendedor_nombre":  nombre_col,
+            "segmento":         str(seg),
+            "total_clientes":   total,
+            "con_cobertura":    con_cob,
+            "pct_cobertura":    pct,
+        })
+
+    resultado.sort(key=lambda x: (x["vendedor_id"], x["segmento"]))
+    return jsonify({
+        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "cobertura": resultado,
+    })
+
+
+# ====== GERENCIA: REAL AYER POR SEGMENTO ======
+@app.route("/api/gerencia/real_ayer_segmento")
+def gerencia_real_ayer_segmento():
+    """Real del día anterior por vendedor × segmento.
+    Fuente: mod_ccc_segmento.csv. Vendedores sin venta ayer aparecen con cero.
+    V3 sin AUTOSERVICIO."""
+    ccc_df = read_csv(DATASETS / "mod_ccc_segmento.csv")
+    vend   = read_csv(CONFIG / "vendedores_activos.csv")
+
+    ccc_df.columns = [c.lstrip("﻿") for c in ccc_df.columns] if not ccc_df.empty else []
+    for col in ["vendedor_codigo", "clientes_con_compra", "coberturas_logradas", "botellas_vendidas", "venta_neta"]:
+        if not ccc_df.empty and col in ccc_df.columns:
+            ccc_df[col] = pd.to_numeric(ccc_df[col], errors="coerce")
+
+    # Construir índice: (cod_int, segmento) → datos
+    ccc_idx = {}
+    if not ccc_df.empty:
+        for _, row in ccc_df.iterrows():
+            cod_int = int(row["vendedor_codigo"]) if pd.notnull(row.get("vendedor_codigo")) else 0
+            seg     = str(row.get("segmento_operativo", "")).upper()
+            ccc_idx[(cod_int, seg)] = {
+                "clientes_con_compra": int(row.get("clientes_con_compra", 0) or 0),
+                "coberturas_logradas": int(row.get("coberturas_logradas", 0) or 0),
+                "botellas_vendidas":   int(row.get("botellas_vendidas", 0) or 0),
+                "venta_neta":          round(float(row.get("venta_neta", 0) or 0), 2),
+            }
+
+    SEGMENTOS_POSIBLES = ["TRADICIONAL", "AUTOSERVICIO", "ON_PREMISE_VTK"]
+    _cero = {"clientes_con_compra": 0, "coberturas_logradas": 0, "botellas_vendidas": 0, "venta_neta": 0.0}
+
+    resultado = []
+    if not vend.empty:
+        for _, v in vend[vend["activo"] == 1].iterrows():
+            cn      = clean_code(str(v["codigo_vendedor"]))
+            cod_int = int(cn) if cn.isdigit() else 0
+            if cod_int in _VENDEDORES_EXCLUIDOS:
+                continue
+            nombre = str(v["nombre_vendedor"]).strip()
+            es_v3  = (cod_int == 3)
+            segs   = []
+            for seg in SEGMENTOS_POSIBLES:
+                if es_v3 and seg == "AUTOSERVICIO":
+                    continue
+                datos = ccc_idx.get((cod_int, seg), _cero).copy()
+                datos["segmento"] = seg
+                segs.append(datos)
+            resultado.append({
+                "vendedor_id":      f"V{cn}",
+                "vendedor_nombre":  nombre,
+                "venta_total_ayer": round(sum(s["venta_neta"] for s in segs), 2),
+                "segmentos":        segs,
+            })
+
+    return jsonify({
+        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "vendedores":  resultado,
+    })
+
+
+# ====== GERENCIA: PLANES AUTOSERVICIO ======
+@app.route("/api/gerencia/planes_autoservicio")
+def gerencia_planes_autoservicio():
+    """Acciones en canal AUTOSERVICIOS con gasto real vs teórico.
+    ADVERTENCIA: no existe fuente de 'planes formales' ni sin cargos detallados.
+    Esta respuesta expone mod_gastos_accion.csv filtrado por canal AUTOSERVICIOS.
+    V3 excluida. Excluye V2, V5, V20."""
+    df = read_csv(DATASETS / "mod_gastos_accion.csv")
+    if df.empty:
+        return jsonify({
+            "fuente_limitada": True,
+            "advertencia": "mod_gastos_accion.csv no encontrado o vacío.",
+            "acciones": [],
+        })
+
+    df.columns = [c.lstrip("﻿") for c in df.columns]
+    for col in ["vendedor_codigo", "clientes_afectados", "lineas_alertadas",
+                "gasto_real_total", "gasto_teorico_total", "exceso_pesos_total", "exceso_pct_promedio"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    # Excluir V3 (no trabaja AS), V2, V5, V20
+    excluir = _VENDEDORES_EXCLUIDOS | {3}
+    df = df[~df["vendedor_codigo"].isin(excluir)]
+
+    # Filtrar canal AUTOSERVICIOS
+    if "canal" in df.columns:
+        df = df[df["canal"].astype(str).str.upper().str.contains("AUTOSERVICIO", na=False)]
+
+    acciones = df.where(pd.notnull(df), None).to_dict(orient="records")
+
+    return jsonify({
+        "fuente_limitada": True,
+        "advertencia": (
+            "Sin cargos formales no disponibles: no existe tabla de sin cargos en este sistema. "
+            "Se muestran únicamente acciones con canal AUTOSERVICIOS de mod_gastos_accion.csv."
+        ),
+        "total_acciones": len(acciones),
+        "acciones": acciones,
+    })
+
 
 # ====== MAIN ======
 if __name__ == "__main__":
