@@ -1,5 +1,52 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-19 — Validación Etapa B1: PASS backend + visual
+
+**Sin commit** — solo validación.
+
+**Backend OK:**
+- `/api/gerencia/ccc_empresa`: 353 CCC · Trad: 236 · AS: 97 · OP: 20.
+- `/api/gerencia/once_titulares`: 15 marcas con clientes reales.
+- `/api/dashboard`: 7 vendedores, KPIs reales, V3 sin autoservicio.
+
+**Visual OK contra `/portal.html`:**
+- CCC COMPRADORES MES: 353 con desglose Trad/AS/OP visible en kcard.
+- Bloque "11 Titulares por Marca": 15 marcas con barras relativas.
+- Label "SIN COMP. MES" en kcard principal y "Sin Comp. Mes" en ranking — correctos.
+- Bloque "Alertas críticas" viejo: no aparece.
+- Header: `REAL · Corte: 2026-05-18 · Matinal: MA 2026-05-19`.
+
+**Error detectado:** 1 error JS 404 NOT FOUND — probable `orbit_portal_data.json` inexistente. Preexistente, no bloquea B1. Pendiente diagnosticar.
+
+**Hallazgo:** Flask sirve `index.html` en `/`. B1 vive en `/portal.html`. Pendiente decidir si unificar o redirigir.
+
+**Validación:** no se modificaron código, portal, inputs, datasets ni orbit.db. Solo se generaron evidencias temporales en %TEMP%.
+
+---
+
+## 2026-05-19 — Corrección mínima V20: formalizar exclusión en reglas Peñaflor
+
+**Commit:** `b16a54c docs(pav): formalizar exclusion V20 en reglas Peñaflor`
+
+**Archivos commiteados:**
+- `LEGACY/orbit_matinal_v42.py` — `VENDEDORES_EXCLUIDOS = [2, 5]` → `[2, 5, 20]`
+- `CLAUDE.md` — regla de exclusión V20 documentada en contrato de trabajo
+- `00_OBSIDIAN_ORBIT/REGLAS_NEGOCIO_PAV.md` — sección "Excluidos — siempre" actualizada con V20
+
+**Qué se logró:**
+1. V20 (DEPOSITO / venta directa) formalizado como excluido en motor legacy, contrato y documentación Obsidian.
+2. Regla oficial consolidada: activos = V3,V4,V6,V7,V8,V9,V10 / excluidos = V2,V5,V20.
+3. Auditoría del estado del proyecto al 2026-05-19 realizada. No se tocaron portal, inputs, datasets ni orbit.db.
+
+**Contexto de la auditoría:**
+- `ventas.csv`: 2104 filas, mayo hasta 2026-05-18. V20 en fuente ERP cruda (40 filas, DEPOSITO) — correcto, es dato de origen.
+- `server_orbit.py` ya tenía `{2, 5, 20}` en `_VENDEDORES_EXCLUIDOS` — OK.
+- Motor legacy tenía solo `[2, 5]` — corregido.
+- Datasets `04_DATASETS_ORBIT/` sin V20 — OK.
+- Etapa B1 (`portal.html`) aplicada en sesión anterior pero sin validación — pendiente próxima sesión.
+
+---
+
 ## 2026-05-14 — Cierre de sesión: rediseño portal + endpoint vendedor real
 
 **Commit:** `c67e70e feat(matinal): rediseñar portal y agregar endpoint vendedor real`

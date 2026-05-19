@@ -1,5 +1,40 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-05-19 — Cierre confirmado (commit b16a54c)
+
+### Estado final
+- Regla V20 formalizada: `VENDEDORES_EXCLUIDOS = [2, 5, 20]` en motor legacy.
+- Documentación actualizada: `CLAUDE.md` y `REGLAS_NEGOCIO_PAV.md`.
+- Auditoría completa del estado del proyecto realizada. Portal, inputs, datasets y orbit.db intactos.
+
+### ~~Próximo paso — Prioridad 1~~ ✅ COMPLETADO 2026-05-19
+
+**Validar Etapa B1 del portal — PASS backend + visual.**
+
+Backend y portal validados. Ver CHANGELOG_AI.md entrada 2026-05-19.
+
+### Próximo paso — Prioridad 1
+
+**Diagnosticar error JS 404 probable `orbit_portal_data.json`.**
+
+Durante validación B1 se detectó 1 error JS: `Failed to load resource: 404 NOT FOUND`. No contiene "favicon" — probable solicitud a `orbit_portal_data.json` que ya no existe o nunca existió en el servidor.
+
+**Cómo diagnosticar (solo lectura):**
+1. Abrir DevTools en `/portal.html` → pestaña Network → filtrar 404.
+2. Identificar qué URL exacta genera el 404.
+3. Si es `orbit_portal_data.json`: verificar si `server_orbit.py` expone ese endpoint o si el archivo está en `06_APP_DATA/`.
+4. Decidir: eliminar la referencia en `portal.html`, agregar el endpoint, o ignorar si es inofensivo.
+
+**Hallazgo relacionado:** Flask sirve `index.html` en `/` (default), pero B1 está en `/portal.html`. Pendiente decidir si redirigir `/` → `/portal.html` o unificar en un solo archivo.
+
+### Pendientes adicionales (no bloquean B1)
+
+2. **Recalcular `clientes_sin_compra_mes`** desde `ventas.csv` mes actual — Etapa B del motor. Hoy viene de `clientes_dia.ccc_mes_flag` (zona Vi solamente), no del mes completo.
+3. **Favicon** — agregar `favicon.ico` en `PAV MATINAL PE_A FLOR/` para eliminar 404 cosmético.
+4. **Decidir limpieza** de `portal.html.bak.2026-05-14` y `screenshots/`.
+
+---
+
 ## Sesión 2026-05-14 — Cierre confirmado (commit c67e70e)
 
 ### Estado final
