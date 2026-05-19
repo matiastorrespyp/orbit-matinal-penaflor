@@ -36,6 +36,10 @@ NEGOCIO_NOMBRE = "Peñaflor"
 VENDEDORES_EXCLUIDOS = [2, 5, 20]
 TOLERANCIA_EXCESO_PCT = 0.20
 
+INPUT_INNOVACIONES = r"01_INPUTS/INNOVACIONES/Innovaciones.xlsx"
+_INOV_TEXTO_A_CODIGO = {"Frizze M": 14620, "Antares XPA": 60020}
+_INOV_PENDIENTE_STOCK = {"Antares P 770", "Antares P 330"}
+
 _EXCLUIDOS_CLI_IDS = None
 
 def _cargar_clientes_excluidos() -> set:
@@ -571,6 +575,104 @@ def factor_volumen_necesario(descuento_pct: float) -> float:
     if descuento_pct >= 100:
         return np.nan
     return 1.0 / (1.0 - descuento_pct / 100.0)
+
+# ============================================================
+# MÓDULO INNOVACIONES + PLAN AS
+# ============================================================
+
+def generar_mod_innovaciones_plan_as(ventas_validas, clientes, fecha_ejecucion):
+    """
+    Seguimiento de 17 innovaciones activas por cliente Plan AS (28 clientes PYP).
+    Cruza con ventas reales del mes actual. Antares P770/P330 excluidos del
+    denominador (pendiente stock).
+    """
+    if not os.path.exists(INPUT_INNOVACIONES):
+        return pd.DataFrame()
+
+    df_inov = pd.read_excel(INPUT_INNOVACIONES, sheet_name="Cuadro Inov", header=4)
+    df_inov = df_inov[pd.to_numeric(df_inov["Cod C"], errors="coerce").notna()].copy()
+    df_inov["cliente_id"] = pd.to_numeric(df_inov["Cod C"], errors="coerce").astype(int)
+    df_inov["plan_as"] = df_inov["Plan AS "].fillna("").str.strip()
+
+    # Clasificar columnas: EAN (extraído del nombre), texto (mapeado), pendiente stock (omitir)
+    ean_cols = {}
+    texto_cols = {}
+    for col in df_inov.columns:
+        s = str(col).strip()
+        if s in _INOV_PENDIENTE_STOCK:
+            continue
+        if s in _INOV_TEXTO_A_CODIGO:
+            texto_cols[col] = _INOV_TEXTO_A_CODIGO[s]
+            continue
+        m = re.match(r'^(\d{6,})\s*-', s)
+        if m:
+            ean_cols[col] = int(m.group(1))
+    activas = {**ean_cols, **texto_cols}
+
+    # Ventas del mes actual desde ventas_validas (Timestamps)
+    primer_dia_ts = fecha_ejecucion.replace(day=1)
+    vmes = ventas_validas.loc[
+        (ventas_validas["fecha_comprobante"] >= primer_dia_ts) &
+        (ventas_validas["fecha_comprobante"] <= fecha_ejecucion) &
+        (ventas_validas["importe_neto"] > 0)
+    ].copy()
+    vmes["_codigo_int"] = pd.to_numeric(vmes["Codigo"], errors="coerce").astype("Int64")
+    vmes_clean = vmes.dropna(subset=["cliente_id", "_codigo_int"])
+    compras = set(zip(vmes_clean["cliente_id"].astype(int), vmes_clean["_codigo_int"].astype(int)))
+
+    # Lookup vendedor desde maestro de clientes
+    cli_map = (
+        clientes[["cliente_id", "cliente_nombre", "vendedor_codigo"]]
+        .drop_duplicates("cliente_id")
+        .set_index("cliente_id")
+    )
+
+    filas = []
+    for _, row in df_inov.iterrows():
+        cli_id = int(row["cliente_id"])
+        plan = row["plan_as"]
+        inov_activas = 0
+        inov_compradas = 0
+        faltantes = []
+
+        for col, codigo in activas.items():
+            val = row.get(col, None)
+            if pd.isna(val):
+                continue  # producto no aplica para este cliente
+            inov_activas += 1
+            if (cli_id, codigo) in compras:
+                inov_compradas += 1
+            else:
+                label = str(col).split(" - ", 1)[-1].strip() if " - " in str(col) else str(col).strip()
+                faltantes.append(label)
+
+        pct = round(inov_compradas / inov_activas, 4) if inov_activas > 0 else 0.0
+
+        if cli_id in cli_map.index:
+            cli_nombre = cli_map.loc[cli_id, "cliente_nombre"]
+            vend_cod = cli_map.loc[cli_id, "vendedor_codigo"]
+        else:
+            cli_nombre = str(row.get("Concatenado ", "")).replace("PYP - ", "").strip()
+            vend_cod = None
+
+        filas.append({
+            "cliente_id": cli_id,
+            "cliente_nombre": cli_nombre,
+            "vendedor_codigo": vend_cod,
+            "plan_as": plan,
+            "innovaciones_activas": inov_activas,
+            "innovaciones_compradas": inov_compradas,
+            "pct_avance": pct,
+            "productos_faltantes": "|".join(faltantes),
+            "productos_pendiente_stock": "Antares P770|Antares P330",
+        })
+
+    df_out = pd.DataFrame(filas)
+    if not df_out.empty:
+        df_out.sort_values(["vendedor_codigo", "pct_avance"], ascending=[True, True], inplace=True)
+        df_out.reset_index(drop=True, inplace=True)
+    return df_out
+
 
 # ============================================================
 # CARGA DE ARCHIVOS
@@ -1666,6 +1768,12 @@ def main():
     build_log(log_rows, "MOD_REINTEGROS_CONTROL_GENERADO", len(mod_reintegros_control))
 
     # =========================
+    # MOD INNOVACIONES PLAN AS
+    # =========================
+    mod_innovaciones_plan_as = generar_mod_innovaciones_plan_as(ventas_validas, clientes, fecha_ejecucion)
+    build_log(log_rows, "MOD_INNOVACIONES_PLAN_AS", len(mod_innovaciones_plan_as))
+
+    # =========================
     # LOG MOTOR
     # =========================
 
@@ -1688,6 +1796,7 @@ def main():
         mod_eficiencia_desc.to_excel(writer, sheet_name="mod_eficiencia_desc", index=False)
         mod_reintegros_control.to_excel(writer, sheet_name="mod_reintegros_ctrl", index=False)
         mod_gastos_accion.to_excel(writer, sheet_name="mod_gastos_accion", index=False)
+        mod_innovaciones_plan_as.to_excel(writer, sheet_name="mod_innovaciones_plan_as", index=False)
         log_motor.to_excel(writer, sheet_name="log_motor", index=False)
 
     print("OK - Archivo generado correctamente:")
@@ -1708,6 +1817,7 @@ def main():
     print(f"Clientes compra 11T con 10% filas      : {len(mod_clientes_compra_11t_desc)}")
     print(f"Eficiencia descuento filas             : {len(mod_eficiencia_desc)}")
     print(f"Reintegros control filas               : {len(mod_reintegros_control)}")
+    print(f"Innovaciones Plan AS filas             : {len(mod_innovaciones_plan_as)}")
     print(f"Historial ventas archivo               : {HISTORY_FILE}")
 
 if __name__ == "__main__":
