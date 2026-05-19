@@ -13,25 +13,30 @@
 
 Backend y portal validados. Ver CHANGELOG_AI.md entrada 2026-05-19.
 
+### ~~Próximo paso — Prioridad 1~~ ✅ COMPLETADO 2026-05-19
+
+**Diagnosticar y corregir error JS 404.**
+Diagnosticado: `/favicon.ico` ausente. Fix: ruta Flask `@app.route("/favicon.ico") → 204`. Commit `7ef8edb`.
+
+### Pendientes adicionales actualizados — 2026-05-19
+
+- ~~**Recalcular `clientes_sin_compra_mes`**~~ ✅ Fix motor legacy commit `9e89030`. Dif = 0 en todos los vendedores.
+- ~~**Favicon 404**~~ ✅ Resuelto con ruta Flask 204, commit `7ef8edb`.
+- **Decidir limpieza** de `portal.html.bak.2026-05-14` y `screenshots/` — pendiente, no urgente.
+
 ### Próximo paso — Prioridad 1
 
-**Diagnosticar error JS 404 probable `orbit_portal_data.json`.**
+**Validación integral portal gerencia + vendedor post-fix.**
 
-Durante validación B1 se detectó 1 error JS: `Failed to load resource: 404 NOT FOUND`. No contiene "favicon" — probable solicitud a `orbit_portal_data.json` que ya no existe o nunca existió en el servidor.
+Los datos del motor cambiaron significativamente (ccc_mes_flag, sc_mes, 11T). Hay que verificar que el portal los refleja correctamente sin regresiones.
 
-**Cómo diagnosticar (solo lectura):**
-1. Abrir DevTools en `/portal.html` → pestaña Network → filtrar 404.
-2. Identificar qué URL exacta genera el 404.
-3. Si es `orbit_portal_data.json`: verificar si `server_orbit.py` expone ese endpoint o si el archivo está en `06_APP_DATA/`.
-4. Decidir: eliminar la referencia en `portal.html`, agregar el endpoint, o ignorar si es inofensivo.
+**Qué validar:**
+1. Vista gerencial (`/portal.html` rol `gerencia`): CCC Compradores Mes, Sin Comp. Mes, 11 Titulares — valores nuevos vs motor.
+2. Vista vendedor (V3,V4,V6,V7,V8,V9,V10): clientes_sin_compra_mes, cobertura y 11T muestran valores corregidos.
+3. Alertas: `resumen_alertas_vend` y `mod_alertas_descuentos` sin V2/V5/V20.
+4. Confirmar que `server_orbit.py` sirve los CSVs regenerados (no cache vieja).
 
-**Hallazgo relacionado:** Flask sirve `index.html` en `/` (default), pero B1 está en `/portal.html`. Pendiente decidir si redirigir `/` → `/portal.html` o unificar en un solo archivo.
-
-### Pendientes adicionales (no bloquean B1)
-
-2. **Recalcular `clientes_sin_compra_mes`** desde `ventas.csv` mes actual — Etapa B del motor. Hoy viene de `clientes_dia.ccc_mes_flag` (zona Vi solamente), no del mes completo.
-3. **Favicon** — agregar `favicon.ico` en `PAV MATINAL PE_A FLOR/` para eliminar 404 cosmético.
-4. **Decidir limpieza** de `portal.html.bak.2026-05-14` y `screenshots/`.
+**Restricciones:** solo lectura, sin commit, sin tocar código hasta validar.
 
 ---
 

@@ -1,5 +1,24 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-19 — Fix Etapa B motor: ventas_mes filtrado al mes calendario actual
+
+**Commit:** `9e89030 fix(motor): filtrar ventas_mes al mes calendario actual`
+
+**Archivo modificado:**
+- `LEGACY/orbit_matinal_v42.py` líneas 919-921: agregado `_primer_dia_mes = fecha_ejecucion.replace(day=1).date()` como piso del filtro de `ventas_mes`.
+
+**Causa raíz:** `ventas_mes` se construía desde `historial_ventas` con filtro `<= fecha_ejecucion` sin cota inferior. El historial acumulaba marzo–mayo 2026, por lo que `ccc_mes_flag=1` significaba "compró desde marzo", no "compró en mayo". Todos los derivados (cobertura_mes, botellas_mes, 11 Titulares) heredaban el error.
+
+**Validación post-fix (PASS):**
+- `ac.py` Dif = 0 en los 7 vendedores activos (V3,V4,V6,V7,V8,V9,V10).
+- V2/V5/V20 ausentes en `clientes_dia` y `mod_volumen_vendedor`.
+- `clientes_sin_compra_mes` corregido: V4 5→45, V6 20→61, V8 9→41, V10 16→29.
+- 11 Titulares ajustado al mes actual: V8 128→36, V4 32→11, V9 36→18.
+- Motor regenerado con backup en `99_BACKUPS_ORBIT/20260519_134231/`.
+- Portal, inputs, datasets y orbit.db no tocados manualmente.
+
+---
+
 ## 2026-05-19 — Validación Etapa B1: PASS backend + visual
 
 **Sin commit** — solo validación.
