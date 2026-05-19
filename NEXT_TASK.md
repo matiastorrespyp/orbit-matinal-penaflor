@@ -46,31 +46,21 @@ Comparar estos dos números en el mismo contexto es semánticamente incorrecto.
 
 **Restricciones:** proponer diseño primero, alineado con sistema visual existente. No implementar sin aprobación.
 
-### Próximo paso — Prioridad 2: Módulo Innovaciones Peñaflor + Plan AS
+### ~~Prioridad 2: Módulo Innovaciones Plan AS~~ ✅ COMPLETADO 2026-05-19 — INOV-1
 
-**Innovaciones Peñaflor + Plan AS:**
-- Auditoría completada 2026-05-19.
-- Innovaciones activas actuales: 17.
-- Antares P770 y Antares P330 quedan Pendiente stock / Próximo ingreso.
-- No cuentan como 0%, no son incumplimiento y no entran en el denominador actual.
-- Se activan cuando haya stock/código/ventas confirmadas.
-- Frizze Manxana va con X.
-- Frizze Manxana = FRIZZE MANXANA POP 6X1000, código 14620.
-- Antares XPA = ANTARES XPA LATA 6X473, código 60020.
-- El resto con EAN se mapea por Código normalizado sin ceros.
+**Motor:** `generar_mod_innovaciones_plan_as()` en `LEGACY/orbit_matinal_v42.py`.
+**Dataset:** `04_DATASETS_ORBIT/mod_innovaciones_plan_as.csv` — 28 filas / 9 columnas.
+**Denominador:** 13 (columnas Si/No del xlsx). NaN = no aplica para PYP.
+**Antares P770/P330:** solo en `productos_pendiente_stock`. Fuera del denominador.
+**Frizze M y Antares XPA:** NaN en xlsx PYP → van en módulo separado INOV-2.
 
-**Plan AS:**
-- 28 clientes.
-- 23 Inicial + 5 Silver.
-- Sin compra mayo: clientes 172 y 2689.
-- Fuente: `01_INPUTS/INNOVACIONES/Innovaciones.xlsx`.
+### Próximo paso — Prioridad 2: INOV-2 Frizze Manxana + Antares XPA por segmento
 
-**Pendiente (no tocar código hasta aprobación):**
-1. Motor: `mod_innovaciones_plan_as.csv`.
-2. Endpoints gerencia/vendedor.
-3. Bloque portal gerencia.
-4. Sección perfil vendedor.
-5. Playwright QA.
+- Seguimiento por `ventas.csv`, no por xlsx.
+- Segmentos: Tradicional / Autoservicio.
+- No es Plan AS — es métrica de cobertura por segmento.
+- Frizze Manxana = código 14620. Antares XPA = código 60020.
+- No implementar hasta diseño aprobado.
 
 ---
 

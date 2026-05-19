@@ -1,5 +1,22 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-19 — INOV-1: módulo Innovaciones Plan AS — PASS
+
+**Archivo:** `LEGACY/orbit_matinal_v42.py` — commit `a091e78`.
+
+**Cambios:** función `generar_mod_innovaciones_plan_as()` + 3 constantes (`INPUT_INNOVACIONES`, `_INOV_TEXTO_A_CODIGO`, `_INOV_PENDIENTE_STOCK`).
+
+**Resultado motor:** 28 filas / 9 columnas. `04_DATASETS_ORBIT/mod_innovaciones_plan_as.csv` generado. Exit code 0.
+
+**Reglas de negocio confirmadas:**
+- Denominador = columnas Si/No en `Innovaciones.xlsx` → **13 hoy**. NaN = no aplica para PYP. No se fuerza.
+- Antares P770 y P330 → solo en `productos_pendiente_stock`. Fuera del denominador.
+- Frizze M (14620) y Antares XPA (60020) → NaN para todos los clientes PYP → no cuentan en Plan AS.
+- Frizze M y Antares XPA → módulo separado INOV-2 (seguimiento por segmento desde ventas.csv).
+- V2/V5/V20 ausentes del dataset. ✅
+
+**Validación:** 28 clientes, denominador 13, pendiente_stock correcto y motor ejecutado con exit code 0. ✅
+
 ## 2026-05-19 — Validación integral post-fix Etapa B: PASS
 
 **Validación:** no se modificaron código, portal, inputs, datasets ni orbit.db. Solo se generó evidencia temporal de validación.
