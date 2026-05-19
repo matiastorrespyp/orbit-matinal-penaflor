@@ -1,5 +1,25 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-19 — Validación integral post-fix Etapa B: PASS
+
+**Validación:** no se modificaron código, portal, inputs, datasets ni orbit.db. Solo se generó evidencia temporal de validación.
+
+**APIs:** `/api/matinal/resumen`, `/api/gerencia/ccc_empresa`, `/api/gerencia/once_titulares`, `/api/dashboard` → todos 200.
+
+**Excluidos:** V2, V5, V20 retornan 404 en `/api/vendedor/V{id}`. ✅
+
+**Portal gerencia (`/portal.html`):**
+- CCC COMPRADORES MES: 353 · Trad: 236 · AS: 97 · OP: 20. ✅
+- SIN COMP. MES: 262 = suma exacta de `clientes_sin_compra_mes` post-fix por vendedor. ✅
+- 11 Titulares por Marca: 14 marcas con clientes reales de mayo 2026. ✅
+- Sin Comp. Mes por vendedor en ranking: V3:11, V4:45, V6:61, V7:57, V8:41, V9:18, V10:29. ✅
+- Sin errores JS. Sin URLs con 404. Favicon resuelto. ✅
+
+**Observación registrada — no bloqueante:**
+"CCC Mes" del ranking usa cartera completa (ventas.csv). "Sin Comp. Mes" usa zona Vi (clientes_dia/motor). Universos distintos — inconsistencia semántica preexistente. Pendiente análisis en próxima sesión.
+
+---
+
 ## 2026-05-19 — Fix Etapa B motor: ventas_mes filtrado al mes calendario actual
 
 **Commit:** `9e89030 fix(motor): filtrar ventas_mes al mes calendario actual`

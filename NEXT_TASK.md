@@ -24,19 +24,27 @@ Diagnosticado: `/favicon.ico` ausente. Fix: ruta Flask `@app.route("/favicon.ico
 - ~~**Favicon 404**~~ ✅ Resuelto con ruta Flask 204, commit `7ef8edb`.
 - **Decidir limpieza** de `portal.html.bak.2026-05-14` y `screenshots/` — pendiente, no urgente.
 
+### ~~Próximo paso — Prioridad 1~~ ✅ COMPLETADO 2026-05-19
+
+**Validación integral portal gerencia + vendedor post-fix — PASS.**
+APIs 200, excluidos 404, portal gerencia correcto, Sin Comp. Mes = 262 coincide con motor. Sin errores JS ni 404s. Ver CHANGELOG_AI.md entrada 2026-05-19.
+
 ### Próximo paso — Prioridad 1
 
-**Validación integral portal gerencia + vendedor post-fix.**
+**Definir y unificar semántica: CCC Mes vs Sin Comp. Mes.**
 
-Los datos del motor cambiaron significativamente (ccc_mes_flag, sc_mes, 11T). Hay que verificar que el portal los refleja correctamente sin regresiones.
+**Problema:** el portal mezcla dos universos en la misma vista gerencial:
+- "CCC Mes" en ranking → cartera completa mes actual (`server_orbit._ccc_mes_por_vendedor()`, ventas.csv).
+- "Sin Comp. Mes" → zona Vi del día (`clientes_dia`, motor).
 
-**Qué validar:**
-1. Vista gerencial (`/portal.html` rol `gerencia`): CCC Compradores Mes, Sin Comp. Mes, 11 Titulares — valores nuevos vs motor.
-2. Vista vendedor (V3,V4,V6,V7,V8,V9,V10): clientes_sin_compra_mes, cobertura y 11T muestran valores corregidos.
-3. Alertas: `resumen_alertas_vend` y `mod_alertas_descuentos` sin V2/V5/V20.
-4. Confirmar que `server_orbit.py` sirve los CSVs regenerados (no cache vieja).
+Comparar estos dos números en el mismo contexto es semánticamente incorrecto.
 
-**Restricciones:** solo lectura, sin commit, sin tocar código hasta validar.
+**Decisión pendiente (sin tocar código hasta resolver):**
+1. Opción A: mostrar ambos con etiquetas explícitas de universo.
+2. Opción B: unificar ambos al universo de zona Vi (cartera planificada del día).
+3. Opción C: unificar ambos al universo de cartera completa del mes.
+
+**Restricciones:** proponer diseño primero, alineado con sistema visual existente. No implementar sin aprobación.
 
 ---
 
