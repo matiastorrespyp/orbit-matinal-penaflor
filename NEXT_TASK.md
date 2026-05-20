@@ -54,12 +54,17 @@ Comparar estos dos números en el mismo contexto es semánticamente incorrecto.
 **Antares P770/P330:** solo en `productos_pendiente_stock`. Fuera del denominador.
 **Frizze M y Antares XPA:** NaN en xlsx PYP → van en módulo separado INOV-2.
 
-### Próximo paso — Prioridad 2: INOV-2 Frizze Manxana + Antares XPA por segmento
+### ~~Prioridad 2: INOV-2 Frizze Manxana + Antares XPA por segmento~~ ✅ COMPLETADO 2026-05-19
 
-- Seguimiento por `ventas.csv`, no por xlsx.
-- Segmentos: Tradicional / Autoservicio.
-- No es Plan AS — es métrica de cobertura por segmento.
-- Frizze Manxana = código 14620. Antares XPA = código 60020.
+**Dataset:** `04_DATASETS_ORBIT/mod_innovaciones_segmento.csv` — 26 filas / 10 columnas.
+**Motor:** `generar_mod_innovaciones_segmento()` en `LEGACY/orbit_matinal_v42.py` — commit `a651d01`.
+**Fuente:** `ventas.csv`. Segmentos: Tradicional / Autoservicio. V2/V5/V20 y V3/AUTOSERVICIO ausentes. ✅
+
+### Próximo paso — Prioridad 2: INOV-3 Endpoints Innovaciones
+
+- `/api/gerencia/innovaciones_segmento` — resumen por producto × segmento.
+- `/api/vendedor/<id>/innovaciones_segmento` — detalle por vendedor con clientes faltantes.
+- Fuente: `mod_innovaciones_segmento.csv` y `mod_innovaciones_plan_as.csv`.
 - No implementar hasta diseño aprobado.
 
 ---

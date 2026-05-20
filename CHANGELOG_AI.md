@@ -1,5 +1,22 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-19 — INOV-2: dataset Innovaciones por segmento — PASS
+
+**Archivo:** `LEGACY/orbit_matinal_v42.py` — commit `a651d01`.
+
+**Cambios:** función `generar_mod_innovaciones_segmento()` + constante `_INOV2_PRODUCTOS`.
+
+**Resultado motor:** `04_DATASETS_ORBIT/mod_innovaciones_segmento.csv` — 26 filas / 10 columnas. Exit code 0.
+
+**Reglas aplicadas:**
+- Fuente: `ventas.csv`, mes actual hasta `fecha_ejecucion`, `ImporteNetoItem > 0`.
+- Productos: Frizze Manxana (14620) y Antares XPA (60020).
+- Segmentos: Tradicional / Autoservicio.
+- V2/V5/V20 ausentes del dataset. ✅
+- V3/AUTOSERVICIO ausente del dataset. ✅
+
+**Pendiente:** endpoints `/api/gerencia/innovaciones_segmento` y `/api/vendedor/<id>/innovaciones_segmento` — INOV-3.
+
 ## 2026-05-19 — INOV-1: módulo Innovaciones Plan AS — PASS
 
 **Archivo:** `LEGACY/orbit_matinal_v42.py` — commit `a091e78`.
