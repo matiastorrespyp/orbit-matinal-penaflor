@@ -674,7 +674,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 
 /* ── estado ── */
 let userData = null, currentDay = null, gFiltro = "", gScreen = "dashboard";
-let D = { diag:{}, dash:[], cli:[], al:[], plan:[], pvr:{}, det:{}, msgs:[] };
+let D = { diag:{}, dash:[], cli:[], al:[], plan:[], pvr:{}, det:{}, msgs:[], cccEmpresa:{}, onceTit:{}, inov:null };
 
 const CV = { V3:'#5BDED4', V4:'#F2B544', V6:'#5BC23A', V7:'#9B7BFF', V8:'#4DA3FF', V9:'#FF9D5C', V10:'#FF5D8B' };
 const DAYS = ['LU','MA','MI','JU','VI','SA'];
@@ -714,12 +714,24 @@ async function loadAll(){
   if(plan) D.plan=Array.isArray(plan)?plan:[];
   if(pvr)  D.pvr =pvr;
   if(userData?.rol==='vendedor'){
-    const [det,msgs]=await Promise.all([
+    const [det,msgs,inov]=await Promise.all([
       safe('/api/vendedor/'+userData.vendedor_id),
-      safe('/api/mensajes?vendedor_id='+userData.vendedor_id)
+      safe('/api/mensajes?vendedor_id='+userData.vendedor_id),
+      safe('/api/vendedor/'+userData.vendedor_id+'/innovaciones_segmento')
     ]);
     if(det)  D.det =det;
     if(msgs) D.msgs=Array.isArray(msgs)?msgs:[];
+    if(inov) D.inov=inov;
+  }
+  if(userData?.rol==='gerencia'){
+    const [cccEmp,onceTit,inov]=await Promise.all([
+      safe('/api/gerencia/ccc_empresa'),
+      safe('/api/gerencia/once_titulares'),
+      safe('/api/gerencia/innovaciones_segmento')
+    ]);
+    if(cccEmp)  D.cccEmpresa=cccEmp;
+    if(onceTit) D.onceTit=onceTit;
+    if(inov)    D.inov=inov;
   }
 }
 
@@ -762,7 +774,7 @@ function buildDaySel(active){
 function setDay(d){ currentDay=d; buildDaySel(d); gRender(); }
 function gFiltV(v){ gFiltro=v; gRender(); }
 function logout(){
-  userData=null; D={diag:{},dash:[],cli:[],al:[],plan:[],det:{},msgs:[]};
+  userData=null; D={diag:{},dash:[],cli:[],al:[],plan:[],det:{},msgs:[],inov:null};
   document.getElementById('appG').style.display='none';
   document.getElementById('appV').style.display='none';
   document.getElementById('loginScreen').style.display='flex';
@@ -829,18 +841,13 @@ function gDashboard(p){
       </div>
       <div class="kcard info">
         <div class="kl">CCC Compradores Mes</div>
-        <div class="kv">${tCCC}</div>
-        <div class="kh">Clientes con compra neta &gt;0</div>
+        <div class="kv">${D.cccEmpresa?.empresa?.total??tCCC}</div>
+        <div class="kh">Trad: ${D.cccEmpresa?.empresa?.tradicional??'–'} · AS: ${D.cccEmpresa?.empresa?.autoservicio??'–'} · OP: ${D.cccEmpresa?.empresa?.onpremise??'–'}</div>
       </div>
       <div class="kcard wn">
-        <div class="kl">Sin compra zona Vi</div>
+        <div class="kl">Sin Comp. Mes</div>
         <div class="kv">${tP}</div>
-        <div class="kh">Sin compra planificados Vi</div>
-      </div>
-      <div class="kcard ${altaN>10?'bd':altaN>3?'wn':'ok'}">
-        <div class="kl">Alertas críticas</div>
-        <div class="kv">${altaN}</div>
-        <div class="kh">${al.length} alertas totales</div>
+        <div class="kh">Clientes sin compra en el mes</div>
       </div>
     </div>`);
 
@@ -858,7 +865,7 @@ function gDashboard(p){
             <div class="rdot" style="background:${col}">${ini(v.vendedor_nombre)}</div>
             <div class="rinfo">
               <b>${v.vendedor_id} · ${v.vendedor_nombre}</b>
-              <div class="rsub">${fmtM(k.acumulado)} / ${fmtM(k.objetivo)} · CCC Mes: ${k.ccc_total||0} · 11T: ${k.once_titulares_cumplidos||0} · S/C Vi: ${k.clientes_pendientes||0}</div>
+              <div class="rsub">${fmtM(k.acumulado)} / ${fmtM(k.objetivo)} · CCC Mes: ${k.ccc_total||0} · 11T: ${k.once_titulares_cumplidos||0} · Sin Comp. Mes: ${k.clientes_pendientes||0}</div>
               <div style="margin-top:5px;"><div class="bar"><div class="bar-f ${cl}" style="width:${clamp(av,0,100)}%"></div></div></div>
             </div>
             <div class="rpct" style="color:var(--${cl})">${av.toFixed(1)}%</div>
@@ -882,21 +889,25 @@ function gDashboard(p){
   }
   left+=`</div>`;
 
-  // right: alertas críticas + clientes sin compra
-  const altaTop=al.filter(a=>a.prioridad==='alta').slice(0,8);
+  // right: 11 titulares por marca + clientes sin compra
   const clinSC=(D.cli||[]).filter(c=>(c.estado||'').toLowerCase().includes('sin')).slice(0,8);
   let right=`<div>`;
-  if(altaTop.length){
+  const onceMarcas=(D.onceTit?.marcas||[]);
+  if(onceMarcas.length){
+    const maxCli=Math.max(...onceMarcas.map(m=>m.clientes_con_compra),1);
     right+=`<div class="card">
-      <div class="card-hd"><span class="card-title">⚡ Alertas Críticas</span><span class="chip bd">${altaN} altas</span></div>
+      <div class="card-hd"><span class="card-title">🏅 11 Titulares por Marca</span><span class="chip">${onceMarcas.length} marcas</span></div>
       <div class="card-body nop">
-        ${altaTop.map(a=>`<div class="arow">
-          <div class="adot alta"></div>
-          <div class="abody">
-            <div class="atitle">${a.cliente_nombre||a.titulo||'Sin nombre'}</div>
-            <div class="adetail">${(a.detalle||a.accion||'').substring(0,140)}</div>
-          </div>
-        </div>`).join('')}
+        <div style="padding:6px 14px 10px;">
+          ${onceMarcas.map(m=>{const pct=Math.round(m.clientes_con_compra/maxCli*100);
+            return `<div style="margin-bottom:7px;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
+                <span style="font-size:12px;font-weight:600;">${m.marca}</span>
+                <span style="font-size:11px;color:var(--text3);">${m.clientes_con_compra} clientes</span>
+              </div>
+              <div class="bar" style="height:4px;"><div class="bar-f ok" style="width:${pct}%"></div></div>
+            </div>`;}).join('')}
+        </div>
       </div>
     </div>`;
   }
@@ -919,6 +930,53 @@ function gDashboard(p){
   right+=`</div>`;
   grid.innerHTML=left+right;
   p.appendChild(grid);
+
+  // — INOV-4: Innovaciones empresa (Frizze Manxana + Antares XPA) —
+  const inov=D.inov||{};
+  const iRes=inov.resumen_empresa||[];
+  if(iRes.length && !inov.advertencia){
+    const iPrds={};
+    iRes.forEach(r=>{ if(!iPrds[r.producto_nombre]) iPrds[r.producto_nombre]=[]; iPrds[r.producto_nombre].push(r); });
+    let iH=`<div style="margin-top:16px;">
+      <div style="font-family:var(--f-dis);font-size:14px;font-weight:600;letter-spacing:-.2px;margin-bottom:10px;color:var(--text);">🚀 Innovaciones &middot; Frizze Manxana &amp; Antares XPA</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;">`;
+    Object.entries(iPrds).forEach(([nombre,segs])=>{
+      iH+=`<div class="card"><div class="card-hd"><span class="card-title">🚀 ${nombre}</span></div><div class="card-body">`;
+      segs.forEach(s=>{
+        const pct=Math.round((s.pct_cobertura||0)*100), cl=pct>=60?'ok':pct>=30?'wn':'bd';
+        iH+=`<div style="margin-bottom:10px;">
+          <div class="row-b xs m3 mb4"><span>${s.segmento}</span><b style="color:var(--${cl})">${pct}%</b></div>
+          <div class="bar" style="height:5px;"><div class="bar-f ${cl}" style="width:${pct}%"></div></div>
+          <div class="xs m3 mt4">${s.clientes_compraron} de ${s.clientes_cartera} clientes</div>
+        </div>`;
+      });
+      iH+=`</div></div>`;
+    });
+    iH+=`</div>`;
+    const iPV=inov.por_vendedor||[];
+    if(iPV.length){
+      iH+=`<div class="card" style="margin-top:12px;">
+        <div class="card-hd"><span class="card-title">📋 Cobertura por vendedor</span><span class="chip">${iPV.length} vendedores</span></div>
+        <div class="card-body nop">
+          <table class="tbl">
+            <thead><tr><th>Vend.</th><th>Producto</th><th>Segmento</th><th style="text-align:right">Cartera</th><th style="text-align:right">Compraron</th><th>%</th></tr></thead>
+            <tbody>${iPV.flatMap(v=>v.productos.map(pr=>{
+              const pct=Math.round((pr.pct_cobertura||0)*100), cl=pct>=60?'ok':pct>=30?'wn':'bd';
+              return `<tr>
+                <td><span class="chip" style="color:${CV[v.vendedor_id]||'var(--text2)'};">${v.vendedor_id}</span></td>
+                <td>${pr.producto_nombre}</td><td>${pr.segmento}</td>
+                <td style="text-align:right">${pr.clientes_cartera}</td>
+                <td style="text-align:right">${pr.clientes_compraron}</td>
+                <td><span class="chip ${cl}">${pct}%</span></td>
+              </tr>`;
+            })).join('')}</tbody>
+          </table>
+        </div>
+      </div>`;
+    }
+    iH+=`</div>`;
+    p.insertAdjacentHTML('beforeend', iH);
+  }
 }
 
 /* — Vendedores — */
@@ -944,7 +1002,7 @@ function gVendedores(p){
           <div><div class="xs m3">CCC Mes</div><b>${k.ccc_total||0}</b></div>
           <div><div class="xs m3">11T ✓</div><b>${k.once_titulares_cumplidos||0}</b></div>
           <div><div class="xs m3">Plan.Vi</div><b>${k.clientes_total||0}</b></div>
-          <div><div class="xs m3">S/C Vi</div><b style="color:var(--bd)">${k.clientes_pendientes||0}</b></div>
+          <div><div class="xs m3">SC Mes</div><b style="color:var(--bd)">${k.clientes_pendientes||0}</b></div>
         </div>
       </div>
     </div>`;}).join('');
@@ -1194,6 +1252,28 @@ function vKpis(){
           </div>`;}).join('')}
       </div>
     </div>`;
+  }
+  // — INOV-4: Innovaciones vendedor —
+  const inov=D.inov||{};
+  const iProds=inov.productos||[];
+  const esV3=(userData?.vendedor_id||'').toUpperCase()==='V3';
+  const iProdsFilt=iProds.filter(pr=>!(esV3&&(pr.segmento||'').toUpperCase()==='AUTOSERVICIO'));
+  if(iProdsFilt.length && !inov.advertencia){
+    h+=`<div class="card">
+      <div class="card-hd"><span class="card-title">🚀 Innovaciones</span><span class="chip">${iProdsFilt.length} líneas</span></div>
+      <div class="card-body">`;
+    iProdsFilt.forEach(pr=>{
+      const pct=Math.round((pr.pct_cobertura||0)*100), cl=pct>=60?'ok':pct>=30?'wn':'bd';
+      const falt=(pr.clientes_faltantes||[]).slice(0,5);
+      const extra=(pr.clientes_faltantes||[]).length-falt.length;
+      h+=`<div style="margin-bottom:14px;">
+        <div class="row-b mb4"><b style="font-size:13px;">${pr.producto_nombre}</b><span class="chip ${cl}">${pct}%</span></div>
+        <div class="xs m3 mb6">${pr.segmento} &middot; ${pr.clientes_compraron} de ${pr.clientes_cartera} clientes</div>
+        <div class="bar" style="height:5px;"><div class="bar-f ${cl}" style="width:${pct}%"></div></div>
+        ${falt.length?`<div class="xs m3 mt6">Faltantes: ${falt.join(', ')}${extra>0?' +'+extra+' más':''}</div>`:''}
+      </div>`;
+    });
+    h+=`</div></div>`;
   }
   document.getElementById('vT-kpis').innerHTML=h;
 }
