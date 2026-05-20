@@ -935,17 +935,18 @@ function gDashboard(p){
   const inov=D.inov||{};
   const iRes=inov.resumen_empresa||[];
   if(iRes.length && !inov.advertencia){
+    const iLbl=pct=>Number(pct||0)===0?'Sin compradores aún':pct+'%';
     const iPrds={};
     iRes.forEach(r=>{ if(!iPrds[r.producto_nombre]) iPrds[r.producto_nombre]=[]; iPrds[r.producto_nombre].push(r); });
     let iH=`<div style="margin-top:16px;">
       <div style="font-family:var(--f-dis);font-size:14px;font-weight:600;letter-spacing:-.2px;margin-bottom:10px;color:var(--text);">🚀 Innovaciones &middot; Frizze Manxana &amp; Antares XPA</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;">`;
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">`;
     Object.entries(iPrds).forEach(([nombre,segs])=>{
       iH+=`<div class="card"><div class="card-hd"><span class="card-title">🚀 ${nombre}</span></div><div class="card-body">`;
       segs.forEach(s=>{
         const pct=Math.round((s.pct_cobertura||0)*100), cl=pct>=60?'ok':pct>=30?'wn':'bd';
         iH+=`<div style="margin-bottom:10px;">
-          <div class="row-b xs m3 mb4"><span>${s.segmento}</span><b style="color:var(--${cl})">${pct}%</b></div>
+          <div class="row-b xs m3 mb4"><span>${s.segmento}</span><b style="color:var(--${cl})">${iLbl(pct)}</b></div>
           <div class="bar" style="height:5px;"><div class="bar-f ${cl}" style="width:${pct}%"></div></div>
           <div class="xs m3 mt4">${s.clientes_compraron} de ${s.clientes_cartera} clientes</div>
         </div>`;
@@ -959,15 +960,14 @@ function gDashboard(p){
         <div class="card-hd"><span class="card-title">📋 Cobertura por vendedor</span><span class="chip">${iPV.length} vendedores</span></div>
         <div class="card-body nop">
           <table class="tbl">
-            <thead><tr><th>Vend.</th><th>Producto</th><th>Segmento</th><th style="text-align:right">Cartera</th><th style="text-align:right">Compraron</th><th>%</th></tr></thead>
+            <thead><tr><th>Vend.</th><th>Producto</th><th>Segmento</th><th style="text-align:right">Compraron</th><th>Cobertura</th></tr></thead>
             <tbody>${iPV.flatMap(v=>v.productos.map(pr=>{
               const pct=Math.round((pr.pct_cobertura||0)*100), cl=pct>=60?'ok':pct>=30?'wn':'bd';
               return `<tr>
                 <td><span class="chip" style="color:${CV[v.vendedor_id]||'var(--text2)'};">${v.vendedor_id}</span></td>
                 <td>${pr.producto_nombre}</td><td>${pr.segmento}</td>
-                <td style="text-align:right">${pr.clientes_cartera}</td>
-                <td style="text-align:right">${pr.clientes_compraron}</td>
-                <td><span class="chip ${cl}">${pct}%</span></td>
+                <td style="text-align:right">${pr.clientes_compraron} / ${pr.clientes_cartera}</td>
+                <td><div style="display:flex;align-items:center;gap:6px;"><div class="bar" style="width:60px;height:4px;"><div class="bar-f ${cl}" style="width:${pct}%"></div></div><span class="chip ${cl}" style="min-width:54px;text-align:center;">${iLbl(pct)}</span></div></td>
               </tr>`;
             })).join('')}</tbody>
           </table>
@@ -1259,6 +1259,7 @@ function vKpis(){
   const esV3=(userData?.vendedor_id||'').toUpperCase()==='V3';
   const iProdsFilt=iProds.filter(pr=>!(esV3&&(pr.segmento||'').toUpperCase()==='AUTOSERVICIO'));
   if(iProdsFilt.length && !inov.advertencia){
+    const iLbl=pct=>Number(pct||0)===0?'Sin compradores aún':pct+'%';
     h+=`<div class="card">
       <div class="card-hd"><span class="card-title">🚀 Innovaciones</span><span class="chip">${iProdsFilt.length} líneas</span></div>
       <div class="card-body">`;
@@ -1266,9 +1267,10 @@ function vKpis(){
       const pct=Math.round((pr.pct_cobertura||0)*100), cl=pct>=60?'ok':pct>=30?'wn':'bd';
       const falt=(pr.clientes_faltantes||[]).slice(0,5);
       const extra=(pr.clientes_faltantes||[]).length-falt.length;
+      const subLbl=Number(pr.clientes_compraron||0)===0?`Sin compradores aún &middot; 0 de ${pr.clientes_cartera} clientes`:`${pr.segmento} &middot; ${pr.clientes_compraron} de ${pr.clientes_cartera} clientes`;
       h+=`<div style="margin-bottom:14px;">
-        <div class="row-b mb4"><b style="font-size:13px;">${pr.producto_nombre}</b><span class="chip ${cl}">${pct}%</span></div>
-        <div class="xs m3 mb6">${pr.segmento} &middot; ${pr.clientes_compraron} de ${pr.clientes_cartera} clientes</div>
+        <div class="row-b mb4"><b style="font-size:13px;">${pr.producto_nombre}</b><span class="chip ${cl}">${iLbl(pct)}</span></div>
+        <div class="xs m3 mb6">${subLbl}</div>
         <div class="bar" style="height:5px;"><div class="bar-f ${cl}" style="width:${pct}%"></div></div>
         ${falt.length?`<div class="xs m3 mt6">Faltantes: ${falt.join(', ')}${extra>0?' +'+extra+' más':''}</div>`:''}
       </div>`;
