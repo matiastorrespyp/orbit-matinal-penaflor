@@ -39,6 +39,7 @@ TOLERANCIA_EXCESO_PCT = 0.20
 INPUT_INNOVACIONES = r"01_INPUTS/INNOVACIONES/Innovaciones.xlsx"
 _INOV_TEXTO_A_CODIGO = {"Frizze M": 14620, "Antares XPA": 60020}
 _INOV_PENDIENTE_STOCK = {"Antares P 770", "Antares P 330"}
+_INOV2_PRODUCTOS = {14620: "FRIZZE MANXANA", 60020: "ANTARES XPA"}
 
 _EXCLUIDOS_CLI_IDS = None
 
@@ -670,6 +671,75 @@ def generar_mod_innovaciones_plan_as(ventas_validas, clientes, fecha_ejecucion):
     df_out = pd.DataFrame(filas)
     if not df_out.empty:
         df_out.sort_values(["vendedor_codigo", "pct_avance"], ascending=[True, True], inplace=True)
+        df_out.reset_index(drop=True, inplace=True)
+    return df_out
+
+
+def generar_mod_innovaciones_segmento(ventas_validas, clientes, fecha_ejecucion):
+    """
+    CCC de Frizze Manxana (14620) y Antares XPA (60020) por vendedor x segmento.
+    Mes actual hasta fecha_ejecucion. V3 no aplica Autoservicio.
+    Solo vendedores activos Peñaflor: V3,V4,V6,V7,V8,V9,V10.
+    """
+    SEGMENTOS = ["TRADICIONAL", "AUTOSERVICIO"]
+    VENDEDORES_ACTIVOS = [3, 4, 6, 7, 8, 9, 10]
+
+    primer_dia_ts = fecha_ejecucion.replace(day=1)
+    vmes = ventas_validas.loc[
+        (ventas_validas["fecha_comprobante"] >= primer_dia_ts) &
+        (ventas_validas["fecha_comprobante"] <= fecha_ejecucion) &
+        (ventas_validas["importe_neto"] > 0)
+    ].copy()
+    vmes["_codigo_int"] = pd.to_numeric(vmes["Codigo"], errors="coerce").astype("Int64")
+    vmes_inov = vmes[
+        vmes["_codigo_int"].isin(_INOV2_PRODUCTOS.keys()) &
+        vmes["vendedor_codigo"].isin(VENDEDORES_ACTIVOS)
+    ].copy()
+
+    cli_seg = clientes[
+        clientes["segmento_operativo"].isin(SEGMENTOS) &
+        clientes["vendedor_codigo"].isin(VENDEDORES_ACTIVOS)
+    ][["cliente_id", "vendedor_codigo", "vendedor_nombre", "segmento_operativo"]].copy()
+
+    # V3 no aplica para Autoservicio
+    cli_seg = cli_seg[~(
+        (cli_seg["vendedor_codigo"] == 3) &
+        (cli_seg["segmento_operativo"] == "AUTOSERVICIO")
+    )].copy()
+
+    filas = []
+    for vend_cod, grp_vend in cli_seg.groupby("vendedor_codigo"):
+        vend_nombre = grp_vend["vendedor_nombre"].iloc[0]
+        for seg in SEGMENTOS:
+            grp_seg = grp_vend[grp_vend["segmento_operativo"] == seg]
+            if grp_seg.empty:
+                continue
+            cartera_ids = set(grp_seg["cliente_id"].dropna().astype(int))
+            for cod, nombre in _INOV2_PRODUCTOS.items():
+                compraron_ids = set(
+                    vmes_inov[
+                        (vmes_inov["vendedor_codigo"] == vend_cod) &
+                        (vmes_inov["_codigo_int"] == cod)
+                    ]["cliente_id"].dropna().astype(int)
+                )
+                compraron = compraron_ids & cartera_ids
+                faltantes = cartera_ids - compraron
+                filas.append({
+                    "fecha_ejecucion": fecha_ejecucion.date(),
+                    "vendedor_codigo": int(vend_cod),
+                    "vendedor_nombre": vend_nombre,
+                    "segmento": seg,
+                    "producto_codigo": cod,
+                    "producto_nombre": nombre,
+                    "clientes_cartera": len(cartera_ids),
+                    "clientes_compraron": len(compraron),
+                    "pct_cobertura": round(len(compraron) / len(cartera_ids), 4) if cartera_ids else 0.0,
+                    "clientes_faltantes": "|".join(str(x) for x in sorted(faltantes)),
+                })
+
+    df_out = pd.DataFrame(filas)
+    if not df_out.empty:
+        df_out.sort_values(["vendedor_codigo", "segmento", "producto_codigo"], inplace=True)
         df_out.reset_index(drop=True, inplace=True)
     return df_out
 
@@ -1774,6 +1844,12 @@ def main():
     build_log(log_rows, "MOD_INNOVACIONES_PLAN_AS", len(mod_innovaciones_plan_as))
 
     # =========================
+    # MOD INNOVACIONES SEGMENTO
+    # =========================
+    mod_innovaciones_segmento = generar_mod_innovaciones_segmento(ventas_validas, clientes, fecha_ejecucion)
+    build_log(log_rows, "MOD_INNOVACIONES_SEGMENTO", len(mod_innovaciones_segmento))
+
+    # =========================
     # LOG MOTOR
     # =========================
 
@@ -1797,6 +1873,7 @@ def main():
         mod_reintegros_control.to_excel(writer, sheet_name="mod_reintegros_ctrl", index=False)
         mod_gastos_accion.to_excel(writer, sheet_name="mod_gastos_accion", index=False)
         mod_innovaciones_plan_as.to_excel(writer, sheet_name="mod_innovaciones_plan_as", index=False)
+        mod_innovaciones_segmento.to_excel(writer, sheet_name="mod_innovaciones_segmento", index=False)
         log_motor.to_excel(writer, sheet_name="log_motor", index=False)
 
     print("OK - Archivo generado correctamente:")
@@ -1818,6 +1895,7 @@ def main():
     print(f"Eficiencia descuento filas             : {len(mod_eficiencia_desc)}")
     print(f"Reintegros control filas               : {len(mod_reintegros_control)}")
     print(f"Innovaciones Plan AS filas             : {len(mod_innovaciones_plan_as)}")
+    print(f"Innovaciones segmento filas            : {len(mod_innovaciones_segmento)}")
     print(f"Historial ventas archivo               : {HISTORY_FILE}")
 
 if __name__ == "__main__":
