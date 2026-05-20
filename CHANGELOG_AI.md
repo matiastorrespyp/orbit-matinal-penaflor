@@ -1,5 +1,20 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-20 — INOV-4: UI Innovaciones por segmento en portal — PASS
+
+**Commit:** `5c8434a` — `PAV MATINAL PE_A FLOR/portal.html` (único archivo).
+
+**Gerencia:** bloque full-width al final de `gDashboard()`. Cards por producto con barra por segmento + tabla cobertura por vendedor. V2/V5/V20 excluidos.
+
+**Vendedor:** card al final de `vKpis()` con barras de avance por segmento + lista `clientes_faltantes` (primeros 5 + contador). V3 no muestra AUTOSERVICIO.
+
+**Playwright 15/15 PASS:**
+- Endpoints `/api/gerencia/innovaciones_segmento`, `/api/vendedor/v3/innovaciones_segmento`, `/api/vendedor/v4/innovaciones_segmento` → 200 ✅
+- appG visible ✅ · Bloque Innovaciones ✅ · Frizze Manxana ✅ · Antares XPA ✅
+- Tabla Cobertura por vendedor ✅ · V2/V5/V20 ausentes ✅
+- appV V3 ✅ · Card Innovaciones V3 ✅ · AUTOSERVICIO ausente V3 ✅
+- appV V4 ✅ · Card Innovaciones V4 ✅ · Sin errores JS ✅
+
 ## 2026-05-19 — INOV-3: endpoints Innovaciones por segmento — PASS
 
 **Archivo:** `server_orbit.py` — commit `b11ab9d`.

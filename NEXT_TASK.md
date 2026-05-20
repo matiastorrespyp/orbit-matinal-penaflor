@@ -66,11 +66,12 @@ Comparar estos dos números en el mismo contexto es semánticamente incorrecto.
 - `/api/gerencia/innovaciones_segmento` y `/api/vendedor/<id>/innovaciones_segmento`.
 - Validación 10/10 PASS. Sin V2/V5/V20. Sin V3/AUTOSERVICIO. `clientes_faltantes` como list. ✅
 
-### Próximo paso — Prioridad 2: INOV-4 UI Innovaciones por segmento
+### ~~Prioridad 2: INOV-4 UI Innovaciones por segmento~~ ✅ COMPLETADO 2026-05-20
 
-- Mostrar cobertura Frizze Manxana y Antares XPA en portal gerencia y vendedor.
-- Fuente: `/api/gerencia/innovaciones_segmento` y `/api/vendedor/<id>/innovaciones_segmento`.
-- No implementar hasta diseño aprobado.
+**Commit:** `5c8434a` — `PAV MATINAL PE_A FLOR/portal.html`.
+- Gerencia: bloque full-width Innovaciones (cards + tabla cobertura por vendedor). V2/V5/V20 excluidos.
+- Vendedor: card Innovaciones en KPIs (barras + clientes_faltantes). V3 sin AUTOSERVICIO.
+- Playwright 15/15 PASS. Endpoints INOV-3 200 OK.
 
 ---
 
