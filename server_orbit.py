@@ -1157,6 +1157,122 @@ def gerencia_planes_autoservicio():
     })
 
 
+# ====== GERENCIA: INNOVACIONES POR SEGMENTO ======
+@app.route("/api/gerencia/innovaciones_segmento")
+def gerencia_innovaciones_segmento():
+    """Frizze Manxana (14620) y Antares XPA (60020) por segmento, empresa completa.
+    Fuente: mod_innovaciones_segmento.csv. Excluye V2, V5, V20 y V3/AUTOSERVICIO."""
+    df = read_csv(DATASETS / "mod_innovaciones_segmento.csv")
+    if df.empty:
+        return jsonify({
+            "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "fuente": "mod_innovaciones_segmento.csv",
+            "advertencia": "Dato no disponible",
+            "resumen_empresa": [], "por_vendedor": [],
+        })
+    df.columns = [c.lstrip("﻿") for c in df.columns]
+    for col in ["vendedor_codigo", "producto_codigo", "clientes_cartera", "clientes_compraron", "pct_cobertura"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+    df = df[~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
+    df = df[~((df["vendedor_codigo"] == 3) & (df["segmento"].astype(str).str.upper() == "AUTOSERVICIO"))].copy()
+    fecha_ej = str(df["fecha_ejecucion"].iloc[0]) if "fecha_ejecucion" in df.columns and not df.empty else None
+    agg = (df.groupby(["producto_codigo", "producto_nombre", "segmento"], dropna=False)
+             .agg(clientes_cartera=("clientes_cartera", "sum"),
+                  clientes_compraron=("clientes_compraron", "sum"))
+             .reset_index())
+    resumen_empresa = []
+    for _, row in agg.iterrows():
+        cartera = int(row["clientes_cartera"]); compraron = int(row["clientes_compraron"])
+        resumen_empresa.append({
+            "producto_codigo": int(row["producto_codigo"]), "producto_nombre": str(row["producto_nombre"]),
+            "segmento": str(row["segmento"]), "clientes_cartera": cartera,
+            "clientes_compraron": compraron,
+            "pct_cobertura": round(compraron / cartera, 4) if cartera else 0.0,
+        })
+    resumen_empresa.sort(key=lambda x: (x["producto_codigo"], x["segmento"]))
+    por_vendedor = []
+    for cod, grp in df.groupby("vendedor_codigo"):
+        cod_int = int(cod); nombre = str(grp["vendedor_nombre"].iloc[0])
+        productos = []
+        for _, row in grp.iterrows():
+            cartera = int(row["clientes_cartera"]); compraron = int(row["clientes_compraron"])
+            faltantes_raw = str(row.get("clientes_faltantes", "") or "")
+            faltantes = [int(x) for x in faltantes_raw.split("|") if x.strip().isdigit()]
+            productos.append({
+                "segmento": str(row["segmento"]), "producto_codigo": int(row["producto_codigo"]),
+                "producto_nombre": str(row["producto_nombre"]), "clientes_cartera": cartera,
+                "clientes_compraron": compraron,
+                "pct_cobertura": round(compraron / cartera, 4) if cartera else 0.0,
+                "clientes_faltantes": faltantes,
+            })
+        productos.sort(key=lambda x: (x["segmento"], x["producto_codigo"]))
+        por_vendedor.append({"vendedor_id": f"V{cod_int}", "vendedor_nombre": nombre, "productos": productos})
+    por_vendedor.sort(key=lambda x: x["vendedor_id"])
+    return jsonify({
+        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "fuente": "mod_innovaciones_segmento.csv",
+        "fecha_ejecucion": fecha_ej,
+        "resumen_empresa": resumen_empresa,
+        "por_vendedor": por_vendedor,
+    })
+
+
+# ====== VENDEDOR: INNOVACIONES POR SEGMENTO ======
+@app.route("/api/vendedor/<vid>/innovaciones_segmento")
+def vendedor_innovaciones_segmento(vid):
+    """Cobertura de innovaciones por segmento para un vendedor específico.
+    Fuente: mod_innovaciones_segmento.csv. V3 sin AUTOSERVICIO."""
+    vid_norm = normalizar_vendedor_codigo(vid)
+    cn = clean_code(vid_norm)
+    cod_int = int(cn) if cn.isdigit() else 0
+    if cod_int in _VENDEDORES_EXCLUIDOS:
+        return jsonify({"error": f"Vendedor {vid_norm} excluido"}), 403
+    vend = read_csv(CONFIG / "vendedores_activos.csv")
+    nombre = vid_norm
+    if not vend.empty:
+        mask = (vend["activo"] == 1) & (vend["codigo_vendedor"].astype(str).apply(clean_code) == cn)
+        fila = vend[mask]
+        if fila.empty:
+            return jsonify({"error": f"Vendedor {vid_norm} no encontrado o inactivo"}), 404
+        nombre = str(fila.iloc[0]["nombre_vendedor"])
+    df = read_csv(DATASETS / "mod_innovaciones_segmento.csv")
+    if df.empty:
+        return jsonify({
+            "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "vendedor_id": vid_norm, "vendedor_nombre": nombre,
+            "fuente": "mod_innovaciones_segmento.csv",
+            "advertencia": "Dato no disponible", "productos": [],
+        })
+    df.columns = [c.lstrip("﻿") for c in df.columns]
+    for col in ["vendedor_codigo", "producto_codigo", "clientes_cartera", "clientes_compraron"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+    dv = df[df["vendedor_codigo"] == cod_int].copy()
+    if cod_int == 3:
+        dv = dv[dv["segmento"].astype(str).str.upper() != "AUTOSERVICIO"]
+    fecha_ej = str(dv["fecha_ejecucion"].iloc[0]) if "fecha_ejecucion" in dv.columns and not dv.empty else None
+    productos = []
+    for _, row in dv.iterrows():
+        cartera = int(row["clientes_cartera"]); compraron = int(row["clientes_compraron"])
+        faltantes_raw = str(row.get("clientes_faltantes", "") or "")
+        faltantes = [int(x) for x in faltantes_raw.split("|") if x.strip().isdigit()]
+        productos.append({
+            "segmento": str(row["segmento"]), "producto_codigo": int(row["producto_codigo"]),
+            "producto_nombre": str(row["producto_nombre"]), "clientes_cartera": cartera,
+            "clientes_compraron": compraron,
+            "pct_cobertura": round(compraron / cartera, 4) if cartera else 0.0,
+            "clientes_faltantes": faltantes,
+        })
+    productos.sort(key=lambda x: (x["segmento"], x["producto_codigo"]))
+    return jsonify({
+        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "vendedor_id": vid_norm, "vendedor_nombre": nombre,
+        "fuente": "mod_innovaciones_segmento.csv",
+        "fecha_ejecucion": fecha_ej, "productos": productos,
+    })
+
+
 # ====== MAIN ======
 if __name__ == "__main__":
     init_db()
