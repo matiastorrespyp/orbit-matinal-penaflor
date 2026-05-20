@@ -1,5 +1,24 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-19 — INOV-3: endpoints Innovaciones por segmento — PASS
+
+**Archivo:** `server_orbit.py` — commit `b11ab9d`.
+
+**Endpoints creados:**
+- `/api/gerencia/innovaciones_segmento` — resumen empresa por producto × segmento.
+- `/api/vendedor/<id>/innovaciones_segmento` — detalle por vendedor con clientes faltantes.
+
+**Fuente:** `04_DATASETS_ORBIT/mod_innovaciones_segmento.csv`.
+
+**Validación 10/10 PASS:**
+- gerencia = 200 ✅ · V3 = 200 ✅ · V4 = 200 ✅ · V2 = 403 (esperado) ✅
+- Sin V2/V5/V20 en respuesta ✅
+- Sin V3/AUTOSERVICIO en respuesta ✅
+- `producto_codigo` solo 14620 y 60020 ✅
+- `clientes_faltantes` como list ✅
+
+**Pendiente:** INOV-4 — UI portal para mostrar innovaciones por segmento en gerencia y vendedor.
+
 ## 2026-05-19 — INOV-2: dataset Innovaciones por segmento — PASS
 
 **Archivo:** `LEGACY/orbit_matinal_v42.py` — commit `a651d01`.

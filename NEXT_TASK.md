@@ -60,11 +60,16 @@ Comparar estos dos números en el mismo contexto es semánticamente incorrecto.
 **Motor:** `generar_mod_innovaciones_segmento()` en `LEGACY/orbit_matinal_v42.py` — commit `a651d01`.
 **Fuente:** `ventas.csv`. Segmentos: Tradicional / Autoservicio. V2/V5/V20 y V3/AUTOSERVICIO ausentes. ✅
 
-### Próximo paso — Prioridad 2: INOV-3 Endpoints Innovaciones
+### ~~Prioridad 2: INOV-3 Endpoints Innovaciones~~ ✅ COMPLETADO 2026-05-19
 
-- `/api/gerencia/innovaciones_segmento` — resumen por producto × segmento.
-- `/api/vendedor/<id>/innovaciones_segmento` — detalle por vendedor con clientes faltantes.
-- Fuente: `mod_innovaciones_segmento.csv` y `mod_innovaciones_plan_as.csv`.
+**Endpoints:** `server_orbit.py` — commit `b11ab9d`.
+- `/api/gerencia/innovaciones_segmento` y `/api/vendedor/<id>/innovaciones_segmento`.
+- Validación 10/10 PASS. Sin V2/V5/V20. Sin V3/AUTOSERVICIO. `clientes_faltantes` como list. ✅
+
+### Próximo paso — Prioridad 2: INOV-4 UI Innovaciones por segmento
+
+- Mostrar cobertura Frizze Manxana y Antares XPA en portal gerencia y vendedor.
+- Fuente: `/api/gerencia/innovaciones_segmento` y `/api/vendedor/<id>/innovaciones_segmento`.
 - No implementar hasta diseño aprobado.
 
 ---
