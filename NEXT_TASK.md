@@ -73,6 +73,12 @@ Comparar estos dos números en el mismo contexto es semánticamente incorrecto.
 - Vendedor: card Innovaciones en KPIs (barras + clientes_faltantes). V3 sin AUTOSERVICIO.
 - Playwright 15/15 PASS. Endpoints INOV-3 200 OK.
 
+### ~~Prioridad 2: INOV-5 Mejora visual Innovaciones~~ ✅ COMPLETADO 2026-05-20
+
+**Commit:** `b247410` — `PAV MATINAL PE_A FLOR/portal.html`. Pusheado.
+- Fase 1: auditoría visual + endpoints crudos. V3 0% = dato real. V4/Gerencia coinciden. V2/V5/V20 ausentes.
+- Fase 2: wording "Sin compradores aún", cards 260px, tabla compacta X/Y + mini-barra. Sin tocar lógica ni backend.
+
 ---
 
 ## Sesión 2026-05-14 — Cierre confirmado (commit c67e70e)

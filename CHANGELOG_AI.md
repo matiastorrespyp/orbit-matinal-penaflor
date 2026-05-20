@@ -1,5 +1,20 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-20 — INOV-5: mejora visual Innovaciones en portal — PASS
+
+**Commit:** `b247410` — `PAV MATINAL PE_A FLOR/portal.html` (único archivo). Pusheado.
+
+**Fase 1 — Auditoría visual + datos crudos:**
+- V3 muestra 0% en ambos productos TRADICIONAL → confirmado real (endpoint: compraron=0, cartera=282).
+- V4 endpoint coincide con portal: AUTOSERVICIO y TRADICIONAL correctos.
+- Gerencia: vendedores V3/V4/V6/V7/V8/V9/V10. V2/V5/V20 ausentes. ✅
+
+**Fase 2 — Mejoras visuales (sin tocar lógica ni backend):**
+- Helper `iLbl`: cuando pct=0 muestra "Sin compradores aún" en lugar de "0%".
+- Cards gerencia: `minmax(210px→260px)` para mejor legibilidad.
+- Tabla gerencia: columnas Cartera+Compraron fusionadas en `X / Y` + mini-barra + chip en "Cobertura".
+- Vendedor: sub-línea dinámica "Sin compradores aún · 0 de N clientes" cuando compraron=0.
+
 ## 2026-05-20 — INOV-4: UI Innovaciones por segmento en portal — PASS
 
 **Commit:** `5c8434a` — `PAV MATINAL PE_A FLOR/portal.html` (único archivo).
