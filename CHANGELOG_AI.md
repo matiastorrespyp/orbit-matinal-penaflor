@@ -1,5 +1,24 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-20 — INOV-6b: UI Plan de Acción Innovaciones — PASS
+
+**Commit:** `ff5e17a` — `PAV MATINAL PE_A FLOR/portal.html` (único archivo).
+
+**Cambios en portal.html:**
+- `let D`: agregado `plan_inov:null`.
+- `logout()`: reset incluye `plan_inov:null`.
+- `loadAll()` vendedor: Promise.all extendido — agrega fetch `/api/vendedor/<id>/plan_innovaciones` → `D.plan_inov`.
+- `vKpis()`: nueva card "📋 Plan Innovaciones" debajo de 🚀 Innovaciones. Máx 5 clientes por producto/segmento, badge "hoy" para `en_zona_hoy`, chips ALTA/MEDIA/BAJA, ruta+día solo si presentes, overflow "+N más". Si endpoint falla, card no se renderiza.
+
+**Validación:**
+- test_inov4.py: 15/15 PASS. Sin errores JS. ✅
+- V3: 2 productos TRADICIONAL, sin AUTOSERVICIO. 5 clientes + "+277 más". ✅
+- V4: 4 productos (AUTOSERVICIO + TRADICIONAL). Clientes con ruta, prioridad, badge "hoy". ✅
+
+**Próximo:** INOV-6c — ranking de oportunidad Innovaciones en vista gerencia.
+
+---
+
 ## 2026-05-20 — INOV-6a: endpoint plan_innovaciones — PASS
 
 **Commit:** `ebb0d17` — `server_orbit.py` (único archivo). Pusheado.

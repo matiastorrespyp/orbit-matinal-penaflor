@@ -87,13 +87,20 @@ Comparar estos dos números en el mismo contexto es semánticamente incorrecto.
 - Fuentes: `mod_innovaciones_segmento.csv` + `clientes_dia.csv` + `clientes_master.csv`.
 - V3 sin AUTOSERVICIO. V2/V5/V20 → 403. Endpoints INOV-3 intactos.
 
-### Próximo paso — Prioridad 2: INOV-6b UI Plan de Acción en portal.html
+### ~~Prioridad 2: INOV-6b UI Plan de Acción en portal.html~~ ✅ COMPLETADO 2026-05-20
 
-- Mostrar lista accionable de clientes faltantes en la card Innovaciones del vendedor.
-- Fuente: `/api/vendedor/<vid>/plan_innovaciones`.
-- Priorizar `en_zona_hoy=true` primero, luego parciales.
-- No tocar backend. Solo `portal.html`.
-- Proponer diseño antes de implementar.
+**Commit:** `ff5e17a` — `PAV MATINAL PE_A FLOR/portal.html` (único archivo).
+- Card "📋 Plan Innovaciones" en KPIs vendedor, debajo de 🚀 Innovaciones.
+- Fuente: `/api/vendedor/<id>/plan_innovaciones`.
+- Máx 5 clientes por producto/segmento. Badge "hoy", chips ALTA/MEDIA/BAJA, ruta+día opcionales. "+N más" si hay overflow.
+- V3 sin AUTOSERVICIO. Si endpoint falla, card no se renderiza.
+- test_inov4.py 15/15 PASS. Sin errores JS.
+
+### Próximo paso — Prioridad 2: INOV-6c ranking de oportunidad Innovaciones (gerencia)
+
+- Mostrar en vista gerencia un ranking de vendedores por oportunidad de cobertura Innovaciones.
+- Posible fuente: `/api/gerencia/innovaciones_segmento` existente (ya devuelve cobertura por vendedor).
+- No implementar sin propuesta de diseño aprobada.
 
 ---
 
