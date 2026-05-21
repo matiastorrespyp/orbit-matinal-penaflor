@@ -976,6 +976,41 @@ function gDashboard(p){
         </div>
       </div>`;
     }
+    // — INOV-6c: Ranking de Oportunidad Innovaciones —
+    const EXCL_VEND=['V2','V5','V20'];
+    const iRank=(inov.por_vendedor||[])
+      .filter(v=>!EXCL_VEND.includes((v.vendedor_id||'').toUpperCase()))
+      .map(v=>{
+        const prods=v.productos||[];
+        const falt=prods.reduce((s,pr)=>s+(pr.clientes_faltantes||[]).length,0);
+        const comp=prods.reduce((s,pr)=>s+(pr.clientes_compraron||0),0);
+        const cart=prods.reduce((s,pr)=>s+(pr.clientes_cartera||0),0);
+        const pctProm=prods.length?Math.round(prods.reduce((s,pr)=>s+(pr.pct_cobertura||0),0)/prods.length*1000)/10:0;
+        return {vid:v.vendedor_id,nombre:v.vendedor_nombre,falt,comp,cart,pctProm,nProds:prods.length};
+      })
+      .sort((a,b)=>b.falt-a.falt);
+    if(iRank.length){
+      const iLbl2=pct=>Number(pct||0).toFixed(1)+'%';
+      iH+=`<div class="card" style="margin-top:12px;">
+        <div class="card-hd"><span class="card-title">🎯 Ranking de Oportunidad — Innovaciones</span><span class="chip">${iRank.length} vendedores</span></div>
+        <div class="card-body nop">
+          <table class="tbl">
+            <thead><tr><th>#</th><th>Vendedor</th><th style="text-align:right">Faltantes</th><th style="text-align:right">Compraron</th><th>Cobertura</th><th style="text-align:right">Prods</th></tr></thead>
+            <tbody>${iRank.map((v,i)=>{
+              const cl=v.pctProm>=60?'ok':v.pctProm>=30?'wn':'bd';
+              return `<tr>
+                <td><b style="color:var(--text2)">${i+1}</b></td>
+                <td><span class="chip" style="color:${CV[v.vid]||'var(--text2)'};">${v.vid}</span> ${(v.nombre||'').split(' ')[0]}</td>
+                <td style="text-align:right"><b style="color:var(--bd)">${v.falt}</b></td>
+                <td style="text-align:right">${v.comp} / ${v.cart}</td>
+                <td><div style="display:flex;align-items:center;gap:6px;"><div class="bar" style="width:60px;height:4px;"><div class="bar-f ${cl}" style="width:${v.pctProm}%"></div></div><span class="chip ${cl}" style="min-width:54px;text-align:center;">${iLbl2(v.pctProm)}</span></div></td>
+                <td style="text-align:right">${v.nProds}</td>
+              </tr>`;
+            }).join('')}</tbody>
+          </table>
+        </div>
+      </div>`;
+    }
     iH+=`</div>`;
     p.insertAdjacentHTML('beforeend', iH);
   }
