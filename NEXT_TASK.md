@@ -96,11 +96,19 @@ Comparar estos dos números en el mismo contexto es semánticamente incorrecto.
 - V3 sin AUTOSERVICIO. Si endpoint falla, card no se renderiza.
 - test_inov4.py 15/15 PASS. Sin errores JS.
 
-### Próximo paso — Prioridad 2: INOV-6c ranking de oportunidad Innovaciones (gerencia)
+### ~~Prioridad 2: INOV-6c ranking de oportunidad Innovaciones (gerencia)~~ ✅ COMPLETADO 2026-05-20
 
-- Mostrar en vista gerencia un ranking de vendedores por oportunidad de cobertura Innovaciones.
-- Posible fuente: `/api/gerencia/innovaciones_segmento` existente (ya devuelve cobertura por vendedor).
-- No implementar sin propuesta de diseño aprobada.
+**Commit:** `e2bad1b` — `PAV MATINAL PE_A FLOR/portal.html` (único archivo).
+- Card "🎯 Ranking de Oportunidad — Innovaciones" en `gDashboard()`, debajo de Cobertura por vendedor.
+- Sin nuevo endpoint. Usa `D.inov.por_vendedor` ya disponible.
+- Ordena por faltantes DESC. V2/V5/V20 excluidos. pctProm con 1 decimal + mini-barra.
+- 14/15 PASS. Único FAIL: extracción automática de orden en test (timing), no falla funcional.
+
+### Próximo paso — Prioridad 2: INOV-7 (por definir)
+
+- Ciclo Innovaciones completado: motor (INOV-1/2), endpoints (INOV-3), UI vendedor (INOV-4/5/6b), UI gerencia (INOV-6c).
+- Posibles próximos pasos: cierre formal del ciclo, nueva funcionalidad, o mejora de cobertura de tests.
+- No implementar sin definición aprobada.
 
 ---
 

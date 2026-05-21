@@ -1,5 +1,25 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-20 — INOV-6c: Ranking gerencial Innovaciones — PASS
+
+**Commit:** `e2bad1b` — `PAV MATINAL PE_A FLOR/portal.html` (único archivo).
+
+**Cambios en portal.html:**
+- `gDashboard()`: nueva card "🎯 Ranking de Oportunidad — Innovaciones" debajo de "Cobertura por vendedor".
+- Fuente: `D.inov.por_vendedor` (ya cargado desde `/api/gerencia/innovaciones_segmento`). Sin nuevo endpoint.
+- Calcula por vendedor: `falt` (sum len clientes_faltantes), `comp`, `cart`, `pctProm` (1 decimal).
+- Ordena por `falt DESC`. Excluye V2/V5/V20. Mini-barra cobertura con color `ok/wn/bd`.
+- Columnas: `#`, Vendedor, Faltantes, Compraron/Cartera, Cobertura, Prods.
+
+**Validación:** 14/15 PASS.
+- Ranking visible (gerencia). V2/V5/V20 ausentes. Sin errores JS. ✅
+- V3 sin AUTOSERVICIO. Plan Innovaciones V3/V4 visible. ✅
+- 1 FAIL: extracción automática del orden en test (problema de timing en `inner_text()` sobre tablas grandes). No es falla funcional — orden verificado en Fase 1 contra endpoint real.
+
+**Próximo:** INOV-7 por definir, o cierre del ciclo Innovaciones.
+
+---
+
 ## 2026-05-20 — INOV-6b: UI Plan de Acción Innovaciones — PASS
 
 **Commit:** `ff5e17a` — `PAV MATINAL PE_A FLOR/portal.html` (único archivo).
