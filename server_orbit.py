@@ -1273,6 +1273,151 @@ def vendedor_innovaciones_segmento(vid):
     })
 
 
+# ====== VENDEDOR: PLAN DE ACCIÓN INNOVACIONES ======
+@app.route("/api/vendedor/<vid>/plan_innovaciones")
+def vendedor_plan_innovaciones(vid):
+    """Faltantes de Innovaciones enriquecidos con datos de cliente para plan de acción.
+    Fuente: mod_innovaciones_segmento.csv + clientes_dia.csv + clientes_master.csv.
+    V3 sin AUTOSERVICIO. Excluye V2, V5, V20."""
+    def parse_clientes_faltantes(v):
+        if isinstance(v, list):
+            result = []
+            for x in v:
+                try: result.append(int(x))
+                except (ValueError, TypeError): pass
+            return result
+        s = str(v or "").strip()
+        if not s or s in ("nan", "None", "[]"):
+            return []
+        s = s.strip("[]")
+        sep = "|" if "|" in s else ","
+        result = []
+        for x in s.split(sep):
+            x = x.strip()
+            if x.isdigit():
+                result.append(int(x))
+        return result
+
+    vid_norm = normalizar_vendedor_codigo(vid)
+    cn = clean_code(vid_norm)
+    cod_int = int(cn) if cn.isdigit() else 0
+    if cod_int in _VENDEDORES_EXCLUIDOS:
+        return jsonify({"error": f"Vendedor {vid_norm} excluido"}), 403
+    vend = read_csv(CONFIG / "vendedores_activos.csv")
+    nombre = vid_norm
+    if not vend.empty:
+        mask = (vend["activo"] == 1) & (vend["codigo_vendedor"].astype(str).apply(clean_code) == cn)
+        fila = vend[mask]
+        if fila.empty:
+            return jsonify({"error": f"Vendedor {vid_norm} no encontrado o inactivo"}), 404
+        nombre = str(fila.iloc[0]["nombre_vendedor"])
+    df = read_csv(DATASETS / "mod_innovaciones_segmento.csv")
+    if df.empty:
+        return jsonify({
+            "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "vendedor_id": vid_norm, "vendedor_nombre": nombre,
+            "advertencia": "Dato no disponible", "productos": [],
+        })
+    df.columns = [str(c).lstrip(chr(65279)).strip() for c in df.columns]
+    for col in ["vendedor_codigo", "producto_codigo", "clientes_cartera", "clientes_compraron"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+    dv = df[df["vendedor_codigo"] == cod_int].copy()
+    if cod_int == 3:
+        dv = dv[dv["segmento"].astype(str).str.upper() != "AUTOSERVICIO"]
+    if dv.empty:
+        return jsonify({
+            "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "vendedor_id": vid_norm, "vendedor_nombre": nombre,
+            "advertencia": "Sin datos de innovaciones para este vendedor", "productos": [],
+        })
+    cli_dia = read_csv(DATASETS / "clientes_dia.csv")
+    cli_dia_idx = {}
+    if not cli_dia.empty:
+        cli_dia["cliente_id"] = pd.to_numeric(cli_dia["cliente_id"], errors="coerce")
+        if "vendedor_codigo" in cli_dia.columns:
+            cli_dia["vendedor_codigo"] = pd.to_numeric(cli_dia["vendedor_codigo"], errors="coerce")
+            cli_dia = cli_dia[cli_dia["vendedor_codigo"] == cod_int]
+        for _, r in cli_dia.iterrows():
+            cid = int(r["cliente_id"]) if not pd.isna(r["cliente_id"]) else None
+            if cid is not None:
+                cli_dia_idx[cid] = r
+    cli_master = read_csv(BASE / "05_MASTER_DATA" / "clientes_master.csv")
+    cli_master_idx = {}
+    if not cli_master.empty:
+        cli_master.columns = [str(c).lstrip(chr(65279)).strip() for c in cli_master.columns]
+        cli_master["cliente_id"] = pd.to_numeric(cli_master["cliente_id"], errors="coerce")
+        for _, r in cli_master.iterrows():
+            cid = int(r["cliente_id"]) if not pd.isna(r["cliente_id"]) else None
+            if cid is not None:
+                cli_master_idx[cid] = r
+    PRIO_ORD = {"ALTA": 0, "MEDIA": 1, "BAJA": 2}
+    productos = []
+    for _, row in dv.iterrows():
+        cartera = int(row["clientes_cartera"]); compraron = int(row["clientes_compraron"])
+        faltantes_ids = parse_clientes_faltantes(row.get("clientes_faltantes", ""))
+        plan = []
+        for cid in faltantes_ids:
+            if cid in cli_dia_idx:
+                r = cli_dia_idx[cid]
+                plan.append({
+                    "cliente_id": cid,
+                    "cliente_nombre": str(r.get("cliente_nombre", "") or ""),
+                    "segmento": str(r.get("segmento_operativo", r.get("segmento", "")) or ""),
+                    "localidad": str(r.get("localidad", "") or ""),
+                    "ruta": str(r.get("ruta", "") or ""),
+                    "dias_visita": str(r.get("dias_visita", "") or ""),
+                    "prioridad": str(r.get("prioridad_comercial", "") or "") or None,
+                    "en_zona_hoy": True,
+                    "enriquecimiento": "completo",
+                })
+            elif cid in cli_master_idx:
+                r = cli_master_idx[cid]
+                plan.append({
+                    "cliente_id": cid,
+                    "cliente_nombre": str(r.get("cliente_nombre", "") or ""),
+                    "segmento": str(r.get("segmento", "") or ""),
+                    "localidad": str(r.get("localidad", "") or ""),
+                    "ruta": None,
+                    "dias_visita": None,
+                    "prioridad": None,
+                    "en_zona_hoy": False,
+                    "enriquecimiento": "parcial",
+                })
+            else:
+                plan.append({
+                    "cliente_id": cid,
+                    "cliente_nombre": None,
+                    "segmento": None, "localidad": None,
+                    "ruta": None, "dias_visita": None, "prioridad": None,
+                    "en_zona_hoy": False,
+                    "enriquecimiento": "sin_datos",
+                })
+        plan.sort(key=lambda x: (
+            0 if x["en_zona_hoy"] else 1,
+            PRIO_ORD.get(x.get("prioridad") or "", 9),
+            x.get("cliente_nombre") or "",
+        ))
+        productos.append({
+            "segmento": str(row["segmento"]),
+            "producto_codigo": int(row["producto_codigo"]),
+            "producto_nombre": str(row["producto_nombre"]),
+            "clientes_cartera": cartera,
+            "clientes_compraron": compraron,
+            "pct_cobertura": round(compraron / cartera, 4) if cartera else 0.0,
+            "total_faltantes": len(plan),
+            "en_zona_hoy": sum(1 for c in plan if c["en_zona_hoy"]),
+            "plan": plan,
+        })
+    productos.sort(key=lambda x: (x["segmento"], x["producto_codigo"]))
+    return jsonify({
+        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "vendedor_id": vid_norm, "vendedor_nombre": nombre,
+        "fuente": "mod_innovaciones_segmento.csv + clientes_dia.csv + clientes_master.csv",
+        "productos": productos,
+    })
+
+
 # ====== MAIN ======
 if __name__ == "__main__":
     init_db()
