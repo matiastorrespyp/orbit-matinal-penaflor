@@ -1,5 +1,28 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-20 — INOV-6a: endpoint plan_innovaciones — PASS
+
+**Commit:** `ebb0d17` — `server_orbit.py` (único archivo). Pusheado.
+
+**Endpoint creado:** `GET /api/vendedor/<vid>/plan_innovaciones` — read-only.
+
+**Fuentes:** `mod_innovaciones_segmento.csv` + `clientes_dia.csv` + `clientes_master.csv`.
+
+**Enriquecimiento por cliente:**
+- `en_zona_hoy: true` + `enriquecimiento: "completo"` → desde `clientes_dia` (nombre, segmento, ruta, dias_visita, localidad, prioridad).
+- `en_zona_hoy: false` + `enriquecimiento: "parcial"` → desde `clientes_master` (nombre, segmento, localidad).
+- `enriquecimiento: "sin_datos"` → ID sin match en ninguna fuente.
+
+**Ordenamiento plan:** en_zona_hoy primero → prioridad ALTA > MEDIA > BAJA → nombre alfabético.
+
+**Validación:**
+- V3 HTTP 200, solo TRADICIONAL, sin AUTOSERVICIO. 282 faltantes, 76 en zona hoy. ✅
+- V4 HTTP 200, AUTOSERVICIO + TRADICIONAL. ✅
+- V2/V5/V20 → 403. ✅
+- Endpoints INOV-3 siguen 200. ✅
+
+**Próximo:** INOV-6b — UI Plan de Acción en `portal.html`.
+
 ## 2026-05-20 — INOV-5: mejora visual Innovaciones en portal — PASS
 
 **Commit:** `b247410` — `PAV MATINAL PE_A FLOR/portal.html` (único archivo). Pusheado.

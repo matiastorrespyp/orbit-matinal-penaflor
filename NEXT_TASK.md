@@ -79,6 +79,22 @@ Comparar estos dos números en el mismo contexto es semánticamente incorrecto.
 - Fase 1: auditoría visual + endpoints crudos. V3 0% = dato real. V4/Gerencia coinciden. V2/V5/V20 ausentes.
 - Fase 2: wording "Sin compradores aún", cards 260px, tabla compacta X/Y + mini-barra. Sin tocar lógica ni backend.
 
+### ~~Prioridad 2: INOV-6a endpoint plan_innovaciones~~ ✅ COMPLETADO 2026-05-20
+
+**Commit:** `ebb0d17` — `server_orbit.py`. Pusheado.
+- `GET /api/vendedor/<vid>/plan_innovaciones` — read-only.
+- Faltantes enriquecidos: `en_zona_hoy`, `enriquecimiento` (completo/parcial/sin_datos).
+- Fuentes: `mod_innovaciones_segmento.csv` + `clientes_dia.csv` + `clientes_master.csv`.
+- V3 sin AUTOSERVICIO. V2/V5/V20 → 403. Endpoints INOV-3 intactos.
+
+### Próximo paso — Prioridad 2: INOV-6b UI Plan de Acción en portal.html
+
+- Mostrar lista accionable de clientes faltantes en la card Innovaciones del vendedor.
+- Fuente: `/api/vendedor/<vid>/plan_innovaciones`.
+- Priorizar `en_zona_hoy=true` primero, luego parciales.
+- No tocar backend. Solo `portal.html`.
+- Proponer diseño antes de implementar.
+
 ---
 
 ## Sesión 2026-05-14 — Cierre confirmado (commit c67e70e)
