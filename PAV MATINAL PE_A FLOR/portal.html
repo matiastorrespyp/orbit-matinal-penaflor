@@ -674,7 +674,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 
 /* ── estado ── */
 let userData = null, currentDay = null, gFiltro = "", gScreen = "dashboard";
-let D = { diag:{}, dash:[], cli:[], al:[], plan:[], pvr:{}, det:{}, msgs:[], cccEmpresa:{}, onceTit:{}, inov:null };
+let D = { diag:{}, dash:[], cli:[], al:[], plan:[], pvr:{}, det:{}, msgs:[], cccEmpresa:{}, onceTit:{}, inov:null, plan_inov:null };
 
 const CV = { V3:'#5BDED4', V4:'#F2B544', V6:'#5BC23A', V7:'#9B7BFF', V8:'#4DA3FF', V9:'#FF9D5C', V10:'#FF5D8B' };
 const DAYS = ['LU','MA','MI','JU','VI','SA'];
@@ -714,14 +714,16 @@ async function loadAll(){
   if(plan) D.plan=Array.isArray(plan)?plan:[];
   if(pvr)  D.pvr =pvr;
   if(userData?.rol==='vendedor'){
-    const [det,msgs,inov]=await Promise.all([
+    const [det,msgs,inov,planInov]=await Promise.all([
       safe('/api/vendedor/'+userData.vendedor_id),
       safe('/api/mensajes?vendedor_id='+userData.vendedor_id),
-      safe('/api/vendedor/'+userData.vendedor_id+'/innovaciones_segmento')
+      safe('/api/vendedor/'+userData.vendedor_id+'/innovaciones_segmento'),
+      safe('/api/vendedor/'+userData.vendedor_id+'/plan_innovaciones')
     ]);
-    if(det)  D.det =det;
-    if(msgs) D.msgs=Array.isArray(msgs)?msgs:[];
-    if(inov) D.inov=inov;
+    if(det)      D.det=det;
+    if(msgs)     D.msgs=Array.isArray(msgs)?msgs:[];
+    if(inov)     D.inov=inov;
+    if(planInov) D.plan_inov=planInov;
   }
   if(userData?.rol==='gerencia'){
     const [cccEmp,onceTit,inov]=await Promise.all([
@@ -774,7 +776,7 @@ function buildDaySel(active){
 function setDay(d){ currentDay=d; buildDaySel(d); gRender(); }
 function gFiltV(v){ gFiltro=v; gRender(); }
 function logout(){
-  userData=null; D={diag:{},dash:[],cli:[],al:[],plan:[],det:{},msgs:[],inov:null};
+  userData=null; D={diag:{},dash:[],cli:[],al:[],plan:[],det:{},msgs:[],inov:null,plan_inov:null};
   document.getElementById('appG').style.display='none';
   document.getElementById('appV').style.display='none';
   document.getElementById('loginScreen').style.display='flex';
@@ -1274,6 +1276,34 @@ function vKpis(){
         <div class="bar" style="height:5px;"><div class="bar-f ${cl}" style="width:${pct}%"></div></div>
         ${falt.length?`<div class="xs m3 mt6">Faltantes: ${falt.join(', ')}${extra>0?' +'+extra+' más':''}</div>`:''}
       </div>`;
+    });
+    h+=`</div></div>`;
+  }
+  // — INOV-6b: Plan de Acción Innovaciones —
+  const planInov=D.plan_inov||{};
+  const planProds=(planInov.productos||[]).filter(pr=>!(esV3&&(pr.segmento||'').toUpperCase()==='AUTOSERVICIO'));
+  if(planProds.length && !planInov.advertencia){
+    h+=`<div class="card">
+      <div class="card-hd"><span class="card-title">📋 Plan Innovaciones</span><span class="chip">${planProds.length} productos</span></div>
+      <div class="card-body">`;
+    planProds.forEach(pr=>{
+      const enZona=pr.en_zona_hoy||0, total=pr.total_faltantes||0;
+      h+=`<div style="margin-bottom:14px;">
+        <div class="row-b mb4"><b style="font-size:13px;">${pr.producto_nombre}</b><span class="chip">${pr.segmento}</span></div>
+        <div class="xs m3 mb6">${enZona} en zona hoy &middot; ${total} faltantes</div>`;
+      const clientes=(pr.plan||[]).slice(0,5);
+      const extra=(pr.plan||[]).length-clientes.length;
+      clientes.forEach(c=>{
+        const zonaBadge=c.en_zona_hoy?'<span class="chip ok" style="font-size:10px;padding:1px 5px;">hoy</span>':'';
+        const rutaLbl=(c.ruta&&c.dias_visita)?`<span class="xs m3">${c.ruta} &middot; ${c.dias_visita}</span>`:'';
+        const prioLbl=c.prioridad?`<span class="chip ${c.prioridad==='ALTA'?'bd':c.prioridad==='MEDIA'?'wn':''}" style="font-size:10px;">${c.prioridad}</span>`:'';
+        h+=`<div style="padding:5px 0;border-bottom:1px solid var(--bd3);">
+          <div class="row-b"><span style="font-size:12px;">${c.cliente_nombre||('#'+c.cliente_id)}</span><div style="display:flex;gap:4px;">${prioLbl}${zonaBadge}</div></div>
+          <div class="xs m3">${c.localidad||''} ${rutaLbl}</div>
+        </div>`;
+      });
+      if(extra>0) h+=`<div class="xs m3 mt6">+${extra} más</div>`;
+      h+=`</div>`;
     });
     h+=`</div></div>`;
   }
