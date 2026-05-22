@@ -3,36 +3,39 @@
 ## Sesión 2026-05-22 — Estado actual
 
 ### HECHO EN ESTA SESIÓN ✅
-- ✅ `_clasificar()` corregido: AUTOSERVICIO = SubSegmento ("Autoservicio Tradicional", "Cadena Regional", etc.). MAYORISTAS/CASH&CARRY = canal MAYORISTA separado.
-- ✅ AUTOSERVICIO cartera real: V4=45, V6=36, V7=23, V8=31, V9=28, V10=29. Total=192 (excl. V3). Era 272 inflado.
-- ✅ V3 excluida de AUTOSERVICIO también en cobertura (consistente con 11T e innovaciones).
-- ✅ 17 productos innovación cargados y validados (antes 2).
-- ✅ 5 datasets regenerados con clasificación correcta.
-- ✅ `botellas_mes=53860` desde historial_ventas_cliente.csv.
-- ✅ Títulos sidebar portal correctos. Botones Innovaciones y Planes AS funcionando.
-- ✅ 6 endpoints nuevos: cobertura_acum, 11t_acum, innovaciones_total, planes_as (gerencia + vendedor), innovaciones_segmento (vendedor).
-- ✅ PORT desde env var (Render compatible). requirements.txt + Procfile.
+- ✅ `_clasificar()` corregido: AUTOSERVICIO = SubSegmento real (210 clientes). MAYORISTAS/CASH&CARRY = MAYORISTA.
+- ✅ AUTOSERVICIO cartera total=192 (excl. V3). Era 272 inflado.
+- ✅ 17 productos innovación cargados.
+- ✅ 7 datasets en 04_DATASETS_ORBIT/: cobertura_acum, 11t_acum, planes_as, innovaciones_segmento, innovaciones_plan_as, **sellout_categoria**, **acciones_ranking**.
+- ✅ Dashboard: "Cobertura acumulada del mes" por segmento junto a cobertura diaria.
+- ✅ Dashboard: tabla sellout en litros por categoría (reemplaza card innovaciones que quedó solo en sidebar).
+- ✅ Sidebar: botón "Acciones Comerciales" → `gAccionesComerciales(p)`.
+- ✅ `/api/gerencia/sellout_categoria` y `/api/gerencia/acciones_ranking` funcionando.
+- ✅ `botellas_mes=53860`. Títulos sidebar correctos.
 
 ### PENDIENTE INMEDIATO
 
-1. **Commit** (este es el siguiente paso):
-   - Archivos a commitear: `generar_datasets_acum.py`, `server_orbit.py`, `portal.html`, `CHANGELOG_AI.md`, `NEXT_TASK.md`, `requirements.txt`, `Procfile`, los 5 CSVs en `04_DATASETS_ORBIT/` (mod_cobertura_acum, mod_11t_acum, mod_planes_as, mod_innovaciones_segmento, mod_innovaciones_plan_as).
-   - También commitear CSVs de 04_DATASETS_ORBIT/ ya staged (mod_11_titulares, mod_ccc_segmento, mod_volumen_vendedor).
+1. **Commit** (siguiente paso):
+   - `generar_datasets_acum.py`, `server_orbit.py`, `portal.html`, `CHANGELOG_AI.md`, `NEXT_TASK.md`
+   - `04_DATASETS_ORBIT/mod_sellout_categoria.csv`, `04_DATASETS_ORBIT/mod_acciones_ranking.csv`
    - NO commitear: `01_INPUTS/`, `02_HISTORY/`, `orbit.db`, `06_APP_DATA/`, `05_MASTER_DATA/`.
 
 2. **Render (despliegue remoto):**
    - Crear cuenta en render.com → New Web Service → conectar repositorio GitHub.
-   - `requirements.txt` y `Procfile` ya están listos.
-   - PORT lo inyecta Render automáticamente.
+   - `requirements.txt` y `Procfile` ya listos.
 
 3. **Regeneración diaria:**
-   - Actualizar `EJECUTAR_ORBIT.bat` para que corra `python generar_datasets_acum.py` antes del pipeline existente.
+   - Actualizar `EJECUTAR_ORBIT.bat` para correr `python generar_datasets_acum.py` antes del pipeline.
+
+4. **Historial de ventas — alertas comparativas (próxima sesión):**
+   - Objetivo: detectar clientes que venían comprando y dejaron de hacerlo, o dejaron de comprar un producto.
+   - Fuente: `02_HISTORY/historial_ventas_cliente.csv` + `02_HISTORY/historial_ventas.csv`.
+   - Cruzar con ventas actuales para identificar brechas.
 
 ### Pendientes opcionales
-- Cobertura acumulada en dashboard gerencia (reemplazar o suplementar CCC del día).
-- 11T acumulado en dashboard gerencia (reemplazar o suplementar 11T mensual).
+- 11T acumulado visible en dashboard gerencia.
 - Objetivo de cobertura 11T por segmento/marca (archivo `09_CONFIG/objetivos_11t.csv`).
-- Semántica CCC Mes vs Sin Comp. Mes (decisión pendiente de sesión anterior).
+- Semántica CCC Mes vs Sin Comp. Mes.
 
 
 

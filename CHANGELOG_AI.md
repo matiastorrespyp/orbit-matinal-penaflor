@@ -1,5 +1,24 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-22 — Sellout litros por categoría + Acciones Comerciales + Cobertura acumulada dashboard
+
+**Archivos tocados:**
+- `generar_datasets_acum.py` — +2 funciones: `cargar_maestro_productos()`, `generar_sellout_categoria()`, `generar_acciones_ranking()`. 7 datasets generados.
+- `04_DATASETS_ORBIT/mod_sellout_categoria.csv` — 23 filas: 13 categorías × segmentos. Top: RTD(S)=302k L, Vodka=175k L, Vinos del año=123k L.
+- `04_DATASETS_ORBIT/mod_acciones_ranking.csv` — 20 acciones: canal × categoría. Cruce ventas × maestro × clientes_seg.
+- `server_orbit.py` — 2 endpoints nuevos: `GET /api/gerencia/sellout_categoria` y `GET /api/gerencia/acciones_ranking`.
+- `PAV MATINAL PE_A FLOR/portal.html` — Dashboard: card "Cobertura acumulada del mes" junto a cobertura diaria. Card INOV-4 (innovaciones dashboard) reemplazado por tabla sellout en litros por categoría+segmento. Sidebar: botón "Acciones Comerciales". Nueva función `gAccionesComerciales(p)` con KPIs resumen + tabla ranking.
+
+**Fuentes:**
+- Sellout: `ventas_acumulada.csv` × `04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx` (col E=Categoria, col B=Segmento, col G=Lts_caja).
+- Acciones: `reglas_acciones_mayo_2026_orbit.csv` × ventas × maestro × clientes._seg. Agrupa tiers del mismo canal+categoria.
+- Cobertura acumulada: `mod_cobertura_acum.csv` (ya existía). JavaScript agrega por segmento.
+
+**Validaciones:**
+- `/api/gerencia/sellout_categoria` → 200, 13 categorías, top RTD(S)=302,554 L.
+- `/api/gerencia/acciones_ranking` → 200, 20 acciones, top inversión VTK/TDB SPIRITS $66,423.
+- Portal HTML: braces 44/44 balanceados.
+
 ## 2026-05-22 — Fix clasificación AUTOSERVICIO vs MAYORISTA + 17 productos innovación
 
 **Regla de negocio aplicada:** MAYORISTAS/CASH&CARRY son canal MAYORISTA independiente, no AUTOSERVICIO.

@@ -1624,6 +1624,78 @@ def vendedor_planes_as(vid):
     })
 
 
+# ====== SELLOUT POR CATEGORÍA ======
+@app.route("/api/gerencia/sellout_categoria")
+def gerencia_sellout_categoria():
+    df = read_csv(DATASETS / "mod_sellout_categoria.csv")
+    if df.empty:
+        return jsonify({"error": "Sin datos"}), 404
+    df.columns = [c.lstrip("﻿") for c in df.columns]
+    for c in ["litros", "cajas", "importe", "clientes"]:
+        if c in df.columns:
+            df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
+    fecha = str(df["fecha_calculo"].iloc[0]) if "fecha_calculo" in df.columns and len(df) else ""
+
+    por_cat = {}
+    for cat, grp in df.groupby("Categoria"):
+        segs = []
+        for _, row in grp.iterrows():
+            segs.append({
+                "segmento":  str(row.get("Segmento", "")),
+                "litros":    round(float(row["litros"]), 1),
+                "cajas":     int(row["cajas"]),
+                "importe":   int(row["importe"]),
+                "clientes":  int(row["clientes"]),
+            })
+        segs.sort(key=lambda x: x["litros"], reverse=True)
+        por_cat[cat] = {
+            "categoria":    cat,
+            "litros_total": round(float(grp["litros"].sum()), 1),
+            "cajas_total":  int(grp["cajas"].sum()),
+            "clientes":     int(grp["clientes"].sum()),
+            "por_segmento": segs,
+        }
+    categorias = sorted(por_cat.values(), key=lambda x: x["litros_total"], reverse=True)
+    return jsonify({
+        "generado_en":   datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "fuente":        "mod_sellout_categoria.csv",
+        "fecha_calculo": fecha,
+        "por_categoria": categorias,
+    })
+
+
+# ====== ACCIONES COMERCIALES RANKING ======
+@app.route("/api/gerencia/acciones_ranking")
+def gerencia_acciones_ranking():
+    df = read_csv(DATASETS / "mod_acciones_ranking.csv")
+    if df.empty:
+        return jsonify({"error": "Sin datos"}), 404
+    df.columns = [c.lstrip("﻿") for c in df.columns]
+    for c in ["litros_vendidos", "cajas_vendidas", "inversion_pesos", "importe_neto", "clientes_afectados"]:
+        if c in df.columns:
+            df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
+    fecha = str(df["fecha_calculo"].iloc[0]) if "fecha_calculo" in df.columns and len(df) else ""
+
+    acciones = []
+    for _, row in df.iterrows():
+        acciones.append({
+            "canal":               str(row.get("canal", "")),
+            "categoria":           str(row.get("categoria", "")),
+            "litros_vendidos":     round(float(row["litros_vendidos"]), 1),
+            "cajas_vendidas":      int(row["cajas_vendidas"]),
+            "inversion_pesos":     int(row["inversion_pesos"]),
+            "importe_neto":        int(row["importe_neto"]),
+            "clientes_afectados":  int(row["clientes_afectados"]),
+        })
+    acciones.sort(key=lambda x: x["inversion_pesos"], reverse=True)
+    return jsonify({
+        "generado_en":   datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "fuente":        "mod_acciones_ranking.csv",
+        "fecha_calculo": fecha,
+        "acciones":      acciones,
+    })
+
+
 # ====== MAIN ======
 if __name__ == "__main__":
     init_db()

@@ -207,6 +207,16 @@ def cargar_planes_as_bbdd():
     return df
 
 
+def cargar_maestro_productos():
+    p = BASE / "01_INPUTS" / "04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx"
+    df = pd.read_excel(p, header=2)
+    df = df.iloc[1:].copy()
+    df.columns = ["Bodega", "Segmento", "Linea_Comercial", "Codigo", "Categoria", "Descripcion", "Lts_caja", "UxC"]
+    df["Codigo"] = pd.to_numeric(df["Codigo"], errors="coerce")
+    df["Lts_caja"] = pd.to_numeric(df["Lts_caja"], errors="coerce").fillna(0)
+    return df.dropna(subset=["Codigo"])
+
+
 # ─────────────────────────────────────────────
 # MOD COBERTURA ACUM
 # ─────────────────────────────────────────────
@@ -432,6 +442,133 @@ def generar_innovaciones_plan_as(ventas, bbdd):
 
 
 # ─────────────────────────────────────────────
+# MOD SELLOUT CATEGORIA
+# ─────────────────────────────────────────────
+
+def generar_sellout_categoria(ventas, maestro):
+    """Ventas acumuladas en litros × categoría de bebida (col E maestro) × segmento (col B maestro)."""
+    v = ventas[ventas["ImporteNetoItem"] > 0].copy()
+    v["_cod"] = pd.to_numeric(v["Codigo"], errors="coerce")
+    merged = v.merge(
+        maestro[["Codigo", "Segmento", "Categoria", "Lts_caja"]],
+        left_on="_cod", right_on="Codigo", how="left"
+    )
+    merged["_litros"] = merged["CantBase"] * merged["Lts_caja"].fillna(0)
+    merged = merged[merged["Categoria"].notna()]
+    agg = merged.groupby(["Categoria", "Segmento"]).agg(
+        litros=("_litros", "sum"),
+        cajas=("CantBase", "sum"),
+        importe=("ImporteNetoItem", "sum"),
+        clientes=("Cliente", "nunique"),
+    ).reset_index()
+    agg["litros"] = agg["litros"].round(1)
+    agg["importe"] = agg["importe"].round(0).astype("int64")
+    agg["fecha_calculo"] = datetime.now().strftime("%Y-%m-%d")
+    return agg.sort_values(["Categoria", "litros"], ascending=[True, False]).reset_index(drop=True)
+
+
+# ─────────────────────────────────────────────
+# MOD ACCIONES RANKING
+# ─────────────────────────────────────────────
+
+# Mapeo: categoria de regla → Categoria del maestro de productos
+_REGLA_CAT_MAP = {
+    "VDA/VDG/ESPUMANTES/SIDRA": ["Vinos del año", "Vinos de guarda", "Espumantes", "Sidra"],
+    "VDA":                       ["Vinos del año", "Vinos de guarda"],
+    "RTD":                       ["RTD", "RTD (S)", "Primary (S)", "Standard (S)", "Premium (S)", "Super Premium (S)"],
+    "RTD LATAS":                 ["RTD", "RTD (S)", "Primary (S)", "Standard (S)", "Premium (S)", "Super Premium (S)"],
+    "SPIRITS LOCALES":           ["Gin", "Vodka", "Ron", "Licores"],
+    "SPIRITS IMPORTADOS":        ["Whisky", "Whisky (Maltas)", "Bourbon"],
+    "SPIRITS":                   ["Gin", "Vodka", "Ron", "Licores", "Whisky", "Whisky (Maltas)", "Bourbon"],
+    "ESPUMANTES":                ["Espumantes"],
+}
+
+# Mapeo: canal de regla → segmentos de clientes (_seg)  None = sin filtro
+_REGLA_CANAL_SEG_MAP = {
+    "AUTOSERVICIOS":           ["AUTOSERVICIO"],
+    "TRAD+KIOSCO+ON PREMISE":  ["TRADICIONAL", "ON_PREMISE"],
+    "VTK/TDB":                 ["ON_PREMISE"],
+    "TODOS":                   None,
+    "ON PREMISE NOCHE; BARES": ["ON_PREMISE"],
+    "PETIT MAYORISTAS":        ["MAYORISTA"],
+}
+
+def generar_acciones_ranking(ventas, clientes, maestro):
+    """Ranking de acciones comerciales del mes: litros vendidos, $ inversión, clientes."""
+    p = BASE / "09_CONFIG" / "reglas_acciones_mayo_2026_orbit.csv"
+    if not p.exists():
+        return pd.DataFrame()
+    reglas = pd.read_csv(p, encoding="latin1")
+    reglas.columns = [c.lstrip("﻿").strip() for c in reglas.columns]
+
+    v = ventas[ventas["ImporteNetoItem"] > 0].copy()
+    v["_cod"] = pd.to_numeric(v["Codigo"], errors="coerce")
+    v["_cli"] = pd.to_numeric(v["Cliente"], errors="coerce")
+    v["_imp_item"] = pd.to_numeric(v.get("ImporteItem", 0), errors="coerce").fillna(0)
+    v["_descuento_p"] = (v["_imp_item"] - v["ImporteNetoItem"]).clip(lower=0)
+
+    v = v.merge(maestro[["Codigo", "Categoria", "Lts_caja"]], left_on="_cod", right_on="Codigo", how="left")
+    v["_litros"] = v["CantBase"] * v["Lts_caja"].fillna(0)
+
+    cli_seg = clientes[["Codigo", "_seg"]].copy()
+    cli_seg["Codigo"] = pd.to_numeric(cli_seg["Codigo"], errors="coerce")
+    v = v.merge(cli_seg.rename(columns={"Codigo": "cli_id"}), left_on="_cli", right_on="cli_id", how="left")
+
+    # Deduplica canal+categoria (agrupa tiers de descuento distintos en una sola accion)
+    seen: set = set()
+    filas = []
+    for _, r in reglas.iterrows():
+        canal = str(r.get("canal", "")).strip()
+        cat_key = str(r.get("categoria", "")).strip().upper()
+        key = (canal, cat_key)
+        if key in seen:
+            continue
+        seen.add(key)
+        # Excluir PLANES AASS (cubierto por mod_planes_as) y RESTO SKU sin mapeo
+        if canal == "PLANES AASS" or cat_key == "RESTO SKU":
+            continue
+        if canal not in _REGLA_CANAL_SEG_MAP:
+            continue
+
+        segs = _REGLA_CANAL_SEG_MAP[canal]
+        mask = pd.Series(True, index=v.index)
+        if segs is not None:
+            mask &= v["_seg"].isin(segs)
+
+        if cat_key == "INNOVACIONES":
+            mask &= v["_cod"].isin(set(INOV_PRODUCTOS.keys()))
+        else:
+            maestro_cats = None
+            for k, cats in _REGLA_CAT_MAP.items():
+                if cat_key == k:
+                    maestro_cats = cats
+                    break
+            if maestro_cats is None:
+                continue
+            mask &= v["Categoria"].isin(maestro_cats)
+
+        v_m = v[mask]
+        if v_m.empty:
+            continue
+
+        filas.append({
+            "canal": canal,
+            "categoria": cat_key,
+            "litros_vendidos": round(float(v_m["_litros"].sum()), 1),
+            "cajas_vendidas": int(v_m["CantBase"].sum()),
+            "inversion_pesos": round(float(v_m["_descuento_p"].sum()), 0),
+            "importe_neto": round(float(v_m["ImporteNetoItem"].sum()), 0),
+            "clientes_afectados": int(v_m["_cli"].nunique()),
+            "fecha_calculo": datetime.now().strftime("%Y-%m-%d"),
+        })
+
+    df = pd.DataFrame(filas)
+    if not df.empty:
+        df = df.sort_values("inversion_pesos", ascending=False).reset_index(drop=True)
+    return df
+
+
+# ─────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────
 
@@ -444,9 +581,11 @@ def main():
     ventas   = cargar_ventas_acum()
     clientes = cargar_clientes()
     bbdd     = cargar_planes_as_bbdd()
+    maestro  = cargar_maestro_productos()
     print(f"  ventas_acumulada : {len(ventas):>6} filas")
     print(f"  clientes         : {len(clientes):>6} filas")
     print(f"  planes_as BBDD   : {len(bbdd):>6} clientes AS")
+    print(f"  maestro productos: {len(maestro):>6} productos")
 
     # ── Cobertura ──
     print("\n[1/3] Generando mod_cobertura_acum.csv ...")
@@ -490,17 +629,39 @@ def main():
     print(resumen_inov.to_string(index=False))
 
     # ── Innovaciones Plan AS ──
-    print("\n[5/5] Generando mod_innovaciones_plan_as.csv ...")
+    print("\n[5/7] Generando mod_innovaciones_plan_as.csv ...")
     inov_pas = generar_innovaciones_plan_as(ventas, bbdd)
     inov_pas.to_csv(OUT / "mod_innovaciones_plan_as.csv", index=False, encoding="utf-8-sig")
     print(f"  OK: {len(inov_pas)} clientes AS")
 
-    print("\n[OK] Cinco datasets generados en 04_DATASETS_ORBIT/")
+    # ── Sellout por Categoría ──
+    print("\n[6/7] Generando mod_sellout_categoria.csv ...")
+    sellout = generar_sellout_categoria(ventas, maestro)
+    sellout.to_csv(OUT / "mod_sellout_categoria.csv", index=False, encoding="utf-8-sig")
+    print(f"  OK: {len(sellout)} filas ({sellout['Categoria'].nunique()} categorias x {sellout['Segmento'].nunique()} segmentos)")
+    resumen_sell = (sellout.groupby("Categoria")
+                    .agg(litros_total=("litros","sum"), cajas_total=("cajas","sum"), clientes=("clientes","sum"))
+                    .reset_index()
+                    .sort_values("litros_total", ascending=False))
+    resumen_sell["litros_total"] = resumen_sell["litros_total"].round(1)
+    print(resumen_sell.to_string(index=False))
+
+    # ── Acciones Ranking ──
+    print("\n[7/7] Generando mod_acciones_ranking.csv ...")
+    acc = generar_acciones_ranking(ventas, clientes, maestro)
+    acc.to_csv(OUT / "mod_acciones_ranking.csv", index=False, encoding="utf-8-sig")
+    print(f"  OK: {len(acc)} acciones")
+    if not acc.empty:
+        print(acc[["canal","categoria","litros_vendidos","inversion_pesos","clientes_afectados"]].to_string(index=False))
+
+    print("\n[OK] Siete datasets generados en 04_DATASETS_ORBIT/")
     print("     mod_cobertura_acum.csv")
     print("     mod_11t_acum.csv")
     print("     mod_planes_as.csv")
     print("     mod_innovaciones_segmento.csv")
     print("     mod_innovaciones_plan_as.csv")
+    print("     mod_sellout_categoria.csv")
+    print("     mod_acciones_ranking.csv")
 
 
 if __name__ == "__main__":

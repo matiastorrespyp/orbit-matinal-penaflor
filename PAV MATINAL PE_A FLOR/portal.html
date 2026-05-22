@@ -601,8 +601,9 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
         <span class="gs-badge" id="gAlertBadge" style="display:none">0</span>
       </div>
       <div class="gs-sec">Productos</div>
-      <div class="gs-item" data-sc="innovaciones" onclick="gSw('innovaciones',this)"><span class="gs-ico">🚀</span>Innovaciones</div>
-      <div class="gs-item" data-sc="planes_as"    onclick="gSw('planes_as',this)"><span class="gs-ico">🏆</span>Planes AS</div>
+      <div class="gs-item" data-sc="innovaciones"        onclick="gSw('innovaciones',this)"><span class="gs-ico">🚀</span>Innovaciones</div>
+      <div class="gs-item" data-sc="planes_as"           onclick="gSw('planes_as',this)"><span class="gs-ico">🏆</span>Planes AS</div>
+      <div class="gs-item" data-sc="acciones_comerciales" onclick="gSw('acciones_comerciales',this)"><span class="gs-ico">💰</span>Acciones Comerciales</div>
     </div>
     <div class="gs-foot">
       <div class="gs-av" id="gAv">G</div>
@@ -733,22 +734,26 @@ async function loadAll(){
     if(plasASV)  D.planes_as_v=plasASV;
   }
   if(userData?.rol==='gerencia'){
-    const [cccEmp,onceTit,inov,cobAcum,t11Acum,inovTot,plasAS]=await Promise.all([
+    const [cccEmp,onceTit,inov,cobAcum,t11Acum,inovTot,plasAS,sellCat,accRank]=await Promise.all([
       safe('/api/gerencia/ccc_empresa'),
       safe('/api/gerencia/once_titulares'),
       safe('/api/gerencia/innovaciones_segmento'),
       safe('/api/gerencia/cobertura_acum'),
       safe('/api/gerencia/11t_acum'),
       safe('/api/gerencia/innovaciones_total'),
-      safe('/api/gerencia/planes_as')
+      safe('/api/gerencia/planes_as'),
+      safe('/api/gerencia/sellout_categoria'),
+      safe('/api/gerencia/acciones_ranking')
     ]);
-    if(cccEmp)  D.cccEmpresa=cccEmp;
-    if(onceTit) D.onceTit=onceTit;
-    if(inov)    D.inov=inov;
-    if(cobAcum) D.cob_acum=cobAcum;
-    if(t11Acum) D.t11_acum=t11Acum;
-    if(inovTot) D.inov_total=inovTot;
-    if(plasAS)  D.planes_as_g=plasAS;
+    if(cccEmp)   D.cccEmpresa=cccEmp;
+    if(onceTit)  D.onceTit=onceTit;
+    if(inov)     D.inov=inov;
+    if(cobAcum)  D.cob_acum=cobAcum;
+    if(t11Acum)  D.t11_acum=t11Acum;
+    if(inovTot)  D.inov_total=inovTot;
+    if(plasAS)   D.planes_as_g=plasAS;
+    if(sellCat)  D.sellout_cat=sellCat;
+    if(accRank)  D.acc_rank=accRank;
   }
 }
 
@@ -802,7 +807,7 @@ function gSw(id,el){
   gScreen=id;
   document.querySelectorAll('.gs-item').forEach(n=>n.classList.remove('active'));
   (el||document.querySelector(`[data-sc="${id}"]`))?.classList.add('active');
-  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',planificacion:'Planificación',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio'};
+  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',planificacion:'Planificación',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales'};
   document.getElementById('gTopTitle').textContent=tt[id]||'';
   gRender();
 }
@@ -814,8 +819,9 @@ function gRender(){
   else if(gScreen==='planificacion') gPlanificacion(p);
   else if(gScreen==='planvsreal')    gPlanVsReal(p);
   else if(gScreen==='alertas')       gAlertas(p);
-  else if(gScreen==='innovaciones')  gInnovaciones(p);
-  else if(gScreen==='planes_as')     gPlanesAS(p);
+  else if(gScreen==='innovaciones')          gInnovaciones(p);
+  else if(gScreen==='planes_as')             gPlanesAS(p);
+  else if(gScreen==='acciones_comerciales')  gAccionesComerciales(p);
 }
 
 /* — Dashboard — */
@@ -895,13 +901,39 @@ function gDashboard(p){
   const segs=D.diag?.segmentos||[];
   if(segs.length){
     left+=`<div class="card">
-      <div class="card-hd"><span class="card-title">📦 Cobertura día sobre cartera total</span></div>
+      <div class="card-hd"><span class="card-title">📦 Cobertura del día · cartera planificada</span></div>
       <div class="card-body">
         ${segs.map(s=>{const pct=s.clientes?Math.round(s.cubiertos/s.clientes*100):0,cl=pct>=80?'ok':pct>=50?'wn':'bd';
           return `<div class="srow">
             <div class="srow-hd"><span class="srow-name">${s.nombre||s.id}</span><span class="chip ${cl}">${pct}%</span></div>
             <div class="bar" style="height:5px;"><div class="bar-f ${cl}" style="width:${pct}%"></div></div>
             <div class="xs m3 mt4">${s.cubiertos||0} cubiertos ayer de ${s.clientes||0} · mín. ${s.req||'–'} bot.</div>
+          </div>`;}).join('')}
+      </div>
+    </div>`;
+  }
+  // Cobertura acumulada del mes por segmento
+  const cobAcumVends=D.cob_acum?.por_vendedor||[];
+  if(cobAcumVends.length){
+    const acumSegs={};
+    cobAcumVends.forEach(v=>{
+      (v.segmentos||[]).forEach(s=>{
+        if(!acumSegs[s.segmento]) acumSegs[s.segmento]={cartera:0,cubiertos:0,sin_cobertura:0};
+        acumSegs[s.segmento].cartera+=s.cartera||0;
+        acumSegs[s.segmento].cubiertos+=s.cubiertos||0;
+        acumSegs[s.segmento].sin_cobertura+=s.sin_cobertura||0;
+      });
+    });
+    const SEG_ORDER=['AUTOSERVICIO','TRADICIONAL','ON_PREMISE','MAYORISTA'];
+    const segsAcum=SEG_ORDER.filter(k=>acumSegs[k]).map(k=>({seg:k,...acumSegs[k]}));
+    left+=`<div class="card">
+      <div class="card-hd"><span class="card-title">📊 Cobertura acumulada del mes</span><span class="chip">${D.cob_acum?.fecha_calculo||''}</span></div>
+      <div class="card-body">
+        ${segsAcum.map(s=>{const pct=s.cartera?Math.round(s.cubiertos/s.cartera*100):0,cl=pct>=80?'ok':pct>=50?'wn':'bd';
+          return `<div class="srow">
+            <div class="srow-hd"><span class="srow-name">${s.seg}</span><span class="chip ${cl}">${pct}%</span></div>
+            <div class="bar" style="height:5px;"><div class="bar-f ${cl}" style="width:${pct}%"></div></div>
+            <div class="xs m3 mt4">${s.cubiertos} cubiertos de ${s.cartera} cartera · <b style="color:var(--bd)">${s.sin_cobertura} aún sin comprar</b></div>
           </div>`;}).join('')}
       </div>
     </div>`;
@@ -950,86 +982,35 @@ function gDashboard(p){
   grid.innerHTML=left+right;
   p.appendChild(grid);
 
-  // — INOV-4: Innovaciones empresa (Frizze Manxana + Antares XPA) —
-  const inov=D.inov||{};
-  const iRes=inov.resumen_empresa||[];
-  if(iRes.length && !inov.advertencia){
-    const iLbl=pct=>Number(pct||0)===0?'Sin compradores aún':pct+'%';
-    const iPrds={};
-    iRes.forEach(r=>{ if(!iPrds[r.producto_nombre]) iPrds[r.producto_nombre]=[]; iPrds[r.producto_nombre].push(r); });
-    let iH=`<div style="margin-top:16px;">
-      <div style="font-family:var(--f-dis);font-size:14px;font-weight:600;letter-spacing:-.2px;margin-bottom:10px;color:var(--text);">🚀 Innovaciones &middot; Frizze Manxana &amp; Antares XPA</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">`;
-    Object.entries(iPrds).forEach(([nombre,segs])=>{
-      iH+=`<div class="card"><div class="card-hd"><span class="card-title">🚀 ${nombre}</span></div><div class="card-body">`;
-      segs.forEach(s=>{
-        const pct=Math.round((s.pct_cobertura||0)*100), cl=pct>=60?'ok':pct>=30?'wn':'bd';
-        iH+=`<div style="margin-bottom:10px;">
-          <div class="row-b xs m3 mb4"><span>${s.segmento}</span><b style="color:var(--${cl})">${iLbl(pct)}</b></div>
-          <div class="bar" style="height:5px;"><div class="bar-f ${cl}" style="width:${pct}%"></div></div>
-          <div class="xs m3 mt4">${s.clientes_compraron} de ${s.clientes_cartera} clientes</div>
-        </div>`;
-      });
-      iH+=`</div></div>`;
+  // — Sellout en litros por categoría —
+  const sell=D.sellout_cat?.por_categoria||[];
+  if(sell.length){
+    const maxL=Math.max(...sell.map(c=>c.litros_total),1);
+    let sH=`<div style="margin-top:16px;" class="card">
+      <div class="card-hd"><span class="card-title">🍷 Sellout acumulado en litros · por categoría</span><span class="chip">${sell.length} categorías</span></div>
+      <div class="card-body nop">
+        <table class="tbl">
+          <thead><tr><th>Categoría</th><th style="text-align:right">Litros</th><th style="text-align:right">Cajas</th><th style="text-align:right">Clientes</th><th style="min-width:100px">Proporción</th></tr></thead>
+          <tbody>`;
+    sell.forEach(c=>{
+      const pctBar=Math.round(c.litros_total/maxL*100);
+      sH+=`<tr>
+        <td><b>${c.categoria}</b></td>
+        <td style="text-align:right;font-variant-numeric:tabular-nums">${c.litros_total.toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:0})} L</td>
+        <td style="text-align:right;font-variant-numeric:tabular-nums">${c.cajas_total.toLocaleString('es-AR')}</td>
+        <td style="text-align:right">${c.clientes}</td>
+        <td><div class="bar" style="height:5px;"><div class="bar-f ok" style="width:${pctBar}%"></div></div></td>
+      </tr>
+      ${c.por_segmento.filter(s=>s.litros>0).map(s=>`<tr style="background:rgba(255,255,255,.02)">
+        <td style="padding-left:24px;color:var(--text3);font-size:11px;">${s.segmento}</td>
+        <td style="text-align:right;font-size:11px;color:var(--text3)">${s.litros.toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:0})} L</td>
+        <td style="text-align:right;font-size:11px;color:var(--text3)">${s.cajas.toLocaleString('es-AR')}</td>
+        <td style="text-align:right;font-size:11px;color:var(--text3)">${s.clientes}</td>
+        <td></td>
+      </tr>`).join('')}`;
     });
-    iH+=`</div>`;
-    const iPV=inov.por_vendedor||[];
-    if(iPV.length){
-      iH+=`<div class="card" style="margin-top:12px;">
-        <div class="card-hd"><span class="card-title">📋 Cobertura por vendedor</span><span class="chip">${iPV.length} vendedores</span></div>
-        <div class="card-body nop">
-          <table class="tbl">
-            <thead><tr><th>Vend.</th><th>Producto</th><th>Segmento</th><th style="text-align:right">Compraron</th><th>Cobertura</th></tr></thead>
-            <tbody>${iPV.flatMap(v=>v.productos.map(pr=>{
-              const pct=Math.round((pr.pct_cobertura||0)*100), cl=pct>=60?'ok':pct>=30?'wn':'bd';
-              return `<tr>
-                <td><span class="chip" style="color:${CV[v.vendedor_id]||'var(--text2)'};">${v.vendedor_id}</span></td>
-                <td>${pr.producto_nombre}</td><td>${pr.segmento}</td>
-                <td style="text-align:right">${pr.clientes_compraron} / ${pr.clientes_cartera}</td>
-                <td><div style="display:flex;align-items:center;gap:6px;"><div class="bar" style="width:60px;height:4px;"><div class="bar-f ${cl}" style="width:${pct}%"></div></div><span class="chip ${cl}" style="min-width:54px;text-align:center;">${iLbl(pct)}</span></div></td>
-              </tr>`;
-            })).join('')}</tbody>
-          </table>
-        </div>
-      </div>`;
-    }
-    // — INOV-6c: Ranking de Oportunidad Innovaciones —
-    const EXCL_VEND=['V2','V5','V20'];
-    const iRank=(inov.por_vendedor||[])
-      .filter(v=>!EXCL_VEND.includes((v.vendedor_id||'').toUpperCase()))
-      .map(v=>{
-        const prods=v.productos||[];
-        const falt=prods.reduce((s,pr)=>s+(pr.clientes_faltantes||[]).length,0);
-        const comp=prods.reduce((s,pr)=>s+(pr.clientes_compraron||0),0);
-        const cart=prods.reduce((s,pr)=>s+(pr.clientes_cartera||0),0);
-        const pctProm=prods.length?Math.round(prods.reduce((s,pr)=>s+(pr.pct_cobertura||0),0)/prods.length*1000)/10:0;
-        return {vid:v.vendedor_id,nombre:v.vendedor_nombre,falt,comp,cart,pctProm,nProds:prods.length};
-      })
-      .sort((a,b)=>b.falt-a.falt);
-    if(iRank.length){
-      const iLbl2=pct=>Number(pct||0).toFixed(1)+'%';
-      iH+=`<div class="card" style="margin-top:12px;">
-        <div class="card-hd"><span class="card-title">🎯 Ranking de Oportunidad — Innovaciones</span><span class="chip">${iRank.length} vendedores</span></div>
-        <div class="card-body nop">
-          <table class="tbl">
-            <thead><tr><th>#</th><th>Vendedor</th><th style="text-align:right">Faltantes</th><th style="text-align:right">Compraron</th><th>Cobertura</th><th style="text-align:right">Prods</th></tr></thead>
-            <tbody>${iRank.map((v,i)=>{
-              const cl=v.pctProm>=60?'ok':v.pctProm>=30?'wn':'bd';
-              return `<tr>
-                <td><b style="color:var(--text2)">${i+1}</b></td>
-                <td><span class="chip" style="color:${CV[v.vid]||'var(--text2)'};">${v.vid}</span> ${(v.nombre||'').split(' ')[0]}</td>
-                <td style="text-align:right"><b style="color:var(--bd)">${v.falt}</b></td>
-                <td style="text-align:right">${v.comp} / ${v.cart}</td>
-                <td><div style="display:flex;align-items:center;gap:6px;"><div class="bar" style="width:60px;height:4px;"><div class="bar-f ${cl}" style="width:${v.pctProm}%"></div></div><span class="chip ${cl}" style="min-width:54px;text-align:center;">${iLbl2(v.pctProm)}</span></div></td>
-                <td style="text-align:right">${v.nProds}</td>
-              </tr>`;
-            }).join('')}</tbody>
-          </table>
-        </div>
-      </div>`;
-    }
-    iH+=`</div>`;
-    p.insertAdjacentHTML('beforeend', iH);
+    sH+=`</tbody></table></div></div>`;
+    p.insertAdjacentHTML('beforeend', sH);
   }
 }
 
@@ -1745,6 +1726,72 @@ function gPlanesAS(p){
   </div>`;
   p.innerHTML=html;
 }
+
+/* ════ ACCIONES COMERCIALES GERENCIA ════ */
+function gAccionesComerciales(p){
+  const dat=D.acc_rank;
+  const fmtARS=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
+  const fmtL=n=>Number(n||0).toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:0});
+  let html=`<div class="gph">
+    <div><div class="gph-title">Acciones Comerciales</div>
+    <div class="gph-sub">${dat?.fecha_calculo||'Sin datos'} · ${dat?.acciones?.length||0} acciones activas del mes</div></div>
+  </div>`;
+  if(!dat||!dat.acciones?.length){
+    html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">💰</div><p>Sin datos de Acciones Comerciales.</p></div></div></div>`;
+    p.innerHTML=html; return;
+  }
+  const acc=dat.acciones;
+  const maxInv=Math.max(...acc.map(a=>a.inversion_pesos),1);
+  const maxL=Math.max(...acc.map(a=>a.litros_vendidos),1);
+
+  // KPI resumen
+  const totInv=acc.reduce((s,a)=>s+a.inversion_pesos,0);
+  const totL=acc.reduce((s,a)=>s+a.litros_vendidos,0);
+  const totCli=acc.reduce((s,a)=>s+a.clientes_afectados,0);
+  const totImporte=acc.reduce((s,a)=>s+a.importe_neto,0);
+  html+=`<div class="krow" style="margin-bottom:16px;">
+    <div class="kcard info"><div class="kl">Inversión total (descuentos)</div><div class="kv" style="font-size:18px;">$${fmtARS(totInv)}</div></div>
+    <div class="kcard ok"><div class="kl">Litros vendidos bajo acciones</div><div class="kv" style="font-size:18px;">${fmtL(totL)} L</div></div>
+    <div class="kcard info"><div class="kl">Clientes alcanzados</div><div class="kv" style="font-size:18px;">${totCli}</div></div>
+    <div class="kcard ok"><div class="kl">Venta neta bajo acciones</div><div class="kv" style="font-size:18px;">$${fmtARS(totImporte)}</div></div>
+  </div>`;
+
+  // Tabla ranking
+  html+=`<div class="card">
+    <div class="card-hd"><span class="card-title">💰 Ranking por inversión</span><span class="chip">${acc.length} acciones</span></div>
+    <div class="card-body nop">
+      <table class="tbl">
+        <thead><tr>
+          <th>#</th><th>Canal</th><th>Categoría</th>
+          <th style="text-align:right">Inversión $</th>
+          <th style="min-width:90px">% inv.</th>
+          <th style="text-align:right">Litros</th>
+          <th style="min-width:90px">% vol.</th>
+          <th style="text-align:right">Clientes</th>
+          <th style="text-align:right">Venta neta</th>
+        </tr></thead>
+        <tbody>${acc.map((a,i)=>{
+          const pInv=Math.round(a.inversion_pesos/maxInv*100);
+          const pL=Math.round(a.litros_vendidos/maxL*100);
+          const clInv=a.inversion_pesos>0?'ok':'bd';
+          return `<tr>
+            <td><b style="color:var(--text2)">${i+1}</b></td>
+            <td style="font-size:11px;">${a.canal}</td>
+            <td style="font-size:11px;"><b>${a.categoria}</b></td>
+            <td style="text-align:right;font-variant-numeric:tabular-nums"><span class="chip ${clInv}">$${fmtARS(a.inversion_pesos)}</span></td>
+            <td><div class="bar" style="height:5px;"><div class="bar-f ${clInv}" style="width:${pInv}%"></div></div></td>
+            <td style="text-align:right;font-variant-numeric:tabular-nums">${fmtL(a.litros_vendidos)} L</td>
+            <td><div class="bar" style="height:5px;"><div class="bar-f ok" style="width:${pL}%"></div></div></td>
+            <td style="text-align:right">${a.clientes_afectados}</td>
+            <td style="text-align:right;font-size:11px;color:var(--text2)">$${fmtARS(a.importe_neto)}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+  p.innerHTML=html;
+}
+
 
 /* ════ PLANES AS VENDEDOR ════ */
 function vPlanesAS(){
