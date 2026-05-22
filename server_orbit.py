@@ -533,6 +533,27 @@ def clientes():
     df["impacto_alertas_ars"] = df["importe_mes"].fillna(0)
     df["faltan_11t"] = 11
     df["kernel_accion"] = ""
+
+    # Enriquecer con última compra desde historial
+    try:
+        hist = read_csv(BASE / "02_HISTORY" / "historial_ventas_cliente.csv")
+        if not hist.empty:
+            hist.columns = [c.lstrip("﻿") for c in hist.columns]
+            fecha_col = next((c for c in hist.columns if "fecha" in c.lower()), None)
+            imp_col = next((c for c in hist.columns if "importe" in c.lower() or "neto" in c.lower()), None)
+            id_col = next((c for c in hist.columns if c.lower() in ("cliente", "cliente_id", "cod_cliente")), None)
+            if all([fecha_col, imp_col, id_col]):
+                hist[id_col] = pd.to_numeric(hist[id_col], errors="coerce")
+                hist[imp_col] = pd.to_numeric(hist[imp_col], errors="coerce")
+                ultima = (hist.sort_values(fecha_col, ascending=False)
+                          .drop_duplicates(subset=[id_col])[[id_col, fecha_col, imp_col]]
+                          .rename(columns={id_col: "cliente_id", fecha_col: "ultima_compra_fecha", imp_col: "ultima_compra_importe"}))
+                ultima["cliente_id"] = pd.to_numeric(ultima["cliente_id"], errors="coerce")
+                df["cliente_id"] = pd.to_numeric(df["cliente_id"], errors="coerce")
+                df = df.merge(ultima, on="cliente_id", how="left")
+    except Exception:
+        pass
+
     return jsonify(df.where(pd.notnull(df), None).to_dict(orient="records"))
 
 @app.route("/api/alertas")
@@ -545,6 +566,15 @@ def alertas():
                 "importe_neto", "valor_descuento"]:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    # Excluir alertas de Plan AS: su descuento base es 10%; solo alerta si supera ese umbral
+    pas = read_csv(DATASETS / "mod_planes_as.csv")
+    if not pas.empty:
+        pas_ids = set(pd.to_numeric(pas["cliente_id"], errors="coerce").dropna().astype(int))
+        is_plan_as = df["cliente_id"].isin(pas_ids)
+        descuento_ok = df["descuento_aplicado_pct"] <= 10
+        df = df[~(is_plan_as & descuento_ok)]
+
     df["vendedor_id"] = "V" + df["vendedor_codigo"].astype("Int64").astype(str)
     df["prioridad"] = "alta"
     df["tipo"] = "descuento"
@@ -1540,31 +1570,48 @@ def gerencia_planes_as():
     df = read_csv(DATASETS / "mod_planes_as.csv")
     if df.empty:
         return jsonify({"error": "Sin datos"}), 404
-    for c in ["total_facturado", "dcto_plan", "cant_cajas", "tope",
-              "sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa",
-              "sc_smf_flavours", "sc_total_ganado", "sc_cajas_enviadas_total", "sc_pendiente"]:
+    _num_cols = ["total_facturado", "dcto_plan", "cant_cajas", "tope", "escala_actual", "escala_max",
+                 "sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa", "sc_smf_flavours",
+                 "sc_total_ganado", "sc_cajas_enviadas_total", "sc_pendiente",
+                 "sc_env_alaris", "sc_env_alma_mora", "sc_env_frizze", "sc_env_antares_ipa", "sc_env_smf_flavours",
+                 "sc_pend_alaris", "sc_pend_alma_mora", "sc_pend_frizze", "sc_pend_antares_ipa", "sc_pend_smf_flavours"]
+    for c in _num_cols:
         if c in df.columns:
             df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
+
+    def _int(v): return int(v) if pd.notna(v) else 0
     registros = []
     for _, row in df.iterrows():
         registros.append({
-            "cliente_id":    int(row["cliente_id"]) if pd.notna(row["cliente_id"]) else None,
-            "cliente_nombre": str(row.get("cliente_nombre", "")),
-            "vendedor_id":   f"V{int(row['vendedor_codigo'])}" if pd.notna(row.get("vendedor_codigo")) else None,
+            "cliente_id":      int(row["cliente_id"]) if pd.notna(row["cliente_id"]) else None,
+            "cliente_nombre":  str(row.get("cliente_nombre", "")),
+            "vendedor_id":     f"V{int(row['vendedor_codigo'])}" if pd.notna(row.get("vendedor_codigo")) else None,
             "vendedor_nombre": str(row.get("vendedor_nombre", "")),
-            "plan_as":       str(row.get("plan_as", "")),
+            "plan_as":         str(row.get("plan_as", "")),
+            "escala_actual":   _int(row.get("escala_actual", 0)),
+            "escala_max":      _int(row.get("escala_max", 0)),
             "total_facturado": round(float(row["total_facturado"]), 2),
-            "dcto_plan":     round(float(row["dcto_plan"]), 2),
-            "cant_cajas":    int(row["cant_cajas"]),
-            "tope":          int(row["tope"]),
-            "sc_alaris":     int(row["sc_alaris"]),
-            "sc_alma_mora":  int(row["sc_alma_mora"]),
-            "sc_frizze":     int(row["sc_frizze"]),
-            "sc_antares_ipa": int(row["sc_antares_ipa"]),
-            "sc_smf_flavours": int(row["sc_smf_flavours"]),
-            "sc_total_ganado": int(row["sc_total_ganado"]),
-            "sc_enviadas_total": int(row["sc_cajas_enviadas_total"]),
-            "sc_pendiente":  int(row["sc_pendiente"]),
+            "dcto_plan":       round(float(row["dcto_plan"]), 2),
+            "cant_cajas":      _int(row["cant_cajas"]),
+            "tope":            _int(row["tope"]),
+            "sc_alaris":       _int(row["sc_alaris"]),
+            "sc_alma_mora":    _int(row["sc_alma_mora"]),
+            "sc_frizze":       _int(row["sc_frizze"]),
+            "sc_antares_ipa":  _int(row["sc_antares_ipa"]),
+            "sc_smf_flavours": _int(row["sc_smf_flavours"]),
+            "sc_total_ganado": _int(row["sc_total_ganado"]),
+            "sc_env_alaris":   _int(row.get("sc_env_alaris", 0)),
+            "sc_env_alma_mora":_int(row.get("sc_env_alma_mora", 0)),
+            "sc_env_frizze":   _int(row.get("sc_env_frizze", 0)),
+            "sc_env_antares_ipa": _int(row.get("sc_env_antares_ipa", 0)),
+            "sc_env_smf_flavours": _int(row.get("sc_env_smf_flavours", 0)),
+            "sc_pend_alaris":  _int(row.get("sc_pend_alaris", 0)),
+            "sc_pend_alma_mora": _int(row.get("sc_pend_alma_mora", 0)),
+            "sc_pend_frizze":  _int(row.get("sc_pend_frizze", 0)),
+            "sc_pend_antares_ipa": _int(row.get("sc_pend_antares_ipa", 0)),
+            "sc_pend_smf_flavours": _int(row.get("sc_pend_smf_flavours", 0)),
+            "sc_enviadas_total": _int(row["sc_cajas_enviadas_total"]),
+            "sc_pendiente":    _int(row["sc_pendiente"]),
         })
     fecha = str(df["fecha_calculo"].iloc[0]) if "fecha_calculo" in df.columns else ""
     return jsonify({

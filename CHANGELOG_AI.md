@@ -1,5 +1,20 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-22 — QA portal: 7 correcciones (innovaciones, acciones, escala AS, alertas, clientes críticos, dashboard)
+
+**Archivos tocados:**
+- `generar_datasets_acum.py` — Fix INOV_PRODUCTOS (17 prods en CSV, estaba generando solo 2). Acciones: solo ventas con descuento real (`Descuento_pct > 0`). Plan AS: agrega `escala_actual/escala_max` desde hoja ESCALA. Agrega `sc_env_*` y `sc_pend_*` por producto Plan AS. Corrección columnas ESCALA (Gold=col5, Silver=col6, Inicial=col7).
+- `server_orbit.py` — Alertas: excluye Plan AS clientes con descuento ≤10%. `/api/clientes`: agrega `ultima_compra_fecha` e `ultima_compra_importe` desde `historial_ventas_cliente.csv`. `/api/gerencia/planes_as`: expone escala_actual, escala_max, sc_env_* y sc_pend_* por producto.
+- `PAV MATINAL PE_A FLOR/portal.html` — Plan AS (gerencia y vendedor): "Cajas ganadas" → "Escala actual N/max". Sin cargo: por producto, verde=enviado, rojo=pendiente. Clientes críticos: filtro zona del día + sin compra mes + columnas última compra fecha/importe. Dashboard "Planificados": muestra compraron vs sin compra en vez de solo total.
+
+**Resultados validados:**
+- Innovaciones: 17 productos × 7 vendedores × segmentos = 221 filas. (14620: Frizze, 60020: Antares, 74813: Dada ExBrut, 80094: NC Spark, 14619: Frizze Bubble, 74830: Dada Sidra, 30139: Gordons Tropical, 74749: Intocables DO, 44396/14425: 0 ventas en periodo, 42376: Don David RB, 74814-16-27-40: Cazador/Alma Mora, 74786: El Bautismo).
+- Alertas: 36 → 14 (excluye Plan AS con ≤10% que es su descuento de plan).
+- Escala: Inicial con $3.5M → escala 5/5. Silver con $4.4M → 9/9. Correcto.
+- Acciones: 20 → 12 (solo ventas con descuento real). Inversión top: VTK/TDB SPIRITS $66k (2 clientes).
+- Clientes críticos zona Vi sin compra mes: 403 clientes con última compra fecha/importe.
+- Plan AS endpoint: sc_env_alaris, sc_pend_alaris y demás por producto ✓.
+
 ## 2026-05-22 — Sellout litros por categoría + Acciones Comerciales + Cobertura acumulada dashboard
 
 **Archivos tocados:**

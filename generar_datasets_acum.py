@@ -204,6 +204,44 @@ def cargar_planes_as_bbdd():
     df["cliente_id"] = df["cliente_id"].astype(int)
     df["cliente_nombre"] = df["cliente_nombre"].astype(str).str.strip()
     df["plan_as"] = df["plan_as"].astype(str).str.strip()
+
+    # Calcular escala_actual desde hoja ESCALA
+    try:
+        esc = pd.read_excel(p, sheet_name="ESCALA", header=None)
+        # Fila 0: encabezado "ESCALA / LC / SEGMENTO / PRECIO / 0.1(Gold) / 0.08(Silver) / 0.06(Inicial) / Reconocimiento"
+        esc_data = esc.iloc[1:].copy()
+        esc_data.columns = range(esc_data.shape[1])
+        esc_col_map = {1: "escala_num", 5: "thresh_gold", 6: "thresh_silver", 7: "thresh_inicial"}
+        esc_df = esc_data[list(esc_col_map.keys())].rename(columns=esc_col_map)
+        for c in ["escala_num", "thresh_gold", "thresh_silver", "thresh_inicial"]:
+            esc_df[c] = pd.to_numeric(esc_df[c], errors="coerce")
+        esc_df = esc_df.dropna(subset=["escala_num"])
+
+        def _calc_escala(row):
+            plan = str(row["plan_as"]).strip().lower()
+            fact = float(row["total_facturado"])
+            if "gold" in plan:
+                col = "thresh_gold"
+            elif "silver" in plan:
+                col = "thresh_silver"
+            else:
+                col = "thresh_inicial"
+            validas = esc_df[esc_df[col].notna() & (esc_df[col] <= fact)]
+            if validas.empty:
+                return 0
+            return int(validas["escala_num"].max())
+
+        df["escala_actual"] = df.apply(_calc_escala, axis=1)
+        df["escala_max"] = df["plan_as"].str.lower().apply(
+            lambda p: int(esc_df[esc_df["thresh_gold"].notna()]["escala_num"].max()) if "gold" in p
+            else int(esc_df[esc_df["thresh_silver"].notna()]["escala_num"].max()) if "silver" in p
+            else int(esc_df[esc_df["thresh_inicial"].notna()]["escala_num"].max())
+        )
+    except Exception as e:
+        print(f"  Advertencia escala: {e}")
+        df["escala_actual"] = 0
+        df["escala_max"] = 0
+
     return df
 
 
@@ -332,18 +370,56 @@ def generar_planes_as(ventas, bbdd):
         columns={"Cliente": "cliente_id", "CantBase": "sc_cajas_enviadas_total"}
     )
 
+    # SC enviados por producto Plan AS (solo productos del plan)
+    _AS_MARCAS = {
+        "alaris": "sc_env_alaris",
+        "alma mora": "sc_env_alma_mora",
+        "frizze": "sc_env_frizze",
+        "antares": "sc_env_antares_ipa",
+        "smirnoff": "sc_env_smf_flavours",
+    }
+    sc_copy = sc.copy()
+    sc_copy["_marca_lower"] = sc_copy["Marca"].fillna("").str.lower()
+    sc_copy["_prod_as"] = sc_copy["_marca_lower"].apply(
+        lambda m: next((v for k, v in _AS_MARCAS.items() if k in m), None)
+    )
+    sc_plan = sc_copy[sc_copy["_prod_as"].notna()]
+    sc_env_prod = {}
+    for prod_col in _AS_MARCAS.values():
+        sub = sc_plan[sc_plan["_prod_as"] == prod_col]
+        grp = sub.groupby("Cliente")["CantBase"].sum().reset_index().rename(
+            columns={"Cliente": "cliente_id", "CantBase": prod_col}
+        )
+        sc_env_prod[prod_col] = grp
+
     # Join
     df = bbdd.merge(vend_cli, on="cliente_id", how="left")
     df = df.merge(sc_total_env, on="cliente_id", how="left")
     df["sc_cajas_enviadas_total"] = df["sc_cajas_enviadas_total"].fillna(0)
-    df["sc_pendiente"] = (df["sc_total_ganado"] - df["sc_cajas_enviadas_total"]).clip(lower=0)
+
+    for prod_col, grp in sc_env_prod.items():
+        df = df.merge(grp, on="cliente_id", how="left")
+        df[prod_col] = df[prod_col].fillna(0)
+
+    # sc_pendiente por producto Plan AS
+    df["sc_pend_alaris"] = (df["sc_alaris"] - df.get("sc_env_alaris", 0)).clip(lower=0)
+    df["sc_pend_alma_mora"] = (df["sc_alma_mora"] - df.get("sc_env_alma_mora", 0)).clip(lower=0)
+    df["sc_pend_frizze"] = (df["sc_frizze"] - df.get("sc_env_frizze", 0)).clip(lower=0)
+    df["sc_pend_antares_ipa"] = (df["sc_antares_ipa"] - df.get("sc_env_antares_ipa", 0)).clip(lower=0)
+    df["sc_pend_smf_flavours"] = (df["sc_smf_flavours"] - df.get("sc_env_smf_flavours", 0)).clip(lower=0)
+    df["sc_pendiente"] = (df["sc_pend_alaris"] + df["sc_pend_alma_mora"] + df["sc_pend_frizze"]
+                          + df["sc_pend_antares_ipa"] + df["sc_pend_smf_flavours"])
     df["fecha_calculo"] = datetime.now().strftime("%Y-%m-%d")
 
     cols_out = [
         "fecha_calculo", "cliente_id", "cliente_nombre", "vendedor_codigo", "vendedor_nombre",
-        "plan_as", "total_facturado", "dcto_plan", "cant_cajas", "tope", "cant_cajas_tope",
+        "plan_as", "escala_actual", "escala_max", "total_facturado", "dcto_plan",
+        "cant_cajas", "tope", "cant_cajas_tope",
         "sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa", "sc_smf_flavours",
-        "sc_total_ganado", "sc_cajas_enviadas_total", "sc_pendiente",
+        "sc_total_ganado",
+        "sc_env_alaris", "sc_env_alma_mora", "sc_env_frizze", "sc_env_antares_ipa", "sc_env_smf_flavours",
+        "sc_pend_alaris", "sc_pend_alma_mora", "sc_pend_frizze", "sc_pend_antares_ipa", "sc_pend_smf_flavours",
+        "sc_cajas_enviadas_total", "sc_pendiente",
     ]
     return df[[c for c in cols_out if c in df.columns]]
 
@@ -506,6 +582,9 @@ def generar_acciones_ranking(ventas, clientes, maestro):
     v["_cli"] = pd.to_numeric(v["Cliente"], errors="coerce")
     v["_imp_item"] = pd.to_numeric(v.get("ImporteItem", 0), errors="coerce").fillna(0)
     v["_descuento_p"] = (v["_imp_item"] - v["ImporteNetoItem"]).clip(lower=0)
+
+    # Solo contar ventas con descuento real (bajo una acción promocional)
+    v = v[v["_descuento_p"] > 0].copy()
 
     v = v.merge(maestro[["Codigo", "Categoria", "Lts_caja"]], left_on="_cod", right_on="Codigo", how="left")
     v["_litros"] = v["CantBase"] * v["Lts_caja"].fillna(0)

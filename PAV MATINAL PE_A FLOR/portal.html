@@ -860,9 +860,12 @@ function gDashboard(p){
         <div class="kh">${dR} días hábiles restantes</div>
       </div>
       <div class="kcard info">
-        <div class="kl">Planificados Vi</div>
+        <div class="kl">Planificados ${D.diag?.dia_operativo||'hoy'}</div>
         <div class="kv">${tC}</div>
-        <div class="kh">Sin compra Vi: ${tP}</div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;">
+          <span style="font-size:11px;color:var(--ok);">✓ ${tC-tP} compraron</span>
+          <span style="font-size:11px;color:var(--bd);">⚠ ${tP} sin compra</span>
+        </div>
       </div>
       <div class="kcard info">
         <div class="kl">CCC Compradores Mes</div>
@@ -871,8 +874,8 @@ function gDashboard(p){
       </div>
       <div class="kcard wn">
         <div class="kl">Sin Comp. Mes</div>
-        <div class="kv">${tP}</div>
-        <div class="kh">Clientes sin compra en el mes</div>
+        <div class="kv">${(D.cli||[]).filter(c=>c.compra_mes_flag===0||c.compra_mes_flag===null||(c.estado||'').toUpperCase().includes('SIN')).length}</div>
+        <div class="kh">De la cartera total del mes</div>
       </div>
     </div>`);
 
@@ -1046,24 +1049,33 @@ function gVendedores(p){
 
 /* — Clientes — */
 function gClientes(p){
-  const filt=(D.cli||[])
-    .filter(c=>gFiltro?(c.vendedor_id||'').toUpperCase()===gFiltro:true)
-    .slice(0,120);
+  const diaHoy=(D.diag?.dia_operativo||'').toUpperCase();
+  const fmtARS=n=>n?'$'+(Number(n)||0).toLocaleString('es-AR',{maximumFractionDigits:0}):'–';
+  const all=(D.cli||[])
+    .filter(c=>gFiltro?(c.vendedor_id||'').toUpperCase()===gFiltro:true);
+  // Solo clientes de la zona del día que NO compraron en el mes
+  const filt=all.filter(c=>{
+    const dias=(c.dias_visita||c.dia_visita||'').toUpperCase();
+    const esHoy=diaHoy&&(dias===diaHoy||dias.includes(diaHoy));
+    const sinCompra=(c.compra_mes_flag===0||c.compra_mes_flag===null||
+                     (c.estado||'').toUpperCase().includes('SIN'));
+    return esHoy&&sinCompra;
+  });
   p.innerHTML=`
-    <div class="gph"><div><div class="gph-title">Clientes Críticos</div><div class="gph-sub">Foco operativo del día · ${filt.length} clientes</div></div></div>
+    <div class="gph"><div><div class="gph-title">Clientes Críticos</div>
+    <div class="gph-sub">Zona ${diaHoy} · sin compra en el mes · ${filt.length} clientes</div></div></div>
     <div class="card">
       <div class="card-body nop" style="max-height:67vh;overflow:auto;">
         <table class="tbl">
-          <thead><tr><th>ID</th><th>Cliente</th><th>Segmento</th><th>Vend.</th><th>Día</th><th>Estado</th><th>11T</th><th>Acción kernel</th></tr></thead>
+          <thead><tr><th>ID</th><th>Cliente</th><th>Seg.</th><th>Vend.</th><th>Última compra</th><th>Importe</th><th>Estado</th></tr></thead>
           <tbody>${filt.map(c=>`<tr>
             <td class="xs m3 mono">${c.cliente_id}</td>
             <td><b>${c.cliente_nombre}</b></td>
-            <td>${c.segmento}</td>
+            <td style="font-size:11px;">${(c.segmento||'').substring(0,4)}</td>
             <td><span class="chip" style="color:${CV[c.vendedor_id]||'var(--text2)'};">${c.vendedor_id||'–'}</span></td>
-            <td>${c.dia_visita||'–'}</td>
-            <td><span class="chip ${(c.estado||'sin_compra').toLowerCase().includes('sin')?'bd':'ok'}">${c.estado||'SIN_COMPRA'}</span></td>
-            <td>${c.faltan_11t||'–'}</td>
-            <td class="xs m3" style="max-width:240px;">${(c.kernel_accion||'').substring(0,100)}</td>
+            <td style="font-size:11px;color:var(--text3);">${c.ultima_compra_fecha||'–'}</td>
+            <td style="font-variant-numeric:tabular-nums;font-size:11px;">${fmtARS(c.ultima_compra_importe)}</td>
+            <td><span class="chip bd" style="font-size:9px;">SIN COMPRA MES</span></td>
           </tr>`).join('')}</tbody>
         </table>
       </div>
@@ -1694,20 +1706,22 @@ function gPlanesAS(p){
           <th style="padding:7px 10px;text-align:left;">Cliente</th>
           <th style="padding:7px 6px;text-align:left;">Plan</th>
           <th style="padding:7px 4px;text-align:right;">Facturado</th>
-          <th style="padding:7px 4px;text-align:right;">Cajas ganadas</th>
-          <th style="padding:7px 4px;text-align:left;">Sin cargo enviado</th>
-          <th style="padding:7px 4px;text-align:right;">Pendiente</th>
+          <th style="padding:7px 4px;text-align:right;">Escala actual</th>
+          <th style="padding:7px 4px;text-align:left;">Sin cargo (enviado / pendiente)</th>
+          <th style="padding:7px 4px;text-align:right;">Estado</th>
         </tr></thead>
         <tbody>
           ${clientes.map(c=>{
             const col=planCol[c.plan_as]||'var(--text2)';
-            const scDet=[
-              c.sc_alaris?`Alaris:${c.sc_alaris}`:'',
-              c.sc_alma_mora?`AlmaMora:${c.sc_alma_mora}`:'',
-              c.sc_frizze?`Frizze:${c.sc_frizze}`:'',
-              c.sc_antares_ipa?`Antares:${c.sc_antares_ipa}`:'',
-              c.sc_smf_flavours?`SMF:${c.sc_smf_flavours}`:'',
-            ].filter(Boolean).join(' · ')||'—';
+            const scProds=[
+              {n:'Alaris',    env:c.sc_env_alaris||0,    pend:c.sc_pend_alaris||0},
+              {n:'AlmaMora',  env:c.sc_env_alma_mora||0,  pend:c.sc_pend_alma_mora||0},
+              {n:'Frizze',    env:c.sc_env_frizze||0,     pend:c.sc_pend_frizze||0},
+              {n:'Antares',   env:c.sc_env_antares_ipa||0,pend:c.sc_pend_antares_ipa||0},
+              {n:'SMF',       env:c.sc_env_smf_flavours||0,pend:c.sc_pend_smf_flavours||0},
+            ].filter(p=>p.env>0||p.pend>0);
+            const scHtml=scProds.map(p=>`<span style="font-size:9px;">${p.n}: `+
+              (p.env?`<span style="color:var(--ok);">✓${p.env}</span> `:'')+(p.pend?`<span style="color:var(--bd);">⚠${p.pend}</span>`:'')+'</span>').join(' · ')||'—';
             return `<tr style="border-bottom:1px solid var(--bord);">
               <td style="padding:7px 10px;">
                 <div style="font-weight:600;">${c.cliente_nombre}</div>
@@ -1715,8 +1729,8 @@ function gPlanesAS(p){
               </td>
               <td style="padding:7px 6px;"><span style="font-weight:700;color:${col};">${c.plan_as}</span></td>
               <td style="padding:7px 4px;text-align:right;font-family:var(--f-dis);">${fmtARS(c.total_facturado)}</td>
-              <td style="padding:7px 4px;text-align:right;">${c.cant_cajas} / ${c.tope}</td>
-              <td style="padding:7px 4px;font-size:10px;color:var(--text2);">${scDet}</td>
+              <td style="padding:7px 4px;text-align:right;font-weight:700;">${c.escala_actual||0} / ${c.escala_max||0}</td>
+              <td style="padding:7px 4px;">${scHtml}</td>
               <td style="padding:7px 4px;text-align:right;">${c.sc_pendiente>0?'<span class="chip wn">'+c.sc_pendiente+' pend.</span>':'<span class="chip ok">OK</span>'}</td>
             </tr>`;
           }).join('')}
@@ -1816,15 +1830,17 @@ function vPlanesAS(){
   </div>`;
   h+=clientes.map(c=>{
     const col=planCol[c.plan_as]||'var(--text2)';
-    const pct=c.tope?Math.round(c.cant_cajas/c.tope*100):0;
-    const pcol2=pct>=100?'ok':pct>=60?'wn':'bd';
-    const scDet=[
-      c.sc_alaris?`Alaris ${c.sc_alaris} caj.`:'',
-      c.sc_alma_mora?`Alma Mora ${c.sc_alma_mora} caj.`:'',
-      c.sc_frizze?`Frizze ${c.sc_frizze} caj.`:'',
-      c.sc_antares_ipa?`Antares ${c.sc_antares_ipa} caj.`:'',
-      c.sc_smf_flavours?`SMF ${c.sc_smf_flavours} caj.`:'',
-    ].filter(Boolean);
+    const escAct=c.escala_actual||0, escMax=c.escala_max||0;
+    const pctEsc=escMax?Math.round(escAct/escMax*100):0;
+    const pcol2=pctEsc>=100?'ok':pctEsc>=60?'wn':'bd';
+    // Sin cargo por producto: ganado vs enviado vs pendiente
+    const scProds=[
+      {nom:'Alaris',    gan:c.sc_alaris||0,     env:c.sc_env_alaris||0,     pend:c.sc_pend_alaris||0},
+      {nom:'Alma Mora', gan:c.sc_alma_mora||0,   env:c.sc_env_alma_mora||0,  pend:c.sc_pend_alma_mora||0},
+      {nom:'Frizze',    gan:c.sc_frizze||0,      env:c.sc_env_frizze||0,     pend:c.sc_pend_frizze||0},
+      {nom:'Antares',   gan:c.sc_antares_ipa||0, env:c.sc_env_antares_ipa||0,pend:c.sc_pend_antares_ipa||0},
+      {nom:'SMF',       gan:c.sc_smf_flavours||0,env:c.sc_env_smf_flavours||0,pend:c.sc_pend_smf_flavours||0},
+    ].filter(p=>p.gan>0);
     return `<div class="vcli" style="flex-direction:column;align-items:stretch;gap:8px;padding:14px;">
       <div class="row-b">
         <div>
@@ -1835,20 +1851,23 @@ function vPlanesAS(){
       </div>
       <div class="row-b">
         <div><div class="vkl">Facturado</div><div style="font-family:var(--f-dis);font-size:16px;font-weight:700;">${fmtARS(c.total_facturado)}</div></div>
-        <div style="text-align:right;"><div class="vkl">Cajas ganadas</div><div style="font-size:15px;font-weight:700;">${c.cant_cajas} / ${c.tope}</div></div>
+        <div style="text-align:right;"><div class="vkl">Escala actual</div><div style="font-size:15px;font-weight:700;">${escAct} / ${escMax}</div></div>
       </div>
       <div>
-        <div class="bar"><div class="bar-f ${pcol2}" style="width:${clamp(pct,0,100)}%"></div></div>
-        <div class="xs m3" style="color:var(--text3);">Escala: ${pct}% del tope alcanzado</div>
+        <div class="bar"><div class="bar-f ${pcol2}" style="width:${clamp(pctEsc,0,100)}%"></div></div>
+        <div class="xs m3" style="color:var(--text3);">${pctEsc}% de la escala máxima alcanzada</div>
       </div>
-      ${scDet.length?`<div>
-        <div class="vkl" style="margin-bottom:4px;">Sin cargo ganado</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;">
-          ${scDet.map(s=>`<span class="chip ok" style="font-size:10px;">${s}</span>`).join('')}
-        </div>
+      ${scProds.length?`<div>
+        <div class="vkl" style="margin-bottom:5px;">Sin cargo del plan</div>
+        ${scProds.map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+          <span style="font-size:11px;">${p.nom} (ganado: ${p.gan} caj.)</span>
+          <div style="display:flex;gap:4px;">
+            ${p.env>0?`<span class="chip ok" style="font-size:10px;">✓ ${p.env} enviadas</span>`:''}
+            ${p.pend>0?`<span class="chip bd" style="font-size:10px;">⚠ ${p.pend} pendientes</span>`:''}
+            ${p.pend===0&&p.env>0?'':''}
+          </div>
+        </div>`).join('')}
       </div>`:''}
-      ${c.sc_enviadas_total?`<div style="font-size:11px;color:var(--text3);">Unidades sin cargo enviadas este periodo: ${c.sc_enviadas_total}</div>`:''}
-      ${c.sc_pendiente>0?`<div><span class="chip wn" style="font-size:11px;">${c.sc_pendiente} cajas pendientes de entrega</span></div>`:''}
     </div>`;
   }).join('');
   document.getElementById('vT-planes_as').innerHTML=h;

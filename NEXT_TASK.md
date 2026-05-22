@@ -5,19 +5,21 @@
 ### HECHO EN ESTA SESIÓN ✅
 - ✅ `_clasificar()` corregido: AUTOSERVICIO = SubSegmento real (210 clientes). MAYORISTAS/CASH&CARRY = MAYORISTA.
 - ✅ AUTOSERVICIO cartera total=192 (excl. V3). Era 272 inflado.
-- ✅ 17 productos innovación cargados.
-- ✅ 7 datasets en 04_DATASETS_ORBIT/: cobertura_acum, 11t_acum, planes_as, innovaciones_segmento, innovaciones_plan_as, **sellout_categoria**, **acciones_ranking**.
-- ✅ Dashboard: "Cobertura acumulada del mes" por segmento junto a cobertura diaria.
-- ✅ Dashboard: tabla sellout en litros por categoría (reemplaza card innovaciones que quedó solo en sidebar).
-- ✅ Sidebar: botón "Acciones Comerciales" → `gAccionesComerciales(p)`.
-- ✅ `/api/gerencia/sellout_categoria` y `/api/gerencia/acciones_ranking` funcionando.
-- ✅ `botellas_mes=53860`. Títulos sidebar correctos.
+- ✅ 17 productos innovación cargados y CSV regenerado (era solo 2).
+- ✅ 7 datasets en 04_DATASETS_ORBIT/: cobertura_acum, 11t_acum, planes_as, innovaciones_segmento, innovaciones_plan_as, sellout_categoria, acciones_ranking.
+- ✅ Dashboard: "Cobertura acumulada del mes" por segmento. Tabla sellout en litros. Card planificados muestra compraron + sin compra del día.
+- ✅ Sidebar: botón "Acciones Comerciales". Innovaciones: 17 productos en portal.
+- ✅ Acciones comerciales: solo ventas con descuento real. Inversión más precisa.
+- ✅ Plan AS: "Escala actual N/max" desde hoja ESCALA (Inicial max=5, Silver max=9, Gold max=12). Sin cargo: verde=enviado / rojo=pendiente por producto.
+- ✅ Alertas: 36 → 14. Plan AS con ≤10% descuento no es alerta (es su beneficio de plan).
+- ✅ Clientes críticos: solo zona del día sin compra mes. Muestra última compra fecha+importe.
+- ✅ `ultima_compra_fecha` y `ultima_compra_importe` en `/api/clientes` desde historial.
 
 ### PENDIENTE INMEDIATO
 
 1. **Commit** (siguiente paso):
    - `generar_datasets_acum.py`, `server_orbit.py`, `portal.html`, `CHANGELOG_AI.md`, `NEXT_TASK.md`
-   - `04_DATASETS_ORBIT/mod_sellout_categoria.csv`, `04_DATASETS_ORBIT/mod_acciones_ranking.csv`
+   - `04_DATASETS_ORBIT/mod_*` — los 7 CSVs regenerados
    - NO commitear: `01_INPUTS/`, `02_HISTORY/`, `orbit.db`, `06_APP_DATA/`, `05_MASTER_DATA/`.
 
 2. **Render (despliegue remoto):**
