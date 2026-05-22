@@ -2,7 +2,7 @@
 ORBIT Server v3 — Flask API con diagnóstico, CCC real, 11T real, sin mock
 """
 from flask import Flask, jsonify, request, send_from_directory
-import json, sqlite3, pandas as pd
+import json, sqlite3, pandas as pd, math
 from pathlib import Path
 from datetime import datetime, timedelta
 
@@ -554,7 +554,12 @@ def clientes():
     except Exception:
         pass
 
-    return jsonify(df.where(pd.notnull(df), None).to_dict(orient="records"))
+    records = df.to_dict(orient="records")
+    for rec in records:
+        for k, v in rec.items():
+            if isinstance(v, float) and not math.isfinite(v):
+                rec[k] = None
+    return jsonify(records)
 
 @app.route("/api/alertas")
 def alertas():

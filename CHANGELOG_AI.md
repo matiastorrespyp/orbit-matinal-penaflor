@@ -1,5 +1,17 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-22 — Fix crítico: NaN inválido en /api/clientes + 4 correcciones de UI
+
+**Archivos tocados:**
+- `server_orbit.py` — `/api/clientes`: `ultima_compra_importe` devolvía `NaN` (JSON inválido) para clientes sin historial. JavaScript del portal lanzaba SyntaxError y `D.cli` quedaba vacío → Dashboard "Sin Comp. Mes = 0" y panel Clientes Críticos vacío. Fix: iteración post-`to_dict` que reemplaza float no-finito con None antes de `jsonify`.
+- `PAV MATINAL PE_A FLOR/portal.html` — (1) Dashboard ranking: "Sin Comp. Mes" → "Sin Comp. Día" (el dato es `clientes_pendientes` del día, no del mes). (2) Panel Vendedores: "SC Mes" → "SC Día" por misma razón. (3) Plan vs Real: columna "Delta" → "Diferencia". (4) Alertas: cada fila muestra código de cliente `[123]` y vendedor `(V8)` junto al nombre.
+
+**Resultados validados:**
+- `/api/clientes`: `Bare NaN count = 0`. Python `json.loads` + PowerShell `ConvertFrom-Json`: OK. 548 clientes, 401 con `compra_mes_flag=0`. JSON válido para browser.
+- Dashboard "Sin Comp. Mes": mostrará 401 (antes: 0 por JSON roto).
+- Clientes Críticos: panel populado (antes: vacío).
+- V3 sin compra día = 7/42 planificados del día: correcto.
+
 ## 2026-05-22 — QA portal: 7 correcciones (innovaciones, acciones, escala AS, alertas, clientes críticos, dashboard)
 
 **Archivos tocados:**

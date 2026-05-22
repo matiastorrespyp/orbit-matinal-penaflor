@@ -893,7 +893,7 @@ function gDashboard(p){
             <div class="rdot" style="background:${col}">${ini(v.vendedor_nombre)}</div>
             <div class="rinfo">
               <b>${v.vendedor_id} · ${v.vendedor_nombre}</b>
-              <div class="rsub">${fmtM(k.acumulado)} / ${fmtM(k.objetivo)} · CCC Mes: ${k.ccc_total||0} · 11T: ${k.once_titulares_cumplidos||0} · Sin Comp. Mes: ${k.clientes_pendientes||0}</div>
+              <div class="rsub">${fmtM(k.acumulado)} / ${fmtM(k.objetivo)} · CCC Mes: ${k.ccc_total||0} · 11T: ${k.once_titulares_cumplidos||0} · Sin Comp. Día: ${k.clientes_pendientes||0}</div>
               <div style="margin-top:5px;"><div class="bar"><div class="bar-f ${cl}" style="width:${clamp(av,0,100)}%"></div></div></div>
             </div>
             <div class="rpct" style="color:var(--${cl})">${av.toFixed(1)}%</div>
@@ -1040,7 +1040,7 @@ function gVendedores(p){
           <div><div class="xs m3">CCC Mes</div><b>${k.ccc_total||0}</b></div>
           <div><div class="xs m3">11T ✓</div><b>${k.once_titulares_cumplidos||0}</b></div>
           <div><div class="xs m3">Plan.Vi</div><b>${k.clientes_total||0}</b></div>
-          <div><div class="xs m3">SC Mes</div><b style="color:var(--bd)">${k.clientes_pendientes||0}</b></div>
+          <div><div class="xs m3">SC Día</div><b style="color:var(--bd)">${k.clientes_pendientes||0}</b></div>
         </div>
       </div>
     </div>`;}).join('');
@@ -1159,7 +1159,7 @@ function gAlertas(p){
         ${items.slice(0,30).map(a=>`<div class="arow">
           <div class="adot ${a.prioridad||'baja'}"></div>
           <div class="abody">
-            <div class="atitle">${a.cliente_nombre||a.titulo||'Sin nombre'}</div>
+            <div class="atitle">${a.cliente_nombre||a.titulo||'Sin nombre'} <span style="font-size:10px;color:var(--text3);font-family:var(--f-mono);">[${a.cliente_id||'–'}]</span> <span class="chip" style="font-size:9px;color:${CV[a.vendedor_id]||'var(--text2)'};">${a.vendedor_id||''}</span></div>
             <div class="adetail">${(a.detalle||a.accion||'').substring(0,200)}</div>
           </div>
           <span class="chip ${cls}" style="flex-shrink:0;font-size:9px;">${(a.prioridad||'info').toUpperCase()}</span>
@@ -1431,7 +1431,7 @@ function gPlanVsReal(p){
     <div class="card-body nop pvr-wrap">
       <table class="tbl pvr-tbl">
         <thead><tr>
-          <th>Vendedor</th><th>Plan venta</th><th>Real ayer</th><th>Delta</th><th>Cumpl %</th>
+          <th>Vendedor</th><th>Plan venta</th><th>Real ayer</th><th>Diferencia</th><th>Cumpl %</th>
           <th>CCC T</th><th>CCC A</th><th>CCC O</th><th>11T plan</th><th>Estado plan</th>
         </tr></thead>
         <tbody>${data.map(v=>{

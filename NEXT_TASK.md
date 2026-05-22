@@ -15,11 +15,16 @@
 - ✅ Clientes críticos: solo zona del día sin compra mes. Muestra última compra fecha+importe.
 - ✅ `ultima_compra_fecha` y `ultima_compra_importe` en `/api/clientes` desde historial.
 
+### HECHO EN ESTA SESIÓN (fix UI post-commit df23c5a) ✅
+- ✅ Fix NaN inválido en `/api/clientes` → `D.cli` quedaba vacío → "Sin Comp. Mes = 0" y "Clientes Críticos vacío" resueltos.
+- ✅ Labels "Sin Comp. Mes/SC Mes" → "Sin Comp. Día/SC Día" (el dato es del día, no del mes).
+- ✅ Plan vs Real: "Delta" → "Diferencia".
+- ✅ Alertas: código cliente `[ID]` + vendedor `(VX)` por fila.
+
 ### PENDIENTE INMEDIATO
 
 1. **Commit** (siguiente paso):
-   - `generar_datasets_acum.py`, `server_orbit.py`, `portal.html`, `CHANGELOG_AI.md`, `NEXT_TASK.md`
-   - `04_DATASETS_ORBIT/mod_*` — los 7 CSVs regenerados
+   - `server_orbit.py`, `portal.html`, `CHANGELOG_AI.md`, `NEXT_TASK.md`
    - NO commitear: `01_INPUTS/`, `02_HISTORY/`, `orbit.db`, `06_APP_DATA/`, `05_MASTER_DATA/`.
 
 2. **Render (despliegue remoto):**
