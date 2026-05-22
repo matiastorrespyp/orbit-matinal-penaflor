@@ -600,6 +600,9 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
         <span class="gs-ico">⚡</span>Alertas
         <span class="gs-badge" id="gAlertBadge" style="display:none">0</span>
       </div>
+      <div class="gs-sec">Productos</div>
+      <div class="gs-item" data-sc="innovaciones" onclick="gSw('innovaciones',this)"><span class="gs-ico">🚀</span>Innovaciones</div>
+      <div class="gs-item" data-sc="planes_as"    onclick="gSw('planes_as',this)"><span class="gs-ico">🏆</span>Planes AS</div>
     </div>
     <div class="gs-foot">
       <div class="gs-av" id="gAv">G</div>
@@ -656,6 +659,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
   <div class="vcont" id="vT-kpis"></div>
   <div class="vcont" id="vT-plan"></div>
   <div class="vcont" id="vT-alertas"></div>
+  <div class="vcont" id="vT-planes_as"></div>
 
   <nav class="vbnav">
     <div class="vtab active" onclick="vSw('inicio',this)"><span class="vtab-ico">🏠</span><span>Inicio</span></div>
@@ -666,6 +670,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       <span class="vtab-ico">⚡</span><span>Alertas</span>
       <div class="vtab-badge" id="vBadge"></div>
     </div>
+    <div class="vtab" onclick="vSw('planes_as',this)"><span class="vtab-ico">🏆</span><span>Plan AS</span></div>
   </nav>
 </div>
 
@@ -674,7 +679,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 
 /* ── estado ── */
 let userData = null, currentDay = null, gFiltro = "", gScreen = "dashboard";
-let D = { diag:{}, dash:[], cli:[], al:[], plan:[], pvr:{}, det:{}, msgs:[], cccEmpresa:{}, onceTit:{}, inov:null, plan_inov:null };
+let D = { diag:{}, dash:[], cli:[], al:[], plan:[], pvr:{}, det:{}, msgs:[], cccEmpresa:{}, onceTit:{}, inov:null, plan_inov:null, cob_acum:null, t11_acum:null, inov_total:null, planes_as_g:null, planes_as_v:null };
 
 const CV = { V3:'#5BDED4', V4:'#F2B544', V6:'#5BC23A', V7:'#9B7BFF', V8:'#4DA3FF', V9:'#FF9D5C', V10:'#FF5D8B' };
 const DAYS = ['LU','MA','MI','JU','VI','SA'];
@@ -714,26 +719,36 @@ async function loadAll(){
   if(plan) D.plan=Array.isArray(plan)?plan:[];
   if(pvr)  D.pvr =pvr;
   if(userData?.rol==='vendedor'){
-    const [det,msgs,inov,planInov]=await Promise.all([
+    const [det,msgs,inov,planInov,plasASV]=await Promise.all([
       safe('/api/vendedor/'+userData.vendedor_id),
       safe('/api/mensajes?vendedor_id='+userData.vendedor_id),
       safe('/api/vendedor/'+userData.vendedor_id+'/innovaciones_segmento'),
-      safe('/api/vendedor/'+userData.vendedor_id+'/plan_innovaciones')
+      safe('/api/vendedor/'+userData.vendedor_id+'/plan_innovaciones'),
+      safe('/api/vendedor/'+userData.vendedor_id+'/planes_as')
     ]);
     if(det)      D.det=det;
     if(msgs)     D.msgs=Array.isArray(msgs)?msgs:[];
     if(inov)     D.inov=inov;
     if(planInov) D.plan_inov=planInov;
+    if(plasASV)  D.planes_as_v=plasASV;
   }
   if(userData?.rol==='gerencia'){
-    const [cccEmp,onceTit,inov]=await Promise.all([
+    const [cccEmp,onceTit,inov,cobAcum,t11Acum,inovTot,plasAS]=await Promise.all([
       safe('/api/gerencia/ccc_empresa'),
       safe('/api/gerencia/once_titulares'),
-      safe('/api/gerencia/innovaciones_segmento')
+      safe('/api/gerencia/innovaciones_segmento'),
+      safe('/api/gerencia/cobertura_acum'),
+      safe('/api/gerencia/11t_acum'),
+      safe('/api/gerencia/innovaciones_total'),
+      safe('/api/gerencia/planes_as')
     ]);
     if(cccEmp)  D.cccEmpresa=cccEmp;
     if(onceTit) D.onceTit=onceTit;
     if(inov)    D.inov=inov;
+    if(cobAcum) D.cob_acum=cobAcum;
+    if(t11Acum) D.t11_acum=t11Acum;
+    if(inovTot) D.inov_total=inovTot;
+    if(plasAS)  D.planes_as_g=plasAS;
   }
 }
 
@@ -787,7 +802,7 @@ function gSw(id,el){
   gScreen=id;
   document.querySelectorAll('.gs-item').forEach(n=>n.classList.remove('active'));
   (el||document.querySelector(`[data-sc="${id}"]`))?.classList.add('active');
-  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',planificacion:'Planificación',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales'};
+  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',planificacion:'Planificación',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio'};
   document.getElementById('gTopTitle').textContent=tt[id]||'';
   gRender();
 }
@@ -799,6 +814,8 @@ function gRender(){
   else if(gScreen==='planificacion') gPlanificacion(p);
   else if(gScreen==='planvsreal')    gPlanVsReal(p);
   else if(gScreen==='alertas')       gAlertas(p);
+  else if(gScreen==='innovaciones')  gInnovaciones(p);
+  else if(gScreen==='planes_as')     gPlanesAS(p);
 }
 
 /* — Dashboard — */
@@ -1169,7 +1186,7 @@ function vSw(tab,el){
   el.classList.add('active');
 }
 
-function vRenderAll(){ vInicio(); vRuta(); vKpis(); vPlan(); vAlertas(); }
+function vRenderAll(){ vInicio(); vRuta(); vKpis(); vPlan(); vAlertas(); vPlanesAS(); }
 
 /* — Inicio — */
 function vInicio(){
@@ -1233,15 +1250,44 @@ function vRuta(){
   const todos=[...sc,...cc].slice(0,60);
   if(todos.length){
     h+=`<div class="sm bold" style="margin:4px 0 9px;">Clientes (${todos.length})</div>`;
+    // Mapa: producto_nombre → Set de IDs faltantes
+    const inovProds = (D.inov?.productos || []);
+    const faltMap = {};
+    inovProds.forEach(p => {
+      const falt = new Set((p.clientes_faltantes||[]).map(Number));
+      faltMap[p.producto_nombre] = { falt, seg: (p.segmento||'').toUpperCase() };
+    });
+    const SEG_INOV = seg => {
+      const s=(seg||'').toUpperCase();
+      if(s.includes('AUTOSERV')) return 'AUTOSERVICIO';
+      if(s.includes('TRAD')||s.includes('ALMAZEN')||s.includes('KIOSK')) return 'TRADICIONAL';
+      return null;
+    };
     h+=todos.map(c=>{
       const isSC=(c.estado||'').toLowerCase().includes('sin');
+      const cid=Number(c.cliente_id);
+      const cSeg=SEG_INOV(c.segmento||'');
+      // Innovaciones relevantes para este cliente
+      const inovRel=Object.entries(faltMap).filter(([,v])=>v.seg===cSeg);
+      let inovHtml='';
+      if(inovRel.length){
+        inovHtml=`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;">
+          ${inovRel.map(([nom,v])=>{
+            const compro=!v.falt.has(cid);
+            return `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 6px;border-radius:20px;background:${compro?'rgba(91,194,58,0.15)':'rgba(255,74,74,0.13)'};color:${compro?'var(--ok)':'var(--bad)'};">
+              <span style="font-size:8px;">${compro?'●':'●'}</span>${nom}
+            </span>`;
+          }).join('')}
+        </div>`;
+      }
       return `<div class="vcli">
         <div class="vcli-dot ${isSC?'bd':'ok'}"></div>
-        <div class="vcli-info">
+        <div class="vcli-info" style="flex:1;">
           <div class="vcli-name">${c.cliente_nombre||c.cliente_id}</div>
           <div class="vcli-meta">${c.segmento||'–'} · 11T faltantes: ${c.faltan_11t||0}</div>
+          ${inovHtml}
         </div>
-        <span class="chip ${isSC?'bd':'ok'}">${isSC?'Sin compra':'Con compra'}</span>
+        <span class="chip ${isSC?'bd':'ok'}" style="flex-shrink:0;">${isSC?'Sin compra':'Con compra'}</span>
       </div>`;}).join('');
   } else {
     h+=`<div class="empty"><div class="eico">📍</div><p>Sin clientes asignados para hoy.</p></div>`;
@@ -1574,6 +1620,191 @@ async function submitPlan(vid){
       vPlan();
     }
   }catch(e){}
+}
+
+/* ════ INNOVACIONES GERENCIA ════ */
+function gInnovaciones(p){
+  const dat=D.inov_total;
+  let html=`<div class="gph">
+    <div><div class="gph-title">Innovaciones — Cobertura Acumulada</div>
+    <div class="gph-sub">${dat?dat.fecha_ejecucion:'Sin datos'} · Todos los vendedores</div></div>
+  </div>`;
+  if(!dat||!dat.por_producto?.length){
+    html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">📦</div><p>Sin datos de innovaciones disponibles.</p></div></div></div>`;
+    p.innerHTML=html; return;
+  }
+  // Agrupar por producto (combina segmentos)
+  const byProd={};
+  dat.por_producto.forEach(r=>{
+    const k=r.producto_nombre;
+    if(!byProd[k]) byProd[k]={nombre:k,cartera:0,compraron:0,segs:[]};
+    byProd[k].cartera+=r.cartera_total;
+    byProd[k].compraron+=r.compraron_total;
+    byProd[k].segs.push(r.segmento);
+  });
+  const prods=Object.values(byProd).sort((a,b)=>b.compraron-a.compraron);
+  html+=`<div class="card" style="margin-bottom:13px;">
+    <div class="card-hd"><span class="card-title">Total Distribuidora por Producto</span></div>
+    <div class="card-body nop">
+      ${prods.map(p=>{
+        const pct=p.cartera?Math.round(p.compraron/p.cartera*100):0;
+        const col=pct>=50?'ok':pct>=25?'wn':'bd';
+        return `<div style="padding:10px 14px;border-bottom:1px solid var(--bord);">
+          <div class="row-b" style="margin-bottom:5px;">
+            <span style="font-weight:600;font-size:13px;">${p.nombre}</span>
+            <span class="chip ${col}">${pct}%</span>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:5px;">${p.compraron} compraron / ${p.cartera} cartera · Segs: ${[...new Set(p.segs)].join(', ')}</div>
+          <div class="bar"><div class="bar-f ${col}" style="width:${clamp(pct,0,100)}%"></div></div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+  // Desglose por vendedor × producto
+  html+=`<div class="card">
+    <div class="card-hd"><span class="card-title">Desglose por Vendedor</span></div>
+    <div class="card-body nop">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead><tr style="color:var(--text3);border-bottom:1px solid var(--bord);">
+          <th style="padding:7px 10px;text-align:left;">Vendedor</th>
+          <th style="padding:7px 10px;text-align:left;">Producto</th>
+          <th style="padding:7px 10px;text-align:left;">Segmento</th>
+          <th style="padding:7px 4px;text-align:right;">Cartera</th>
+          <th style="padding:7px 4px;text-align:right;">Compraron</th>
+        </tr></thead>
+        <tbody>
+          ${(dat.por_vendedor||[]).map(r=>{
+            const pct=r.clientes_cartera?Math.round(r.clientes_compraron/r.clientes_cartera*100):0;
+            const col=pct>=50?'ok':pct>=25?'wn':'bd';
+            return `<tr style="border-bottom:1px solid var(--bord);">
+              <td style="padding:6px 10px;font-weight:600;">${r.vendedor_id}</td>
+              <td style="padding:6px 10px;">${r.producto_nombre}</td>
+              <td style="padding:6px 10px;">${r.segmento}</td>
+              <td style="padding:6px 4px;text-align:right;">${r.clientes_cartera}</td>
+              <td style="padding:6px 4px;text-align:right;"><span class="chip ${col}" style="font-size:9px;">${r.clientes_compraron} (${pct}%)</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+  p.innerHTML=html;
+}
+
+/* ════ PLANES AS GERENCIA ════ */
+function gPlanesAS(p){
+  const dat=D.planes_as_g;
+  const fmtARS=n=>n?'$'+(n).toLocaleString('es-AR',{maximumFractionDigits:0}):'$0';
+  let html=`<div class="gph">
+    <div><div class="gph-title">Planes Autoservicio</div>
+    <div class="gph-sub">${dat?dat.fecha_calculo:'Sin datos'} · ${dat?.total_clientes||0} clientes AS</div></div>
+  </div>`;
+  if(!dat||!dat.clientes?.length){
+    html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">🏆</div><p>Sin datos de Planes AS.</p></div></div></div>`;
+    p.innerHTML=html; return;
+  }
+  const clientes=dat.clientes;
+  const planCol={Gold:'#F2B544',Silver:'#8BA0BE',Inicial:'#5BC23A'};
+  html+=`<div class="card">
+    <div class="card-hd"><span class="card-title">Clientes con Plan AS</span></div>
+    <div class="card-body nop">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead><tr style="color:var(--text3);border-bottom:1px solid var(--bord);">
+          <th style="padding:7px 10px;text-align:left;">Cliente</th>
+          <th style="padding:7px 6px;text-align:left;">Plan</th>
+          <th style="padding:7px 4px;text-align:right;">Facturado</th>
+          <th style="padding:7px 4px;text-align:right;">Cajas ganadas</th>
+          <th style="padding:7px 4px;text-align:left;">Sin cargo enviado</th>
+          <th style="padding:7px 4px;text-align:right;">Pendiente</th>
+        </tr></thead>
+        <tbody>
+          ${clientes.map(c=>{
+            const col=planCol[c.plan_as]||'var(--text2)';
+            const scDet=[
+              c.sc_alaris?`Alaris:${c.sc_alaris}`:'',
+              c.sc_alma_mora?`AlmaMora:${c.sc_alma_mora}`:'',
+              c.sc_frizze?`Frizze:${c.sc_frizze}`:'',
+              c.sc_antares_ipa?`Antares:${c.sc_antares_ipa}`:'',
+              c.sc_smf_flavours?`SMF:${c.sc_smf_flavours}`:'',
+            ].filter(Boolean).join(' · ')||'—';
+            return `<tr style="border-bottom:1px solid var(--bord);">
+              <td style="padding:7px 10px;">
+                <div style="font-weight:600;">${c.cliente_nombre}</div>
+                <div style="font-size:10px;color:var(--text3);">${c.vendedor_id||'–'} · ${c.vendedor_nombre||''}</div>
+              </td>
+              <td style="padding:7px 6px;"><span style="font-weight:700;color:${col};">${c.plan_as}</span></td>
+              <td style="padding:7px 4px;text-align:right;font-family:var(--f-dis);">${fmtARS(c.total_facturado)}</td>
+              <td style="padding:7px 4px;text-align:right;">${c.cant_cajas} / ${c.tope}</td>
+              <td style="padding:7px 4px;font-size:10px;color:var(--text2);">${scDet}</td>
+              <td style="padding:7px 4px;text-align:right;">${c.sc_pendiente>0?'<span class="chip wn">'+c.sc_pendiente+' pend.</span>':'<span class="chip ok">OK</span>'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+  p.innerHTML=html;
+}
+
+/* ════ PLANES AS VENDEDOR ════ */
+function vPlanesAS(){
+  const dat=D.planes_as_v;
+  const fmtARS=n=>n?'$'+(n).toLocaleString('es-AR',{maximumFractionDigits:0}):'$0';
+  const planCol={Gold:'#F2B544',Silver:'#8BA0BE',Inicial:'#5BC23A'};
+  let h=`<div class="vsh">Mi Plan AS</div>`;
+  if(!dat||!dat.clientes?.length){
+    h+=`<div class="vkw" style="background:var(--surf2);text-align:center;padding:28px 16px;">
+      <div style="font-size:32px;">🏆</div>
+      <div style="margin-top:8px;color:var(--text3);font-size:13px;">Sin clientes con Plan AS asignados</div>
+    </div>`;
+    document.getElementById('vT-planes_as').innerHTML=h; return;
+  }
+  const clientes=dat.clientes;
+  const total=clientes.reduce((a,c)=>a+c.total_facturado,0);
+  h+=`<div class="vkw" style="background:var(--surf2);">
+    <div class="row-b">
+      <div><div class="vkl">Clientes AS</div><div class="vkv">${clientes.length}</div></div>
+      <div style="text-align:right;"><div class="vkl">Facturado total</div><div class="vkv" style="font-size:18px;">${fmtARS(total)}</div></div>
+    </div>
+  </div>`;
+  h+=clientes.map(c=>{
+    const col=planCol[c.plan_as]||'var(--text2)';
+    const pct=c.tope?Math.round(c.cant_cajas/c.tope*100):0;
+    const pcol2=pct>=100?'ok':pct>=60?'wn':'bd';
+    const scDet=[
+      c.sc_alaris?`Alaris ${c.sc_alaris} caj.`:'',
+      c.sc_alma_mora?`Alma Mora ${c.sc_alma_mora} caj.`:'',
+      c.sc_frizze?`Frizze ${c.sc_frizze} caj.`:'',
+      c.sc_antares_ipa?`Antares ${c.sc_antares_ipa} caj.`:'',
+      c.sc_smf_flavours?`SMF ${c.sc_smf_flavours} caj.`:'',
+    ].filter(Boolean);
+    return `<div class="vcli" style="flex-direction:column;align-items:stretch;gap:8px;padding:14px;">
+      <div class="row-b">
+        <div>
+          <div style="font-weight:700;font-size:13px;">${c.cliente_nombre}</div>
+          <div style="font-size:11px;color:var(--text3);">ID ${c.cliente_id}</div>
+        </div>
+        <span style="font-weight:800;font-size:14px;color:${col};">Plan ${c.plan_as}</span>
+      </div>
+      <div class="row-b">
+        <div><div class="vkl">Facturado</div><div style="font-family:var(--f-dis);font-size:16px;font-weight:700;">${fmtARS(c.total_facturado)}</div></div>
+        <div style="text-align:right;"><div class="vkl">Cajas ganadas</div><div style="font-size:15px;font-weight:700;">${c.cant_cajas} / ${c.tope}</div></div>
+      </div>
+      <div>
+        <div class="bar"><div class="bar-f ${pcol2}" style="width:${clamp(pct,0,100)}%"></div></div>
+        <div class="xs m3" style="color:var(--text3);">Escala: ${pct}% del tope alcanzado</div>
+      </div>
+      ${scDet.length?`<div>
+        <div class="vkl" style="margin-bottom:4px;">Sin cargo ganado</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+          ${scDet.map(s=>`<span class="chip ok" style="font-size:10px;">${s}</span>`).join('')}
+        </div>
+      </div>`:''}
+      ${c.sc_enviadas_total?`<div style="font-size:11px;color:var(--text3);">Unidades sin cargo enviadas este periodo: ${c.sc_enviadas_total}</div>`:''}
+      ${c.sc_pendiente>0?`<div><span class="chip wn" style="font-size:11px;">${c.sc_pendiente} cajas pendientes de entrega</span></div>`:''}
+    </div>`;
+  }).join('');
+  document.getElementById('vT-planes_as').innerHTML=h;
 }
 
 /* ── mensajes ── */

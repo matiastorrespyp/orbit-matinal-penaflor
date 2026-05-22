@@ -1,5 +1,41 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-05-22 — Estado actual
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ `_clasificar()` corregido: AUTOSERVICIO = SubSegmento ("Autoservicio Tradicional", "Cadena Regional", etc.). MAYORISTAS/CASH&CARRY = canal MAYORISTA separado.
+- ✅ AUTOSERVICIO cartera real: V4=45, V6=36, V7=23, V8=31, V9=28, V10=29. Total=192 (excl. V3). Era 272 inflado.
+- ✅ V3 excluida de AUTOSERVICIO también en cobertura (consistente con 11T e innovaciones).
+- ✅ 17 productos innovación cargados y validados (antes 2).
+- ✅ 5 datasets regenerados con clasificación correcta.
+- ✅ `botellas_mes=53860` desde historial_ventas_cliente.csv.
+- ✅ Títulos sidebar portal correctos. Botones Innovaciones y Planes AS funcionando.
+- ✅ 6 endpoints nuevos: cobertura_acum, 11t_acum, innovaciones_total, planes_as (gerencia + vendedor), innovaciones_segmento (vendedor).
+- ✅ PORT desde env var (Render compatible). requirements.txt + Procfile.
+
+### PENDIENTE INMEDIATO
+
+1. **Commit** (este es el siguiente paso):
+   - Archivos a commitear: `generar_datasets_acum.py`, `server_orbit.py`, `portal.html`, `CHANGELOG_AI.md`, `NEXT_TASK.md`, `requirements.txt`, `Procfile`, los 5 CSVs en `04_DATASETS_ORBIT/` (mod_cobertura_acum, mod_11t_acum, mod_planes_as, mod_innovaciones_segmento, mod_innovaciones_plan_as).
+   - También commitear CSVs de 04_DATASETS_ORBIT/ ya staged (mod_11_titulares, mod_ccc_segmento, mod_volumen_vendedor).
+   - NO commitear: `01_INPUTS/`, `02_HISTORY/`, `orbit.db`, `06_APP_DATA/`, `05_MASTER_DATA/`.
+
+2. **Render (despliegue remoto):**
+   - Crear cuenta en render.com → New Web Service → conectar repositorio GitHub.
+   - `requirements.txt` y `Procfile` ya están listos.
+   - PORT lo inyecta Render automáticamente.
+
+3. **Regeneración diaria:**
+   - Actualizar `EJECUTAR_ORBIT.bat` para que corra `python generar_datasets_acum.py` antes del pipeline existente.
+
+### Pendientes opcionales
+- Cobertura acumulada en dashboard gerencia (reemplazar o suplementar CCC del día).
+- 11T acumulado en dashboard gerencia (reemplazar o suplementar 11T mensual).
+- Objetivo de cobertura 11T por segmento/marca (archivo `09_CONFIG/objetivos_11t.csv`).
+- Semántica CCC Mes vs Sin Comp. Mes (decisión pendiente de sesión anterior).
+
+
+
 ## Sesión 2026-05-19 — Cierre confirmado (commit b16a54c)
 
 ### Estado final

@@ -1,5 +1,74 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-22 — Fix clasificación AUTOSERVICIO vs MAYORISTA + 17 productos innovación
+
+**Regla de negocio aplicada:** MAYORISTAS/CASH&CARRY son canal MAYORISTA independiente, no AUTOSERVICIO.
+AUTOSERVICIO real se identifica por columna SubSegmento de clientes.xlsx: "Autoservicio Tradicional" (185), "Cadena Regional" (20), "AUTOSERVICIO" (3), "CADENAS REGIONALES (SAR/BAR)" (2). Total: ~210 clientes reales.
+
+**Archivos tocados:**
+- `generar_datasets_acum.py` — `_clasificar()` reescrito: SubSegmento como fuente primaria, MAYORISTAS/CASH&CARRY → MAYORISTA (antes → AUTOSERVICIO). AUTOSERVICIO cartera total = 192 excl. V3 (era 272 inflado). V3 excluido de AUTOSERVICIO en cobertura también (consistente con 11T e innovaciones). 17 productos innovación (era 2). 5 datasets generados.
+- `04_DATASETS_ORBIT/mod_cobertura_acum.csv` — regenerado: 26 filas. V3 sin AUTOSERVICIO. V8 AS = 31 (era 1). MAYORISTA como segmento propio.
+- `04_DATASETS_ORBIT/mod_11t_acum.csv` — regenerado: 18.202 filas, 6.2% cubiertos. AUTOSERVICIO cartera = 192.
+- `04_DATASETS_ORBIT/mod_innovaciones_segmento.csv` — regenerado: 221 filas, 17 productos × 7 vendedores × 2 segmentos. V3 sin AUTOSERVICIO.
+- `04_DATASETS_ORBIT/mod_innovaciones_plan_as.csv` — regenerado: 31 clientes AS Plan.
+- `04_DATASETS_ORBIT/mod_planes_as.csv` — regenerado: 31 clientes AS Plan.
+- `server_orbit.py` — Fix `botellas_mes`: calcula desde historial_ventas_cliente.csv filtrado al mes actual (era `null`). 6 nuevos endpoints: cobertura_acum, 11t_acum, innovaciones_total, planes_as (gerencia), planes_as+innovaciones_segmento (vendedor). PORT desde env var (Render compatible). BASE relativo.
+- `PAV MATINAL PE_A FLOR/portal.html` — Botones sidebar "Innovaciones" y "Planes AS". Títulos correctos en gSw(). Secciones gerencia y vendedor. vRuta con chips verde/rojo.
+- `requirements.txt` + `Procfile` — deployment Render.
+
+**Validaciones:**
+- `/api/gerencia/cobertura_acum` → 7 vendedores, V3 sin AUTOSERVICIO, MAYORISTA = canal propio.
+- `/api/gerencia/innovaciones_total` → 34 items (17 × 2 segmentos), 7 vendedores.
+- `/api/diagnostico` → `botellas_mes=53860` (era null).
+- AUTOSERVICIO cartera V4=45, V6=36, V7=23, V8=31, V9=28, V10=29. Total=192 (correcto).
+
+## 2026-05-21 — Módulos Acum + Innovaciones + Planes AS + Render
+
+**Archivos tocados:**
+- `generar_datasets_acum.py` (NUEVO)
+- `04_DATASETS_ORBIT/mod_cobertura_acum.csv` (NUEVO)
+- `04_DATASETS_ORBIT/mod_11t_acum.csv` (NUEVO)
+- `04_DATASETS_ORBIT/mod_planes_as.csv` (NUEVO)
+- `server_orbit.py` (5 endpoints nuevos + ruta relativa + PORT env var)
+- `PAV MATINAL PE_A FLOR/portal.html` (botones laterales + secciones + vRuta verde/rojo)
+- `requirements.txt` (NUEVO)
+- `Procfile` (NUEVO)
+
+**Datasets generados:**
+- `mod_cobertura_acum.csv` — 26 filas. Cobertura real por vendedor × segmento desde ventas_acumulada.csv × clientes.xlsx. V2/V5/V20 excluidos. Umbrales: AS≥6, resto≥3.
+- `mod_11t_acum.csv` — 18.601 filas. 11T desde ventas_acumulada × clientes (AUTOSERVICIO + TRADICIONAL). V3 sin AUTOSERVICIO. 962/18.601 cubiertos (5.2%).
+- `mod_planes_as.csv` — 31 clientes AS. Desde BBDD sheet (plan, facturado, cajas ganadas por marca) + ventas 100% descuento (sin cargo enviado).
+
+**Endpoints nuevos en server_orbit.py:**
+- `GET /api/gerencia/cobertura_acum` — cobertura acumulada por vendedor × segmento.
+- `GET /api/gerencia/11t_acum` — 11T acumulado por marca (distribuidora + por vendedor).
+- `GET /api/gerencia/innovaciones_total` — total innovaciones por producto × distribuidora + desglose vendedor.
+- `GET /api/gerencia/planes_as` — planes AS: 31 clientes, plan, facturado, cajas ganadas, sin cargo.
+- `GET /api/vendedor/<vid>/planes_as` — planes AS filtrado por vendedor. V2/V5/V20 → 403.
+
+**Fixes en server_orbit.py:**
+- `BASE = Path(__file__).parent` (antes: ruta absoluta hardcodeada).
+- `PORT = int(os.environ.get("PORT", 8502))` (para Render).
+- `debug = os.environ.get("FLASK_DEBUG","false").lower()=="true"` (producción safe).
+
+**Portal gerencia:**
+- Sección "Productos" en sidebar con dos botones: 🚀 Innovaciones y 🏆 Planes AS.
+- `gInnovaciones(p)`: total por producto (barras), desglose por vendedor.
+- `gPlanesAS(p)`: tabla clientes AS con plan/facturado/cajas ganadas/sin cargo enviado/pendiente.
+
+**Portal vendedor:**
+- Tab "Plan AS" (🏆) en nav bottom.
+- `vPlanesAS()`: cards por cliente AS con facturado, cajas, barra de escala, sin cargo por marca, pendiente.
+- `vRuta()`: cada cliente del día muestra innovaciones relevantes. Verde = compró. Rojo = no compró. Solo muestra el segmento que corresponde al cliente (AUTOSERVICIO o TRADICIONAL).
+
+**Render (despliegue remoto):**
+- `requirements.txt`: flask, pandas, numpy, openpyxl, gunicorn.
+- `Procfile`: `web: gunicorn server_orbit:app --bind 0.0.0.0:$PORT --timeout 120`.
+
+**Pendiente de validación:** reiniciar servidor para confirmar 5 endpoints nuevos HTTP 200.
+
+---
+
 ## 2026-05-20 — INOV-6c: Ranking gerencial Innovaciones — PASS
 
 **Commit:** `e2bad1b` — `PAV MATINAL PE_A FLOR/portal.html` (único archivo).

@@ -6,8 +6,9 @@ import json, sqlite3, pandas as pd
 from pathlib import Path
 from datetime import datetime, timedelta
 
+import os
 app = Flask(__name__, static_folder=None)
-BASE = Path(r"C:\Orbit\MATINAL_PENAFLOR")
+BASE = Path(__file__).parent
 APP_DATA = BASE / "06_APP_DATA"
 CONFIG = BASE / "09_CONFIG"
 DATASETS = BASE / "04_DATASETS_ORBIT"
@@ -335,7 +336,22 @@ def diagnostico():
         titulares11.sort(key=lambda x: -x["cubiertos"])
 
     botellas_dia = int(pd.to_numeric(ccc_df["botellas_vendidas"], errors="coerce").sum()) if not ccc_df.empty and "botellas_vendidas" in ccc_df.columns else 0
-    botellas_mes = None  # clientes_dia es solo zona Vi; omitir para evitar botellas_dia > botellas_mes
+    botellas_mes = None
+    try:
+        hv_path = BASE / "02_HISTORY" / "historial_ventas_cliente.csv"
+        if hv_path.exists():
+            hv = read_csv(hv_path)
+            if not hv.empty and "cant_base" in hv.columns and "importe_neto" in hv.columns:
+                hoy = datetime.now()
+                mes_str = hoy.strftime("%Y-%m")
+                hv["_fecha"] = hv["fecha_comprobante"].astype(str).str[:7]
+                hv["_importe"] = pd.to_numeric(hv["importe_neto"], errors="coerce").fillna(0)
+                hv["_cant"] = pd.to_numeric(hv["cant_base"], errors="coerce").fillna(0)
+                hv["_vend"] = pd.to_numeric(hv["vendedor_codigo"], errors="coerce").fillna(0).astype(int)
+                mes_df = hv[(hv["_fecha"] == mes_str) & (hv["_importe"] > 0) & (~hv["_vend"].isin(_VENDEDORES_EXCLUIDOS))]
+                botellas_mes = int(mes_df["_cant"].sum())
+    except Exception:
+        botellas_mes = None
 
     fecha_datos = None
     fecha_obj_str = None
@@ -1418,6 +1434,196 @@ def vendedor_plan_innovaciones(vid):
     })
 
 
+# ====== COBERTURA ACUMULADA ======
+@app.route("/api/gerencia/cobertura_acum")
+def gerencia_cobertura_acum():
+    df = read_csv(DATASETS / "mod_cobertura_acum.csv")
+    if df.empty:
+        return jsonify({"error": "Sin datos"}), 404
+    df["vendedor_codigo"] = pd.to_numeric(df["vendedor_codigo"], errors="coerce")
+    df = df[~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
+    for c in ["cartera", "cubiertos", "sin_cobertura"]:
+        if c in df.columns:
+            df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0).astype(int)
+    df["pct_cobertura"] = pd.to_numeric(df.get("pct_cobertura", 0), errors="coerce").fillna(0)
+    fecha = str(df["fecha_calculo"].iloc[0]) if "fecha_calculo" in df.columns else ""
+    por_vendedor = {}
+    for _, row in df.iterrows():
+        vid = f"V{int(row['vendedor_codigo'])}"
+        if vid not in por_vendedor:
+            por_vendedor[vid] = {"vendedor_id": vid, "vendedor_nombre": str(row.get("vendedor_nombre", "")), "segmentos": []}
+        por_vendedor[vid]["segmentos"].append({
+            "segmento": str(row["segmento"]),
+            "cartera": int(row["cartera"]),
+            "cubiertos": int(row["cubiertos"]),
+            "sin_cobertura": int(row["sin_cobertura"]),
+            "pct_cobertura": round(float(row["pct_cobertura"]), 4),
+        })
+    return jsonify({
+        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "fecha_calculo": fecha,
+        "fuente": "mod_cobertura_acum.csv",
+        "por_vendedor": list(por_vendedor.values()),
+    })
+
+
+# ====== 11T ACUMULADO ======
+@app.route("/api/gerencia/11t_acum")
+def gerencia_11t_acum():
+    df = read_csv(DATASETS / "mod_11t_acum.csv")
+    if df.empty:
+        return jsonify({"error": "Sin datos"}), 404
+    df["vendedor_codigo"] = pd.to_numeric(df["vendedor_codigo"], errors="coerce")
+    df = df[~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
+    df["tiene_flag"] = pd.to_numeric(df["tiene_flag"], errors="coerce").fillna(0)
+    # Resumen por marca (distribuidora total)
+    por_marca = (df.groupby("marca_objetivo")
+                 .agg(cartera=("cliente_id", "count"), cubiertos=("tiene_flag", "sum"))
+                 .reset_index())
+    por_marca["cubiertos"] = por_marca["cubiertos"].astype(int)
+    por_marca["pct"] = (por_marca["cubiertos"] / por_marca["cartera"].replace(0, 1) * 100).round(1)
+    por_marca = por_marca.sort_values("cubiertos", ascending=False)
+    # Resumen por vendedor × marca
+    por_vend = (df.groupby(["vendedor_codigo", "vendedor_nombre", "marca_objetivo"])
+                .agg(cartera=("cliente_id", "count"), cubiertos=("tiene_flag", "sum"))
+                .reset_index())
+    por_vend["cubiertos"] = por_vend["cubiertos"].astype(int)
+    por_vend["vendedor_id"] = "V" + por_vend["vendedor_codigo"].astype(int).astype(str)
+    fecha = str(df["fecha_calculo"].iloc[0]) if "fecha_calculo" in df.columns else ""
+    return jsonify({
+        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "fecha_calculo": fecha,
+        "fuente": "mod_11t_acum.csv",
+        "por_marca": por_marca[["marca_objetivo", "cartera", "cubiertos", "pct"]].to_dict("records"),
+        "por_vendedor": por_vend[["vendedor_id", "vendedor_nombre", "marca_objetivo",
+                                   "cartera", "cubiertos"]].to_dict("records"),
+    })
+
+
+# ====== INNOVACIONES TOTAL GERENCIA ======
+@app.route("/api/gerencia/innovaciones_total")
+def gerencia_innovaciones_total():
+    df = read_csv(DATASETS / "mod_innovaciones_segmento.csv")
+    if df.empty:
+        return jsonify({"error": "Sin datos"}), 404
+    df["vendedor_codigo"] = pd.to_numeric(df["vendedor_codigo"], errors="coerce")
+    df = df[~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
+    df["clientes_cartera"]  = pd.to_numeric(df["clientes_cartera"],  errors="coerce").fillna(0)
+    df["clientes_compraron"] = pd.to_numeric(df["clientes_compraron"], errors="coerce").fillna(0)
+    # Total por producto × segmento (toda la distribuidora)
+    tot = (df.groupby(["producto_codigo", "producto_nombre", "segmento"])
+           .agg(cartera_total=("clientes_cartera", "sum"),
+                compraron_total=("clientes_compraron", "sum"))
+           .reset_index())
+    tot["pct_cobertura"] = (tot["compraron_total"] / tot["cartera_total"].replace(0, 1) * 100).round(1)
+    # Por vendedor (para tabla de desglose)
+    por_v = df[["vendedor_codigo", "vendedor_nombre", "segmento",
+                "producto_codigo", "producto_nombre",
+                "clientes_cartera", "clientes_compraron", "pct_cobertura"]].copy()
+    por_v["vendedor_id"] = "V" + por_v["vendedor_codigo"].astype(int).astype(str)
+    fecha = str(df["fecha_ejecucion"].iloc[0]) if "fecha_ejecucion" in df.columns else ""
+    return jsonify({
+        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "fecha_ejecucion": fecha,
+        "fuente": "mod_innovaciones_segmento.csv",
+        "por_producto": tot[["producto_codigo", "producto_nombre", "segmento",
+                              "cartera_total", "compraron_total", "pct_cobertura"]].to_dict("records"),
+        "por_vendedor": por_v[["vendedor_id", "vendedor_nombre", "segmento",
+                                "producto_codigo", "producto_nombre",
+                                "clientes_cartera", "clientes_compraron"]].to_dict("records"),
+    })
+
+
+# ====== PLANES AS — GERENCIA ======
+@app.route("/api/gerencia/planes_as")
+def gerencia_planes_as():
+    df = read_csv(DATASETS / "mod_planes_as.csv")
+    if df.empty:
+        return jsonify({"error": "Sin datos"}), 404
+    for c in ["total_facturado", "dcto_plan", "cant_cajas", "tope",
+              "sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa",
+              "sc_smf_flavours", "sc_total_ganado", "sc_cajas_enviadas_total", "sc_pendiente"]:
+        if c in df.columns:
+            df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
+    registros = []
+    for _, row in df.iterrows():
+        registros.append({
+            "cliente_id":    int(row["cliente_id"]) if pd.notna(row["cliente_id"]) else None,
+            "cliente_nombre": str(row.get("cliente_nombre", "")),
+            "vendedor_id":   f"V{int(row['vendedor_codigo'])}" if pd.notna(row.get("vendedor_codigo")) else None,
+            "vendedor_nombre": str(row.get("vendedor_nombre", "")),
+            "plan_as":       str(row.get("plan_as", "")),
+            "total_facturado": round(float(row["total_facturado"]), 2),
+            "dcto_plan":     round(float(row["dcto_plan"]), 2),
+            "cant_cajas":    int(row["cant_cajas"]),
+            "tope":          int(row["tope"]),
+            "sc_alaris":     int(row["sc_alaris"]),
+            "sc_alma_mora":  int(row["sc_alma_mora"]),
+            "sc_frizze":     int(row["sc_frizze"]),
+            "sc_antares_ipa": int(row["sc_antares_ipa"]),
+            "sc_smf_flavours": int(row["sc_smf_flavours"]),
+            "sc_total_ganado": int(row["sc_total_ganado"]),
+            "sc_enviadas_total": int(row["sc_cajas_enviadas_total"]),
+            "sc_pendiente":  int(row["sc_pendiente"]),
+        })
+    fecha = str(df["fecha_calculo"].iloc[0]) if "fecha_calculo" in df.columns else ""
+    return jsonify({
+        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "fecha_calculo": fecha,
+        "fuente": "mod_planes_as.csv",
+        "total_clientes": len(registros),
+        "clientes": registros,
+    })
+
+
+# ====== PLANES AS — VENDEDOR ======
+@app.route("/api/vendedor/<vid>/planes_as")
+def vendedor_planes_as(vid):
+    vid_norm = normalizar_vendedor_codigo(vid)
+    if vid_norm in ("V2", "V5", "V20"):
+        return jsonify({"error": "Vendedor no autorizado"}), 403
+    try:
+        cod = int(vid_norm.replace("V", ""))
+    except Exception:
+        return jsonify({"error": "ID inválido"}), 400
+    df = read_csv(DATASETS / "mod_planes_as.csv")
+    if df.empty:
+        return jsonify({"clientes": []}), 200
+    df["vendedor_codigo"] = pd.to_numeric(df["vendedor_codigo"], errors="coerce")
+    df = df[df["vendedor_codigo"] == cod]
+    for c in ["total_facturado", "dcto_plan", "cant_cajas", "tope",
+              "sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa",
+              "sc_smf_flavours", "sc_total_ganado", "sc_cajas_enviadas_total", "sc_pendiente"]:
+        if c in df.columns:
+            df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
+    registros = []
+    for _, row in df.iterrows():
+        registros.append({
+            "cliente_id":    int(row["cliente_id"]) if pd.notna(row["cliente_id"]) else None,
+            "cliente_nombre": str(row.get("cliente_nombre", "")),
+            "plan_as":       str(row.get("plan_as", "")),
+            "total_facturado": round(float(row["total_facturado"]), 2),
+            "dcto_plan":     round(float(row["dcto_plan"]), 2),
+            "cant_cajas":    int(row["cant_cajas"]),
+            "tope":          int(row["tope"]),
+            "sc_alaris":     int(row["sc_alaris"]),
+            "sc_alma_mora":  int(row["sc_alma_mora"]),
+            "sc_frizze":     int(row["sc_frizze"]),
+            "sc_antares_ipa": int(row["sc_antares_ipa"]),
+            "sc_smf_flavours": int(row["sc_smf_flavours"]),
+            "sc_total_ganado": int(row["sc_total_ganado"]),
+            "sc_enviadas_total": int(row["sc_cajas_enviadas_total"]),
+            "sc_pendiente":  int(row["sc_pendiente"]),
+        })
+    return jsonify({
+        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "vendedor_id": vid_norm,
+        "fuente": "mod_planes_as.csv",
+        "total_clientes": len(registros),
+        "clientes": registros,
+    })
+
+
 # ====== MAIN ======
 if __name__ == "__main__":
     init_db()
@@ -1426,4 +1632,6 @@ if __name__ == "__main__":
     print("Dashboard:   http://localhost:8502/api/dashboard")
     print("Portal:      http://localhost:8502/index.html")
     print("===============================\n")
-    app.run(host="0.0.0.0", port=8502, debug=True)
+    port = int(os.environ.get("PORT", 8502))
+    debug = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
+    app.run(host="0.0.0.0", port=port, debug=debug)
