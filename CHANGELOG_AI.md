@@ -1,5 +1,14 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-23 — fix(11T): fuente corregida a ventas.csv (era ventas_acumulada.csv)
+
+**Archivos tocados:**
+- `server_orbit.py` — `gerencia_once_titulares()`: cambia `ventas_acumulada.csv` → `ventas.csv`. El archivo acumulado tenía datos desde abril 1 (225 clientes Antares), ventas.csv es el período comercial actual (26 clientes Antares = coincide con conteo manual del usuario).
+
+**Validación:**
+- ANTARES: CCC=26 ✓ (usuario valida 26 a mano)
+- Diferencia origen: ventas_acumulada.csv abarca 1/4 al 21/5 (8646 filas); ventas.csv es el período comercial actual (3621 filas, desde fin de abril)
+
 ## 2026-05-23 — 11T: CCC real vs objetivo CCC (ventas_acumulada.csv)
 
 **Archivos tocados:**

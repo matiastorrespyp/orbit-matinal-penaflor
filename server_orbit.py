@@ -1152,12 +1152,12 @@ def gerencia_ccc_empresa():
 @app.route("/api/gerencia/once_titulares")
 def gerencia_once_titulares():
     """11 Titulares: CCC real vs objetivo CCC.
-    Fuente CCC: ventas_acumulada.csv (clientes únicos con ImporteNetoItem > 0).
+    Fuente CCC: ventas.csv (período comercial actual, clientes únicos con ImporteNetoItem > 0).
     Fuente objetivo: objetivo 11T.xlsx (columna Objetivo = nro de clientes).
     Excluye V2, V5, V20."""
-    vac_path = INPUTS / "ventas_acumulada.csv"
+    vac_path = INPUTS / "ventas.csv"
     if not vac_path.exists():
-        return jsonify({"error": "ventas_acumulada.csv no encontrado", "marcas": []}), 500
+        return jsonify({"error": "ventas.csv no encontrado", "marcas": []}), 500
 
     try:
         vac = pd.read_csv(vac_path, sep=";", encoding="latin1", low_memory=False)
@@ -1263,7 +1263,7 @@ def gerencia_once_titulares():
 
     return jsonify({
         "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "fuente": "ventas_acumulada.csv",
+        "fuente": "ventas.csv",
         "total_marcas": len(marcas),
         "marcas": marcas,
     })
