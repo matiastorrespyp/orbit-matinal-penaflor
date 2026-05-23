@@ -1,5 +1,21 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-23 — Corrección datos: 11T cartera completa + alertas 11T + filtros CCC + Clientes del Día
+
+**Archivos tocados:**
+- `server_orbit.py` — (1) `/api/gerencia/once_titulares`: cambia fuente de `mod_11_titulares.csv` (548 clientes Vi solo) a `mod_11t_acum.csv` (1800 clientes, cartera completa). Agrega `objetivo_cajas`, `cajas_mes`, `pct_objetivo` desde `01_INPUTS/objetivo 11T.xlsx`. Incluye todas las marcas incluso con 0 cobertura. (2) `/api/alertas`: nueva exclusión de 11T brands con ≤10% de descuento (hay una acción comercial válida de 10% en 11T); alertas 14 → 3.
+- `PAV MATINAL PE_A FLOR/portal.html` — (1) Card "Planificados VI" → "Clientes del Día" con labels "compraron mes / sin compra mes". (2) Card "Sin Comp. Mes": filtro ahora usa solo `compra_mes_flag===0` (eliminado `estado.includes('SIN')` que incluía falsamente CCC_SIN_COBERTURA). (3) Mini-lista clientes sin compra en dashboard: misma corrección. (4) Panel Clientes Críticos: mismo fix de filtro → cliente 8212 (CCC_SIN_COBERTURA, compra_mes_flag=1) ya no aparece. (5) 11T panel: reemplazado gráfico de barras por tabla con cajas actuales, objetivo y % avance.
+
+**Resultados validados:**
+- 11T: 18 marcas mostradas (antes 9 Vi-only). Alma Mora 932 cajas / obj 639 = 145.9% ✓. Dada 467.5/467 = 100.1% ✓. Alaris 129/440 = 29.3% ⚠.
+- Alertas: 3 (CAZADOR 15%, ELEMENTOS 10%, DON DAVID 15%) — todas legítimas. 11 alertas anteriores eran 10% en marcas 11T con acción válida.
+- Sin Comp. Mes card: 401 (antes 403, bug CCC_SIN_COBERTURA).
+- Cliente 8212 MOSTRADOR ya no aparece en Clientes Críticos (compra_mes_flag=1, estado=CCC_SIN_COBERTURA).
+- "Clientes del Día" card: 548 total, 147 compraron mes, 401 sin compra mes.
+
+**Nota arquitectural:**
+Tanto la card "Clientes del Día" como "Sin Comp. Mes" muestran la zona del día (Vi), no la cartera total. Esta es la misma fuente (`clientes_dia.csv` / `mod_volumen_vendedor.csv`). Para la cartera completa mes se requeriría un dataset adicional de todos los clientes activos.
+
 ## 2026-05-22 — Fix crítico: NaN inválido en /api/clientes + 4 correcciones de UI
 
 **Archivos tocados:**

@@ -580,6 +580,18 @@ def alertas():
         descuento_ok = df["descuento_aplicado_pct"] <= 10
         df = df[~(is_plan_as & descuento_ok)]
 
+    # Excluir alertas de 11 Titulares con ≤10%: hay una acción comercial de 10% dto en las 11T
+    _11T_MARCAS = {
+        "ALMA MORA", "DADA", "LOS ARBOLES", "TRAPICHE RESERVA", "ALARIS",
+        "FINCA LAS MORAS", "DON DAVID", "GORDON'S FLAVOURS", "SMIRNOFF FLAVOURS",
+        "ANTARES", "SMIRNOFF ICE", "FOND DE CAVE", "CAZADOR", "JW BLACK", "JW RED",
+        "MASCOTA", "NC ESPUMANTES", "TRAPICHE MEDALLA",
+    }
+    if "marca" in df.columns:
+        is_11t = df["marca"].astype(str).str.upper().str.strip().isin(_11T_MARCAS)
+        descuento_11t_ok = df["descuento_aplicado_pct"] <= 10
+        df = df[~(is_11t & descuento_11t_ok)]
+
     df["vendedor_id"] = "V" + df["vendedor_codigo"].astype("Int64").astype(str)
     df["prioridad"] = "alta"
     df["tipo"] = "descuento"
@@ -1020,39 +1032,69 @@ def gerencia_ccc_empresa():
 # ====== GERENCIA: 11 TITULARES POR MARCA ======
 @app.route("/api/gerencia/once_titulares")
 def gerencia_once_titulares():
-    """11 Titulares acumulados en el mes por marca a nivel empresa.
-    Fuente: mod_11_titulares.csv (tiene_flag=1 por marca_objetivo).
-    Excluye V2, V5, V20."""
-    df = read_csv(DATASETS / "mod_11_titulares.csv")
+    """11 Titulares acumulados en el mes por marca a nivel empresa (cartera completa).
+    Fuente: mod_11t_acum.csv (todas las zonas, no solo la del día).
+    Excluye V2, V5, V20. Incluye objetivo por marca desde objetivo 11T.xlsx."""
+    df = read_csv(DATASETS / "mod_11t_acum.csv")
     if df.empty:
         return jsonify({"generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "marcas": []})
 
     df.columns = [c.lstrip("﻿") for c in df.columns]
-    for col in ["vendedor_codigo", "tiene_flag", "falta_flag", "botellas_mes", "importe_mes"]:
+    for col in ["vendedor_codigo", "tiene_flag", "falta_flag", "cant_base_acum"]:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    # Excluir vendedores no activos
     df = df[~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
 
     if "marca_objetivo" not in df.columns or "tiene_flag" not in df.columns:
         return jsonify({"error": "Columnas esperadas no encontradas", "columnas": list(df.columns)}), 500
 
-    # Una fila por vendedor×cliente×marca: tiene_flag=1 si ese cliente ya compró esa marca este mes
-    # clientes_con_compra = clientes únicos con tiene_flag=1 por marca
+    # Todas las marcas (incluso con 0 cobertura) para que aparezcan en el objetivo
+    todas = (df.groupby("marca_objetivo", as_index=False)
+               .agg(cartera_total=("cliente_id", "nunique")))
     tiene = df[df["tiene_flag"] == 1]
-    resumen = (
-        tiene.groupby("marca_objetivo", as_index=False)
-             .agg(clientes_con_compra=("cliente_id", "nunique"),
-                  botellas_mes=("botellas_mes", "sum"),
-                  importe_mes=("importe_mes", "sum"))
-             .sort_values("clientes_con_compra", ascending=False)
-    )
+    con_compra = (tiene.groupby("marca_objetivo", as_index=False)
+                       .agg(clientes_con_compra=("cliente_id", "nunique"),
+                            botellas_mes=("cant_base_acum", "sum")))
+    resumen = todas.merge(con_compra, on="marca_objetivo", how="left")
+    resumen["clientes_con_compra"] = resumen["clientes_con_compra"].fillna(0).astype(int)
+    resumen["botellas_mes"] = resumen["botellas_mes"].fillna(0)
+    resumen = resumen.sort_values("clientes_con_compra", ascending=False)
+
+    # Cargar objetivos desde objetivo 11T.xlsx
+    _OBJ_ALIAS = {
+        "ALMA MORA": "ALMA MORA", "TRAPICHE RESERVA": "TRAPICHE RESERVA",
+        "FINCA LAS MORAS": "FINCA LAS MORAS", "ALARIS": "ALARIS",
+        "DON DAVID": "DON DAVID", "DADA": "DADA",
+        "SIMRNOFF FLAVORS": "SMIRNOFF FLAVOURS", "SMIRNOFF FLAVORS": "SMIRNOFF FLAVOURS",
+        "SMIRNOFF FLAVOURS": "SMIRNOFF FLAVOURS",
+        "LOS ARBOLES": "LOS ARBOLES", "ANTARES": "ANTARES",
+        "SMIRNOFF ICE": "SMIRNOFF ICE", "SMF ICE": "SMIRNOFF ICE",
+        "GORDONS FLAVOURS": "GORDON'S FLAVOURS", "GORDONS FLAVORS": "GORDON'S FLAVOURS",
+    }
+    obj_map = {}
+    try:
+        obj_df = pd.read_excel(INPUTS / "objetivo 11T.xlsx", header=1)
+        obj_df = obj_df.dropna(subset=obj_df.columns[1:2])
+        for _, row in obj_df.iterrows():
+            raw = str(row.iloc[1]).upper().strip()
+            marca_key = _OBJ_ALIAS.get(raw, raw)
+            try:
+                obj_map[marca_key] = float(row.iloc[2])
+            except (ValueError, TypeError):
+                pass
+    except Exception:
+        pass
 
     marcas = resumen.rename(columns={"marca_objetivo": "marca"}).to_dict(orient="records")
     for m in marcas:
-        m["botellas_mes"] = round(float(m["botellas_mes"]), 0)
-        m["importe_mes"]  = round(float(m["importe_mes"]), 2)
+        botellas = float(m["botellas_mes"] or 0)
+        cajas = round(botellas / 6, 1)
+        obj = obj_map.get(m["marca"], None)
+        m["botellas_mes"]   = round(botellas, 0)
+        m["cajas_mes"]      = cajas
+        m["objetivo_cajas"] = obj
+        m["pct_objetivo"]   = round(cajas / obj * 100, 1) if obj else None
 
     return jsonify({
         "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),

@@ -15,6 +15,14 @@
 - ✅ Clientes críticos: solo zona del día sin compra mes. Muestra última compra fecha+importe.
 - ✅ `ultima_compra_fecha` y `ultima_compra_importe` en `/api/clientes` desde historial.
 
+### HECHO 2026-05-23 ✅
+- ✅ 11T: usa `mod_11t_acum.csv` (cartera completa 1800 clientes) en lugar de Vi-only (548).
+- ✅ 11T: agrega objetivo por marca (objetivo 11T.xlsx) y % avance. 18 marcas visibles.
+- ✅ Alertas: exluye 11T brands con ≤10% dto (acción comercial válida). 14 → 3 alertas.
+- ✅ Filtro `estado.includes('SIN')` eliminado → cliente 8212 (CCC_SIN_COBERTURA) ya no aparece en Clientes Críticos.
+- ✅ "Planificados VI" → "Clientes del Día" con labels "mes" explícitos.
+- ✅ Card "Sin Comp. Mes": usa solo `compra_mes_flag===0`.
+
 ### HECHO EN ESTA SESIÓN (fix UI post-commit df23c5a) ✅
 - ✅ Fix NaN inválido en `/api/clientes` → `D.cli` quedaba vacío → "Sin Comp. Mes = 0" y "Clientes Críticos vacío" resueltos.
 - ✅ Labels "Sin Comp. Mes/SC Mes" → "Sin Comp. Día/SC Día" (el dato es del día, no del mes).

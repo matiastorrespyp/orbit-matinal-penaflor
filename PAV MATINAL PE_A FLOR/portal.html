@@ -860,11 +860,11 @@ function gDashboard(p){
         <div class="kh">${dR} días hábiles restantes</div>
       </div>
       <div class="kcard info">
-        <div class="kl">Planificados ${D.diag?.dia_operativo||'hoy'}</div>
+        <div class="kl">Clientes del Día</div>
         <div class="kv">${tC}</div>
         <div style="display:flex;justify-content:space-between;margin-top:4px;">
-          <span style="font-size:11px;color:var(--ok);">✓ ${tC-tP} compraron</span>
-          <span style="font-size:11px;color:var(--bd);">⚠ ${tP} sin compra</span>
+          <span style="font-size:11px;color:var(--ok);">✓ ${tC-tP} compraron mes</span>
+          <span style="font-size:11px;color:var(--bd);">⚠ ${tP} sin compra mes</span>
         </div>
       </div>
       <div class="kcard info">
@@ -874,8 +874,8 @@ function gDashboard(p){
       </div>
       <div class="kcard wn">
         <div class="kl">Sin Comp. Mes</div>
-        <div class="kv">${(D.cli||[]).filter(c=>c.compra_mes_flag===0||c.compra_mes_flag===null||(c.estado||'').toUpperCase().includes('SIN')).length}</div>
-        <div class="kh">De la cartera total del mes</div>
+        <div class="kv">${(D.cli||[]).filter(c=>c.compra_mes_flag===0||c.compra_mes_flag===null).length}</div>
+        <div class="kh">Zona del día · sin compra este mes</div>
       </div>
     </div>`);
 
@@ -944,24 +944,28 @@ function gDashboard(p){
   left+=`</div>`;
 
   // right: 11 titulares por marca + clientes sin compra
-  const clinSC=(D.cli||[]).filter(c=>(c.estado||'').toLowerCase().includes('sin')).slice(0,8);
+  const clinSC=(D.cli||[]).filter(c=>c.compra_mes_flag===0||c.compra_mes_flag===null).slice(0,8);
   let right=`<div>`;
   const onceMarcas=(D.onceTit?.marcas||[]);
   if(onceMarcas.length){
-    const maxCli=Math.max(...onceMarcas.map(m=>m.clientes_con_compra),1);
     right+=`<div class="card">
-      <div class="card-hd"><span class="card-title">🏅 11 Titulares por Marca</span><span class="chip">${onceMarcas.length} marcas</span></div>
+      <div class="card-hd"><span class="card-title">🏅 11 Titulares · Cajas vs Objetivo</span><span class="chip">${onceMarcas.length} marcas</span></div>
       <div class="card-body nop">
-        <div style="padding:6px 14px 10px;">
-          ${onceMarcas.map(m=>{const pct=Math.round(m.clientes_con_compra/maxCli*100);
-            return `<div style="margin-bottom:7px;">
-              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
-                <span style="font-size:12px;font-weight:600;">${m.marca}</span>
-                <span style="font-size:11px;color:var(--text3);">${m.clientes_con_compra} clientes</span>
-              </div>
-              <div class="bar" style="height:4px;"><div class="bar-f ok" style="width:${pct}%"></div></div>
-            </div>`;}).join('')}
-        </div>
+        <table class="tbl">
+          <thead><tr><th>Marca</th><th style="text-align:right">Cajas</th><th style="text-align:right">Objetivo</th><th style="text-align:right">Avance</th><th style="min-width:80px"></th></tr></thead>
+          <tbody>${onceMarcas.map(m=>{
+            const cajas=m.cajas_mes||0, obj=m.objetivo_cajas||0, pctObj=m.pct_objetivo;
+            const pctBar=obj?Math.min(Math.round(cajas/obj*100),100):0;
+            const cl=pctBar>=80?'ok':pctBar>=50?'wn':'bd';
+            return `<tr>
+              <td style="font-size:12px;font-weight:600;">${m.marca}</td>
+              <td style="text-align:right;font-size:12px;">${cajas.toLocaleString('es-AR')}</td>
+              <td style="text-align:right;font-size:12px;color:var(--text3);">${obj||'–'}</td>
+              <td style="text-align:right;"><span class="chip ${cl}" style="font-size:9px;">${pctObj!=null?pctObj+'%':'–'}</span></td>
+              <td><div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${pctBar}%"></div></div></td>
+            </tr>`;}).join('')}
+          </tbody>
+        </table>
       </div>
     </div>`;
   }
@@ -1057,8 +1061,7 @@ function gClientes(p){
   const filt=all.filter(c=>{
     const dias=(c.dias_visita||c.dia_visita||'').toUpperCase();
     const esHoy=diaHoy&&(dias===diaHoy||dias.includes(diaHoy));
-    const sinCompra=(c.compra_mes_flag===0||c.compra_mes_flag===null||
-                     (c.estado||'').toUpperCase().includes('SIN'));
+    const sinCompra=(c.compra_mes_flag===0||c.compra_mes_flag===null);
     return esHoy&&sinCompra;
   });
   p.innerHTML=`
