@@ -1,5 +1,18 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-23 — Selector de días: filtra todos los paneles por día seleccionado
+
+**Archivos tocados:**
+- `server_orbit.py` — (1) Nueva función `_clientes_por_dia(dia)`: computa cartera del día desde `clientes.xlsx` (filtra por DiasVisita, excluye V2/V5/V20), cruza con `ventas.csv` para `compra_mes_flag`, enriquece con `historial_ventas_cliente.csv`. (2) `/api/clientes`: acepta `?dia=` opcional; cuando se pasa, usa `_clientes_por_dia()` en lugar de `clientes_dia.csv`. (3) `/api/dashboard`: acepta `?dia=` opcional; cuando se pasa, precomputa `clientes_dia_map` con total y sin_compra por vendedor desde `_clientes_por_dia()`, y sobreescribe `cli_total`, `cli_sin`, `oportunidades` en el loop — vendedores sin clientes ese día muestran 0.
+- `PAV MATINAL PE_A FLOR/portal.html` — (1) `setDay(d)` → async: muestra spinner, llama `Promise.all([/api/clientes?dia=d, /api/dashboard?dia=d])`, actualiza D.cli y D.dash, re-renderiza. (2) `gClientes`: usa `currentDay` como zona de filtro en lugar de `D.diag?.dia_operativo`. (3) "Plan.Vi" → "Plan.${currentDay}" en ranking de vendedores.
+
+**Resultados validados:**
+- `/api/clientes?dia=Lu` → 302 clientes, 195 sin compra mes ✓
+- `/api/clientes?dia=Vi` → 550 clientes, 403 sin compra mes ✓
+- `/api/dashboard?dia=Lu` → V3=64, V4=55, V6=53, V7=0, V8=71, V9=17, V10=42; total=302, sin=195 ✓
+- `/api/dashboard?dia=Vi` → total=550, sin=403 ✓
+- V7 correctamente 0 clientes para Lu (no trabaja ese día) ✓
+
 ## 2026-05-23 — Corrección datos: 11T cartera completa + alertas 11T + filtros CCC + Clientes del Día
 
 **Archivos tocados:**

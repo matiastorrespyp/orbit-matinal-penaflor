@@ -793,7 +793,15 @@ function buildDaySel(active){
   const c=document.getElementById('gDaySel'); if(!c) return;
   c.innerHTML=DAYS.map(d=>`<button class="${d===(active||currentDay)?'active':''}" onclick="setDay('${d}')">${d}</button>`).join('');
 }
-function setDay(d){ currentDay=d; buildDaySel(d); gRender(); }
+async function setDay(d){
+  currentDay=d; buildDaySel(d);
+  const p=document.getElementById('gPage');
+  if(p) p.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);">Cargando datos del día <b>'+d+'</b>…</div>';
+  const [cli,dash]=await Promise.all([safe('/api/clientes?dia='+d),safe('/api/dashboard?dia='+d)]);
+  if(cli) D.cli=Array.isArray(cli)?cli:[];
+  if(dash) D.dash=Array.isArray(dash)?dash:[];
+  gRender();
+}
 function gFiltV(v){ gFiltro=v; gRender(); }
 function logout(){
   userData=null; D={diag:{},dash:[],cli:[],al:[],plan:[],det:{},msgs:[],inov:null,plan_inov:null};
@@ -1043,7 +1051,7 @@ function gVendedores(p){
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;text-align:center;">
           <div><div class="xs m3">CCC Mes</div><b>${k.ccc_total||0}</b></div>
           <div><div class="xs m3">11T ✓</div><b>${k.once_titulares_cumplidos||0}</b></div>
-          <div><div class="xs m3">Plan.Vi</div><b>${k.clientes_total||0}</b></div>
+          <div><div class="xs m3">Plan.${currentDay||'–'}</div><b>${k.clientes_total||0}</b></div>
           <div><div class="xs m3">SC Día</div><b style="color:var(--bd)">${k.clientes_pendientes||0}</b></div>
         </div>
       </div>
@@ -1053,7 +1061,7 @@ function gVendedores(p){
 
 /* — Clientes — */
 function gClientes(p){
-  const diaHoy=(D.diag?.dia_operativo||'').toUpperCase();
+  const diaHoy=(currentDay||D.diag?.dia_operativo||'').toUpperCase();
   const fmtARS=n=>n?'$'+(Number(n)||0).toLocaleString('es-AR',{maximumFractionDigits:0}):'–';
   const all=(D.cli||[])
     .filter(c=>gFiltro?(c.vendedor_id||'').toUpperCase()===gFiltro:true);

@@ -29,23 +29,25 @@
 - ✅ Plan vs Real: "Delta" → "Diferencia".
 - ✅ Alertas: código cliente `[ID]` + vendedor `(VX)` por fila.
 
+### HECHO 2026-05-23 (selector de días) ✅
+- ✅ `_clientes_por_dia(dia)`: cartera real del día desde clientes.xlsx + compra_mes_flag desde ventas.csv.
+- ✅ `/api/clientes?dia=X`: usa cartera del día seleccionado (Lu=302, Ma=353, Vi=550).
+- ✅ `/api/dashboard?dia=X`: clientes_total y clientes_pendientes por vendedor para el día seleccionado.
+- ✅ `setDay(d)` → async: llama ambos endpoints, actualiza D.cli + D.dash, re-renderiza.
+- ✅ `gClientes`: usa `currentDay` como zona (Clientes Críticos filtra por día seleccionado).
+- ✅ "Plan.Vi" → "Plan.${currentDay}" en ranking vendedores.
+
 ### PENDIENTE INMEDIATO
 
-1. **Commit** (siguiente paso):
-   - `server_orbit.py`, `portal.html`, `CHANGELOG_AI.md`, `NEXT_TASK.md`
-   - NO commitear: `01_INPUTS/`, `02_HISTORY/`, `orbit.db`, `06_APP_DATA/`, `05_MASTER_DATA/`.
+1. **Validar en browser:** tocar LU / MA / VI y verificar que los paneles cambian datos.
 
-2. **Render (despliegue remoto):**
-   - Crear cuenta en render.com → New Web Service → conectar repositorio GitHub.
-   - `requirements.txt` y `Procfile` ya listos.
-
-3. **Regeneración diaria:**
-   - Actualizar `EJECUTAR_ORBIT.bat` para correr `python generar_datasets_acum.py` antes del pipeline.
-
-4. **Historial de ventas — alertas comparativas (próxima sesión):**
+2. **Historial de ventas — alertas comparativas (próxima sesión):**
    - Objetivo: detectar clientes que venían comprando y dejaron de hacerlo, o dejaron de comprar un producto.
    - Fuente: `02_HISTORY/historial_ventas_cliente.csv` + `02_HISTORY/historial_ventas.csv`.
    - Cruzar con ventas actuales para identificar brechas.
+
+3. **Regeneración diaria:**
+   - Actualizar `EJECUTAR_ORBIT.bat` para correr `python generar_datasets_acum.py` antes del pipeline.
 
 ### Pendientes opcionales
 - 11T acumulado visible en dashboard gerencia.

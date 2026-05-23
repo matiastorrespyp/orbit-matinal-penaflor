@@ -182,6 +182,93 @@ def _ccc_mes_por_vendedor(ventas_mes: pd.DataFrame) -> dict:
         }
     return result
 
+def _clientes_por_dia(dia: str) -> pd.DataFrame:
+    """Calcula cartera del día desde clientes.xlsx + compra_mes_flag desde ventas.csv."""
+    cli_path = INPUTS / "clientes.xlsx"
+    if not cli_path.exists():
+        return pd.DataFrame()
+    try:
+        cli = pd.read_excel(cli_path)
+    except Exception:
+        return pd.DataFrame()
+
+    dia_cap = dia.capitalize()
+    cli = cli[cli["DiasVisita"].astype(str).str.strip() == dia_cap]
+    cli = cli[~cli["codven"].isin([2, 5, 20])]
+    if cli.empty:
+        return pd.DataFrame()
+
+    ventas_mes = _cargar_ventas_mes_actual()
+    ccc_ids = set(ventas_mes["cliente_id"].dropna().astype(int)) if not ventas_mes.empty else set()
+
+    sub_col = next((c for c in cli.columns if "subseg" in c.lower() or "subramo" in c.lower()), None)
+    nombre_col = next((c for c in cli.columns if c.lower() in ("razonsocial", "nombre", "cliente")), "Nombre")
+
+    rows = []
+    for _, row in cli.iterrows():
+        cid_raw = row.get("Codigo")
+        vcod_raw = row.get("codven")
+        if pd.isna(cid_raw) or pd.isna(vcod_raw):
+            continue
+        cid = int(cid_raw)
+        vcod = int(vcod_raw)
+        seg = _clasificar_segmento(str(row.get("Ramo", "")),
+                                   str(row.get(sub_col, "") if sub_col else ""))
+        compra_mes = 1 if cid in ccc_ids else 0
+        estado = "SIN_COMPRA_MES" if compra_mes == 0 else "COBERTURA_OK"
+        rows.append({
+            "cliente_id": cid,
+            "cliente_nombre": str(row.get(nombre_col, cid)),
+            "vendedor_codigo": vcod,
+            "vendedor_id": f"V{vcod}",
+            "dias_visita": dia_cap,
+            "segmento": seg,
+            "segmento_operativo": seg,
+            "compra_mes_flag": compra_mes,
+            "compra_ayer_flag": 0,
+            "estado": estado,
+            "estado_cliente": estado,
+            "prioridad_label": "ALTA" if compra_mes == 0 else "NORMAL",
+            "importe_mes": 0.0,
+            "botellas_mes": 0,
+            "ultima_compra_fecha": None,
+            "ultima_compra_importe": None,
+        })
+    df = pd.DataFrame(rows)
+
+    # Enriquecer con última compra
+    try:
+        hist = read_csv(BASE / "02_HISTORY" / "historial_ventas_cliente.csv")
+        if not hist.empty:
+            hist.columns = [c.lstrip("﻿") for c in hist.columns]
+            f_col = next((c for c in hist.columns if "fecha" in c.lower()), None)
+            i_col = next((c for c in hist.columns if "importe" in c.lower() or "neto" in c.lower()), None)
+            id_col = next((c for c in hist.columns if c.lower() in ("cliente", "cliente_id", "cod_cliente")), None)
+            if all([f_col, i_col, id_col]):
+                hist[id_col] = pd.to_numeric(hist[id_col], errors="coerce")
+                hist[i_col] = pd.to_numeric(hist[i_col], errors="coerce")
+                ultima = (hist.sort_values(f_col, ascending=False)
+                          .drop_duplicates(subset=[id_col])[[id_col, f_col, i_col]]
+                          .rename(columns={id_col: "cliente_id", f_col: "ultima_compra_fecha",
+                                           i_col: "ultima_compra_importe"}))
+                ultima["cliente_id"] = pd.to_numeric(ultima["cliente_id"], errors="coerce")
+                df["cliente_id"] = pd.to_numeric(df["cliente_id"], errors="coerce")
+                df = df.merge(ultima, on="cliente_id", how="left", suffixes=("", "_h"))
+                if "ultima_compra_fecha_h" in df.columns:
+                    df["ultima_compra_fecha"] = df["ultima_compra_fecha_h"].fillna(df["ultima_compra_fecha"])
+                    df["ultima_compra_importe"] = df["ultima_compra_importe_h"].fillna(df["ultima_compra_importe"])
+                    df.drop(columns=["ultima_compra_fecha_h", "ultima_compra_importe_h"], inplace=True, errors="ignore")
+    except Exception:
+        pass
+
+    records = df.to_dict(orient="records")
+    for rec in records:
+        for k, v in rec.items():
+            if isinstance(v, float) and not math.isfinite(v):
+                rec[k] = None
+    return pd.DataFrame(records)
+
+
 def _cargar_feriados():
     import csv
     p = CONFIG / "feriados.csv"
@@ -396,11 +483,25 @@ def diagnostico():
 # ====== DASHBOARD REAL ======
 @app.route("/api/dashboard")
 def dashboard():
+    dia_param = request.args.get("dia", "").strip()
+
+    # Precompute day-specific client counts when a day is requested
+    clientes_dia_map = {}  # {cn: {total, sin_compra}}
+    if dia_param:
+        cli_dia_df = _clientes_por_dia(dia_param)
+        if cli_dia_df is not None and not cli_dia_df.empty and "vendedor_codigo" in cli_dia_df.columns:
+            cli_dia_df["_cn"] = cli_dia_df["vendedor_codigo"].astype(str).apply(clean_code)
+            for vcn, grp in cli_dia_df.groupby("_cn"):
+                clientes_dia_map[vcn] = {
+                    "total": len(grp),
+                    "sin_compra": int((grp["compra_mes_flag"] == 0).sum()),
+                }
+
     vol     = read_csv(DATASETS / "mod_volumen_vendedor.csv")
     vend    = read_csv(CONFIG  / "vendedores_activos.csv")
     ccc_df  = read_csv(DATASETS / "mod_ccc_segmento.csv")   # CCC día (ayer)
     t11_df  = read_csv(DATASETS / "mod_11_titulares.csv")
-    cdia_df = read_csv(DATASETS / "clientes_dia.csv")        # para oportunidades
+    cdia_df = read_csv(DATASETS / "clientes_dia.csv")        # para oportunidades (día base)
 
     # CCC Compradores Mes — desde ventas.csv del mes actual (no clientes_dia)
     ventas_mes = _cargar_ventas_mes_actual()
@@ -455,6 +556,11 @@ def dashboard():
         tendencia_pct = round((acum / _corridos) * _total / obj * 100, 2) if obj else 0
         cli_total = int(vv["clientes_planificados"].sum()) if not vv.empty and "clientes_planificados" in vv.columns else 0
         cli_sin = int(vv["clientes_sin_compra_mes"].sum()) if not vv.empty and "clientes_sin_compra_mes" in vv.columns else 0
+        # Override with day-specific counts when dia requested (0 if vendor not scheduled that day)
+        if dia_param:
+            day_data = clientes_dia_map.get(cn, {"total": 0, "sin_compra": 0})
+            cli_total = day_data["total"]
+            cli_sin   = day_data["sin_compra"]
 
         # CCC Compradores Mes — desde ventas.csv del mes actual
         cod_int = int(cn) if cn.isdigit() else 0
@@ -483,7 +589,9 @@ def dashboard():
 
         # Oportunidades: clientes sin compra del día (V3 excluye AS)
         oportunidades = 0
-        if not cdia_df.empty and "estado_cliente" in cdia_df.columns and "vendedor_codigo" in cdia_df.columns:
+        if dia_param:
+            oportunidades = clientes_dia_map.get(cn, {"sin_compra": 0})["sin_compra"]
+        elif not cdia_df.empty and "estado_cliente" in cdia_df.columns and "vendedor_codigo" in cdia_df.columns:
             opv = cdia_df[cdia_df["vendedor_codigo"].astype(str).apply(clean_code) == cn]
             omask = opv["estado_cliente"].astype(str).str.lower().str.contains("sin", na=False)
             if cod.upper() == "V3" and "segmento_operativo" in opv.columns:
@@ -518,6 +626,17 @@ def dashboard():
 # ====== CLIENTES, ALERTAS ======
 @app.route("/api/clientes")
 def clientes():
+    dia_param = request.args.get("dia", "").strip()
+    if dia_param:
+        df = _clientes_por_dia(dia_param)
+        if df is None or df.empty:
+            return jsonify([])
+        records = df.to_dict(orient="records")
+        for rec in records:
+            for k, v in rec.items():
+                if isinstance(v, float) and not math.isfinite(v):
+                    rec[k] = None
+        return jsonify(records)
     df = read_csv(DATASETS / "clientes_dia.csv")
     if df.empty: return jsonify([])
     df.columns = [c.lstrip("﻿") for c in df.columns]
