@@ -957,17 +957,17 @@ function gDashboard(p){
   const onceMarcas=(D.onceTit?.marcas||[]);
   if(onceMarcas.length){
     right+=`<div class="card">
-      <div class="card-hd"><span class="card-title">🏅 11 Titulares · Cajas vs Objetivo</span><span class="chip">${onceMarcas.length} marcas</span></div>
+      <div class="card-hd"><span class="card-title">🏅 11 Titulares · CCC vs Objetivo</span><span class="chip">${onceMarcas.length} marcas</span></div>
       <div class="card-body nop">
         <table class="tbl">
-          <thead><tr><th>Marca</th><th style="text-align:right">Cajas</th><th style="text-align:right">Objetivo</th><th style="text-align:right">Avance</th><th style="min-width:80px"></th></tr></thead>
+          <thead><tr><th>Marca</th><th style="text-align:right">CCC</th><th style="text-align:right">Objetivo</th><th style="text-align:right">Avance</th><th style="min-width:80px"></th></tr></thead>
           <tbody>${onceMarcas.map(m=>{
-            const cajas=m.cajas_mes||0, obj=m.objetivo_cajas||0, pctObj=m.pct_objetivo;
-            const pctBar=obj?Math.min(Math.round(cajas/obj*100),100):0;
+            const ccc=m.ccc||0, obj=m.objetivo_ccc||0, pctObj=m.pct_objetivo;
+            const pctBar=obj?Math.min(Math.round(ccc/obj*100),100):0;
             const cl=pctBar>=80?'ok':pctBar>=50?'wn':'bd';
             return `<tr>
               <td style="font-size:12px;font-weight:600;">${m.marca}</td>
-              <td style="text-align:right;font-size:12px;">${cajas.toLocaleString('es-AR')}</td>
+              <td style="text-align:right;font-size:12px;">${ccc.toLocaleString('es-AR')}</td>
               <td style="text-align:right;font-size:12px;color:var(--text3);">${obj||'–'}</td>
               <td style="text-align:right;"><span class="chip ${cl}" style="font-size:9px;">${pctObj!=null?pctObj+'%':'–'}</span></td>
               <td><div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${pctBar}%"></div></div></td>

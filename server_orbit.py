@@ -1151,45 +1151,88 @@ def gerencia_ccc_empresa():
 # ====== GERENCIA: 11 TITULARES POR MARCA ======
 @app.route("/api/gerencia/once_titulares")
 def gerencia_once_titulares():
-    """11 Titulares acumulados en el mes por marca a nivel empresa (cartera completa).
-    Fuente: mod_11t_acum.csv (todas las zonas, no solo la del día).
-    Excluye V2, V5, V20. Incluye objetivo por marca desde objetivo 11T.xlsx."""
-    df = read_csv(DATASETS / "mod_11t_acum.csv")
-    if df.empty:
-        return jsonify({"generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "marcas": []})
+    """11 Titulares: CCC real vs objetivo CCC.
+    Fuente CCC: ventas_acumulada.csv (clientes únicos con ImporteNetoItem > 0).
+    Fuente objetivo: objetivo 11T.xlsx (columna Objetivo = nro de clientes).
+    Excluye V2, V5, V20."""
+    vac_path = INPUTS / "ventas_acumulada.csv"
+    if not vac_path.exists():
+        return jsonify({"error": "ventas_acumulada.csv no encontrado", "marcas": []}), 500
 
-    df.columns = [c.lstrip("﻿") for c in df.columns]
-    for col in ["vendedor_codigo", "tiene_flag", "falta_flag", "cant_base_acum"]:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
+    try:
+        vac = pd.read_csv(vac_path, sep=";", encoding="latin1", low_memory=False)
+    except Exception as e:
+        return jsonify({"error": str(e), "marcas": []}), 500
 
-    df = df[~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
+    # Fix decimal comma in ImporteNetoItem
+    vac["ImporteNetoItem"] = pd.to_numeric(
+        vac["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
+    vac = vac[~vac["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS)]
+    vac = vac[vac["ImporteNetoItem"] > 0]
 
-    if "marca_objetivo" not in df.columns or "tiene_flag" not in df.columns:
-        return jsonify({"error": "Columnas esperadas no encontradas", "columnas": list(df.columns)}), 500
+    # Brand alias lookup: Marca column (upper) → marca_objetivo
+    _MARCA_LOOKUP = {
+        "ALMA MORA": "ALMA MORA", "ALARIS": "ALARIS", "TRAPICHE ALARIS": "ALARIS",
+        "DON DAVID": "DON DAVID", "DADA": "DADA", "LOS ARBOLES": "LOS ARBOLES",
+        "FINCA LAS MORAS": "FINCA LAS MORAS", "F LAS MORAS": "FINCA LAS MORAS",
+        "TRAPICHE RESERVA": "TRAPICHE RESERVA",
+        "FOND DE CAVE": "FOND DE CAVE", "FOND CAVE": "FOND DE CAVE",
+        "CAZADOR": "CAZADOR", "ANTARES": "ANTARES",
+        "GORDON'S FLAVOURS": "GORDON'S FLAVOURS", "GORDONS FLAVOURS": "GORDON'S FLAVOURS",
+        "GORDON'S": "GORDON'S FLAVOURS", "GORDONS": "GORDON'S FLAVOURS",
+        "GORDON S": "GORDON'S FLAVOURS",
+        "SMIRNOFF": "SMIRNOFF FLAVOURS",           # bottle variants (DO etc.)
+        "SMIRNOFF FLAVOURS": "SMIRNOFF FLAVOURS",
+        "SMIRNOFF ICE FLAVOURS": "SMIRNOFF ICE",   # SMF ICE cans
+        "SMIRNOFF ICE": "SMIRNOFF ICE",
+        "JW": "JW BLACK", "JW BLACK": "JW BLACK", "JW RED": "JW RED",
+        "MASCOTA": "MASCOTA", "LA MASCOTA": "MASCOTA",
+        "NC ESPUMANTES": "NC ESPUMANTES", "NAVARRO CORREAS": "NC ESPUMANTES",
+        "TRAPICHE MEDALLA": "TRAPICHE MEDALLA", "GRAN MEDALLA": "TRAPICHE MEDALLA",
+    }
+    # Keyword lookup for Articulo when Marca is broken (#¿NOMBRE? / NaN)
+    _ART_KW = [
+        ("SMIRNOFF ICE", "SMIRNOFF ICE"), ("SMF ICE", "SMIRNOFF ICE"),
+        ("SMIRNOFF", "SMIRNOFF FLAVOURS"), ("GORDON", "GORDON'S FLAVOURS"),
+        ("ANTARES", "ANTARES"), ("CAZADOR", "CAZADOR"),
+        ("FOND DE CAVE", "FOND DE CAVE"), ("ALMA MORA", "ALMA MORA"),
+        ("LOS ARBOLES", "LOS ARBOLES"), ("DADA", "DADA"),
+        ("FINCA LAS MORAS", "FINCA LAS MORAS"), ("F.LAS MORAS", "FINCA LAS MORAS"),
+        ("DON DAVID", "DON DAVID"), ("ALARIS", "ALARIS"),
+        ("TRAPICHE RESERVA", "TRAPICHE RESERVA"),
+        ("JW BLACK", "JW BLACK"), ("JW RED", "JW RED"),
+    ]
 
-    # Todas las marcas (incluso con 0 cobertura) para que aparezcan en el objetivo
-    todas = (df.groupby("marca_objetivo", as_index=False)
-               .agg(cartera_total=("cliente_id", "nunique")))
-    tiene = df[df["tiene_flag"] == 1]
-    con_compra = (tiene.groupby("marca_objetivo", as_index=False)
-                       .agg(clientes_con_compra=("cliente_id", "nunique"),
-                            botellas_mes=("cant_base_acum", "sum")))
-    resumen = todas.merge(con_compra, on="marca_objetivo", how="left")
-    resumen["clientes_con_compra"] = resumen["clientes_con_compra"].fillna(0).astype(int)
-    resumen["botellas_mes"] = resumen["botellas_mes"].fillna(0)
-    resumen = resumen.sort_values("clientes_con_compra", ascending=False)
+    vac["marca_upper"] = vac["Marca"].astype(str).str.upper().str.strip()
+    vac["marca_objetivo"] = vac["marca_upper"].map(_MARCA_LOOKUP)
 
-    # Cargar objetivos desde objetivo 11T.xlsx
+    # Fill unresolved rows via Articulo keyword search
+    unresolved = vac["marca_objetivo"].isna()
+    if unresolved.any():
+        for kw, mo in _ART_KW:
+            still = vac["marca_objetivo"].isna() & unresolved
+            if not still.any():
+                break
+            hits = vac.loc[still, "Articulo"].astype(str).str.upper().str.contains(kw, regex=False, na=False)
+            vac.loc[still & hits, "marca_objetivo"] = mo
+
+    # CCC per brand = unique clients
+    ccc_map = (vac[vac["marca_objetivo"].notna()]
+               .groupby("marca_objetivo")["Cliente"]
+               .nunique()
+               .to_dict())
+
+    # Load objectives (column Objetivo = target CCC clients)
     _OBJ_ALIAS = {
         "ALMA MORA": "ALMA MORA", "TRAPICHE RESERVA": "TRAPICHE RESERVA",
-        "FINCA LAS MORAS": "FINCA LAS MORAS", "ALARIS": "ALARIS",
-        "DON DAVID": "DON DAVID", "DADA": "DADA",
+        "FINCA LAS MORAS": "FINCA LAS MORAS", "FINCA LAS MORAS": "FINCA LAS MORAS",
+        "ALARIS": "ALARIS", "DON DAVID": "DON DAVID", "DADA": "DADA",
         "SIMRNOFF FLAVORS": "SMIRNOFF FLAVOURS", "SMIRNOFF FLAVORS": "SMIRNOFF FLAVOURS",
         "SMIRNOFF FLAVOURS": "SMIRNOFF FLAVOURS",
         "LOS ARBOLES": "LOS ARBOLES", "ANTARES": "ANTARES",
         "SMIRNOFF ICE": "SMIRNOFF ICE", "SMF ICE": "SMIRNOFF ICE",
         "GORDONS FLAVOURS": "GORDON'S FLAVOURS", "GORDONS FLAVORS": "GORDON'S FLAVOURS",
+        "GORDON'S FLAVOURS": "GORDON'S FLAVOURS",
     }
     obj_map = {}
     try:
@@ -1199,25 +1242,29 @@ def gerencia_once_titulares():
             raw = str(row.iloc[1]).upper().strip()
             marca_key = _OBJ_ALIAS.get(raw, raw)
             try:
-                obj_map[marca_key] = float(row.iloc[2])
+                obj_map[marca_key] = int(float(row.iloc[2]))
             except (ValueError, TypeError):
                 pass
     except Exception:
         pass
 
-    marcas = resumen.rename(columns={"marca_objetivo": "marca"}).to_dict(orient="records")
-    for m in marcas:
-        botellas = float(m["botellas_mes"] or 0)
-        cajas = round(botellas / 6, 1)
-        obj = obj_map.get(m["marca"], None)
-        m["botellas_mes"]   = round(botellas, 0)
-        m["cajas_mes"]      = cajas
-        m["objetivo_cajas"] = obj
-        m["pct_objetivo"]   = round(cajas / obj * 100, 1) if obj else None
+    # Build result ordered by CCC desc, only brands with objectives
+    marcas = []
+    for marca_obj in sorted(obj_map.keys(), key=lambda x: ccc_map.get(x, 0), reverse=True):
+        ccc = ccc_map.get(marca_obj, 0)
+        obj = obj_map[marca_obj]
+        pct = round(ccc / obj * 100, 1) if obj else None
+        marcas.append({
+            "marca": marca_obj,
+            "ccc": ccc,
+            "objetivo_ccc": obj,
+            "pct_objetivo": pct,
+        })
 
     return jsonify({
         "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "total_marcas_con_compra": len(marcas),
+        "fuente": "ventas_acumulada.csv",
+        "total_marcas": len(marcas),
         "marcas": marcas,
     })
 

@@ -1,5 +1,24 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-23 — 11T: CCC real vs objetivo CCC (ventas_acumulada.csv)
+
+**Archivos tocados:**
+- `server_orbit.py` — `gerencia_once_titulares()`: reescrito completo. Fuente cambia de `mod_11t_acum.csv` (botellas/cajas) a `ventas_acumulada.csv` (clientes únicos). Fix decimal comma en ImporteNetoItem (coma → punto antes de to_numeric). Normalización por Marca column (lookup dict) + fallback por Articulo (keyword search) para filas con Marca rota (#¿NOMBRE?/NaN). CCC = nunique clientes por marca_objetivo. Objetivo desde `objetivo 11T.xlsx` (columna Objetivo = nro clientes, no cajas). Resultado: `ccc`, `objetivo_ccc`, `pct_objetivo`.
+- `PAV MATINAL PE_A FLOR/portal.html` — Tabla 11T: "Cajas vs Objetivo" → "CCC vs Objetivo". Variables `cajas_mes`/`objetivo_cajas` → `ccc`/`objetivo_ccc`.
+
+**Resultados validados (endpoint `/api/gerencia/once_titulares`):**
+- fuente: ventas_acumulada.csv | 11 marcas
+- ALMA MORA CCC=638 / obj=639 = 99.8% ✓
+- DADA 533/467 = 114.1% ✓
+- ALARIS 516/440 = 117.3% ✓
+- SMIRNOFF ICE 454/400 = 113.5% (dedup "Smirnoff Ice" + "Smirnoff Ice Flavours") ✓
+- GORDON'S FLAVOURS 109/122 = 89.3% ⚠ (único bajo objetivo)
+
+**Notas técnicas:**
+- ImporteNetoItem usa coma decimal en CSV → `str.replace(',','.')` antes de `to_numeric`
+- Marcas rotas (#¿NOMBRE?) resueltas por Articulo: ANTARES=225, CAZADOR=199, GORDON=109
+- Smirnoff split: "Smirnoff" (botella DO) → SMIRNOFF FLAVOURS; "Smirnoff Ice Flavours" (lata SMF ICE) + "Smirnoff Ice" → SMIRNOFF ICE
+
 ## 2026-05-23 — Selector de días: filtra todos los paneles por día seleccionado
 
 **Archivos tocados:**
