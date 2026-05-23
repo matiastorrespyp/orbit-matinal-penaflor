@@ -138,8 +138,8 @@ VENDEDORES_ACTIVOS_INOV = [3, 4, 6, 7, 8, 9, 10]
 # ─────────────────────────────────────────────
 
 def cargar_ventas_acum():
-    p = BASE / "01_INPUTS" / "ventas_acumulada.csv"
-    df = pd.read_csv(p, encoding="latin1", sep=None, engine="python")
+    p = BASE / "01_INPUTS" / "ventas.csv"
+    df = pd.read_csv(p, encoding="latin1", sep=";", engine="python")
     df["CantBase"] = pd.to_numeric(df["CantBase"], errors="coerce").fillna(0)
     df["ImporteNetoItem"] = (
         df["ImporteNetoItem"].astype(str)

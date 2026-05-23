@@ -1,5 +1,20 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-23 — fix(sellout): fuente pipeline corregida a ventas.csv + datasets regenerados
+
+**Archivos tocados:**
+- `generar_datasets_acum.py` — `cargar_ventas_acum()`: `ventas_acumulada.csv` → `ventas.csv` (sep=";" explícito). Pipeline regenerado: 7 datasets actualizados.
+- `04_DATASETS_ORBIT/mod_sellout_categoria.csv` — regenerado con fuente correcta.
+- `04_DATASETS_ORBIT/mod_11t_acum.csv`, `mod_cobertura_acum.csv`, `mod_innovaciones_segmento.csv`, `mod_innovaciones_plan_as.csv`, `mod_acciones_ranking.csv`, `mod_planes_as.csv` — ídem.
+
+**Validación:**
+- Cerveza Artesanal: 911 litros, 26 clientes ✓ (antes: 4776 litros, 225 clientes con ventas_acumulada)
+- RTD (S): 209512 L, 287 clientes (antes: 302553 L, 476)
+- Vinos del año: 48753 L, 1041 clientes (antes: 122764 L, 2023)
+- Endpoint `/api/gerencia/sellout_categoria`: todos los datos correctos
+
+**Causa raíz:** `ventas_acumulada.csv` contiene datos desde abril 1 (8646 filas); `ventas.csv` es el período comercial actual (3579 filas). El usuario confirmó que ventas.csv = fuente correcta.
+
 ## 2026-05-23 — fix(11T): fuente corregida a ventas.csv (era ventas_acumulada.csv)
 
 **Archivos tocados:**
