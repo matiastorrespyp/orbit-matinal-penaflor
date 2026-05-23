@@ -1885,6 +1885,8 @@ def vendedor_planes_as(vid):
 
 
 # ====== SELLOUT POR CATEGORÍA ======
+# REGLA FIJA: Sellout usa ventas.csv (período comercial actual).
+# NO cambiar a ventas_acumulada.csv. Validado por usuario 2026-05-23.
 @app.route("/api/gerencia/sellout_categoria")
 def gerencia_sellout_categoria():
     df = read_csv(DATASETS / "mod_sellout_categoria.csv")
