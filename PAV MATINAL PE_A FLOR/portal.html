@@ -94,8 +94,31 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
   border-radius:var(--r-xl); padding:44px 40px;
   box-shadow:0 2px 0 rgba(255,255,255,0.04) inset, 0 32px 80px rgba(0,0,0,0.65);
 }
-.ln-logo { font-family:var(--f-dis); font-size:40px; font-weight:800; letter-spacing:-1.5px; text-align:center; margin-bottom:4px; }
-.ln-logo span { color:var(--mg); }
+.ln-logo { text-align:center; margin-bottom:8px; }
+.ln-logo-img {
+  width:90px; height:auto; display:block; margin:0 auto;
+  animation: orbitFloat 3s ease-in-out infinite;
+  transform-origin: center center;
+  perspective: 600px;
+}
+.ln-logo-img.spinning {
+  animation: drumSpin 0.65s cubic-bezier(.3,0,.7,1) forwards !important;
+}
+@keyframes orbitFloat {
+  0%,100% { transform: translateY(0px); }
+  50%      { transform: translateY(-12px); }
+}
+@keyframes drumSpin {
+  0%   { transform: rotateY(0deg)   translateY(-6px); }
+  25%  { transform: rotateY(180deg) translateY(-10px); }
+  50%  { transform: rotateY(360deg) translateY(-8px); }
+  75%  { transform: rotateY(540deg) translateY(-4px); }
+  100% { transform: rotateY(720deg) translateY(0px); }
+}
+/* sidebar logos */
+.gs-pyp-logo { width:100%; max-width:116px; height:auto; display:block; margin:0 auto 6px; object-fit:contain; }
+.gs-orbit-logo { width:52px; height:auto; display:block; margin:10px auto 0; opacity:0.55; filter:brightness(1.1); }
+.gs-foot-user { display:flex; align-items:center; gap:9px; width:100%; }
 .ln-tag { text-align:center; color:var(--text3); font-size:11px; letter-spacing:2px; text-transform:uppercase; margin-bottom:34px; }
 .ln-div { height:1px; background:var(--b); margin-bottom:26px; }
 .ln-field { margin-bottom:16px; }
@@ -172,8 +195,8 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
   font-size:9px; font-weight:700; padding:2px 5px; border-radius:999px; min-width:17px; text-align:center;
 }
 .gs-foot {
-  padding:12px 14px; border-top:1px solid var(--b);
-  display:flex; align-items:center; gap:9px;
+  padding:12px 14px 16px; border-top:1px solid var(--b);
+  display:flex; flex-direction:column; align-items:stretch; gap:0;
 }
 .gs-av {
   width:30px; height:30px; border-radius:50%; flex-shrink:0;
@@ -555,12 +578,12 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 <div id="loginScreen">
   <div class="ln-wrap">
     <div class="ln-card">
-      <div class="ln-logo">ORB<span>IT</span></div>
+      <div class="ln-logo"><img id="orbitLogoLogin" src="orbit_logo.png" alt="ORBIT" class="ln-logo-img"></div>
       <div class="ln-tag">Peñaflor · PAV Matinal</div>
       <div class="ln-div"></div>
       <div class="ln-field">
         <label>Usuario</label>
-        <select id="userSelect">
+        <select id="userSelect" onchange="triggerDrumSpin()">
           <option value="">Seleccionar...</option>
           <option value="v3">V3 · Nadia Gambino</option>
           <option value="v4">V4 · Angel Gribaudo</option>
@@ -586,8 +609,8 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 <div id="appG">
   <nav class="gs">
     <div class="gs-brand">
-      <div class="gs-logo">ORB<span>IT</span></div>
-      <div class="gs-sub">Peñaflor · PAV Matinal</div>
+      <img src="pyp_logo.png" alt="Peñaflor" class="gs-pyp-logo">
+      <div class="gs-sub" style="text-align:center;letter-spacing:2px;">PAV PEÑAFLOR</div>
     </div>
     <div class="gs-nav">
       <div class="gs-sec">Gerencia</div>
@@ -606,8 +629,11 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       <div class="gs-item" data-sc="acciones_comerciales" onclick="gSw('acciones_comerciales',this)"><span class="gs-ico">💰</span>Acciones Comerciales</div>
     </div>
     <div class="gs-foot">
-      <div class="gs-av" id="gAv">G</div>
-      <div class="gs-um"><b id="gName">Gerencia</b><span id="gRol">Acceso completo</span></div>
+      <div class="gs-foot-user">
+        <div class="gs-av" id="gAv">G</div>
+        <div class="gs-um"><b id="gName">Gerencia</b><span id="gRol">Acceso completo</span></div>
+      </div>
+      <img src="orbit_logo.png" alt="ORBIT" class="gs-orbit-logo">
     </div>
   </nav>
 
@@ -691,6 +717,40 @@ const ini   = n => (n||'').split(' ').filter(Boolean).map(s=>s[0]).slice(0,2).jo
 const clamp = (v,a,b) => Math.max(a, Math.min(b, v||0));
 const pcol  = p => p>=70 ? 'ok' : p>=40 ? 'wn' : 'bd';
 const safe  = async url => { try { const r=await fetch(url); return r.ok ? await r.json() : null; } catch{ return null; } };
+
+/* ── logo drum animation ── */
+function playDrumClick(delay=0){
+  setTimeout(()=>{
+    try{
+      const ctx=new(window.AudioContext||window.webkitAudioContext)();
+      const sr=ctx.sampleRate, dur=0.12;
+      const buf=ctx.createBuffer(1,Math.floor(sr*dur),sr);
+      const d=buf.getChannelData(0);
+      for(let i=0;i<d.length;i++){
+        const t=i/sr;
+        d[i]=(Math.random()*2-1)*Math.exp(-t*35)*0.7
+             +Math.sin(2*Math.PI*900*t)*Math.exp(-t*50)*0.25
+             +Math.sin(2*Math.PI*1800*t)*Math.exp(-t*70)*0.1;
+      }
+      const src=ctx.createBufferSource();
+      src.buffer=buf;
+      const flt=ctx.createBiquadFilter();
+      flt.type='bandpass'; flt.frequency.value=750; flt.Q.value=0.9;
+      src.connect(flt); flt.connect(ctx.destination);
+      src.start();
+      src.onended=()=>ctx.close();
+    }catch(e){}
+  },delay);
+}
+function triggerDrumSpin(){
+  const img=document.getElementById('orbitLogoLogin');
+  if(!img) return;
+  img.classList.remove('spinning');
+  void img.offsetWidth; // reflow para reiniciar animación
+  img.classList.add('spinning');
+  [0,110,220,330,440].forEach(playDrumClick);
+  img.addEventListener('animationend',()=>img.classList.remove('spinning'),{once:true});
+}
 
 /* ── login ── */
 async function doLogin(){
