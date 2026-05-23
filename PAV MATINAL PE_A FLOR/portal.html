@@ -622,6 +622,10 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
         <span class="gs-ico">⚡</span>Alertas
         <span class="gs-badge" id="gAlertBadge" style="display:none">0</span>
       </div>
+      <div class="gs-item" data-sc="dormidos" onclick="gSw('dormidos',this)">
+        <span class="gs-ico">💤</span>Dormidos
+        <span class="gs-badge" id="gDormBadge" style="display:none;background:var(--wn)">0</span>
+      </div>
       <div class="gs-sec">Productos</div>
       <div class="gs-item" data-sc="innovaciones"        onclick="gSw('innovaciones',this)"><span class="gs-ico">🚀</span>Innovaciones</div>
       <div class="gs-item" data-sc="planes_as"           onclick="gSw('planes_as',this)"><span class="gs-ico">🏆</span>Planes AS</div>
@@ -759,7 +763,7 @@ async function loadAll(){
     if(plasASV)  D.planes_as_v=plasASV;
   }
   if(userData?.rol==='gerencia'){
-    const [cccEmp,onceTit,inov,cobAcum,t11Acum,inovTot,plasAS,sellCat,accRank]=await Promise.all([
+    const [cccEmp,onceTit,inov,cobAcum,t11Acum,inovTot,plasAS,sellCat,accRank,dormidos]=await Promise.all([
       safe('/api/gerencia/ccc_empresa'),
       safe('/api/gerencia/once_titulares'),
       safe('/api/gerencia/innovaciones_segmento'),
@@ -768,7 +772,8 @@ async function loadAll(){
       safe('/api/gerencia/innovaciones_total'),
       safe('/api/gerencia/planes_as'),
       safe('/api/gerencia/sellout_categoria'),
-      safe('/api/gerencia/acciones_ranking')
+      safe('/api/gerencia/acciones_ranking'),
+      safe('/api/gerencia/alertas_caida')
     ]);
     if(cccEmp)   D.cccEmpresa=cccEmp;
     if(onceTit)  D.onceTit=onceTit;
@@ -779,6 +784,7 @@ async function loadAll(){
     if(plasAS)   D.planes_as_g=plasAS;
     if(sellCat)  D.sellout_cat=sellCat;
     if(accRank)  D.acc_rank=accRank;
+    if(dormidos) D.dormidos=dormidos;
   }
 }
 
@@ -815,6 +821,8 @@ function showApp(){
   }
   const altasN=(D.al||[]).filter(a=>a.prioridad==='alta').length;
   if(altasN){ const b=document.getElementById('gAlertBadge'); b.textContent=altasN; b.style.display=''; }
+  const dormN=D.dormidos?.resumen?.total_dormidos||0;
+  if(dormN){ const b=document.getElementById('gDormBadge'); if(b){ b.textContent=dormN; b.style.display='inline-flex'; } }
   if(userData.rol==='gerencia'){
     document.getElementById('appG').style.display='flex';
     document.getElementById('gAv').textContent=ini(userData.nombre)||'G';
@@ -870,6 +878,7 @@ function gRender(){
   else if(gScreen==='innovaciones')          gInnovaciones(p);
   else if(gScreen==='planes_as')             gPlanesAS(p);
   else if(gScreen==='acciones_comerciales')  gAccionesComerciales(p);
+  else if(gScreen==='dormidos')              gDormidos(p);
 }
 
 /* — Dashboard — */
@@ -1857,6 +1866,102 @@ function gAccionesComerciales(p){
   p.innerHTML=html;
 }
 
+
+/* ════ CLIENTES DORMIDOS ════ */
+function gDormidos(p){
+  const dat=D.dormidos;
+  const fmtARS=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
+  let html=`<div class="gph">
+    <div><div class="gph-title">Clientes Dormidos</div>
+    <div class="gph-sub">Compraron en el período anterior · sin compra en el período actual</div></div>
+  </div>`;
+  if(!dat||!dat.resumen){
+    html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">💤</div><p>Sin datos disponibles.</p></div></div></div>`;
+    p.innerHTML=html; return;
+  }
+  const res=dat.resumen, pv=dat.por_vendedor||[], det=dat.detalle||[];
+
+  // Actualizar badge en sidebar
+  const badge=document.getElementById('gDormBadge');
+  if(badge){ badge.textContent=res.total_dormidos; badge.style.display=res.total_dormidos>0?'inline-flex':'none'; }
+
+  // KPI cards
+  const maxRiesgo=Math.max(...pv.map(v=>v.importe_en_riesgo),1);
+  html+=`<div class="krow" style="margin-bottom:16px;">
+    <div class="kcard wn">
+      <div class="kl">Clientes dormidos</div>
+      <div class="kv" style="font-size:22px;">${res.total_dormidos}</div>
+      <div class="ks" style="font-size:10px;margin-top:3px;">sin compra desde ${res.inicio_periodo_actual}</div>
+    </div>
+    <div class="kcard bd">
+      <div class="kl">Importe en riesgo (acum. período anterior)</div>
+      <div class="kv" style="font-size:22px;">$${fmtARS(res.importe_en_riesgo)}</div>
+      <div class="ks" style="font-size:10px;margin-top:3px;">suma compras período ant. de estos clientes</div>
+    </div>
+    <div class="kcard info">
+      <div class="kl">Período actual</div>
+      <div class="kv" style="font-size:14px;">${res.inicio_periodo_actual} → ${res.fin_periodo_actual}</div>
+    </div>
+  </div>`;
+
+  // Tabla resumen por vendedor
+  html+=`<div class="card" style="margin-bottom:14px;">
+    <div class="card-hd"><span class="card-title">💤 Dormidos por Vendedor</span></div>
+    <div class="card-body nop">
+      <table class="tbl"><thead><tr>
+        <th>Vendedor</th>
+        <th style="text-align:right">Dormidos</th>
+        <th>Riesgo $</th>
+        <th style="min-width:130px">Peso relativo</th>
+        <th>Top 3 clientes</th>
+      </tr></thead>
+      <tbody>${pv.map(v=>{
+        const pct=Math.round(v.importe_en_riesgo/maxRiesgo*100);
+        const top3=v.top_clientes.slice(0,3).map(c=>`<div style="font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">${c.cliente_nombre} <span style="color:var(--text3)">${c.dias_sin_compra}d · $${fmtARS(c.importe_anterior)}</span></div>`).join('');
+        return `<tr>
+          <td><b>${v.vendedor_codigo}</b> <span style="font-size:11px;color:var(--text3)">${v.vendedor_nombre}</span></td>
+          <td style="text-align:right"><span class="chip wn">${v.dormidos}</span></td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums"><b>$${fmtARS(v.importe_en_riesgo)}</b></td>
+          <td><div class="bar"><div class="bar-f wn" style="width:${pct}%"></div></div></td>
+          <td>${top3}</td>
+        </tr>`;
+      }).join('')}</tbody></table>
+    </div>
+  </div>`;
+
+  // Tabla detalle top 100 por importe
+  const topDet=det.slice(0,100);
+  const maxImp=Math.max(...topDet.map(c=>c.importe_anterior),1);
+  html+=`<div class="card">
+    <div class="card-hd">
+      <span class="card-title">📋 Detalle clientes (top ${topDet.length} por importe)</span>
+      <span class="chip">${det.length} total</span>
+    </div>
+    <div class="card-body nop">
+      <table class="tbl"><thead><tr>
+        <th>Cliente</th>
+        <th>Vendedor</th>
+        <th style="text-align:right">Últ. compra</th>
+        <th style="text-align:right">Días s/compra</th>
+        <th>Importe ant. $</th>
+        <th style="min-width:100px"></th>
+      </tr></thead>
+      <tbody>${topDet.map(c=>{
+        const pct=Math.round(c.importe_anterior/maxImp*100);
+        const urgCol=c.dias_sin_compra>=45?'bd':c.dias_sin_compra>=30?'wn':'info';
+        return `<tr>
+          <td><span style="font-size:10px;color:var(--text3)">[${c.cliente_id}]</span> ${c.cliente_nombre}</td>
+          <td style="font-size:11px;">${c.vendedor_codigo} · <span style="color:var(--text3)">${c.vendedor_nombre}</span></td>
+          <td style="text-align:right;font-size:11px;">${c.ultima_compra}</td>
+          <td style="text-align:right"><span class="chip ${urgCol}">${c.dias_sin_compra}d</span></td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums"><b>$${fmtARS(c.importe_anterior)}</b></td>
+          <td><div class="bar" style="height:5px;"><div class="bar-f ${urgCol}" style="width:${pct}%"></div></div></td>
+        </tr>`;
+      }).join('')}</tbody></table>
+    </div>
+  </div>`;
+  p.innerHTML=html;
+}
 
 /* ════ PLANES AS VENDEDOR ════ */
 function vPlanesAS(){

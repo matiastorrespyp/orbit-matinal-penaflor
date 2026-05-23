@@ -1958,6 +1958,120 @@ def gerencia_acciones_ranking():
     })
 
 
+# ====== ALERTAS CAÍDA: clientes dormidos ======
+@app.route("/api/gerencia/alertas_caida")
+def gerencia_alertas_caida():
+    """Clientes que compraron en período anterior pero NO en el período actual.
+    Período anterior: fechas en historial_ventas_cliente.csv antes del inicio de ventas.csv.
+    Período actual: ventas.csv (ImporteNetoItem > 0).
+    Excluye V2, V5, V20.
+    """
+    EXCLUIR = [2, 5, 20]
+    HIST_PATH = BASE / "02_HISTORY" / "historial_ventas_cliente.csv"
+    VTAS_PATH = INPUTS / "ventas.csv"
+
+    if not HIST_PATH.exists() or not VTAS_PATH.exists():
+        return jsonify({"error": "Fuente no disponible"}), 404
+
+    try:
+        hc = pd.read_csv(HIST_PATH, encoding="utf-8-sig", sep=None, engine="python")
+        hc["fecha"] = pd.to_datetime(hc["fecha_comprobante"], errors="coerce")
+        hc = hc[~hc["vendedor_codigo"].isin(EXCLUIR) & hc["importe_neto"].notna()].copy()
+        hc = hc[hc["importe_neto"] > 0]
+
+        v = pd.read_csv(VTAS_PATH, encoding="latin1", sep=";", engine="python")
+        v["fecha"] = pd.to_datetime(v["FechaComprobante"], dayfirst=True, errors="coerce")
+        v["importe"] = pd.to_numeric(
+            v["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce"
+        )
+        v = v[~v["CodVendedor"].isin(EXCLUIR) & (v["importe"] > 0)]
+
+        inicio_actual = v["fecha"].min()
+        if pd.isna(inicio_actual):
+            return jsonify({"error": "ventas.csv sin fechas válidas"}), 500
+
+        # Período anterior: historial antes del inicio del período actual
+        hc_prev = hc[hc["fecha"] < inicio_actual].copy()
+        clientes_actuales = set(v["Cliente"].unique())
+
+        dormidos_df = hc_prev[~hc_prev["cliente_id"].isin(clientes_actuales)]
+        if dormidos_df.empty:
+            return jsonify({
+                "resumen": {"total_dormidos": 0, "importe_en_riesgo": 0},
+                "por_vendedor": [], "detalle": []
+            })
+
+        hoy = pd.Timestamp.today().normalize()
+
+        resumen_cli = (
+            dormidos_df
+            .groupby(["cliente_id", "cliente_nombre", "vendedor_codigo", "vendedor_nombre"])
+            .agg(ultima_compra=("fecha", "max"), importe_anterior=("importe_neto", "sum"))
+            .reset_index()
+        )
+        resumen_cli["dias_sin_compra"] = (hoy - resumen_cli["ultima_compra"]).dt.days
+        resumen_cli["vendedor_codigo_str"] = "V" + resumen_cli["vendedor_codigo"].astype(str)
+        resumen_cli = resumen_cli.sort_values("importe_anterior", ascending=False)
+
+        # Resumen por vendedor
+        por_vend = (
+            resumen_cli.groupby(["vendedor_codigo_str", "vendedor_nombre"])
+            .agg(dormidos=("cliente_id", "count"), importe_en_riesgo=("importe_anterior", "sum"))
+            .reset_index()
+            .rename(columns={"vendedor_codigo_str": "vendedor_codigo"})
+            .sort_values("importe_en_riesgo", ascending=False)
+        )
+        top_por_vend = []
+        for _, row in por_vend.iterrows():
+            vc = row["vendedor_codigo"]
+            top = resumen_cli[resumen_cli["vendedor_codigo_str"] == vc].head(5)
+            top_por_vend.append({
+                "vendedor_codigo": vc,
+                "vendedor_nombre": row["vendedor_nombre"],
+                "dormidos": int(row["dormidos"]),
+                "importe_en_riesgo": round(float(row["importe_en_riesgo"]), 0),
+                "top_clientes": [
+                    {
+                        "cliente_id": int(r["cliente_id"]),
+                        "cliente_nombre": r["cliente_nombre"],
+                        "ultima_compra": r["ultima_compra"].strftime("%Y-%m-%d"),
+                        "importe_anterior": round(float(r["importe_anterior"]), 0),
+                        "dias_sin_compra": int(r["dias_sin_compra"]),
+                    }
+                    for _, r in top.iterrows()
+                ],
+            })
+
+        detalle = [
+            {
+                "cliente_id": int(r["cliente_id"]),
+                "cliente_nombre": r["cliente_nombre"],
+                "vendedor_codigo": r["vendedor_codigo_str"],
+                "vendedor_nombre": r["vendedor_nombre"],
+                "ultima_compra": r["ultima_compra"].strftime("%Y-%m-%d"),
+                "importe_anterior": round(float(r["importe_anterior"]), 0),
+                "dias_sin_compra": int(r["dias_sin_compra"]),
+            }
+            for _, r in resumen_cli.iterrows()
+        ]
+
+        total_riesgo = float(resumen_cli["importe_anterior"].sum())
+        return jsonify({
+            "resumen": {
+                "total_dormidos": len(resumen_cli),
+                "importe_en_riesgo": round(total_riesgo, 0),
+                "inicio_periodo_actual": inicio_actual.strftime("%Y-%m-%d"),
+                "fin_periodo_actual": v["fecha"].max().strftime("%Y-%m-%d"),
+                "fuente_historial": "historial_ventas_cliente.csv",
+                "fuente_actual": "ventas.csv",
+            },
+            "por_vendedor": top_por_vend,
+            "detalle": detalle,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ====== MAIN ======
 if __name__ == "__main__":
     init_db()
