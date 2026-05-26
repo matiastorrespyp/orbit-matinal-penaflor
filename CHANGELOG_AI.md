@@ -1,5 +1,31 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-26 — fix(dashboard): tendencia_pct usa ERP en lugar de recálculo dinámico
+
+**Problema encontrado en auditoría:**
+El servidor recalculaba `tendencia_pct = (acum / corridos_hoy) * total / obj * 100`
+usando `corridos_hoy = 20` (fecha actual 26/5), pero el acumulado es de fecha_datos = 23/5
+(19 días hábiles). El divisor incorrecto inflaba la tendencia +0.73 a +1.78 pp vs ERP.
+Caso crítico: V9 SANCHEZ aparecía en portal como 100.11% (objetivo cumplido) cuando
+el ERP oficial dice 99.07% (no llegó). Decisión incorrecta en reunión matinal.
+
+**Fix:**
+- `server_orbit.py` línea 556: `tendencia_pct` ahora usa `av` (avance_pct del CSV = ERP)
+  cuando está disponible. Fallback al recálculo solo si no hay dato oficial.
+- Validación: los 7 vendedores muestran tendencia_pct = avance_pct exacto del ERP.
+
+**Archivos tocados:**
+- `server_orbit.py` — línea 556: 1 línea → 4 líneas con lógica ERP-first.
+
+**Auditoría dashboard completa — resultado:**
+- ✅ Acumulado, objetivo, avance_pct: exactos vs resultado.xlsx
+- ✅ CCC mes: Δ ≤ 2 clientes por vendedor (snapshot timing aceptable)
+- ✅ 11 Titulares: CSV = API exacto
+- ✅ V3 sin autoservicio: CCC AS = 0
+- ✅ Vendedores activos: V3,V4,V6,V7,V8,V9,V10 (sin V2,V5,V20)
+- ✅ Total días comerciales mayo = 24 (feriados 1/5 y 25/5 correctos)
+- ✅ tendencia_pct (post-fix): Portal = ERP exacto
+
 ## 2026-05-26 — feat(portal): responsive mobile — sidebar drawer, hamburger, media queries
 
 **Archivos tocados:**

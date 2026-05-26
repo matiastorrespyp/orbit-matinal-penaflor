@@ -1,5 +1,26 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-05-26 — Estado actual
+
+### HECHO HOY ✅
+- ✅ Login: toggle día/noche, Ken Burns sobre fondo.png/fondo_noche.png, isotipo flotante sin card.
+- ✅ Responsive PC + smartphone: sidebar drawer, hamburger, media queries 768px/430px.
+- ✅ Servidor: ruta `/` abre portal.html (no index.html).
+- ✅ Auditoría completa dashboard: acumulado, objetivo, avance_pct, CCC, 11T, corridos todos correctos.
+- ✅ Fix tendencia_pct: portal ahora muestra valor ERP exacto (no recálculo inflado).
+  V9 de 100.11% → 99.07% correcto.
+
+### PRÓXIMAS ETAPAS (portal, por orden de prioridad)
+1. **Etapa A — Vista Gerencial dashboard**: verificar gráficas de barras (valores reales vs visualización).
+2. **Etapa B — Vista Vendedor individual**: drill-down desde ranking, KPIs de clientes del día.
+3. **Etapa C — Clientes Críticos**: validar que la lista y estados vienen de datos reales.
+4. **Etapa D — 11 Titulares detalle**: tabla por marca y cliente.
+5. **Hosting público**: migrar de localhost a hosting libre cuando esté todo validado.
+
+### PENDIENTES TÉCNICOS
+- `ccc_mes`: pequeña diferencia ≤2 clientes aceptable por timing de snapshot. No crítico.
+- `corridos` en `/api/diagnostico` usa datetime.now() → siempre incluye hoy aunque no haya datos. No bloquea.
+
 ## Sesión 2026-05-22 — Estado actual
 
 ### HECHO EN ESTA SESIÓN ✅

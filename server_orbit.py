@@ -553,7 +553,11 @@ def dashboard():
             acum = fb["acumulado"]
             av = fb["avance"]
             sin_maestro = True
-        tendencia_pct = round((acum / _corridos) * _total / obj * 100, 2) if obj else 0
+        # Usar avance_pct del ERP (= tendencia_mes/objetivo*100) cuando está disponible.
+        # Fallback al recálculo dinámico solo si no hay dato oficial (sin_maestro o av==0).
+        tendencia_pct = round(av, 2) if (not vv.empty and av > 0) else (
+            round((acum / _corridos) * _total / obj * 100, 2) if obj else 0
+        )
         cli_total = int(vv["clientes_planificados"].sum()) if not vv.empty and "clientes_planificados" in vv.columns else 0
         cli_sin = int(vv["clientes_sin_compra_mes"].sum()) if not vv.empty and "clientes_sin_compra_mes" in vv.columns else 0
         # Override with day-specific counts when dia requested (0 if vendor not scheduled that day)
