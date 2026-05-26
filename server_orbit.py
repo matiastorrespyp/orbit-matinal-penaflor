@@ -1902,6 +1902,34 @@ def gerencia_planes_as():
     })
 
 
+# ====== ACCIONES VIGENTES (todos los roles) ======
+@app.route("/api/acciones_vigentes")
+def acciones_vigentes():
+    """Lista simplificada de acciones comerciales activas. Usada por el perfil vendedor."""
+    df = read_csv(DATASETS / "mod_acciones_ranking.csv")
+    if df.empty:
+        return jsonify([])
+    result = []
+    for _, row in df.iterrows():
+        nombre   = str(row.get("accion_nombre", "") or "").strip()
+        canal    = str(row.get("canal", "") or "").strip()
+        cat      = str(row.get("categoria", "") or "").strip()
+        dto      = str(row.get("descuento_display", "") or "").strip()
+        tipo     = str(row.get("tipo_accion", "") or "").strip()
+        grupo    = str(row.get("accion_grupo", "") or "").strip()
+        if not nombre:
+            continue
+        result.append({
+            "accion_nombre":    nombre,
+            "accion_grupo":     grupo,
+            "canal":            canal,
+            "categoria":        cat,
+            "descuento_display": dto,
+            "tipo_accion":      tipo,
+        })
+    return jsonify(result)
+
+
 # ====== PLANES AS — VENDEDOR ======
 @app.route("/api/vendedor/<vid>/planes_as")
 def vendedor_planes_as(vid):
