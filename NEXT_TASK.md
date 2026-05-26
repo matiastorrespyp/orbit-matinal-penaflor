@@ -3,6 +3,11 @@
 ## Sesión 2026-05-26 (noche) — Estado actual
 
 ### HECHO EN ESTA SESIÓN ✅
+- ✅ Acciones comerciales en Alertas del vendedor:
+  - `/api/acciones_vigentes` reescrito con tramos y `lineas_segmentos` (reemplaza "3-25%")
+  - Portal: marcas y escalones por acción, chip de descuento por tramo
+  - V3 sigue sin ver AUTOSERVICIOS
+  - Commit `b4c8e6e` pusheado → Render auto-deploy en curso
 - ✅ Smartphone responsiveness — perfil vendedor:
   - `viewport-fit=cover` → safe area habilitada en iPhones con notch/home indicator
   - CSS `@supports env(safe-area-inset-bottom)` para bottom nav y content padding

@@ -1,5 +1,28 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-26 — feat(vendedor): acciones comerciales con tramos y marcas en Alertas
+
+**Acciones comerciales — pestaña Alertas del vendedor:**
+- `/api/acciones_vigentes` reescrito: lee `reglas_acciones_*.csv` (fuente de verdad) agrupando por
+  `accion_grupo`. Devuelve `lineas_segmentos` + lista `tramos[]` con `{condicion, descuento_pct,
+  cant_min, cant_max, bonif_cajas, unidad}` — elimina el campo `descuento_display` de rango (era "3-25%", ilegible)
+- Portal: `vAlertas()` reescrita con `CAT_LABEL` (categoria → etiqueta legible) y `marcasLabel()`
+  que usa `lineas_segmentos` si es específico o el mapa si es genérico
+- Un tramo: condición + chip de dto en una línea; múltiples tramos: bullet list con chip por escalón
+- V3 (Nadia Gambino) sigue sin ver acciones de canal AUTOSERVICIOS
+- `CONFIG.glob("reglas_acciones_*.csv")` auto-detecta el archivo del mes vigente → sin cambios de código para junio
+
+**Archivos tocados:**
+- `server_orbit.py`: endpoint `/api/acciones_vigentes` (+78 líneas)
+- `PAV MATINAL PE_A FLOR/portal.html`: función `vAlertas()` (+107 líneas)
+
+**Validación:**
+- Endpoint devuelve 22 grupos con `lineas_segmentos` + `tramos[]`
+- V3 filtra AUTOSERVICIOS en frontend
+- Commit `b4c8e6e` — push `8cca2ce..b4c8e6e` → Render auto-deploya
+
+---
+
 ## 2026-05-26 — feat(responsive): smartphone optimization + Render deploy setup
 
 **Smartphone — perfil vendedor:**
