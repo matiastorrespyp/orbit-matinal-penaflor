@@ -1,5 +1,29 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-26 — feat(innovaciones): 17 productos reales, sin desglose vendedor en gerencia, avance propio en panel vendedor
+
+**Problema encontrado:**
+- `generar_datasets_acum.py` cargaba `ventas.csv` (Apr30-May23, 2 productos) para innovaciones
+  en vez de `ventas_acumulada.csv` (Apr1-May9, 15 productos con data real).
+- El panel gerencial mostraba una tabla de "Desglose por Vendedor" que el usuario no quiere.
+- El card vendedor mostraba cada producto×segmento por separado (duplicado visual).
+
+**Fix:**
+- `generar_datasets_acum.py`: refactor `cargar_ventas_acum()` → `_parsear_ventas_csv()` + nueva
+  función `cargar_ventas_acumulada()`. Las funciones de innovaciones ahora usan `ventas_acumulada.csv`.
+- CSV regenerado: 221 filas, 17 productos, todos con datos reales desde ventas acumuladas.
+- `portal.html` `gInnovaciones()`: tabla "Desglose por Vendedor" eliminada. Panel gerencial muestra
+  solo resumen total: stats cards (N productos, con cobertura, cartera) + lista de 17 productos
+  con barra de progreso y compraron/cartera.
+- `portal.html` INOV-4 vendedor: productos ahora agrupados por nombre (combina TRAD+AS),
+  muestra compraron/cartera total y barra por producto. Chip "X/17 con cobertura".
+
+**Archivos tocados:**
+- `generar_datasets_acum.py` — refactor carga ventas + uso de ventas_acumulada para innovaciones
+- `04_DATASETS_ORBIT/mod_innovaciones_segmento.csv` — regenerado, 17 productos × 7 vend × segs
+- `04_DATASETS_ORBIT/mod_innovaciones_plan_as.csv` — regenerado con ventas_acumulada
+- `PAV MATINAL PE_A FLOR/portal.html` — gInnovaciones() + INOV-4 vendedor
+
 ## 2026-05-26 — fix(dashboard): tendencia_pct usa ERP en lugar de recálculo dinámico
 
 **Problema encontrado en auditoría:**

@@ -137,8 +137,8 @@ VENDEDORES_ACTIVOS_INOV = [3, 4, 6, 7, 8, 9, 10]
 # CARGA
 # ─────────────────────────────────────────────
 
-def cargar_ventas_acum():
-    p = BASE / "01_INPUTS" / "ventas.csv"
+def _parsear_ventas_csv(p):
+    """Carga y normaliza un CSV de ventas (sep=;, latin1, decimales con coma)."""
     df = pd.read_csv(p, encoding="latin1", sep=";", engine="python")
     df["CantBase"] = pd.to_numeric(df["CantBase"], errors="coerce").fillna(0)
     df["ImporteNetoItem"] = (
@@ -157,6 +157,21 @@ def cargar_ventas_acum():
     df["Cliente"] = pd.to_numeric(df["Cliente"], errors="coerce")
     df = df[~df["CodVendedor"].isin(VENDEDORES_EXCLUIDOS)]
     return df
+
+
+def cargar_ventas_acum():
+    """Ventas del periodo reciente (ventas.csv) — para cobertura, 11T, acciones."""
+    return _parsear_ventas_csv(BASE / "01_INPUTS" / "ventas.csv")
+
+
+def cargar_ventas_acumulada():
+    """Ventas acumuladas del mes completo (ventas_acumulada.csv) — para innovaciones.
+    Si no existe, cae a ventas.csv con advertencia."""
+    p = BASE / "01_INPUTS" / "ventas_acumulada.csv"
+    if not p.exists():
+        print(f"  [AVISO] ventas_acumulada.csv no encontrado, usando ventas.csv para innovaciones")
+        return cargar_ventas_acum()
+    return _parsear_ventas_csv(p)
 
 
 def cargar_clientes():
@@ -658,13 +673,15 @@ def main():
 
     print("\nCargando fuentes...")
     ventas   = cargar_ventas_acum()
+    ventas_acum_full = cargar_ventas_acumulada()   # periodo completo para innovaciones
     clientes = cargar_clientes()
     bbdd     = cargar_planes_as_bbdd()
     maestro  = cargar_maestro_productos()
-    print(f"  ventas_acumulada : {len(ventas):>6} filas")
-    print(f"  clientes         : {len(clientes):>6} filas")
-    print(f"  planes_as BBDD   : {len(bbdd):>6} clientes AS")
-    print(f"  maestro productos: {len(maestro):>6} productos")
+    print(f"  ventas (reciente)  : {len(ventas):>6} filas")
+    print(f"  ventas (acum full) : {len(ventas_acum_full):>6} filas")
+    print(f"  clientes           : {len(clientes):>6} filas")
+    print(f"  planes_as BBDD     : {len(bbdd):>6} clientes AS")
+    print(f"  maestro productos  : {len(maestro):>6} productos")
 
     # ── Cobertura ──
     print("\n[1/3] Generando mod_cobertura_acum.csv ...")
@@ -697,7 +714,7 @@ def main():
 
     # ── Innovaciones Segmento ──
     print("\n[4/5] Generando mod_innovaciones_segmento.csv ...")
-    inov_seg = generar_innovaciones_segmento(ventas, clientes)
+    inov_seg = generar_innovaciones_segmento(ventas_acum_full, clientes)  # usa ventas acumuladas completas
     inov_seg.to_csv(OUT / "mod_innovaciones_segmento.csv", index=False, encoding="utf-8-sig")
     print(f"  OK: {len(inov_seg)} filas ({inov_seg['producto_nombre'].nunique()} productos x {inov_seg['vendedor_codigo'].nunique()} vendedores x segmentos)")
     resumen_inov = (inov_seg.groupby("producto_nombre")
@@ -709,7 +726,7 @@ def main():
 
     # ── Innovaciones Plan AS ──
     print("\n[5/7] Generando mod_innovaciones_plan_as.csv ...")
-    inov_pas = generar_innovaciones_plan_as(ventas, bbdd)
+    inov_pas = generar_innovaciones_plan_as(ventas_acum_full, bbdd)  # usa ventas acumuladas completas
     inov_pas.to_csv(OUT / "mod_innovaciones_plan_as.csv", index=False, encoding="utf-8-sig")
     print(f"  OK: {len(inov_pas)} clientes AS")
 

@@ -1609,26 +1609,43 @@ function vKpis(){
       </div>
     </div>`;
   }
-  // — INOV-4: Innovaciones vendedor —
+  // — INOV-4: Innovaciones vendedor — agrupado por producto (combina segmentos)
   const inov=D.inov||{};
   const iProds=inov.productos||[];
   const esV3=(userData?.vendedor_id||'').toUpperCase()==='V3';
+  // Filtrar AS si es V3, luego agrupar por producto_nombre
   const iProdsFilt=iProds.filter(pr=>!(esV3&&(pr.segmento||'').toUpperCase()==='AUTOSERVICIO'));
-  if(iProdsFilt.length && !inov.advertencia){
-    const iLbl=pct=>Number(pct||0)===0?'Sin compradores aún':pct+'%';
+  const iByProd={}, iCartUsed={};
+  iProdsFilt.forEach(pr=>{
+    const k=pr.producto_nombre, seg=pr.segmento;
+    if(!iByProd[k]) iByProd[k]={nombre:k,cartera:0,compraron:0,segs:[],faltantes:[]};
+    iByProd[k].compraron+=(pr.clientes_compraron||0);
+    const segKey=seg+'__'+k;
+    if(!iCartUsed[segKey]){ iCartUsed[segKey]=true; iByProd[k].cartera+=(pr.clientes_cartera||0); }
+    if(!iByProd[k].segs.includes(seg)) iByProd[k].segs.push(seg);
+    iByProd[k].faltantes.push(...(pr.clientes_faltantes||[]).slice(0,3));
+  });
+  const iProdsAgr=Object.values(iByProd).sort((a,b)=>b.compraron-a.compraron);
+  if(iProdsAgr.length && !inov.advertencia){
+    const conCompra=iProdsAgr.filter(x=>x.compraron>0).length;
     h+=`<div class="card">
-      <div class="card-hd"><span class="card-title">🚀 Innovaciones</span><span class="chip">${iProdsFilt.length} líneas</span></div>
-      <div class="card-body">`;
-    iProdsFilt.forEach(pr=>{
-      const pct=Math.round((pr.pct_cobertura||0)*100), cl=pct>=60?'ok':pct>=30?'wn':'bd';
-      const falt=(pr.clientes_faltantes||[]).slice(0,5);
-      const extra=(pr.clientes_faltantes||[]).length-falt.length;
-      const subLbl=Number(pr.clientes_compraron||0)===0?`Sin compradores aún &middot; 0 de ${pr.clientes_cartera} clientes`:`${pr.segmento} &middot; ${pr.clientes_compraron} de ${pr.clientes_cartera} clientes`;
-      h+=`<div style="margin-bottom:14px;">
-        <div class="row-b mb4"><b style="font-size:13px;">${pr.producto_nombre}</b><span class="chip ${cl}">${iLbl(pct)}</span></div>
-        <div class="xs m3 mb6">${subLbl}</div>
-        <div class="bar" style="height:5px;"><div class="bar-f ${cl}" style="width:${pct}%"></div></div>
-        ${falt.length?`<div class="xs m3 mt6">Faltantes: ${falt.join(', ')}${extra>0?' +'+extra+' más':''}</div>`:''}
+      <div class="card-hd">
+        <span class="card-title">🚀 Innovaciones</span>
+        <span class="chip">${conCompra}/${iProdsAgr.length} con cobertura</span>
+      </div>
+      <div class="card-body nop">`;
+    iProdsAgr.forEach(pr=>{
+      const pct=pr.cartera?Math.round(pr.compraron/pr.cartera*100):0;
+      const cl=pct>=50?'ok':pct>=25?'wn':'bd';
+      h+=`<div style="padding:9px 14px;border-bottom:1px solid var(--bord);">
+        <div class="row-b" style="margin-bottom:3px;">
+          <b style="font-size:12px;">${pr.nombre}</b>
+          <span class="chip ${cl}" style="font-size:11px;">${pct}%</span>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:5px;">
+          <b style="color:var(--text2);">${pr.compraron}</b> de ${pr.cartera} clientes
+        </div>
+        <div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${clamp(pct,0,100)}%"></div></div>
       </div>`;
     });
     h+=`</div></div>`;
@@ -1900,65 +1917,63 @@ function gInnovaciones(p){
   const dat=D.inov_total;
   let html=`<div class="gph">
     <div><div class="gph-title">Innovaciones — Cobertura Acumulada</div>
-    <div class="gph-sub">${dat?dat.fecha_ejecucion:'Sin datos'} · Todos los vendedores</div></div>
+    <div class="gph-sub">${dat?dat.fecha_ejecucion:'Sin datos'} · Toda la distribuidora</div></div>
   </div>`;
   if(!dat||!dat.por_producto?.length){
     html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">📦</div><p>Sin datos de innovaciones disponibles.</p></div></div></div>`;
     p.innerHTML=html; return;
   }
-  // Agrupar por producto (combina segmentos)
-  const byProd={};
+  // Agrupar por producto: sumar compraron y tomar la cartera del primer segmento
+  // (la cartera total es igual para todos los productos del mismo segmento, se suma una sola vez por segmento)
+  const byProd={}, cartSegUsed={};
   dat.por_producto.forEach(r=>{
-    const k=r.producto_nombre;
+    const k=r.producto_nombre, seg=r.segmento;
     if(!byProd[k]) byProd[k]={nombre:k,cartera:0,compraron:0,segs:[]};
-    byProd[k].cartera+=r.cartera_total;
     byProd[k].compraron+=r.compraron_total;
-    byProd[k].segs.push(r.segmento);
+    // La cartera de cada segmento se suma solo la primera vez que aparece
+    const segKey=seg+'__'+k;
+    if(!cartSegUsed[segKey]){ cartSegUsed[segKey]=true; byProd[k].cartera+=r.cartera_total; }
+    if(!byProd[k].segs.includes(seg)) byProd[k].segs.push(seg);
   });
   const prods=Object.values(byProd).sort((a,b)=>b.compraron-a.compraron);
-  html+=`<div class="card" style="margin-bottom:13px;">
-    <div class="card-hd"><span class="card-title">Total Distribuidora por Producto</span></div>
-    <div class="card-body nop">
-      ${prods.map(p=>{
-        const pct=p.cartera?Math.round(p.compraron/p.cartera*100):0;
-        const col=pct>=50?'ok':pct>=25?'wn':'bd';
-        return `<div style="padding:10px 14px;border-bottom:1px solid var(--bord);">
-          <div class="row-b" style="margin-bottom:5px;">
-            <span style="font-weight:600;font-size:13px;">${p.nombre}</span>
-            <span class="chip ${col}">${pct}%</span>
-          </div>
-          <div style="font-size:11px;color:var(--text3);margin-bottom:5px;">${p.compraron} compraron / ${p.cartera} cartera · Segs: ${[...new Set(p.segs)].join(', ')}</div>
-          <div class="bar"><div class="bar-f ${col}" style="width:${clamp(pct,0,100)}%"></div></div>
-        </div>`;
-      }).join('')}
+  const conCobertura=prods.filter(x=>x.compraron>0).length;
+  const totalClientes=prods[0]?.cartera||0;
+  // Barra de stats
+  html+=`<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+    <div class="card" style="flex:1;min-width:110px;padding:12px 16px;">
+      <div style="font-size:22px;font-weight:700;color:var(--orbit-magenta);">${prods.length}</div>
+      <div style="font-size:11px;color:var(--text3);">Productos</div>
+    </div>
+    <div class="card" style="flex:1;min-width:110px;padding:12px 16px;">
+      <div style="font-size:22px;font-weight:700;color:var(--ok);">${conCobertura}</div>
+      <div style="font-size:11px;color:var(--text3);">Con compradores</div>
+    </div>
+    <div class="card" style="flex:1;min-width:110px;padding:12px 16px;">
+      <div style="font-size:22px;font-weight:700;">${totalClientes}</div>
+      <div style="font-size:11px;color:var(--text3);">Clientes cartera</div>
     </div>
   </div>`;
-  // Desglose por vendedor × producto
+  // Lista de productos
   html+=`<div class="card">
-    <div class="card-hd"><span class="card-title">Desglose por Vendedor</span></div>
+    <div class="card-hd"><span class="card-title">Cobertura por Producto</span><span class="chip">${prods.length} innovaciones</span></div>
     <div class="card-body nop">
-      <table style="width:100%;border-collapse:collapse;font-size:11px;">
-        <thead><tr style="color:var(--text3);border-bottom:1px solid var(--bord);">
-          <th style="padding:7px 10px;text-align:left;">Vendedor</th>
-          <th style="padding:7px 10px;text-align:left;">Producto</th>
-          <th style="padding:7px 10px;text-align:left;">Segmento</th>
-          <th style="padding:7px 4px;text-align:right;">Cartera</th>
-          <th style="padding:7px 4px;text-align:right;">Compraron</th>
-        </tr></thead>
-        <tbody>
-          ${(dat.por_vendedor||[]).map(r=>{
-            const pct=r.clientes_cartera?Math.round(r.clientes_compraron/r.clientes_cartera*100):0;
-            const col=pct>=50?'ok':pct>=25?'wn':'bd';
-            return `<tr style="border-bottom:1px solid var(--bord);">
-              <td style="padding:6px 10px;font-weight:600;">${r.vendedor_id}</td>
-              <td style="padding:6px 10px;">${r.producto_nombre}</td>
-              <td style="padding:6px 10px;">${r.segmento}</td>
-              <td style="padding:6px 4px;text-align:right;">${r.clientes_cartera}</td>
-              <td style="padding:6px 4px;text-align:right;"><span class="chip ${col}" style="font-size:9px;">${r.clientes_compraron} (${pct}%)</span></td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
+      ${prods.map(prod=>{
+        const pct=prod.cartera?Math.round(prod.compraron/prod.cartera*100):0;
+        const col=pct>=50?'ok':pct>=25?'wn':'bd';
+        const segStr=prod.segs.join(' + ');
+        return `<div style="padding:10px 14px;border-bottom:1px solid var(--bord);">
+          <div class="row-b" style="margin-bottom:4px;">
+            <span style="font-weight:600;font-size:13px;">${prod.nombre}</span>
+            <span class="chip ${col}" style="font-size:12px;">${pct}%</span>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:6px;">
+            <b style="color:var(--text2);">${prod.compraron}</b> compraron
+            <span style="color:var(--bord);">·</span> ${prod.cartera} cartera
+            <span style="color:var(--bord);">·</span> <span style="color:var(--text4);">${segStr}</span>
+          </div>
+          <div class="bar" style="height:5px;"><div class="bar-f ${col}" style="width:${clamp(pct,0,100)}%"></div></div>
+        </div>`;
+      }).join('')}
     </div>
   </div>`;
   p.innerHTML=html;
