@@ -2194,9 +2194,11 @@ def gerencia_alertas_caida():
         return jsonify({"error": str(e)}), 500
 
 
-# ====== MAIN ======
+# ====== STARTUP (gunicorn + __main__) ======
+# Se ejecuta cuando gunicorn importa el módulo, no solo en __main__
+init_db()
+
 if __name__ == "__main__":
-    init_db()
     print("\n===== ORBIT SERVER v3 =====")
     print("Diagnóstico: http://localhost:8502/api/diagnostico")
     print("Dashboard:   http://localhost:8502/api/dashboard")
