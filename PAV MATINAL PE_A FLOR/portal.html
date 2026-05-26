@@ -82,69 +82,133 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 /* ── LOGIN ───────────────────────────────────────────────── */
 #loginScreen {
   display:none; position:fixed; inset:0; z-index:200;
-  background: url('fondo.png') center center / cover no-repeat;
-  align-items:center; justify-content:center;
+  align-items:center; justify-content:center; overflow:hidden;
 }
-.ln-wrap { width:100%; max-width:420px; padding:20px; }
-.ln-card {
-  background: linear-gradient(150deg,#ffffff 0%,#f0f4f9 100%);
-  border: 1px solid rgba(0,0,0,0.06);
-  border-radius:var(--r-xl); padding:44px 40px;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.08);
-}
-/* light-theme overrides inside login card */
-.ln-tag  { color: rgba(0,0,0,0.42); }
-.ln-div  { background: rgba(0,0,0,0.09); }
-.ln-field label { color: rgba(0,0,0,0.52); }
-.ln-field select, .ln-field input {
-  background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.14); color: #1a1f2e;
-}
-.ln-field select:focus, .ln-field input:focus {
-  outline:none; border-color:var(--mg); box-shadow:0 0 0 3px rgba(226,20,122,0.15);
-}
-.ln-field select option { background:#fff; color:#1a1f2e; }
 
-.ln-logo { text-align:center; margin-bottom:20px; }
+/* — Capas de fondo con movimiento real (Ken Burns — cámara fija) — */
+.ln-bg {
+  position:absolute; inset:-6%; z-index:0;
+  background-size:cover; background-position:center center; background-repeat:no-repeat;
+  will-change:transform; transform-origin:center center;
+}
+.ln-bg-day {
+  background-image:url('fondo.png'); opacity:1;
+  animation:skyDay 52s ease-in-out infinite;
+  transition:opacity 1.6s cubic-bezier(.4,0,.2,1);
+}
+.ln-bg-night {
+  background-image:url('fondo_noche.png'); opacity:0;
+  animation:skyNight 70s ease-in-out infinite;
+  transition:opacity 1.6s cubic-bezier(.4,0,.2,1);
+}
+/* Movimiento de día — zoom y drift muy suave, como timelapse real */
+@keyframes skyDay {
+  0%   { transform:scale(1.00) translate(0%,    0%   ); }
+  18%  { transform:scale(1.04) translate(-0.8%, -0.6%); }
+  42%  { transform:scale(1.08) translate( 0.5%, -1.4%); }
+  68%  { transform:scale(1.05) translate( 1.2%, -0.7%); }
+  85%  { transform:scale(1.03) translate( 0.3%, -1.0%); }
+  100% { transform:scale(1.00) translate(0%,    0%   ); }
+}
+/* Movimiento de noche — más lento, deriva lateral suave */
+@keyframes skyNight {
+  0%   { transform:scale(1.00) translate(0%,    0%   ); }
+  25%  { transform:scale(1.03) translate(-1.2%, -0.5%); }
+  52%  { transform:scale(1.06) translate( 0.6%, -1.1%); }
+  78%  { transform:scale(1.03) translate( 1.0%, -0.4%); }
+  100% { transform:scale(1.00) translate(0%,    0%   ); }
+}
+#loginScreen.night .ln-bg-day   { opacity:0; }
+#loginScreen.night .ln-bg-night { opacity:1; }
+/* Velo azul muy sutil en modo noche */
+#loginScreen.night .ln-bg-night { filter:brightness(0.92) saturate(1.1); }
+
+/* — Toggle día/noche — */
+.ln-toggle {
+  position:absolute; top:18px; right:22px; z-index:10;
+  display:flex; align-items:center; gap:7px;
+  padding:9px 16px; border-radius:999px;
+  background:rgba(0,0,0,0.38); backdrop-filter:blur(20px) saturate(150%);
+  -webkit-backdrop-filter:blur(20px) saturate(150%);
+  border:1px solid rgba(255,255,255,0.16);
+  color:#fff; cursor:pointer; transition:all .25s;
+}
+.ln-toggle:hover { background:rgba(0,0,0,0.55); border-color:rgba(255,255,255,0.30); }
+.ln-toggle-ico { font-size:16px; transition:transform .4s cubic-bezier(.34,1.56,.64,1); }
+.ln-toggle-lbl { font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; opacity:.75; }
+#loginScreen.night .ln-toggle-ico { transform:rotate(-20deg); }
+
+/* — Vignette de legibilidad (suave, focalizada en la zona del form) — */
+.ln-vignette {
+  position:absolute; inset:0; z-index:2; pointer-events:none;
+  background:
+    radial-gradient(ellipse 78% 62% at 50% 78%, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.22) 50%, transparent 72%),
+    linear-gradient(to top, rgba(0,0,0,0.28) 0%, transparent 38%);
+}
+
+/* — Form flotante (directo sobre la imagen, sin card) — */
+.ln-wrap { width:100%; max-width:360px; padding:20px; position:relative; z-index:5; }
+.ln-logo { text-align:center; margin-bottom:46px; }
 .ln-logo-img {
-  width:190px; height:auto; display:block; margin:0 auto;
-  animation: orbitFloat 3.2s ease-in-out infinite;
-  transform-origin: center center;
+  width:108px; height:108px; object-fit:contain; display:block; margin:0 auto;
+  animation:orbitFloat 3.6s ease-in-out infinite;
+  transform-origin:center center;
+  filter:drop-shadow(0 6px 22px rgba(226,20,122,0.55)) drop-shadow(0 2px 10px rgba(0,0,0,0.70));
 }
 @keyframes orbitFloat {
-  0%,100% { transform: translateY(0px); }
-  50%      { transform: translateY(-18px); }
+  0%,100% { transform:translateY(0px); }
+  50%      { transform:translateY(-14px); }
 }
 /* sidebar logos */
 .gs-pyp-logo { width:100%; max-width:116px; height:auto; display:block; margin:0 auto 6px; object-fit:contain; }
 .gs-orbit-logo { width:52px; height:auto; display:block; margin:10px auto 0; opacity:0.55; filter:brightness(1.1); }
 .gs-foot-user { display:flex; align-items:center; gap:9px; width:100%; }
-.ln-tag { text-align:center; color:var(--text3); font-size:11px; letter-spacing:2px; text-transform:uppercase; margin-bottom:34px; }
-.ln-div { height:1px; background:var(--b); margin-bottom:26px; }
-.ln-field { margin-bottom:16px; }
-.ln-field label { display:block; font-size:9.5px; color:var(--text3); text-transform:uppercase; letter-spacing:1.6px; margin-bottom:7px; font-weight:700; }
+.ln-field { margin-bottom:14px; }
+.ln-field label {
+  display:block; font-size:9px; color:rgba(255,255,255,0.75);
+  text-transform:uppercase; letter-spacing:2px; margin-bottom:8px; font-weight:700;
+  text-shadow:0 1px 8px rgba(0,0,0,1);
+}
+.ln-sel-wrap { position:relative; }
+.ln-sel-wrap::after {
+  content:"▾"; position:absolute; right:15px; top:50%;
+  transform:translateY(-50%); color:rgba(255,255,255,0.55);
+  pointer-events:none; font-size:13px;
+}
 .ln-field select, .ln-field input {
-  width:100%; padding:12px 14px; background:rgba(0,0,0,0.35);
-  border:1px solid var(--bb); border-radius:var(--r); color:var(--text);
-  font-size:14px; transition:border-color .18s, box-shadow .18s; appearance:none;
+  width:100%; padding:13px 16px;
+  background:rgba(0,0,0,0.44);
+  backdrop-filter:blur(18px) saturate(120%);
+  -webkit-backdrop-filter:blur(18px) saturate(120%);
+  border:1px solid rgba(255,255,255,0.20);
+  border-radius:13px; color:#fff;
+  font-size:14px; font-family:var(--f-body);
+  transition:border-color .18s, background .18s, box-shadow .18s; appearance:none;
 }
+.ln-sel-wrap select { padding-right:38px; }
 .ln-field select:focus, .ln-field input:focus {
-  outline:none; border-color:var(--mg); box-shadow:0 0 0 3px rgba(226,20,122,0.15);
+  outline:none; border-color:var(--mg);
+  background:rgba(50,4,24,0.60);
+  box-shadow:0 0 0 3px rgba(226,20,122,0.22);
 }
-.ln-field select option { background:#111820; }
+.ln-field select option { background:#0A0D14; color:#E8EDF5; }
+.ln-field input::placeholder { color:rgba(255,255,255,0.35); }
 .ln-btn {
-  width:100%; padding:14px; margin-top:8px;
+  width:100%; padding:15px; margin-top:10px;
   background:linear-gradient(180deg, var(--mg) 0%, var(--mg2) 100%);
-  color:#fff; border-radius:var(--r);
-  font-family:var(--f-dis); font-size:14px; font-weight:700; letter-spacing:0.3px;
-  box-shadow:0 8px 24px rgba(226,20,122,0.38), 0 1px 0 rgba(255,255,255,0.15) inset;
-  transition:transform .15s, filter .15s;
+  color:#fff; border-radius:13px;
+  font-family:var(--f-dis); font-size:14px; font-weight:700; letter-spacing:0.4px;
+  box-shadow:0 8px 32px rgba(226,20,122,0.52), 0 1px 0 rgba(255,255,255,0.15) inset;
+  transition:transform .15s, filter .15s, box-shadow .15s;
 }
-.ln-btn:hover { transform:translateY(-1px); filter:brightness(1.08); }
-.ln-btn:active { transform:translateY(0); filter:brightness(0.97); }
+.ln-btn:hover { transform:translateY(-2px); filter:brightness(1.1); box-shadow:0 14px 42px rgba(226,20,122,0.62); }
+.ln-btn:active { transform:translateY(0); filter:brightness(0.95); }
 .ln-err {
-  display:none; color:var(--bd); font-size:12px; margin-top:10px;
-  text-align:center; padding:8px 12px; background:var(--bd-s);
-  border-radius:var(--r-sm); border:1px solid rgba(255,93,93,0.2);
+  display:none; color:#fff; font-size:12px; margin-top:10px;
+  text-align:center; padding:9px 12px;
+  background:rgba(255,60,60,0.28); backdrop-filter:blur(10px);
+  border-radius:10px; border:1px solid rgba(255,93,93,0.38);
+  text-shadow:0 1px 4px rgba(0,0,0,0.8);
 }
 .ln-err.show { display:block; }
 
@@ -562,6 +626,109 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 }
 .emod-sel option { background:#111820; }
 .emod-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:18px; }
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE — Mobile & Tablet
+═══════════════════════════════════════════════════════════ */
+
+/* — Hamburger (oculto en desktop) — */
+.gt-ham {
+  display:none; width:38px; height:38px; border-radius:var(--r-sm);
+  align-items:center; justify-content:center; flex-direction:column; gap:5px;
+  border:1px solid var(--b); background:rgba(255,255,255,0.04);
+  cursor:pointer; padding:0; flex-shrink:0;
+}
+.gt-ham span { display:block; width:16px; height:1.5px; background:var(--text2); border-radius:2px; transition:all .2s; }
+.gs.open .gt-ham span:nth-child(1) { transform:translateY(6.5px) rotate(45deg); }
+.gs.open .gt-ham span:nth-child(2) { opacity:0; }
+.gs.open .gt-ham span:nth-child(3) { transform:translateY(-6.5px) rotate(-45deg); }
+
+/* — Overlay de fondo cuando el nav está abierto — */
+.gs-overlay {
+  display:none; position:fixed; inset:0; z-index:49;
+  background:rgba(0,0,0,0.55); backdrop-filter:blur(3px);
+}
+.gs-overlay.show { display:block; }
+
+/* — Tablet / mobile 768px — */
+@media (max-width: 768px) {
+  /* Sidebar: drawer deslizable desde la izquierda */
+  .gs {
+    position:fixed; left:-290px; top:0; bottom:0; width:260px; z-index:50;
+    transition:left .28s cubic-bezier(.4,0,.2,1);
+    box-shadow:6px 0 32px rgba(0,0,0,0.6);
+    overflow-y:auto;
+  }
+  .gs.open { left:0; }
+
+  /* Hamburger visible en mobile */
+  .gt-ham { display:flex; }
+
+  /* Contenido principal ocupa todo el ancho */
+  #appG { flex-direction:column; }
+  .gm { width:100%; min-width:0; }
+
+  /* Topbar compacto */
+  .gt { padding:0 10px; gap:6px; height:50px; }
+  .gt-crumb { font-size:13px; gap:4px; }
+  .gt-live { display:none; }
+  .g-sp { min-width:0; flex:1; }
+
+  /* Ocultar selector de vendedor en header (ocupa demasiado) */
+  #gVSel { display:none; }
+  .g-dsel button { padding:4px 8px; font-size:10px; }
+  .g-ghost { padding:6px 9px; font-size:11px; }
+
+  /* Grids a 1 columna */
+  .g2, .g3 { grid-template-columns:1fr; }
+
+  /* KPI row: 2 columnas */
+  .krow { grid-template-columns:repeat(2,1fr); gap:9px; }
+  .kv { font-size:22px; }
+  .kcard { padding:13px 14px; min-height:80px; }
+
+  /* Page padding reducido */
+  .gpage { padding:14px 12px 24px; }
+  .gph { flex-direction:column; gap:8px; margin-bottom:16px; }
+  .gph-title { font-size:19px; }
+  .gph-chips { flex-wrap:wrap; }
+
+  /* Tablas: scroll horizontal */
+  .card .nop { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .pvr-wrap  { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .tbl { min-width:460px; }
+
+  /* Ranking: ocultar barra lateral para ahorrar espacio */
+  .rbar { display:none; }
+  .rpct { min-width:44px; font-size:17px; }
+
+  /* Login toggle: ocultar label, solo emoji */
+  .ln-toggle-lbl { display:none; }
+  .ln-toggle { padding:8px 11px; top:14px; right:14px; }
+}
+
+/* — Small phones 430px — */
+@media (max-width: 430px) {
+  /* Login form — small phones */
+  .ln-wrap { padding:12px; }
+  .ln-logo { margin-bottom:32px; }
+  .ln-logo-img { width:88px; height:88px; }
+  .ln-field select, .ln-field input { padding:12px 14px; font-size:13px; }
+  .ln-btn { padding:13px; font-size:13px; }
+
+  /* Topbar: ocultar "ORBIT ›" para que entre el título */
+  .gt-crumb .c1, .gt-crumb .c2 { display:none; }
+  #gTopTitle { font-size:13px; }
+
+  /* KPI row 1 col en pantallas muy pequeñas */
+  .krow { grid-template-columns:1fr 1fr; gap:7px; }
+  .kv { font-size:20px; letter-spacing:-.4px; }
+  .ku { font-size:12px; }
+  .kcard { padding:11px 12px; }
+
+  /* Chips pequeños */
+  .chip { font-size:8.5px; padding:2px 6px; }
+}
 </style>
 </head>
 <body>
@@ -575,15 +742,30 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 
 <!-- LOGIN -->
 <div id="loginScreen">
+
+  <!-- Toggle Día / Noche -->
+  <button class="ln-toggle" id="modeToggle" onclick="toggleMode()">
+    <span class="ln-toggle-ico" id="modeIco">☀️</span>
+    <span class="ln-toggle-lbl" id="modeLbl">Día</span>
+  </button>
+
+  <!-- Fondos -->
+  <div class="ln-bg ln-bg-day"></div>
+  <div class="ln-bg ln-bg-night"></div>
+
+  <!-- Vignette de legibilidad -->
+  <div class="ln-vignette"></div>
+
+  <!-- Formulario flotante — directo sobre la imagen -->
   <div class="ln-wrap">
-    <div class="ln-card">
-      <div class="ln-logo"><img id="orbitLogoLogin" src="orbit_logo.png" alt="ORBIT" class="ln-logo-img"></div>
-      <div class="ln-tag">Peñaflor · PAV Matinal</div>
-      <div class="ln-div"></div>
-      <div class="ln-field">
-        <label>Usuario</label>
+    <div class="ln-logo">
+      <img id="orbitLogoLogin" src="assets/orbit-mark.png" alt="ORBIT" class="ln-logo-img">
+    </div>
+    <div class="ln-field">
+      <label>Perfil de acceso</label>
+      <div class="ln-sel-wrap">
         <select id="userSelect">
-          <option value="">Seleccionar...</option>
+          <option value="">Seleccionar vendedor…</option>
           <option value="v3">V3 · Nadia Gambino</option>
           <option value="v4">V4 · Angel Gribaudo</option>
           <option value="v6">V6 · Andrea Peyronel</option>
@@ -594,18 +776,19 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
           <option value="gerencia">── Gerencia ──</option>
         </select>
       </div>
-      <div class="ln-field">
-        <label>Contraseña</label>
-        <input type="password" id="pwdInput" placeholder="••••••••">
-      </div>
-      <button class="ln-btn" onclick="doLogin()">Ingresar a ORBIT</button>
-      <div id="loginError" class="ln-err">Credenciales inválidas. Verificá usuario y contraseña.</div>
     </div>
+    <div class="ln-field">
+      <label>Contraseña</label>
+      <input type="password" id="pwdInput" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="ln-btn" onclick="doLogin()">Ingresar a ORBIT</button>
+    <div id="loginError" class="ln-err">Credenciales inválidas. Verificá usuario y contraseña.</div>
   </div>
 </div>
 
 <!-- ═══════════ APP GERENCIAL (desktop) ═══════════ -->
 <div id="appG">
+  <div class="gs-overlay" onclick="closeNav()"></div>
   <nav class="gs">
     <div class="gs-brand">
       <img src="pyp_logo.png" alt="Peñaflor" class="gs-pyp-logo">
@@ -642,6 +825,9 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 
   <div class="gm">
     <header class="gt">
+      <button class="gt-ham" onclick="openNav()" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
       <div class="gt-crumb">
         <span class="c1">ORBIT</span><span class="c2">›</span>
         <span id="gTopTitle">Dashboard</span>
@@ -720,6 +906,29 @@ const ini   = n => (n||'').split(' ').filter(Boolean).map(s=>s[0]).slice(0,2).jo
 const clamp = (v,a,b) => Math.max(a, Math.min(b, v||0));
 const pcol  = p => p>=70 ? 'ok' : p>=40 ? 'wn' : 'bd';
 const safe  = async url => { try { const r=await fetch(url); return r.ok ? await r.json() : null; } catch{ return null; } };
+
+/* ── modo día / noche (login) ── */
+let loginMode = localStorage.getItem('orbitLoginMode') || 'day';
+
+function applyLoginMode(mode) {
+  loginMode = mode;
+  const ls  = document.getElementById('loginScreen');
+  const ico = document.getElementById('modeIco');
+  const lbl = document.getElementById('modeLbl');
+  if (!ls) return;
+  if (mode === 'night') {
+    ls.classList.add('night');
+    if (ico) ico.textContent = '🌙';
+    if (lbl) lbl.textContent = 'Noche';
+  } else {
+    ls.classList.remove('night');
+    if (ico) ico.textContent = '☀️';
+    if (lbl) lbl.textContent = 'Día';
+  }
+  localStorage.setItem('orbitLoginMode', mode);
+}
+
+function toggleMode() { applyLoginMode(loginMode === 'day' ? 'night' : 'day'); }
 
 /* ── login ── */
 async function doLogin(){
@@ -858,8 +1067,19 @@ function logout(){
   document.getElementById('loginScreen').style.display='flex';
 }
 
+/* ── nav mobile (sidebar gerencial) ── */
+function openNav(){
+  document.querySelector('.gs')?.classList.add('open');
+  document.querySelector('.gs-overlay')?.classList.add('show');
+}
+function closeNav(){
+  document.querySelector('.gs')?.classList.remove('open');
+  document.querySelector('.gs-overlay')?.classList.remove('show');
+}
+
 /* ════ GERENCIAL RENDERS ════ */
 function gSw(id,el){
+  closeNav();
   gScreen=id;
   document.querySelectorAll('.gs-item').forEach(n=>n.classList.remove('active'));
   (el||document.querySelector(`[data-sc="${id}"]`))?.classList.add('active');
@@ -2040,6 +2260,7 @@ async function enviarMsg(){
 
 /* ── boot ── */
 window.addEventListener('DOMContentLoaded', ()=>{
+  applyLoginMode(loginMode);
   setTimeout(()=>{
     document.getElementById('loadingScreen').style.display='none';
     document.getElementById('loginScreen').style.display='flex';

@@ -37,17 +37,33 @@
 - ✅ `gClientes`: usa `currentDay` como zona (Clientes Críticos filtra por día seleccionado).
 - ✅ "Plan.Vi" → "Plan.${currentDay}" en ranking vendedores.
 
+### HECHO 2026-05-23 ✅ (continuación)
+- ✅ Panel "Clientes Dormidos": 561 clientes sin compra en período actual, $41.2M en riesgo. Endpoint `/api/gerencia/alertas_caida`. Badge sidebar. Tabla por vendedor + detalle top100.
+- ✅ Login: fondo.png, logo ORBIT isotipo 190px flotante, card blanca.
+- ✅ Sidebar: logo PyP + "PAV PEÑAFLOR" arriba, logo ORBIT abajo del perfil.
+
+### HECHO 2026-05-26 ✅ — Responsive mobile + default route
+- ✅ `server_orbit.py`: `/` ahora sirve `portal.html` (antes: `index.html`). `http://localhost:8502` abre el portal correcto.
+- ✅ Responsive: `@media (max-width:768px)` — sidebar drawer deslizable, hamburger, grids 1 col, tablas scroll, topbar compacto.
+- ✅ Responsive: `@media (max-width:430px)` — login card compacta, topbar mínimo, KPI cards ajustadas.
+- ✅ `openNav()` / `closeNav()` + overlay + hook en `gSw()` → UX de navegación mobile completa.
+
+### HECHO 2026-05-26 ✅ — Login rediseño
+- ✅ Login: toggle ☀️/🌙 (top-right, glass pill) — persiste en localStorage.
+- ✅ Login: fondos de día (`fondo.png`) y noche (`fondo_noche.png`) con transición suave (opacity 1.4s).
+- ✅ Login: cielo animado — sol (arc 30s + glow), 4 nubes de día (sentidos opuestos), luna (arc 34s + glow azul), 2 nubes nocturnas, 90 estrellas generadas en JS con `starTwinkle`.
+- ✅ Login: card blanca eliminada → glass dark (`backdrop-filter:blur(32px)`, border rgba semitransparente).
+- ✅ Login: logo `orbit_pav_matinal_final.png` 176px flotante (sin sonido), selector de perfil con nombres legibles, campo contraseña. Sin el tag "Peñaflor · PAV Matinal" duplicado.
+- ✅ `fondo_noche.png` y `orbit_pav_matinal_final.png` copiados a `PAV MATINAL PE_A FLOR/`.
+
 ### PENDIENTE INMEDIATO
 
-1. **Validar en browser:** tocar LU / MA / VI y verificar que los paneles cambian datos.
-
-2. **Historial de ventas — alertas comparativas (próxima sesión):**
-   - Objetivo: detectar clientes que venían comprando y dejaron de hacerlo, o dejaron de comprar un producto.
-   - Fuente: `02_HISTORY/historial_ventas_cliente.csv` + `02_HISTORY/historial_ventas.csv`.
-   - Cruzar con ventas actuales para identificar brechas.
-
-3. **Regeneración diaria:**
+1. **Regeneración diaria:**
    - Actualizar `EJECUTAR_ORBIT.bat` para correr `python generar_datasets_acum.py` antes del pipeline.
+
+2. **Dormidos — refinamiento opcional:**
+   - Filtro por vendedor dentro del panel (ya hay `gFiltro` global, se puede conectar).
+   - Alertas comparativas a nivel producto: cliente que compraba X marca y dejó de hacerlo.
 
 ### Pendientes opcionales
 - 11T acumulado visible en dashboard gerencia.

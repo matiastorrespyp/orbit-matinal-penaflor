@@ -318,7 +318,7 @@ def favicon():
 # ====== STATIC ======
 @app.route("/")
 @app.route("/<path:filename>")
-def frontend(filename="index.html"):
+def frontend(filename="portal.html"):
     return send_from_directory(str(FRONTEND), filename)
 
 # ====== AUTH ======

@@ -1,5 +1,61 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-26 — feat(portal): responsive mobile — sidebar drawer, hamburger, media queries
+
+**Archivos tocados:**
+- `PAV MATINAL PE_A FLOR/portal.html` — responsive completo para PC y smartphones:
+  - `.gt-ham`: botón hamburger (3 líneas → X animado) oculto en desktop, visible en mobile.
+  - `.gs-overlay`: capa oscura backdrop detrás del sidebar cuando está abierto en mobile.
+  - `@media (max-width:768px)`: sidebar `.gs` pasa a drawer deslizable desde la izquierda (posición fixed, `left:-290px`, transición cubic-bezier). Grids `.g2/.g3` a 1 columna. `.krow` a 2 columnas. Tablas con `overflow-x:auto`. Topbar compacto (50px, sin `.gt-live`, sin `#gVSel`). Padding de página reducido.
+  - `@media (max-width:430px)`: login card con padding reducido, logo 144px. Topbar sin "ORBIT ›". KPI cards más compactas.
+  - `openNav()` / `closeNav()`: muestran/ocultan sidebar y overlay.
+  - `gSw()`: llama `closeNav()` al navegar → sidebar se cierra solo al seleccionar sección.
+  - Overlay `onclick="closeNav()"` → tap fuera del sidebar lo cierra.
+- `server_orbit.py` — default de ruta `/` cambiado de `index.html` a `portal.html`. `http://localhost:8502/` ahora abre directamente el portal correcto.
+
+## 2026-05-26 — feat(portal): login — toggle día/noche, cielo animado, form glass minimalista
+
+**Archivos tocados:**
+- `PAV MATINAL PE_A FLOR/portal.html` — rediseño completo del login screen:
+  - Botón toggle ☀️/🌙 en esquina superior derecha (posición `fixed` glass con blur).
+  - Dos capas de fondo con transición suave (opacity 1.4s): `fondo.png` (día) / `fondo_noche.png` (noche).
+  - Overlay `.sky-overlay` con elementos CSS animados:
+    - **Día:** `.sky-sun` (arc 30s, `sunArc` keyframe, glow cálido), 4 nubes (`.sky-c1`–`.sky-c4`) con `::before/::after`, animaciones `c1Move`/`c2Move` en sentidos opuestos.
+    - **Noche:** `.sky-moon` (arc 34s, `moonArc`, glow azulado), 2 nubes oscuras (`.sky-nc1/2`), `.sky-stars` generadas dinámicamente (90 estrellas, `starTwinkle`).
+  - Clase `.night` en `#loginScreen` controla visibilidad vía CSS (`display:none/block`).
+  - Card blanca eliminada → `.ln-glass` (backdrop-filter blur 32px, border rgba).
+  - Logo: `orbit_pav_matinal_final.png` 176px, `orbitFloat` sin sonido.
+  - Selector de perfil con `ln-sel-wrap` (custom arrow CSS, opciones legibles `#0D1118`).
+  - JS: `applyLoginMode()`, `toggleMode()`, `initStars()`, persistencia en `localStorage`.
+  - Boot: `initStars()` + `applyLoginMode(loginMode)` antes de mostrar pantalla.
+- `PAV MATINAL PE_A FLOR/fondo_noche.png` — copiado desde `01_INPUTS/` (2.3MB).
+- `PAV MATINAL PE_A FLOR/orbit_pav_matinal_final.png` — copiado desde `01_INPUTS/` (110KB).
+
+**Validación:** portal.html: 261 insertions / 60 deletions. Las 4 imágenes PNG están en `PAV MATINAL PE_A FLOR/`. Sin cambios a endpoints, datasets ni app gerencial/vendedor.
+
+## 2026-05-23 — feat(portal): Clientes Dormidos — alertas comparativas historial
+
+**Archivos tocados:**
+- `server_orbit.py` — nuevo endpoint `GET /api/gerencia/alertas_caida`. Compara `historial_ventas_cliente.csv` (período anterior: antes del inicio de ventas.csv = 30 abril) con `ventas.csv` (período actual). Devuelve: resumen, por_vendedor con top 5, detalle completo. Excluye V2/V5/V20. Resultado: 561 dormidos, $41.2M en riesgo. V4=171/V8=$12.6M/V6=108.
+- `PAV MATINAL PE_A FLOR/portal.html` — nuevo ítem sidebar "💤 Dormidos" con badge amarillo, loadAll ampliado, showApp actualiza badge, función `gDormidos(p)` con KPI cards + tabla por vendedor + tabla detalle top100 con urgencia (rojo≥45d, amarillo≥30d, azul<30d).
+
+## 2026-05-23 — feat(portal): login redesign — fondo.png, logo isotipo flotante, card blanca
+
+**Archivos tocados:**
+- `PAV MATINAL PE_A FLOR/portal.html` — fondo login → `fondo.png` (cover), logo ORBIT 190px con animación `orbitFloat` continua, card login con fondo blanco/claro para legibilidad del isotipo negro. Sin efectos de sonido ni spin.
+- `PAV MATINAL PE_A FLOR/orbit_logo.png` — isotipo ORBIT (copiado desde 01_INPUTS).
+- `PAV MATINAL PE_A FLOR/pyp_logo.png` — logo PyP 3D (copiado desde 01_INPUTS).
+- `PAV MATINAL PE_A FLOR/fondo.png` — imagen de fondo pantalla login (copiado desde 01_INPUTS).
+- Sidebar gerencial: logo PyP en lugar del texto ORBIT + "PAV PEÑAFLOR". Logo ORBIT debajo del perfil de usuario.
+
+## 2026-05-23 — fix(portal): botón Actualizar preserva día seleccionado
+
+**Archivos tocados:**
+- `PAV MATINAL PE_A FLOR/portal.html` — `reloadData()`: guarda `savedDay` antes de `loadAll()`, muestra spinner, restaura selección y re-fetchea datos del día si difiere del operativo.
+- `server_orbit.py` — comentario REGLA FIJA en `gerencia_sellout_categoria()`.
+
+
+
 ## 2026-05-23 — fix(sellout): fuente pipeline corregida a ventas.csv + datasets regenerados
 
 **Archivos tocados:**
