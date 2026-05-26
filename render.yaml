@@ -7,7 +7,7 @@ services:
   - type: web
     name: orbit-penaflor-pav
     runtime: python
-    plan: starter           # $7/mes — tier mínimo para web services dinámicos
+    plan: free              # tier gratuito de Render
 
     # Build
     buildCommand: pip install -r requirements.txt

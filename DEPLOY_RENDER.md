@@ -47,16 +47,10 @@ git push
 4. Render detecta `render.yaml` automáticamente
 5. Click **Create Web Service**
 
-### Costo
-- Plan **Starter**: US$7/mes (~$6.200 ARS/mes a cotización actual)
-- **No hay tier gratuito para apps dinámicas** en Render desde 2024
-
-### Alternativa gratis: Railway
-Si el costo es un problema, Railway tiene $5/mes de crédito incluido:
-1. [railway.app](https://railway.app) → New Project → Deploy from GitHub
-2. Detecta el Procfile automáticamente
-3. Variable de entorno `FLASK_DEBUG=false` ya está
-4. Costo: US$0-2/mes para tráfico bajo
+### Plan
+- **Tier gratuito de Render** — igual al que ya usaron en otros proyectos
+- El `render.yaml` está configurado con `plan: free`
+- Nota: el tier free duerme el servicio tras ~15 min de inactividad (el primer request del día tarda ~30s)
 
 ---
 
