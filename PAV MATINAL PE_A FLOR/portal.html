@@ -1751,65 +1751,110 @@ function vAlertas(){
   const myId=(userData.vendedor_id||'').toUpperCase();
   const esV3=myId==='V3';
 
-  // ── helper: canal legible ──
-  const canalCorto=c=>c
-    .replace('TRAD+KIOSCO+ON PREMISE','Tradicional / Kiosco / ON Premise')
+  // ── helpers ──────────────────────────────────────────────
+  const canalCorto=c=>(c||'')
+    .replace('TRAD+KIOSCO+ON PREMISE','Tradicional / Kiosco / On Premise')
     .replace('AUTOSERVICIOS','Autoservicio')
     .replace('VTK/TDB','Vinotecas')
     .replace('PETIT MAYORISTAS','P. Mayoristas')
-    .replace('ON PREMISE NOCHE; BARES','On Premise')
+    .replace('ON PREMISE NOCHE; BARES','On Premise Noche')
     .replace('TODOS','Todos los canales');
+
+  // Etiqueta de marcas: usa lineas_segmentos si es específico, si no usa categoria mapeada
+  const CAT_LABEL={
+    'VDA/VDG/ESPUMANTES/SIDRA':'Vinos del Año · Vinos de Guarda · Espumantes · Sidra',
+    'VDA':'Vinos del Año · Vinos de Guarda',
+    'SPIRITS LOCALES':'Spirits Locales (Gin, Vodka, Ron, Licores)',
+    'SPIRITS IMPORTADOS':'Spirits Importados (Whisky, Bourbon)',
+    'SPIRITS':'Spirits',
+    'RTD':'Frizze',
+    'RTD LATAS':'RTD Latas (Gordons Tonic · Smirnoff BC · Antares)',
+    'RTD ICE':'Smirnoff ICE',
+    'ESPUMANTES':'Espumantes',
+    'TERMIDOR':'Termidor Blanco / Termidor Tinto',
+    'INNOVACIONES':'Innovaciones del mes',
+  };
+  const marcasLabel=a=>{
+    const ls=(a.lineas_segmentos||'').trim();
+    // Descartar valores genéricos del CSV
+    const esgener=/ver imagen|medio;|alto;|todos|cualquier|plan as|innovaciones mayo/i.test(ls);
+    if(!ls||esgener) return CAT_LABEL[a.categoria]||a.categoria||'';
+    // Reemplazar ";" por "·" para lectura más fluida
+    return ls.replace(/;\s*/g,' · ');
+  };
 
   let h=`<div class="vsh">Alertas del día</div>`;
 
   // ── BLOQUE 1: Acciones Comerciales Vigentes ──────────────
   const accs=(D.acc_vigentes||[]).filter(a=>{
-    // V3 no trabaja Autoservicio → ocultar acciones exclusivas de AS
     if(esV3 && (a.canal||'').toUpperCase()==='AUTOSERVICIOS') return false;
     return true;
   });
+
   if(accs.length){
-    h+=`<div class="card" style="margin-bottom:12px;">
+    h+=`<div class="card" style="margin-bottom:14px;">
       <div class="card-hd">
         <span class="card-title">💰 Acciones Comerciales Vigentes</span>
         <span class="chip mg">${accs.length} acciones</span>
-      </div>
-      <div class="card-body" style="padding:10px 13px;">`;
-    accs.forEach(a=>{
-      const canal=canalCorto(a.canal||'');
-      const dto=a.descuento_display||'';
-      const tipo=a.tipo_accion||'';
-      // color del chip según tipo de acción
-      const tipoCol=tipo==='DROP'?'ok':tipo==='ESCALA'?'info':tipo==='BONIF'?'vio':'wn';
-      h+=`<div style="display:flex;align-items:flex-start;justify-content:space-between;
-            gap:8px;padding:9px 0;border-bottom:1px solid var(--b);">
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:700;line-height:1.3;">${a.accion_nombre}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:3px;">
-            📍 ${canal}
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
-          <span class="chip mg" style="font-size:11px;font-weight:800;">${dto}</span>
-          ${tipo?`<span class="chip ${tipoCol}" style="font-size:9px;">${tipo}</span>`:''}
-        </div>
       </div>`;
+    accs.forEach((a,i)=>{
+      const isLast=i===accs.length-1;
+      const canal=canalCorto(a.canal||'');
+      const marcas=marcasLabel(a);
+      const tramos=a.tramos||[];
+      const tipo=a.tipo_accion||'';
+
+      h+=`<div style="padding:12px 15px;${isLast?'':'border-bottom:1px solid var(--b);'}">
+        <!-- nombre + canal chip -->
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:5px;">
+          <span style="font-size:13px;font-weight:700;line-height:1.35;flex:1;">${a.accion_nombre}</span>
+          <span class="chip" style="font-size:9px;flex-shrink:0;white-space:nowrap;">${canal}</span>
+        </div>
+        <!-- marcas/productos -->
+        ${marcas?`<div style="font-size:11px;color:var(--text3);margin-bottom:7px;">🏷 ${marcas}</div>`:''}
+        <!-- tramos de descuento -->
+        <div style="display:flex;flex-direction:column;gap:4px;">`;
+
+      if(tramos.length===0){
+        h+=`<div style="font-size:11px;color:var(--text2);">Ver condiciones en la planilla de acciones</div>`;
+      } else if(tramos.length===1){
+        // Un solo tramo: mostrar como línea directa
+        const t=tramos[0];
+        const dtoLabel=t.bonif_cajas!=null
+          ? `${t.bonif_cajas} caja${t.bonif_cajas!==1?'s':''} bonificada${t.bonif_cajas!==1?'s':''}`
+          : t.descuento_pct!=null?`${t.descuento_pct}% dto`:'';
+        h+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <span style="font-size:11px;color:var(--text2);">${t.condicion}</span>
+          ${dtoLabel?`<span class="chip ok" style="font-size:11px;font-weight:800;flex-shrink:0;">${dtoLabel}</span>`:''}
+        </div>`;
+      } else {
+        // Múltiples tramos: lista con bullets
+        tramos.forEach(t=>{
+          const dtoLabel=t.bonif_cajas!=null
+            ? `${t.bonif_cajas} caj. bonif.`
+            : t.descuento_pct!=null?`${t.descuento_pct}%`:'';
+          h+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <span style="font-size:11px;color:var(--text2);">· ${t.condicion}</span>
+            ${dtoLabel?`<span class="chip ok" style="font-size:11px;font-weight:800;flex-shrink:0;">${dtoLabel}</span>`:''}
+          </div>`;
+        });
+      }
+
+      h+=`</div></div>`;
     });
-    h+=`</div></div>`;
+    h+=`</div>`;
   }
 
-  // ── BLOQUE 2: Alertas del día ────────────────────────────
+  // ── BLOQUE 2: Alertas de clientes ────────────────────────
   const mis=(D.al||[]).filter(a=>{
     if(!a.vendedor_id&&!a.responsable) return true;
     return (a.vendedor_id||a.responsable||'').toUpperCase().includes(myId);
   }).slice(0,30);
 
-  if(accs.length){
-    h+=`<div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1.5px;
-          text-transform:uppercase;margin:4px 0 9px;">⚡ Alertas de clientes</div>`;
-  }
+  h+=`<div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1.5px;
+        text-transform:uppercase;margin:2px 0 9px;">⚡ Alertas de clientes</div>`;
   if(!mis.length){
-    h+=`<div class="empty" style="padding:28px 20px;"><div class="eico">✅</div><p>Sin alertas activas para vos hoy.</p></div>`;
+    h+=`<div class="empty" style="padding:24px 20px;"><div class="eico">✅</div><p>Sin alertas activas para vos hoy.</p></div>`;
   } else {
     h+=mis.map(a=>{
       const cls=a.prioridad==='alta'?'bd':a.prioridad==='media'?'wn':'';

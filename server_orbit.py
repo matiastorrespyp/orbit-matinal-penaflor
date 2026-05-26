@@ -1905,29 +1905,71 @@ def gerencia_planes_as():
 # ====== ACCIONES VIGENTES (todos los roles) ======
 @app.route("/api/acciones_vigentes")
 def acciones_vigentes():
-    """Lista simplificada de acciones comerciales activas. Usada por el perfil vendedor."""
-    df = read_csv(DATASETS / "mod_acciones_ranking.csv")
+    """
+    Acciones comerciales del mes con tramos de descuento y marcas.
+    Lee el CSV de reglas (fuente de verdad) para devolver info completa al vendedor.
+    Excluye PLAN_AS (tiene su propia pestaña).
+    """
+    # Buscar el CSV de reglas más reciente en 09_CONFIG/
+    archivos = sorted(CONFIG.glob("reglas_acciones_*.csv"))
+    if not archivos:
+        return jsonify([])
+
+    try:
+        df = pd.read_csv(str(archivos[-1]), encoding="utf-8-sig")
+    except Exception as e:
+        print(f"[WARN] acciones_vigentes: {e}")
+        return jsonify([])
+
     if df.empty:
         return jsonify([])
-    result = []
+
+    # Excluir Plan AS: tiene pestaña propia
+    if "tipo_accion" in df.columns:
+        df = df[df["tipo_accion"] != "PLAN_AS"]
+
+    grupos = {}
+    orden  = []
+
     for _, row in df.iterrows():
-        nombre   = str(row.get("accion_nombre", "") or "").strip()
-        canal    = str(row.get("canal", "") or "").strip()
-        cat      = str(row.get("categoria", "") or "").strip()
-        dto      = str(row.get("descuento_display", "") or "").strip()
-        tipo     = str(row.get("tipo_accion", "") or "").strip()
-        grupo    = str(row.get("accion_grupo", "") or "").strip()
-        if not nombre:
+        grupo = str(row.get("accion_grupo", "") or "").strip()
+        if not grupo:
             continue
-        result.append({
-            "accion_nombre":    nombre,
-            "accion_grupo":     grupo,
-            "canal":            canal,
-            "categoria":        cat,
-            "descuento_display": dto,
-            "tipo_accion":      tipo,
+
+        if grupo not in grupos:
+            lineas = str(row.get("lineas_segmentos", "") or "").strip()
+            grupos[grupo] = {
+                "accion_grupo":     grupo,
+                "accion_nombre":    str(row.get("accion_nombre",    "") or "").strip(),
+                "canal":            str(row.get("canal",            "") or "").strip(),
+                "tipo_accion":      str(row.get("tipo_accion",      "") or "").strip(),
+                "categoria":        str(row.get("categoria",        "") or "").strip(),
+                "lineas_segmentos": lineas,
+                "tramos":           [],
+            }
+            orden.append(grupo)
+
+        # Construir tramo desde condicion_original
+        condicion = str(row.get("condicion_original", "") or "").strip()
+        if not condicion:
+            continue
+
+        dto_raw  = row.get("descuento_pct")
+        cant_min = row.get("cantidad_min")
+        cant_max = row.get("cantidad_max")
+        bonif_e  = row.get("bonif_entrega_cajas")
+        unidad   = str(row.get("unidad_condicion", "") or "").strip()
+
+        grupos[grupo]["tramos"].append({
+            "condicion":     condicion.replace("->", "→"),
+            "descuento_pct": round(float(dto_raw) * 100, 1) if pd.notna(dto_raw) and dto_raw else None,
+            "cant_min":      int(cant_min) if pd.notna(cant_min) else None,
+            "cant_max":      int(cant_max) if pd.notna(cant_max) else None,
+            "bonif_cajas":   int(bonif_e)  if pd.notna(bonif_e)  else None,
+            "unidad":        unidad,
         })
-    return jsonify(result)
+
+    return jsonify([grupos[g] for g in orden])
 
 
 # ====== PLANES AS — VENDEDOR ======
