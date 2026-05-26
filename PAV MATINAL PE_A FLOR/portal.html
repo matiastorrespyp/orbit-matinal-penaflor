@@ -2032,10 +2032,12 @@ function gPlanesAS(p){
             ].filter(p=>p.env>0||p.pend>0);
             const scHtml=scProds.map(p=>`<span style="font-size:9px;">${p.n}: `+
               (p.env?`<span style="color:var(--ok);">✓${p.env}</span> `:'')+(p.pend?`<span style="color:var(--bd);">⚠${p.pend}</span>`:'')+'</span>').join(' · ')||'—';
+            const vLabel=c.vendedor_id&&c.vendedor_nombre?`(${c.vendedor_id} ${c.vendedor_nombre})`:(c.vendedor_id||'');
+            const metaRow=[c.cliente_id?`#${c.cliente_id}`:'',c.localidad||'',c.dia_visita||''].filter(Boolean).join(' · ');
             return `<tr style="border-bottom:1px solid var(--bord);">
               <td style="padding:7px 10px;">
-                <div style="font-weight:600;">${c.cliente_nombre}</div>
-                <div style="font-size:10px;color:var(--text3);">${c.vendedor_id||'–'} · ${c.vendedor_nombre||''}</div>
+                <div style="font-weight:600;">${c.cliente_nombre} <span style="font-weight:400;font-size:10px;color:var(--text3);">${vLabel}</span></div>
+                <div style="font-size:10px;color:var(--text4);margin-top:2px;">${metaRow}</div>
               </td>
               <td style="padding:7px 6px;"><span style="font-weight:700;color:${col};">${c.plan_as}</span></td>
               <td style="padding:7px 4px;text-align:right;font-family:var(--f-dis);">${fmtARS(c.total_facturado)}</td>

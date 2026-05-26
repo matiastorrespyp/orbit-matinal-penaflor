@@ -1837,12 +1837,33 @@ def gerencia_planes_as():
         if c in df.columns:
             df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
 
+    # Join con clientes.xlsx para obtener localidad y dia_visita
+    _cli_info = {}   # cliente_id → {localidad, dia_visita}
+    try:
+        cli_path = INPUTS / "clientes.xlsx"
+        if cli_path.exists():
+            cli_xl = pd.read_excel(cli_path, usecols=lambda c: c.strip() in
+                                   ("Codigo","Localidad","DiasVisita","Direccion"))
+            cli_xl.columns = cli_xl.columns.str.strip()
+            cli_xl["Codigo"] = pd.to_numeric(cli_xl["Codigo"], errors="coerce")
+            for _, r in cli_xl.dropna(subset=["Codigo"]).iterrows():
+                _cli_info[int(r["Codigo"])] = {
+                    "localidad":   str(r.get("Localidad", "") or "").strip(),
+                    "dia_visita":  str(r.get("DiasVisita", "") or "").strip(),
+                }
+    except Exception as e:
+        print(f"[WARN] planes_as join clientes: {e}")
+
     def _int(v): return int(v) if pd.notna(v) else 0
     registros = []
     for _, row in df.iterrows():
+        cid = int(row["cliente_id"]) if pd.notna(row["cliente_id"]) else None
+        ci  = _cli_info.get(cid, {})
         registros.append({
-            "cliente_id":      int(row["cliente_id"]) if pd.notna(row["cliente_id"]) else None,
+            "cliente_id":      cid,
             "cliente_nombre":  str(row.get("cliente_nombre", "")),
+            "localidad":       ci.get("localidad", ""),
+            "dia_visita":      ci.get("dia_visita", ""),
             "vendedor_id":     f"V{int(row['vendedor_codigo'])}" if pd.notna(row.get("vendedor_codigo")) else None,
             "vendedor_nombre": str(row.get("vendedor_nombre", "")),
             "plan_as":         str(row.get("plan_as", "")),
