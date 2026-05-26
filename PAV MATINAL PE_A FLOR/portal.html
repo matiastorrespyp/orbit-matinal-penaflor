@@ -978,7 +978,7 @@ async function loadAll(){
       safe('/api/gerencia/innovaciones_segmento'),
       safe('/api/gerencia/cobertura_acum'),
       safe('/api/gerencia/11t_acum'),
-      safe('/api/gerencia/innovaciones_total'),
+      safe('/api/gerencia/innovaciones_total?dia='+(currentDay||'')),
       safe('/api/gerencia/planes_as'),
       safe('/api/gerencia/sellout_categoria'),
       safe('/api/gerencia/acciones_ranking'),
@@ -1054,9 +1054,14 @@ async function setDay(d){
   currentDay=d; buildDaySel(d);
   const p=document.getElementById('gPage');
   if(p) p.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);">Cargando datos del día <b>'+d+'</b>…</div>';
-  const [cli,dash]=await Promise.all([safe('/api/clientes?dia='+d),safe('/api/dashboard?dia='+d)]);
-  if(cli) D.cli=Array.isArray(cli)?cli:[];
-  if(dash) D.dash=Array.isArray(dash)?dash:[];
+  const [cli,dash,inovTot]=await Promise.all([
+    safe('/api/clientes?dia='+d),
+    safe('/api/dashboard?dia='+d),
+    safe('/api/gerencia/innovaciones_total?dia='+d)
+  ]);
+  if(cli)    D.cli=Array.isArray(cli)?cli:[];
+  if(dash)   D.dash=Array.isArray(dash)?dash:[];
+  if(inovTot) D.inov_total=inovTot;
   gRender();
 }
 function gFiltV(v){ gFiltro=v; gRender(); }
@@ -1935,9 +1940,17 @@ function gInnovaciones(p){
     if(!cartSegUsed[segKey]){ cartSegUsed[segKey]=true; byProd[k].cartera+=r.cartera_total; }
     if(!byProd[k].segs.includes(seg)) byProd[k].segs.push(seg);
   });
+  // compraron_dia: el servidor calcula 1 valor por producto_codigo (mismo en TRAD y AS).
+  // Usamos producto_codigo como clave para evitar doble suma; mapeamos después a nombre.
+  const diaCodMap={};
+  dat.por_producto.forEach(r=>{ diaCodMap[r.producto_codigo]=(r.compraron_dia||0); });
+  const diaMap={};
+  dat.por_producto.forEach(r=>{ diaMap[r.producto_nombre]=diaCodMap[r.producto_codigo]||0; });
+  const diaLabel=dat.dia||currentDay||'';
   const prods=Object.values(byProd).sort((a,b)=>b.compraron-a.compraron);
   const conCobertura=prods.filter(x=>x.compraron>0).length;
   const totalClientes=prods[0]?.cartera||0;
+  const totalDia=Object.values(diaMap).reduce((s,v)=>s+v,0);
   // Barra de stats
   html+=`<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
     <div class="card" style="flex:1;min-width:110px;padding:12px 16px;">
@@ -1949,8 +1962,8 @@ function gInnovaciones(p){
       <div style="font-size:11px;color:var(--text3);">Con compradores</div>
     </div>
     <div class="card" style="flex:1;min-width:110px;padding:12px 16px;">
-      <div style="font-size:22px;font-weight:700;">${totalClientes}</div>
-      <div style="font-size:11px;color:var(--text3);">Clientes cartera</div>
+      <div style="font-size:22px;font-weight:700;">${totalDia}</div>
+      <div style="font-size:11px;color:var(--text3);">Compraron ${diaLabel||'hoy'}</div>
     </div>
   </div>`;
   // Lista de productos
@@ -1961,10 +1974,12 @@ function gInnovaciones(p){
         const pct=prod.cartera?Math.round(prod.compraron/prod.cartera*100):0;
         const col=pct>=50?'ok':pct>=25?'wn':'bd';
         const segStr=prod.segs.join(' + ');
+        const nDia=diaMap[prod.nombre]||0;
+        const diaCol=nDia>0?'ok':'';
         return `<div style="padding:10px 14px;border-bottom:1px solid var(--bord);">
           <div class="row-b" style="margin-bottom:4px;">
             <span style="font-weight:600;font-size:13px;">${prod.nombre}</span>
-            <span class="chip ${col}" style="font-size:12px;">${pct}%</span>
+            <span class="chip ${diaCol}" style="font-size:12px;" title="Compraron ${diaLabel||'hoy'}">${nDia} <span style="font-size:10px;opacity:.75;">${diaLabel||'hoy'}</span></span>
           </div>
           <div style="font-size:11px;color:var(--text3);margin-bottom:6px;">
             <b style="color:var(--text2);">${prod.compraron}</b> compraron

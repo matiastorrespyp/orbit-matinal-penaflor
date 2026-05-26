@@ -1750,6 +1750,8 @@ def gerencia_11t_acum():
 # ====== INNOVACIONES TOTAL GERENCIA ======
 @app.route("/api/gerencia/innovaciones_total")
 def gerencia_innovaciones_total():
+    """Cobertura de innovaciones. Acepta ?dia=MA para agregar compraron_dia por producto."""
+    dia_param = request.args.get("dia", "").strip().capitalize()
     df = read_csv(DATASETS / "mod_innovaciones_segmento.csv")
     if df.empty:
         return jsonify({"error": "Sin datos"}), 404
@@ -1757,13 +1759,52 @@ def gerencia_innovaciones_total():
     df = df[~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
     df["clientes_cartera"]  = pd.to_numeric(df["clientes_cartera"],  errors="coerce").fillna(0)
     df["clientes_compraron"] = pd.to_numeric(df["clientes_compraron"], errors="coerce").fillna(0)
+    df["producto_codigo"] = pd.to_numeric(df["producto_codigo"], errors="coerce").fillna(0).astype(int)
     # Total por producto × segmento (toda la distribuidora)
     tot = (df.groupby(["producto_codigo", "producto_nombre", "segmento"])
            .agg(cartera_total=("clientes_cartera", "sum"),
                 compraron_total=("clientes_compraron", "sum"))
            .reset_index())
     tot["pct_cobertura"] = (tot["compraron_total"] / tot["cartera_total"].replace(0, 1) * 100).round(1)
-    # Por vendedor (para tabla de desglose)
+    # compraron_dia: clientes del día que compraron el producto (ventas_acumulada × clientes del día)
+    compraron_dia_map = {}   # producto_codigo → count
+    if dia_param:
+        try:
+            acum_path = INPUTS / "ventas_acumulada.csv"
+            if acum_path.exists():
+                acum = pd.read_csv(acum_path, encoding="latin1", sep=";", engine="python")
+                acum["Codigo"]         = pd.to_numeric(acum["Codigo"], errors="coerce")
+                acum["Cliente"]        = pd.to_numeric(acum["Cliente"], errors="coerce")
+                acum["ImporteNetoItem"] = (acum["ImporteNetoItem"].astype(str)
+                                           .str.replace(".", "", regex=False)
+                                           .str.replace(",", ".", regex=False))
+                acum["ImporteNetoItem"] = pd.to_numeric(acum["ImporteNetoItem"], errors="coerce").fillna(0)
+                acum = acum[acum["ImporteNetoItem"] > 0]
+                cli_dia = _clientes_por_dia(dia_param)
+                if not cli_dia.empty and "cliente_id" in cli_dia.columns:
+                    dia_ids = set(cli_dia["cliente_id"].dropna().astype(int))
+                    prod_codes = set(df["producto_codigo"].dropna().astype(int).tolist())
+                    for cod in prod_codes:
+                        compraron_dia_map[int(cod)] = int(
+                            acum[(acum["Codigo"] == cod) & (acum["Cliente"].isin(dia_ids))]
+                            ["Cliente"].nunique()
+                        )
+        except Exception as e:
+            print(f"[WARN] innovaciones_total ?dia: {e}")
+    records = []
+    for _, row in tot.iterrows():
+        pcod = int(row["producto_codigo"])
+        rec = {
+            "producto_codigo": pcod,
+            "producto_nombre": str(row["producto_nombre"]),
+            "segmento": str(row["segmento"]),
+            "cartera_total": int(row["cartera_total"]),
+            "compraron_total": int(row["compraron_total"]),
+            "pct_cobertura": float(row["pct_cobertura"]),
+            "compraron_dia": compraron_dia_map.get(pcod, 0),
+        }
+        records.append(rec)
+    # Por vendedor (sin desglose en portal, se mantiene para API externa)
     por_v = df[["vendedor_codigo", "vendedor_nombre", "segmento",
                 "producto_codigo", "producto_nombre",
                 "clientes_cartera", "clientes_compraron", "pct_cobertura"]].copy()
@@ -1773,8 +1814,8 @@ def gerencia_innovaciones_total():
         "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "fecha_ejecucion": fecha,
         "fuente": "mod_innovaciones_segmento.csv",
-        "por_producto": tot[["producto_codigo", "producto_nombre", "segmento",
-                              "cartera_total", "compraron_total", "pct_cobertura"]].to_dict("records"),
+        "dia": dia_param or None,
+        "por_producto": records,
         "por_vendedor": por_v[["vendedor_id", "vendedor_nombre", "segmento",
                                 "producto_codigo", "producto_nombre",
                                 "clientes_cartera", "clientes_compraron"]].to_dict("records"),
