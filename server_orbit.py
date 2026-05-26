@@ -1917,29 +1917,46 @@ def vendedor_planes_as(vid):
         return jsonify({"clientes": []}), 200
     df["vendedor_codigo"] = pd.to_numeric(df["vendedor_codigo"], errors="coerce")
     df = df[df["vendedor_codigo"] == cod]
-    for c in ["total_facturado", "dcto_plan", "cant_cajas", "tope",
-              "sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa",
-              "sc_smf_flavours", "sc_total_ganado", "sc_cajas_enviadas_total", "sc_pendiente"]:
+    _num = ["total_facturado", "dcto_plan", "cant_cajas", "tope", "escala_actual", "escala_max",
+            "sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa", "sc_smf_flavours",
+            "sc_total_ganado", "sc_cajas_enviadas_total", "sc_pendiente",
+            "sc_env_alaris", "sc_env_alma_mora", "sc_env_frizze", "sc_env_antares_ipa", "sc_env_smf_flavours",
+            "sc_pend_alaris", "sc_pend_alma_mora", "sc_pend_frizze", "sc_pend_antares_ipa", "sc_pend_smf_flavours"]
+    for c in _num:
         if c in df.columns:
             df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
+    def _i(row, k): return int(row[k]) if k in row.index and pd.notna(row[k]) else 0
     registros = []
     for _, row in df.iterrows():
         registros.append({
-            "cliente_id":    int(row["cliente_id"]) if pd.notna(row["cliente_id"]) else None,
-            "cliente_nombre": str(row.get("cliente_nombre", "")),
-            "plan_as":       str(row.get("plan_as", "")),
+            "cliente_id":      int(row["cliente_id"]) if pd.notna(row["cliente_id"]) else None,
+            "cliente_nombre":  str(row.get("cliente_nombre", "")),
+            "plan_as":         str(row.get("plan_as", "")),
             "total_facturado": round(float(row["total_facturado"]), 2),
-            "dcto_plan":     round(float(row["dcto_plan"]), 2),
-            "cant_cajas":    int(row["cant_cajas"]),
-            "tope":          int(row["tope"]),
-            "sc_alaris":     int(row["sc_alaris"]),
-            "sc_alma_mora":  int(row["sc_alma_mora"]),
-            "sc_frizze":     int(row["sc_frizze"]),
-            "sc_antares_ipa": int(row["sc_antares_ipa"]),
-            "sc_smf_flavours": int(row["sc_smf_flavours"]),
-            "sc_total_ganado": int(row["sc_total_ganado"]),
-            "sc_enviadas_total": int(row["sc_cajas_enviadas_total"]),
-            "sc_pendiente":  int(row["sc_pendiente"]),
+            "dcto_plan":       round(float(row["dcto_plan"]), 2),
+            "cant_cajas":      _i(row, "cant_cajas"),
+            "tope":            _i(row, "tope"),
+            "escala_actual":   _i(row, "escala_actual"),
+            "escala_max":      _i(row, "escala_max"),
+            "sc_alaris":       _i(row, "sc_alaris"),
+            "sc_alma_mora":    _i(row, "sc_alma_mora"),
+            "sc_frizze":       _i(row, "sc_frizze"),
+            "sc_antares_ipa":  _i(row, "sc_antares_ipa"),
+            "sc_smf_flavours": _i(row, "sc_smf_flavours"),
+            "sc_total_ganado": _i(row, "sc_total_ganado"),
+            "sc_enviadas_total": _i(row, "sc_cajas_enviadas_total"),
+            "sc_pendiente":    _i(row, "sc_pendiente"),
+            # por producto: enviados y pendientes
+            "sc_env_alaris":       _i(row, "sc_env_alaris"),
+            "sc_env_alma_mora":    _i(row, "sc_env_alma_mora"),
+            "sc_env_frizze":       _i(row, "sc_env_frizze"),
+            "sc_env_antares_ipa":  _i(row, "sc_env_antares_ipa"),
+            "sc_env_smf_flavours": _i(row, "sc_env_smf_flavours"),
+            "sc_pend_alaris":      _i(row, "sc_pend_alaris"),
+            "sc_pend_alma_mora":   _i(row, "sc_pend_alma_mora"),
+            "sc_pend_frizze":      _i(row, "sc_pend_frizze"),
+            "sc_pend_antares_ipa": _i(row, "sc_pend_antares_ipa"),
+            "sc_pend_smf_flavours":_i(row, "sc_pend_smf_flavours"),
         })
     return jsonify({
         "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
