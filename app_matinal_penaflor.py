@@ -313,7 +313,8 @@ def load_volumen() -> pd.DataFrame:
 def load_ventas_mes() -> pd.DataFrame:
     df = _read_csv(INPUTS / "ventas.csv", enc="latin-1")
     if df.empty: return df
-    df["FechaEntrega"] = pd.to_datetime(df["FechaEntrega"], dayfirst=True, errors="coerce")
+    # REGLA PEÑAFLOR: fecha válida = FechaComprobante (facturación), no FechaEntrega
+    df["FechaComprobante"] = pd.to_datetime(df["FechaComprobante"], dayfirst=True, errors="coerce")
     for c in ["ImporteNetoItem","valorDescuento","CantBase"]:
         if c in df.columns:
             df[c] = pd.to_numeric(
@@ -326,7 +327,8 @@ def load_ventas_mes() -> pd.DataFrame:
 def load_historial() -> pd.DataFrame:
     df = _read_csv(HIST / "historial_ventas.csv", enc="latin-1")
     if df.empty: return df
-    df["FechaEntrega"] = pd.to_datetime(df["FechaEntrega"], dayfirst=True, errors="coerce")
+    # REGLA PEÑAFLOR: fecha válida = FechaComprobante (facturación), no FechaEntrega
+    df["FechaComprobante"] = pd.to_datetime(df["FechaComprobante"], dayfirst=True, errors="coerce")
     df["ImporteNetoItem"] = pd.to_numeric(
         df["ImporteNetoItem"].astype(str).str.replace(".", "", regex=False).str.replace(",", "."),
         errors="coerce").fillna(0)
@@ -384,7 +386,7 @@ def load_real_dia() -> pd.DataFrame:
     Fuente de verdad para 'real logrado' cuando no hay snapshot diario."""
     df = _read_csv(INPUTS / "ventas.csv", enc="latin-1")
     if df.empty: return pd.DataFrame()
-    df["FechaEntrega"] = pd.to_datetime(df["FechaEntrega"], dayfirst=True, errors="coerce")
+    # REGLA PEÑAFLOR: fecha válida = FechaComprobante (facturación), no FechaEntrega
     df["FechaComprobante"] = pd.to_datetime(df["FechaComprobante"], dayfirst=True, errors="coerce")
     for c in ["ImporteNetoItem", "CantBase"]:
         if c in df.columns:
@@ -393,10 +395,8 @@ def load_real_dia() -> pd.DataFrame:
                 errors="coerce").fillna(0)
     df = df[df["CodVendedor"].isin(VALID_CODES)]
     if df.empty: return pd.DataFrame()
-    # Usar FechaEntrega si es válida, si no FechaComprobante
-    fecha_col = "FechaEntrega" if df["FechaEntrega"].notna().sum() > df["FechaComprobante"].notna().sum() else "FechaComprobante"
-    ultima = df[fecha_col].max()
-    df_dia = df[df[fecha_col] == ultima].copy()
+    ultima = df["FechaComprobante"].max()
+    df_dia = df[df["FechaComprobante"] == ultima].copy()
     rows = []
     for code in VALID_CODES:
         vid = VMAP_INV.get(code)
@@ -1057,15 +1057,16 @@ def render_gerencia() -> None:
         # ── Calcular semanas históricas ──
         sem_data: dict[str, dict] = {}
         hist_caption = ""
-        if not df_hist.empty and "FechaEntrega" in df_hist.columns:
-            ultimo = df_hist["FechaEntrega"].max().date()
+        # REGLA PEÑAFLOR: semanas históricas por FechaComprobante (facturación)
+        if not df_hist.empty and "FechaComprobante" in df_hist.columns:
+            ultimo = df_hist["FechaComprobante"].max().date()
             hist_caption = ultimo.strftime("%d/%m/%Y")
             for i, (ini, fin) in enumerate([
                 (ultimo - timedelta(days=20), ultimo - timedelta(days=14)),
                 (ultimo - timedelta(days=13), ultimo - timedelta(days=7)),
                 (ultimo - timedelta(days=6),  ultimo),
             ]):
-                mask = (df_hist["FechaEntrega"].dt.date >= ini) & (df_hist["FechaEntrega"].dt.date <= fin)
+                mask = (df_hist["FechaComprobante"].dt.date >= ini) & (df_hist["FechaComprobante"].dt.date <= fin)
                 gr = df_hist[mask].groupby("CodVendedor")["ImporteNetoItem"].sum()
                 for code, val in gr.items():
                     vid_k = VMAP_INV.get(code)

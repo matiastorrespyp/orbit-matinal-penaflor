@@ -77,6 +77,16 @@
 - ✅ Login: logo `orbit_pav_matinal_final.png` 176px flotante (sin sonido), selector de perfil con nombres legibles, campo contraseña. Sin el tag "Peñaflor · PAV Matinal" duplicado.
 - ✅ `fondo_noche.png` y `orbit_pav_matinal_final.png` copiados a `PAV MATINAL PE_A FLOR/`.
 
+### HECHO 2026-05-26 ✅ — Fix Planes AS + reglas de negocio formalizadas
+- ✅ Fix detección sin cargo: reemplaza Marca por Articulo como fuente primaria. Corrige 3 bugs ERP:
+  NaN Marca (Frizze 14619/14620), Marca incorrecta (74510 "F.Las Moras" con Marca="Alaris"),
+  abreviatura SMF (35103/35104/35105 "SMF ICE" = Smirnoff). 8/31 genuinamente pendientes.
+- ✅ Regla FechaComprobante: fecha válida siempre = facturación, nunca entrega. Corregido en
+  app_matinal_penaflor.py (4 lugares) y tools/orbit_truth_audit.py. Guardado en memoria.
+- ✅ Regla fuente Plan AS: sin cargos enviados = solo ventas.csv (período mensual). BBDD se
+  renueva mensualmente. ventas_acumulada no aplica. Comentario fijo en pipeline.
+- ✅ Resultado: 7/31 genuinamente pendientes. Portal CLI 2357 sc_pend_frizze=0 ✓.
+
 ### PENDIENTE INMEDIATO
 
 1. **Regeneración diaria:**

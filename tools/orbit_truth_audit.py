@@ -150,9 +150,10 @@ def main():
 
     # KPIs diarios desde ventas.csv (limpiando columnas)
     if not ventas.empty:
-        ventas["FechaEntrega"] = pd.to_datetime(ventas["FechaEntrega"], dayfirst=True, errors="coerce")
-        ultima = ventas["FechaEntrega"].max()
-        ventas_ayer = ventas[ventas["FechaEntrega"] == ultima].copy()
+        # REGLA PEÑAFLOR: fecha válida = FechaComprobante (facturación), no FechaEntrega
+        ventas["FechaComprobante"] = pd.to_datetime(ventas["FechaComprobante"], dayfirst=True, errors="coerce")
+        ultima = ventas["FechaComprobante"].max()
+        ventas_ayer = ventas[ventas["FechaComprobante"] == ultima].copy()
         # Limpiar columnas numéricas
         if "ImporteNetoItem" in ventas_ayer.columns:
             ventas_ayer["ImporteNetoItem"] = limpiar_numero(ventas_ayer["ImporteNetoItem"])

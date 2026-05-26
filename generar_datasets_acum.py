@@ -386,6 +386,12 @@ def generar_planes_as(ventas, bbdd):
     )
 
     # SC enviados por producto Plan AS (solo productos del plan)
+    # REGLA: detectar marca desde columna Articulo (fuente primaria, más confiable).
+    # Marca del ERP tiene errores conocidos:
+    #   - COD 74510 "F. LAS MORAS ROSADO" tiene Marca="Alaris" → falso positivo si usamos Marca
+    #   - COD 14619/14620 "FRIZZE..." tiene Marca=NaN → falso negativo si usamos solo Marca
+    #   - COD 35103/35104/35105 "SMF ICE..." tiene Marca="Smirnoff Ice Flavours" → correcto,
+    #     pero Articulo usa abreviatura "SMF" no "SMIRNOFF", por eso se incluye "smf ice".
     _AS_MARCAS = {
         "alaris": "sc_env_alaris",
         "alma mora": "sc_env_alma_mora",
@@ -393,11 +399,27 @@ def generar_planes_as(ventas, bbdd):
         "antares": "sc_env_antares_ipa",
         "smirnoff": "sc_env_smf_flavours",
     }
+    _ARTICULO_AS = {
+        "sc_env_alaris":       ["alaris"],
+        "sc_env_alma_mora":    ["alma mora"],
+        "sc_env_frizze":       ["frizze"],
+        "sc_env_antares_ipa":  ["antares"],
+        "sc_env_smf_flavours": ["smirnoff", "smf ice"],
+    }
+
+    def _detectar_prod_as(row):
+        # Fuente: SOLO Articulo. Sin fallback a Marca.
+        # Marca tiene errores conocidos en el ERP (ej: COD 74510 "F. LAS MORAS ROSADO"
+        # con Marca="Alaris" → falso positivo). Si el Articulo no dice explícitamente
+        # el nombre de la marca del plan, no se cuenta como sin cargo del plan.
+        art = str(row.get("Articulo", "")).lower()
+        for prod_col, kws in _ARTICULO_AS.items():
+            if any(kw in art for kw in kws):
+                return prod_col
+        return None
+
     sc_copy = sc.copy()
-    sc_copy["_marca_lower"] = sc_copy["Marca"].fillna("").str.lower()
-    sc_copy["_prod_as"] = sc_copy["_marca_lower"].apply(
-        lambda m: next((v for k, v in _AS_MARCAS.items() if k in m), None)
-    )
+    sc_copy["_prod_as"] = sc_copy.apply(_detectar_prod_as, axis=1)
     sc_plan = sc_copy[sc_copy["_prod_as"].notna()]
     sc_env_prod = {}
     for prod_col in _AS_MARCAS.values():
@@ -705,6 +727,9 @@ def main():
 
     # ── Planes AS ──
     print("\n[3/5] Generando mod_planes_as.csv ...")
+    # REGLA: sin cargos enviados se calculan SOLO desde ventas.csv (período mensual activo).
+    # El archivo Reconocimiento Plan As.xlsx se renueva cada mes → define lo adeudado este mes.
+    # ventas_acumulada NO aplica: pertenece a un período comercial anterior.
     pas = generar_planes_as(ventas, bbdd)
     pas.to_csv(OUT / "mod_planes_as.csv", index=False, encoding="utf-8-sig")
     print(f"  OK: {len(pas)} clientes AS")

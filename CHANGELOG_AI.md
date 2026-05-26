@@ -1,5 +1,50 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-26 — fix(planes_as): NaN Marca Frizze + regla fechas + regla fuente mensual
+
+**Problema 1 — Errores de Marca en ERP (afecta múltiples marcas):**
+La detección de sin cargo usaba la columna `Marca` del ERP, que tiene dos tipos de error:
+- `Marca = NaN`: códigos 14619/14620 (FRIZZE BUBBLE MOOD/MANXANA POP) sin Marca → Frizze no detectado
+- `Marca = "Alaris"` incorrecto: código 74510 "F. LAS MORAS ROSADO" tiene Marca="Alaris" en el ERP
+  → falso positivo: CLIs 1178 y 997 mostraban Alaris enviado cuando no se había enviado nada
+- Código 35103/35104/35105 "SMF ICE...": Marca="Smirnoff Ice Flavours" es correcto pero Articulo
+  usa abreviatura "SMF", no "SMIRNOFF" → se perdería si se usa solo Articulo sin keyword "smf ice"
+
+**Fix:** `_detectar_prod_as()` usa `Articulo` como fuente primaria y exclusiva (sin fallback a Marca).
+Keywords ampliados: `"sc_env_smf_flavours": ["smirnoff", "smf ice"]` para cubrir abreviaturas ERP.
+"F. LAS MORAS ROSADO" no contiene ningún keyword del plan → correctamente excluido.
+"FRIZZE BUBBLE MOOD" contiene "frizze" → correctamente detectado.
+"SMF ICE RED BERRIE" contiene "smf ice" → correctamente detectado como Smirnoff.
+
+**Regla de negocio formalizada — FechaComprobante:**
+Para Peñaflor la fecha válida de venta es siempre `FechaComprobante` (facturación), nunca
+`FechaEntrega` ni `FechaCarga`. Una venta facturada el 30/5 y entregada el 4/6 es de mayo.
+Corregido en:
+- `app_matinal_penaflor.py`: 4 lugares (load_ventas_mes, load_historial, load_real_dia,
+  semanas históricas) — todos usaban `FechaEntrega` para filtrar períodos.
+- `tools/orbit_truth_audit.py`: "ventas_ayer" filtrada por `FechaEntrega` → `FechaComprobante`.
+- `server_orbit.py` y `generar_datasets_acum.py`: ya usaban `FechaComprobante` correctamente.
+- Memoria guardada en `memory/business_rule_fecha_facturacion.md`.
+
+**Regla de negocio formalizada — fuente Plan AS:**
+Sin cargos enviados se calculan SOLO desde `ventas.csv` (período mensual activo).
+`Reconocimiento Plan As.xlsx` se renueva cada mes → define lo adeudado en ese mes.
+`ventas_acumulada.csv` NO aplica para Plan AS (es período anterior).
+Comentario fijo en `main()` de `generar_datasets_acum.py`.
+
+**Resultado final:**
+- 8/31 clientes genuinamente pendientes (8125, 390, 30006, 1178, 2689, 8010, 997, 2353)
+- 23/31 con todos sus sin cargos del mes entregados y registrados
+- CLI 2357/30033/172/30044: Frizze sc_pend_frizze=0 ✓ (antes PENDIENTE por NaN Marca)
+- CLI 1178/997: Alaris sc_env_alaris=0 ✓ (antes mostraba 6 enviado por F.Las Moras mal taggeado)
+- CLIs con Smirnoff SMF ICE: sc_env_smf_flavours detectado correctamente vía keyword "smf ice"
+
+**Archivos tocados:**
+- `generar_datasets_acum.py` — fix NaN Marca Frizze + comentario regla fuente mensual
+- `app_matinal_penaflor.py` — 4 ocurrencias FechaEntrega → FechaComprobante
+- `tools/orbit_truth_audit.py` — FechaEntrega → FechaComprobante
+- `04_DATASETS_ORBIT/mod_planes_as.csv` — regenerado, 7 genuinamente pendientes
+
 ## 2026-05-26 — feat(innovaciones): 17 productos reales, sin desglose vendedor en gerencia, avance propio en panel vendedor
 
 **Problema encontrado:**
