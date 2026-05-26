@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>ORBIT · Peñaflor PAV Matinal</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -729,6 +729,64 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
   /* Chips pequeños */
   .chip { font-size:8.5px; padding:2px 6px; }
 }
+
+/* ── Vendor tab labels: no-wrap + soft truncation ──────── */
+.vtab > span:last-child {
+  display:block; width:100%; text-align:center;
+  white-space:nowrap; overflow:hidden; text-overflow:clip;
+  max-width:100%;
+}
+
+/* ── iOS safe area (notch + home indicator) ─────────────
+   viewport-fit=cover est on <meta>, esta regla aplica el inset.  */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .vbnav {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 4px);
+  }
+  .vcont {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+  #loginScreen {
+    padding-top:    env(safe-area-inset-top,   0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* ── Login: scrollable cuando el teclado virtual sube ─── */
+@media (max-width: 768px) {
+  #loginScreen { overflow-y: auto; }
+  .ln-wrap {
+    /* margen auto recupera el centrado vertical cuando hay espacio */
+    margin: auto;
+    flex-shrink: 0;
+  }
+}
+
+/* ── Teléfonos < 380px (ej. iPhone SE 1a gen, Android compactos) */
+@media (max-width: 380px) {
+  /* KPI vendedor: fuente más chica para que los números entren */
+  .vkv { font-size:20px; letter-spacing:-.3px; }
+  .vkh { font-size:9px; }
+  /* Formulario plan: una sola columna para inputs cómodos */
+  .pf-grid { grid-template-columns: 1fr; }
+  .pf-full { grid-column: 1 !important; }
+  /* Reducir padding lateral */
+  .vcont { padding-left:11px; padding-right:11px; }
+  /* Touch targets mínimos 44px para inputs y botones */
+  .pf-field input, .pf-field textarea, .pf-field select,
+  .ln-field input, .ln-field select { min-height:44px; }
+  .g-prim, .g-ghost { min-height:44px; }
+}
+
+/* ── Teléfonos muy pequeños < 340px (320px legacy devices) ── */
+@media (max-width: 340px) {
+  .vkv  { font-size:17px; }
+  .vtab { font-size:7.5px; padding:8px 2px 6px; gap:2px; }
+  .vtab-ico { font-size:15px; }
+  .vhdr-name { font-size:16px; }
+  .vsh { font-size:16px; }
+  .vkcard { padding:10px 11px; }
+}
 </style>
 </head>
 <body>
@@ -759,7 +817,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
   <!-- Formulario flotante — directo sobre la imagen -->
   <div class="ln-wrap">
     <div class="ln-logo">
-      <img id="orbitLogoLogin" src="assets/orbit-mark.png" alt="ORBIT" class="ln-logo-img">
+      <img id="orbitLogoLogin" src="orbit_pav_matinal_final.png" alt="ORBIT" class="ln-logo-img">
     </div>
     <div class="ln-field">
       <label>Perfil de acceso</label>
@@ -865,7 +923,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       </div>
       <div class="row gap6">
         <span class="vt-live">EN VIVO</span>
-        <button class="g-ghost" style="padding:5px 9px;font-size:10px;" onclick="logout()">Salir</button>
+        <button class="g-ghost" style="padding:5px 12px;font-size:10px;min-height:44px;" onclick="logout()">Salir</button>
       </div>
     </div>
   </header>
@@ -881,7 +939,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
     <div class="vtab active" onclick="vSw('inicio',this)"><span class="vtab-ico">🏠</span><span>Inicio</span></div>
     <div class="vtab" onclick="vSw('ruta',this)"><span class="vtab-ico">📍</span><span>Ruta</span></div>
     <div class="vtab" onclick="vSw('kpis',this)"><span class="vtab-ico">📈</span><span>KPIs</span></div>
-    <div class="vtab" onclick="vSw('plan',this)"><span class="vtab-ico">📋</span><span>Mi Plan</span></div>
+    <div class="vtab" onclick="vSw('plan',this)"><span class="vtab-ico">📋</span><span>Plan</span></div>
     <div class="vtab" onclick="vSw('alertas',this)">
       <span class="vtab-ico">⚡</span><span>Alertas</span>
       <div class="vtab-badge" id="vBadge"></div>
@@ -2358,6 +2416,16 @@ window.addEventListener('DOMContentLoaded', ()=>{
     document.getElementById('loginScreen').style.display='flex';
   }, 800);
   document.getElementById('pwdInput').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+  /* — iOS / Android: cuando el teclado virtual sube, adaptar altura de login — */
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      const ls = document.getElementById('loginScreen');
+      if (ls && ls.style.display !== 'none') {
+        ls.style.height = window.visualViewport.height + 'px';
+      }
+    });
+  }
 });
 </script>
 </body>

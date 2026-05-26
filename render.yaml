@@ -1,0 +1,35 @@
+###############################################################
+# ORBIT PAV Matinal · Peñaflor — Render deployment config
+# https://render.com/docs/yaml-spec
+###############################################################
+
+services:
+  - type: web
+    name: orbit-penaflor-pav
+    runtime: python
+    plan: starter           # $7/mes — tier mínimo para web services dinámicos
+
+    # Build
+    buildCommand: pip install -r requirements.txt
+
+    # Start — gunicorn sirve la app Flask
+    startCommand: >
+      gunicorn server_orbit:app
+      --bind 0.0.0.0:$PORT
+      --timeout 120
+      --workers 2
+      --worker-class sync
+
+    # Environment variables
+    envVars:
+      - key: FLASK_DEBUG
+        value: "false"
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+
+    # Health check
+    healthCheckPath: /api/diagnostico
+
+    # Auto-deploy on every push to master
+    branch: master
+    autoDeploy: true

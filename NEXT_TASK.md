@@ -1,19 +1,28 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
-## Sesión 2026-05-26 (tarde) — Estado actual
+## Sesión 2026-05-26 (noche) — Estado actual
 
 ### HECHO EN ESTA SESIÓN ✅
-- ✅ Planes AS: fix detección sin cargo (Articulo-primario, sin fallback a Marca). Clientes 1178 y 2357 corregidos.
-- ✅ Regla FechaComprobante formalizada y aplicada en app_matinal + orbit_truth_audit.
-- ✅ Acciones comerciales: reescritura completa del pipeline y del panel portal:
-  - Fix bug `ImporteItem` coma decimal → filtro cambiado a `Descuento_pct > 0`
-  - Fix RTD duplicado: `_ARTICULO_CAT_MAP` diferencia Frizze vs RTD Latas vs Smirnoff ICE
-  - Fix SIDRA case mismatch
-  - Nuevas reglas: Smirnoff ICE 25% (imagen 7) y Termidor (imagen 8)
-  - `accion_grupo` + `accion_nombre` en CSV de reglas
-  - `generar_acciones_analisis()`: comparativo vs mes anterior (clientes nuevos, delta litros, costo activación)
-  - Endpoint `/api/gerencia/acciones_ranking` enriquecido
-  - Portal: tabla detalle por acción + panel análisis de retorno
+- ✅ Smartphone responsiveness — perfil vendedor:
+  - `viewport-fit=cover` → safe area habilitada en iPhones con notch/home indicator
+  - CSS `@supports env(safe-area-inset-bottom)` para bottom nav y content padding
+  - Login scrollable cuando el teclado virtual sube (overflow-y:auto + visualViewport API)
+  - `@media (max-width:380px)`: pf-grid 1 columna, vkv 20px, touch targets 44px
+  - `@media (max-width:340px)`: vkv 17px, tabs compactos para 320px legacy
+  - Tab "Mi Plan" → "Plan" (evita desborde en 320px)
+  - Botón "Salir" min-height:44px
+  - Login logo corregido (assets/orbit-mark.png → orbit_pav_matinal_final.png)
+- ✅ Render deployment preparado:
+  - `render.yaml` creado
+  - `DEPLOY_RENDER.md` guía completa
+  - GitHub remote ya existe: matiastorrespyp/orbit-matinal-penaflor
+
+### PRÓXIMO PASO — Render deploy (para hacer)
+1. Asegurarse que el repo GitHub esté actualizado: `git push`
+2. Ir a render.com → New Web Service → conectar `matiastorrespyp/orbit-matinal-penaflor`
+3. Render detecta `render.yaml` automáticamente
+4. Plan Starter = $7/mes (no hay tier gratis para apps dinámicas en Render 2024+)
+5. **Alternativa gratuita**: Railway.app → $5/mes crédito incluido → efectivamente gratis para tráfico bajo
 
 ### PENDIENTES TÉCNICOS
 - **Workflow mensual acciones**: en junio cambiar `reglas_acciones_mayo_2026_orbit.csv` por `reglas_acciones_junio_2026_orbit.csv`
@@ -22,13 +31,15 @@
   el segmento ON_PREMISE + categoría SPIRITS. Revisar si son realmente distintas en el ERP.
 - **Termidor delta**: muestra `None` en delta_litros porque en abril no había ventas de Termidor para esos clientes.
   El cap de 9999% lo excluye correctamente.
+- **Persistencia de datos en Render**: orbit.db se lee del repo (commit necesario). Planificación/mensajes
+  escritos en el portal se pierden al re-deployar. Para persistencia: usar Render Persistent Disk ($7/mes extra).
 
 ### PRÓXIMAS ETAPAS (portal, por orden de prioridad)
-1. **Etapa A — Vista Gerencial dashboard**: verificar gráficas de barras (valores reales vs visualización).
-2. **Etapa B — Vista Vendedor individual**: drill-down desde ranking, KPIs de clientes del día.
-3. **Etapa C — Clientes Críticos**: validar que la lista y estados vienen de datos reales.
-4. **Etapa D — 11 Titulares detalle**: tabla por marca y cliente.
-5. **Hosting público**: migrar de localhost a hosting libre cuando esté todo validado.
+1. **Deploy en Railway / Render** (listo para ejecutar — ver DEPLOY_RENDER.md)
+2. **Etapa A — Vista Gerencial dashboard**: verificar gráficas de barras (valores reales vs visualización).
+3. **Etapa B — Vista Vendedor individual**: drill-down desde ranking, KPIs de clientes del día.
+4. **Etapa C — Clientes Críticos**: validar que la lista y estados vienen de datos reales.
+5. **Etapa D — 11 Titulares detalle**: tabla por marca y cliente.
 
 ### PENDIENTES TÉCNICOS
 - `ccc_mes`: pequeña diferencia ≤2 clientes aceptable por timing de snapshot. No crítico.

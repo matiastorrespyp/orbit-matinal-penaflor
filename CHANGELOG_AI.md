@@ -1,5 +1,33 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-26 — feat(responsive): smartphone optimization + Render deploy setup
+
+**Smartphone — perfil vendedor:**
+- `viewport-fit=cover` en meta viewport → habilita safe area en iOS (notch + home indicator)
+- `@supports env(safe-area-inset-bottom)`: `.vbnav` y `.vcont` ajustan padding para home indicator
+- `#loginScreen overflow-y:auto` en móviles → form no se clipa cuando el teclado virtual sube
+- `visualViewport.resize` event → ajusta altura de login al espacio disponible sobre el teclado
+- `@media (max-width:380px)`: `.pf-grid` colapsa a 1 columna, `.vkv` reduce a 20px
+- `@media (max-width:340px)`: `.vkv` 17px, tabs 7.5px, íconos 15px, vendor header 16px
+- `.vtab > span:last-child`: `white-space:nowrap; overflow:hidden` evita desborde de etiquetas
+- Tab "Mi Plan" → "Plan" (más corto, entra en pantallas de 320px sin problema)
+- Botón "Salir" en topbar vendedor: `min-height:44px` para touch target adecuado
+- Touch targets en formularios: `min-height:44px` en inputs/textareas a ≤380px
+- Fix: login logo `assets/orbit-mark.png` (no existía) → `orbit_pav_matinal_final.png`
+
+**Render deployment:**
+- `render.yaml` creado (web service, Python, gunicorn, plan Starter $7/mes)
+- `DEPLOY_RENDER.md` con guía completa: pasos, flujo diario, variables de entorno, nota SQLite
+- GitHub remote ya existente: `matiastorrespyp/orbit-matinal-penaflor`
+- Nota: Render ya no tiene tier gratuito; Railway.app tiene $5/mes de crédito incluido
+
+**Archivos tocados:**
+- `PAV MATINAL PE_A FLOR/portal.html`: CSS responsivo + JS visualViewport + correcciones HTML
+- `render.yaml`: nuevo
+- `DEPLOY_RENDER.md`: nuevo
+
+---
+
 ## 2026-05-26 — feat(acciones): panel acciones comerciales por acción con análisis de retorno
 
 **Nuevo panel "Acciones Comerciales" con tres mejoras principales:**
