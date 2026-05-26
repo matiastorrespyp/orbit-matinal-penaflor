@@ -585,15 +585,31 @@ def generar_sellout_categoria(ventas, maestro):
 # ─────────────────────────────────────────────
 
 # Mapeo: categoria de regla → Categoria del maestro de productos
+# NOTA: los valores deben coincidir EXACTAMENTE (case-sensitive) con la columna Categoria
+#       del maestro 04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx
 _REGLA_CAT_MAP = {
-    "VDA/VDG/ESPUMANTES/SIDRA": ["Vinos del año", "Vinos de guarda", "Espumantes", "Sidra"],
+    "VDA/VDG/ESPUMANTES/SIDRA": ["Vinos del año", "Vinos de guarda", "Espumantes", "SIDRA"],
     "VDA":                       ["Vinos del año", "Vinos de guarda"],
     "RTD":                       ["RTD", "RTD (S)", "Primary (S)", "Standard (S)", "Premium (S)", "Super Premium (S)"],
     "RTD LATAS":                 ["RTD", "RTD (S)", "Primary (S)", "Standard (S)", "Premium (S)", "Super Premium (S)"],
+    "RTD ICE":                   ["RTD", "RTD (S)"],                  # Smirnoff ICE (refina con _ARTICULO_CAT_MAP)
     "SPIRITS LOCALES":           ["Gin", "Vodka", "Ron", "Licores"],
     "SPIRITS IMPORTADOS":        ["Whisky", "Whisky (Maltas)", "Bourbon"],
     "SPIRITS":                   ["Gin", "Vodka", "Ron", "Licores", "Whisky", "Whisky (Maltas)", "Bourbon"],
     "ESPUMANTES":                ["Espumantes"],
+    "TERMIDOR":                  ["Vinos de Mesa"],                   # refina con _ARTICULO_CAT_MAP
+}
+
+# Filtro adicional por keyword en Articulo para categorías que necesitan precisión de producto.
+# Cuando cat_key aparece aquí, se aplica ADEMÁS del filtro de Categoria del maestro.
+# Razón: RTD/RTD LATAS/RTD ICE comparten la misma Categoria ("RTD (S)") en el maestro;
+# sin este filtro las tres acciones producirían filas idénticas.
+# Termidor: está en "Vinos de Mesa" pero la acción es específica de esa marca.
+_ARTICULO_CAT_MAP = {
+    "RTD":       ["frizze"],                           # solo Frizze (botellas)
+    "RTD LATAS": ["gordons", "smf bc", "antares"],     # Gordons Tonic / Smirnoff BC / Antares (NO SMF ICE)
+    "RTD ICE":   ["smirnoff ice", "smf ice"],          # Smirnoff ICE exclusivamente (Imagen 7: 25% dto)
+    "TERMIDOR":  ["termidor"],                         # Termidor Blanco / Tinto (Imagen 8)
 }
 
 # Mapeo: canal de regla → segmentos de clientes (_seg)  None = sin filtro
@@ -606,76 +622,259 @@ _REGLA_CANAL_SEG_MAP = {
     "PETIT MAYORISTAS":        ["MAYORISTA"],
 }
 
-def generar_acciones_ranking(ventas, clientes, maestro):
-    """Ranking de acciones comerciales del mes: litros vendidos, $ inversión, clientes."""
-    p = BASE / "09_CONFIG" / "reglas_acciones_mayo_2026_orbit.csv"
-    if not p.exists():
-        return pd.DataFrame()
-    reglas = pd.read_csv(p, encoding="latin1")
-    reglas.columns = [c.lstrip("﻿").strip() for c in reglas.columns]
-
+def _preparar_ventas_acciones(ventas, clientes, maestro):
+    """Prepara el dataframe de ventas para el análisis de acciones (reutilizable)."""
     v = ventas[ventas["ImporteNetoItem"] > 0].copy()
     v["_cod"] = pd.to_numeric(v["Codigo"], errors="coerce")
     v["_cli"] = pd.to_numeric(v["Cliente"], errors="coerce")
-    v["_imp_item"] = pd.to_numeric(v.get("ImporteItem", 0), errors="coerce").fillna(0)
+    # Filtro de acción comercial: solo ventas con descuento explícito en el ERP.
+    # Descuento_pct ya está limpio desde _parsear_ventas_csv.
+    # NO usar ImporteItem - ImporteNetoItem: incluye diferencias de precio de lista que no son acciones.
+    v = v[v["Descuento_pct"] > 0].copy()
+    # Inversión = ImporteItem (bruto) - ImporteNetoItem. ImporteItem puede tener coma decimal.
+    _imp_raw = v["ImporteItem"].astype(str) if "ImporteItem" in v.columns else pd.Series(["0"] * len(v), index=v.index)
+    _imp_raw = _imp_raw.str.replace(".", "", regex=False).str.replace(",", ".", regex=False)
+    v["_imp_item"] = pd.to_numeric(_imp_raw, errors="coerce").fillna(0)
     v["_descuento_p"] = (v["_imp_item"] - v["ImporteNetoItem"]).clip(lower=0)
-
-    # Solo contar ventas con descuento real (bajo una acción promocional)
-    v = v[v["_descuento_p"] > 0].copy()
-
     v = v.merge(maestro[["Codigo", "Categoria", "Lts_caja"]], left_on="_cod", right_on="Codigo", how="left")
     v["_litros"] = v["CantBase"] * v["Lts_caja"].fillna(0)
-
     cli_seg = clientes[["Codigo", "_seg"]].copy()
     cli_seg["Codigo"] = pd.to_numeric(cli_seg["Codigo"], errors="coerce")
     v = v.merge(cli_seg.rename(columns={"Codigo": "cli_id"}), left_on="_cli", right_on="cli_id", how="left")
+    return v
 
-    # Deduplica canal+categoria (agrupa tiers de descuento distintos en una sola accion)
+
+def _filtrar_ventas_accion(v, canal, cat_key, segs):
+    """Aplica filtros de canal + categoría + Articulo sobre el df preparado."""
+    mask = pd.Series(True, index=v.index)
+    if segs is not None:
+        mask &= v["_seg"].isin(segs)
+    if cat_key == "INNOVACIONES":
+        mask &= v["_cod"].isin(set(INOV_PRODUCTOS.keys()))
+    else:
+        maestro_cats = _REGLA_CAT_MAP.get(cat_key)
+        if maestro_cats is None:
+            return None
+        mask &= v["Categoria"].isin(maestro_cats)
+        if cat_key in _ARTICULO_CAT_MAP:
+            kws = _ARTICULO_CAT_MAP[cat_key]
+            art_l = v["Articulo"].astype(str).str.lower()
+            mask &= art_l.apply(lambda a, kws=kws: any(kw in a for kw in kws))
+    return v[mask]
+
+
+def generar_acciones_ranking(ventas, clientes, maestro):
+    """
+    Detalle de acciones comerciales del mes, una fila por acción (accion_grupo).
+    Incluye accion_nombre legible y conjunto de clientes para análisis posterior.
+    Retorna: (DataFrame detalle, dict {accion_grupo: set(cli_ids)})
+    """
+    p = BASE / "09_CONFIG" / "reglas_acciones_mayo_2026_orbit.csv"
+    if not p.exists():
+        return pd.DataFrame(), {}
+    reglas = pd.read_csv(p, encoding="utf-8-sig")
+    reglas.columns = [c.strip() for c in reglas.columns]
+
+    v = _preparar_ventas_acciones(ventas, clientes, maestro)
+
     seen: set = set()
     filas = []
+    clientes_por_accion: dict = {}   # accion_grupo → set de cliente_ids
+
     for _, r in reglas.iterrows():
-        canal = str(r.get("canal", "")).strip()
-        cat_key = str(r.get("categoria", "")).strip().upper()
-        key = (canal, cat_key)
-        if key in seen:
+        canal    = str(r.get("canal", "")).strip()
+        cat_key  = str(r.get("categoria", "")).strip().upper()
+        grupo    = str(r.get("accion_grupo", f"{canal}|{cat_key}")).strip()
+        nombre   = str(r.get("accion_nombre", grupo)).strip()
+        tipo     = str(r.get("tipo_accion", "")).strip()
+
+        if grupo in seen:
             continue
-        seen.add(key)
-        # Excluir PLANES AASS (cubierto por mod_planes_as) y RESTO SKU sin mapeo
+        seen.add(grupo)
+
+        # Excluir PLANES AASS (cubierto por mod_planes_as) y RESTO SKU
         if canal == "PLANES AASS" or cat_key == "RESTO SKU":
             continue
         if canal not in _REGLA_CANAL_SEG_MAP:
             continue
 
-        segs = _REGLA_CANAL_SEG_MAP[canal]
-        mask = pd.Series(True, index=v.index)
-        if segs is not None:
-            mask &= v["_seg"].isin(segs)
-
-        if cat_key == "INNOVACIONES":
-            mask &= v["_cod"].isin(set(INOV_PRODUCTOS.keys()))
-        else:
-            maestro_cats = None
-            for k, cats in _REGLA_CAT_MAP.items():
-                if cat_key == k:
-                    maestro_cats = cats
-                    break
-            if maestro_cats is None:
-                continue
-            mask &= v["Categoria"].isin(maestro_cats)
-
-        v_m = v[mask]
-        if v_m.empty:
+        segs  = _REGLA_CANAL_SEG_MAP[canal]
+        v_m   = _filtrar_ventas_accion(v, canal, cat_key, segs)
+        if v_m is None or v_m.empty:
             continue
 
+        clientes_por_accion[grupo] = set(v_m["_cli"].dropna().astype(int).tolist())
+
+        # Rango de descuentos aplicados en esta acción
+        desc_vals = sorted(v_m["Descuento_pct"].dropna().unique())
+        if desc_vals:
+            desc_min = round(min(desc_vals), 0)
+            desc_max = round(max(desc_vals), 0)
+            desc_display = (f"{int(desc_min)}%" if desc_min == desc_max
+                            else f"{int(desc_min)}-{int(desc_max)}%")
+        else:
+            desc_display = "–"
+
         filas.append({
-            "canal": canal,
-            "categoria": cat_key,
-            "litros_vendidos": round(float(v_m["_litros"].sum()), 1),
-            "cajas_vendidas": int(v_m["CantBase"].sum()),
-            "inversion_pesos": round(float(v_m["_descuento_p"].sum()), 0),
-            "importe_neto": round(float(v_m["ImporteNetoItem"].sum()), 0),
+            "accion_grupo":       grupo,
+            "accion_nombre":      nombre,
+            "tipo_accion":        tipo,
+            "canal":              canal,
+            "categoria":          cat_key,
+            "descuento_display":  desc_display,
+            "litros_vendidos":    round(float(v_m["_litros"].sum()), 1),
+            "cajas_vendidas":     int(v_m["CantBase"].sum()),
+            "inversion_pesos":    round(float(v_m["_descuento_p"].sum()), 0),
+            "importe_neto":       round(float(v_m["ImporteNetoItem"].sum()), 0),
             "clientes_afectados": int(v_m["_cli"].nunique()),
-            "fecha_calculo": datetime.now().strftime("%Y-%m-%d"),
+            "fecha_calculo":      datetime.now().strftime("%Y-%m-%d"),
+        })
+
+    df = pd.DataFrame(filas)
+    if not df.empty:
+        df = df.sort_values("inversion_pesos", ascending=False).reset_index(drop=True)
+    return df, clientes_por_accion
+
+
+def generar_acciones_analisis(ventas, historial_path, clientes, maestro, clientes_por_accion: dict):
+    """
+    Análisis de retorno por acción comercial vs mes anterior.
+    Para cada acción calcula:
+    - clientes_mes_actual: compraron con descuento en categoría este mes
+    - clientes_cat_mes_ant: compraron la misma categoría el mes anterior (cualquier precio)
+    - clientes_nuevos_cat: en actual pero NO en mes anterior → activados por la acción
+    - litros_mes_actual, litros_mes_anterior: comparativo de volumen
+    - costo_por_cliente_nuevo: inversión / clientes_nuevos_cat
+    """
+    if not clientes_por_accion:
+        return pd.DataFrame()
+
+    p_reglas = BASE / "09_CONFIG" / "reglas_acciones_mayo_2026_orbit.csv"
+    if not p_reglas.exists():
+        return pd.DataFrame()
+    reglas = pd.read_csv(p_reglas, encoding="utf-8-sig")
+    reglas.columns = [c.strip() for c in reglas.columns]
+    reglas_map = {}
+    for _, r in reglas.iterrows():
+        g = str(r.get("accion_grupo", "")).strip()
+        if g and g not in reglas_map:
+            reglas_map[g] = r
+
+    # Cargar historial (ventas reales históricas)
+    if not historial_path.exists():
+        return pd.DataFrame()
+    hist = pd.read_csv(historial_path, encoding="latin1", sep=";", engine="python",
+                       on_bad_lines="skip")
+    hist.columns = [c.strip() for c in hist.columns]
+    hist["FechaComprobante"] = pd.to_datetime(hist["FechaComprobante"], dayfirst=True, errors="coerce")
+    hist["ImporteNetoItem"] = (hist["ImporteNetoItem"].astype(str)
+                               .str.replace(".", "", regex=False)
+                               .str.replace(",", ".", regex=False))
+    hist["ImporteNetoItem"] = pd.to_numeric(hist["ImporteNetoItem"], errors="coerce").fillna(0)
+    hist["CantBase"] = pd.to_numeric(hist["CantBase"], errors="coerce").fillna(0)
+    hist["_cod"] = pd.to_numeric(hist["Codigo"], errors="coerce")
+    hist["_cli"] = pd.to_numeric(hist["Cliente"], errors="coerce")
+    hist = hist[hist["ImporteNetoItem"] > 0]
+    hist = hist.merge(maestro[["Codigo", "Categoria", "Lts_caja"]], left_on="_cod", right_on="Codigo", how="left")
+    hist["_litros"] = hist["CantBase"] * hist["Lts_caja"].fillna(0)
+
+    # Determinar mes actual y mes anterior desde ventas
+    ventas["FechaComprobante"] = pd.to_datetime(ventas["FechaComprobante"], dayfirst=True, errors="coerce")
+    mes_actual  = ventas["FechaComprobante"].dt.to_period("M").dropna().max()
+    mes_anterior = mes_actual - 1
+
+    hist_ant = hist[hist["FechaComprobante"].dt.to_period("M") == mes_anterior].copy()
+    hist_act = hist[hist["FechaComprobante"].dt.to_period("M") == mes_actual].copy()
+
+    v_act = _preparar_ventas_acciones(ventas, clientes, maestro)
+
+    filas = []
+    for grupo, clis_accion in clientes_por_accion.items():
+        r_reg = reglas_map.get(grupo)
+        if r_reg is None:
+            continue
+        canal   = str(r_reg.get("canal", "")).strip()
+        cat_key = str(r_reg.get("categoria", "")).strip().upper()
+        nombre  = str(r_reg.get("accion_nombre", grupo)).strip()
+
+        if canal not in _REGLA_CANAL_SEG_MAP:
+            continue
+        segs = _REGLA_CANAL_SEG_MAP[canal]
+
+        # Litros MES ANTERIOR — mismo canal+categoría, sin filtro de descuento
+        if cat_key == "INNOVACIONES":
+            cat_mask_ant = hist_ant["_cod"].isin(set(INOV_PRODUCTOS.keys()))
+        else:
+            maestro_cats = _REGLA_CAT_MAP.get(cat_key)
+            if maestro_cats is None:
+                continue
+            cat_mask_ant = hist_ant["Categoria"].isin(maestro_cats)
+            if cat_key in _ARTICULO_CAT_MAP:
+                kws = _ARTICULO_CAT_MAP[cat_key]
+                art_l_ant = hist_ant["Articulo"].astype(str).str.lower()
+                cat_mask_ant &= art_l_ant.apply(lambda a, kws=kws: any(kw in a for kw in kws))
+
+        # Filtro de segmento (canal) sobre historial anterior
+        if segs is not None and "Ramo" in hist_ant.columns and "Subramo" in hist_ant.columns:
+            sub_ant = hist_ant["Subramo"].astype(str).str.upper().str.strip()
+            ram_ant = hist_ant["Ramo"].astype(str).str.upper().str.strip()
+            # Mapeo inverso simplificado: si segs incluye AUTOSERVICIO → filtrar por esos ramos
+            seg_mask_ant = pd.Series(False, index=hist_ant.index)
+            for sg in segs:
+                if sg == "AUTOSERVICIO":
+                    seg_mask_ant |= sub_ant.isin(_AS_SUBSEG) | ram_ant.isin({"AUTOSERVICIO", "LARGE FORMAT"})
+                elif sg == "MAYORISTA":
+                    seg_mask_ant |= sub_ant.isin(_MAY_SUBSEG) | ram_ant.isin({"CASH&CARRY", "MAYORISTAS"})
+                elif sg == "ON_PREMISE":
+                    seg_mask_ant |= sub_ant.apply(lambda s: any(k in s for k in _OP_KEYWORDS))
+                elif sg == "TRADICIONAL":
+                    seg_mask_ant |= sub_ant.apply(lambda s: any(k in s for k in _TR_KEYWORDS))
+            h_ant = hist_ant[cat_mask_ant & seg_mask_ant]
+        else:
+            h_ant = hist_ant[cat_mask_ant]
+
+        litros_ant = float(h_ant["_litros"].sum())
+        clis_cat_ant = set(h_ant["_cli"].dropna().astype(int).tolist())
+
+        # Litros MES ACTUAL (misma base que acciones ranking)
+        v_m_act = _filtrar_ventas_accion(v_act, canal, cat_key, segs)
+        if v_m_act is None or v_m_act.empty:
+            litros_act = 0.0
+        else:
+            litros_act = float(v_m_act["_litros"].sum())
+
+        # Clientes nuevos en la categoría = compraron con esta acción pero NO compraron la categoría en mes anterior
+        clis_nuevos_cat  = clis_accion - clis_cat_ant
+        clis_retorno     = clis_accion & clis_cat_ant
+        n_cli_accion     = len(clis_accion)
+        n_nuevos_cat     = len(clis_nuevos_cat)
+        n_retorno        = len(clis_retorno)
+        pct_nuevos       = round(n_nuevos_cat / max(n_cli_accion, 1) * 100, 1)
+        delta_l_pct      = round((litros_act - litros_ant) / max(litros_ant, 1) * 100, 1)
+
+        # Inversión de la acción (desde detalle)
+        v_inv = _filtrar_ventas_accion(v_act, canal, cat_key, segs)
+        inversion = float(v_inv["_descuento_p"].sum()) if v_inv is not None and not v_inv.empty else 0.0
+        costo_activacion = round(inversion / max(n_nuevos_cat, 1), 0)
+
+        filas.append({
+            "accion_grupo":          grupo,
+            "accion_nombre":         nombre,
+            "canal":                 canal,
+            "categoria":             cat_key,
+            "clientes_mes_actual":   n_cli_accion,
+            "clientes_cat_mes_ant":  len(clis_cat_ant),
+            "clientes_nuevos_cat":   n_nuevos_cat,
+            "clientes_retorno":      n_retorno,
+            "pct_clientes_nuevos":   pct_nuevos,
+            "litros_mes_actual":     round(litros_act, 1),
+            "litros_mes_anterior":   round(litros_ant, 1),
+            "delta_litros_pct":      delta_l_pct,
+            "inversion_pesos":       round(inversion, 0),
+            "costo_activacion":      costo_activacion,
+            "mes_actual":            str(mes_actual),
+            "mes_anterior":          str(mes_anterior),
+            "fecha_calculo":         datetime.now().strftime("%Y-%m-%d"),
         })
 
     df = pd.DataFrame(filas)
@@ -767,15 +966,25 @@ def main():
     resumen_sell["litros_total"] = resumen_sell["litros_total"].round(1)
     print(resumen_sell.to_string(index=False))
 
-    # ── Acciones Ranking ──
-    print("\n[7/7] Generando mod_acciones_ranking.csv ...")
-    acc = generar_acciones_ranking(ventas, clientes, maestro)
+    # ── Acciones Detalle + Análisis ──
+    print("\n[7/9] Generando mod_acciones_ranking.csv (detalle por acción) ...")
+    acc, clis_por_accion = generar_acciones_ranking(ventas, clientes, maestro)
     acc.to_csv(OUT / "mod_acciones_ranking.csv", index=False, encoding="utf-8-sig")
     print(f"  OK: {len(acc)} acciones")
     if not acc.empty:
-        print(acc[["canal","categoria","litros_vendidos","inversion_pesos","clientes_afectados"]].to_string(index=False))
+        print(acc[["accion_nombre","descuento_display","litros_vendidos","inversion_pesos","clientes_afectados"]].to_string(index=False))
 
-    print("\n[OK] Siete datasets generados en 04_DATASETS_ORBIT/")
+    print("\n[8/9] Generando mod_acciones_analisis.csv (comparativo mes anterior) ...")
+    hist_path = BASE / "02_HISTORY" / "historial_ventas.csv"
+    analisis = generar_acciones_analisis(ventas, hist_path, clientes, maestro, clis_por_accion)
+    analisis.to_csv(OUT / "mod_acciones_analisis.csv", index=False, encoding="utf-8-sig")
+    print(f"  OK: {len(analisis)} acciones analizadas")
+    if not analisis.empty:
+        cols_show = ["accion_nombre","clientes_mes_actual","clientes_nuevos_cat",
+                     "pct_clientes_nuevos","delta_litros_pct","costo_activacion"]
+        print(analisis[[c for c in cols_show if c in analisis.columns]].to_string(index=False))
+
+    print("\n[OK] Datasets generados en 04_DATASETS_ORBIT/")
     print("     mod_cobertura_acum.csv")
     print("     mod_11t_acum.csv")
     print("     mod_planes_as.csv")
@@ -783,6 +992,7 @@ def main():
     print("     mod_innovaciones_plan_as.csv")
     print("     mod_sellout_categoria.csv")
     print("     mod_acciones_ranking.csv")
+    print("     mod_acciones_analisis.csv")
 
 
 if __name__ == "__main__":

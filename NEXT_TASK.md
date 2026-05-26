@@ -1,14 +1,27 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
-## Sesión 2026-05-26 — Estado actual
+## Sesión 2026-05-26 (tarde) — Estado actual
 
-### HECHO HOY ✅
-- ✅ Login: toggle día/noche, Ken Burns sobre fondo.png/fondo_noche.png, isotipo flotante sin card.
-- ✅ Responsive PC + smartphone: sidebar drawer, hamburger, media queries 768px/430px.
-- ✅ Servidor: ruta `/` abre portal.html (no index.html).
-- ✅ Auditoría completa dashboard: acumulado, objetivo, avance_pct, CCC, 11T, corridos todos correctos.
-- ✅ Fix tendencia_pct: portal ahora muestra valor ERP exacto (no recálculo inflado).
-  V9 de 100.11% → 99.07% correcto.
+### HECHO EN ESTA SESIÓN ✅
+- ✅ Planes AS: fix detección sin cargo (Articulo-primario, sin fallback a Marca). Clientes 1178 y 2357 corregidos.
+- ✅ Regla FechaComprobante formalizada y aplicada en app_matinal + orbit_truth_audit.
+- ✅ Acciones comerciales: reescritura completa del pipeline y del panel portal:
+  - Fix bug `ImporteItem` coma decimal → filtro cambiado a `Descuento_pct > 0`
+  - Fix RTD duplicado: `_ARTICULO_CAT_MAP` diferencia Frizze vs RTD Latas vs Smirnoff ICE
+  - Fix SIDRA case mismatch
+  - Nuevas reglas: Smirnoff ICE 25% (imagen 7) y Termidor (imagen 8)
+  - `accion_grupo` + `accion_nombre` en CSV de reglas
+  - `generar_acciones_analisis()`: comparativo vs mes anterior (clientes nuevos, delta litros, costo activación)
+  - Endpoint `/api/gerencia/acciones_ranking` enriquecido
+  - Portal: tabla detalle por acción + panel análisis de retorno
+
+### PENDIENTES TÉCNICOS
+- **Workflow mensual acciones**: en junio cambiar `reglas_acciones_mayo_2026_orbit.csv` por `reglas_acciones_junio_2026_orbit.csv`
+  y actualizar la referencia en `generar_acciones_ranking()`. El usuario puede subir las imágenes y Claude genera el CSV.
+- **Drop Spirits Vinotecas / Especial Smirnoff 5+1**: ambas muestran los mismos clientes porque comparten
+  el segmento ON_PREMISE + categoría SPIRITS. Revisar si son realmente distintas en el ERP.
+- **Termidor delta**: muestra `None` en delta_litros porque en abril no había ventas de Termidor para esos clientes.
+  El cap de 9999% lo excluye correctamente.
 
 ### PRÓXIMAS ETAPAS (portal, por orden de prioridad)
 1. **Etapa A — Vista Gerencial dashboard**: verificar gráficas de barras (valores reales vs visualización).

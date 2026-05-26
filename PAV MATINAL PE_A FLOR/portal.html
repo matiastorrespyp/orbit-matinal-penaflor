@@ -2058,9 +2058,11 @@ function gAccionesComerciales(p){
   const dat=D.acc_rank;
   const fmtARS=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
   const fmtL=n=>Number(n||0).toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:0});
+  const fmtPct=n=>(n==null?'–':(n>0?'+':'')+Number(n).toFixed(1)+'%');
+
   let html=`<div class="gph">
-    <div><div class="gph-title">Acciones Comerciales</div>
-    <div class="gph-sub">${dat?.fecha_calculo||'Sin datos'} · ${dat?.acciones?.length||0} acciones activas del mes</div></div>
+    <div><div class="gph-title">💰 Acciones Comerciales</div>
+    <div class="gph-sub">${dat?.fecha_calculo||'Sin datos'} · ${dat?.acciones?.length||0} acciones activas · vs ${dat?.acciones?.[0]?.mes_anterior||'mes anterior'}</div></div>
   </div>`;
   if(!dat||!dat.acciones?.length){
     html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">💰</div><p>Sin datos de Acciones Comerciales.</p></div></div></div>`;
@@ -2071,50 +2073,108 @@ function gAccionesComerciales(p){
   const maxL=Math.max(...acc.map(a=>a.litros_vendidos),1);
 
   // KPI resumen
-  const totInv=acc.reduce((s,a)=>s+a.inversion_pesos,0);
-  const totL=acc.reduce((s,a)=>s+a.litros_vendidos,0);
-  const totCli=acc.reduce((s,a)=>s+a.clientes_afectados,0);
-  const totImporte=acc.reduce((s,a)=>s+a.importe_neto,0);
+  const totInv=acc.reduce((s,a)=>s+(a.inversion_pesos||0),0);
+  const totL=acc.reduce((s,a)=>s+(a.litros_vendidos||0),0);
+  const totCli=new Set(acc.flatMap(a=>a._cli_set||[])).size||acc.reduce((s,a)=>s+(a.clientes_afectados||0),0);
+  const totImporte=acc.reduce((s,a)=>s+(a.importe_neto||0),0);
+  const totNuevos=acc.reduce((s,a)=>s+(a.clientes_nuevos_cat||0),0);
   html+=`<div class="krow" style="margin-bottom:16px;">
-    <div class="kcard info"><div class="kl">Inversión total (descuentos)</div><div class="kv" style="font-size:18px;">$${fmtARS(totInv)}</div></div>
+    <div class="kcard info"><div class="kl">Inversión total en descuentos</div><div class="kv" style="font-size:18px;">$${fmtARS(totInv)}</div></div>
     <div class="kcard ok"><div class="kl">Litros vendidos bajo acciones</div><div class="kv" style="font-size:18px;">${fmtL(totL)} L</div></div>
-    <div class="kcard info"><div class="kl">Clientes alcanzados</div><div class="kv" style="font-size:18px;">${totCli}</div></div>
-    <div class="kcard ok"><div class="kl">Venta neta bajo acciones</div><div class="kv" style="font-size:18px;">$${fmtARS(totImporte)}</div></div>
+    <div class="kcard info"><div class="kl">Clientes alcanzados</div><div class="kv" style="font-size:18px;">${fmtARS(acc.reduce((s,a)=>s+(a.clientes_afectados||0),0))}</div></div>
+    <div class="kcard ok"><div class="kl">Clientes nuevos en categoría</div><div class="kv" style="font-size:18px;">${totNuevos}</div></div>
   </div>`;
 
-  // Tabla ranking
-  html+=`<div class="card">
-    <div class="card-hd"><span class="card-title">💰 Ranking por inversión</span><span class="chip">${acc.length} acciones</span></div>
+  // ── Tabla detalle por acción ──
+  html+=`<div class="card" style="margin-bottom:16px;">
+    <div class="card-hd"><span class="card-title">Detalle por Acción</span><span class="chip">${acc.length} acciones</span></div>
     <div class="card-body nop">
       <table class="tbl">
         <thead><tr>
-          <th>#</th><th>Canal</th><th>Categoría</th>
+          <th style="min-width:180px">Acción</th>
+          <th>Canal</th>
+          <th>Dto.</th>
           <th style="text-align:right">Inversión $</th>
-          <th style="min-width:90px">% inv.</th>
+          <th style="min-width:80px"></th>
           <th style="text-align:right">Litros</th>
-          <th style="min-width:90px">% vol.</th>
           <th style="text-align:right">Clientes</th>
-          <th style="text-align:right">Venta neta</th>
+          <th style="text-align:right">Neto vendido</th>
         </tr></thead>
         <tbody>${acc.map((a,i)=>{
-          const pInv=Math.round(a.inversion_pesos/maxInv*100);
-          const pL=Math.round(a.litros_vendidos/maxL*100);
-          const clInv=a.inversion_pesos>0?'ok':'bd';
+          const pInv=Math.round((a.inversion_pesos||0)/maxInv*100);
+          const clInv=(a.inversion_pesos||0)>0?'ok':'bd';
+          const canalShort=a.canal.replace('TRAD+KIOSCO+ON PREMISE','Tradicional').replace('AUTOSERVICIOS','Autoservicios')
+            .replace('VTK/TDB','Vinotecas').replace('PETIT MAYORISTAS','P. Mayor.').replace('ON PREMISE NOCHE; BARES','ON Premise')
+            .replace('TODOS','Todos');
           return `<tr>
-            <td><b style="color:var(--text2)">${i+1}</b></td>
-            <td style="font-size:11px;">${a.canal}</td>
-            <td style="font-size:11px;"><b>${a.categoria}</b></td>
+            <td><b style="font-size:12px;">${a.accion_nombre||a.canal}</b></td>
+            <td style="font-size:11px;color:var(--text2)">${canalShort}</td>
+            <td><span class="chip info" style="font-size:10px;">${a.descuento_display||''}</span></td>
             <td style="text-align:right;font-variant-numeric:tabular-nums"><span class="chip ${clInv}">$${fmtARS(a.inversion_pesos)}</span></td>
-            <td><div class="bar" style="height:5px;"><div class="bar-f ${clInv}" style="width:${pInv}%"></div></div></td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums">${fmtL(a.litros_vendidos)} L</td>
-            <td><div class="bar" style="height:5px;"><div class="bar-f ok" style="width:${pL}%"></div></div></td>
-            <td style="text-align:right">${a.clientes_afectados}</td>
+            <td><div class="bar" style="height:4px;"><div class="bar-f ${clInv}" style="width:${pInv}%"></div></div></td>
+            <td style="text-align:right;font-variant-numeric:tabular-nums;font-size:12px;">${fmtL(a.litros_vendidos)} L</td>
+            <td style="text-align:right;font-size:12px;">${a.clientes_afectados}</td>
             <td style="text-align:right;font-size:11px;color:var(--text2)">$${fmtARS(a.importe_neto)}</td>
           </tr>`;
         }).join('')}</tbody>
       </table>
     </div>
   </div>`;
+
+  // ── Análisis de retorno por acción ──
+  const accConAnalisis=acc.filter(a=>a.clientes_nuevos_cat!=null);
+  if(accConAnalisis.length){
+    html+=`<div class="card">
+      <div class="card-hd"><span class="card-title">📊 Análisis de Retorno por Acción</span>
+        <span class="chip" style="font-size:10px;">vs ${acc[0]?.mes_anterior||'mes anterior'}</span></div>
+      <div class="card-body" style="padding:0;">`;
+    accConAnalisis.forEach(a=>{
+      const pNuevos=a.pct_clientes_nuevos!=null?Math.min(Math.round(a.pct_clientes_nuevos),100):0;
+      const deltaL=a.delta_litros_pct;
+      const deltaClass=deltaL==null?'':deltaL>=0?'ok':'bd';
+      const deltaStr=deltaL==null?'Sin datos prev.':fmtPct(deltaL);
+      const costoStr=a.costo_activacion?'$'+fmtARS(a.costo_activacion)+'/cliente nuevo':'–';
+      html+=`<div style="padding:14px 16px;border-bottom:1px solid var(--bs);">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div>
+            <div style="font-weight:600;font-size:13px;margin-bottom:4px;">${a.accion_nombre||a.canal}</div>
+            <div style="font-size:11px;color:var(--text2);">${a.canal} · ${a.categoria} · <span class="chip info" style="font-size:10px;">${a.descuento_display}</span></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <span class="chip ok" style="font-size:11px;">$${fmtARS(a.inversion_pesos)} invertidos</span>
+            <span class="chip" style="font-size:11px;">${a.clientes_afectados} clientes</span>
+            <span class="chip ${deltaClass}" style="font-size:11px;">${deltaStr} litros</span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:12px;">
+          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:10px 12px;">
+            <div style="font-size:10px;color:var(--text2);margin-bottom:4px;">🆕 Clientes nuevos en categoría</div>
+            <div style="font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;">${a.clientes_nuevos_cat??'–'}</div>
+            <div style="font-size:11px;color:var(--text2);">${a.pct_clientes_nuevos!=null?a.pct_clientes_nuevos.toFixed(1)+'% del total':'–'}</div>
+            <div style="margin-top:6px;background:rgba(255,255,255,.08);border-radius:4px;height:4px;">
+              <div style="background:var(--ok);border-radius:4px;height:4px;width:${pNuevos}%;transition:width .4s"></div>
+            </div>
+          </div>
+          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:10px 12px;">
+            <div style="font-size:10px;color:var(--text2);margin-bottom:4px;">🔄 Clientes que repitieron</div>
+            <div style="font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;">${a.clientes_retorno??'–'}</div>
+            <div style="font-size:11px;color:var(--text2);">ya compraban en ${a.mes_anterior||'mes ant.'}</div>
+          </div>
+          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:10px 12px;">
+            <div style="font-size:10px;color:var(--text2);margin-bottom:4px;">📦 Litros vs mes anterior</div>
+            <div style="font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--${deltaClass||'text'})">${deltaStr}</div>
+            <div style="font-size:11px;color:var(--text2);">${fmtL(a.litros_vendidos)} L este mes · ${fmtL(a.litros_mes_anterior)} L anterior</div>
+          </div>
+          <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:10px 12px;">
+            <div style="font-size:10px;color:var(--text2);margin-bottom:4px;">💡 Costo de activación</div>
+            <div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;">${costoStr}</div>
+            <div style="font-size:11px;color:var(--text2);">inversión ÷ clientes nuevos</div>
+          </div>
+        </div>
+      </div>`;
+    });
+    html+=`</div></div>`;
+  }
   p.innerHTML=html;
 }
 

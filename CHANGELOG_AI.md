@@ -1,5 +1,49 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-26 — feat(acciones): panel acciones comerciales por acción con análisis de retorno
+
+**Nuevo panel "Acciones Comerciales" con tres mejoras principales:**
+
+**1. Detección por acción individual (no canal+categoría):**
+- `generar_acciones_ranking()` ahora agrupa por `accion_grupo` (definido en CSV de reglas)
+- Cada acción tiene nombre legible (ej: "Smirnoff ICE 25%", "Drop Vinos — Autoservicios")
+- Muestra rango de descuento real aplicado (ej: "6-25%")
+- 19 acciones detectadas vs las 7-8 anteriores
+
+**2. Análisis comparativo vs mes anterior (nuevo: `generar_acciones_analisis()`):**
+- Para cada acción calcula clientes nuevos en categoría (no compraban en abril y ahora sí)
+- Delta de litros % vs mes anterior (usando historial_ventas.csv)
+- Costo de activación por cliente nuevo (inversión ÷ clientes nuevos)
+- Clientes que repitieron vs abril
+
+**3. Corrección de bug crítico: `ImporteItem` con coma decimal:**
+- El filtro original `ImporteItem - ImporteNetoItem > 0` fallaba para casi todos los productos
+  porque `ImporteItem` usa coma decimal y no se limpiaba → parseaba como 0
+- Fix: cambiar filtro a `Descuento_pct > 0` (descuento explícito en ERP)
+- `ImporteItem` ahora se limpia correctamente para calcular inversión real
+
+**4. Corrección de bug RTD duplicado + acciones faltantes:**
+- `_ARTICULO_CAT_MAP`: RTD=Frizze, RTD LATAS=Gordons/Smirnoff BC/Antares, RTD ICE=Smirnoff ICE
+- `_REGLA_CAT_MAP`: SIDRA capitalizado correctamente ("SIDRA" no "Sidra")
+- Nuevas reglas CSV: Smirnoff ICE 25% (imagen 7) y Termidor 5-15% (imagen 8)
+
+**Archivos tocados:**
+- `generar_datasets_acum.py`: nuevas funciones `_preparar_ventas_acciones`, `_filtrar_ventas_accion`,
+  `generar_acciones_ranking` (reescrita), `generar_acciones_analisis` (nueva)
+- `09_CONFIG/reglas_acciones_mayo_2026_orbit.csv`: +cols `accion_grupo`/`accion_nombre`, +2 reglas
+- `04_DATASETS_ORBIT/mod_acciones_ranking.csv`: regenerado con nuevo formato (19 filas)
+- `04_DATASETS_ORBIT/mod_acciones_analisis.csv`: nuevo archivo (19 filas)
+- `server_orbit.py`: endpoint `/api/gerencia/acciones_ranking` reescrito con datos enriquecidos
+- `PAV MATINAL PE_A FLOR/portal.html`: `gAccionesComerciales()` reescrita con:
+  - Tabla detalle por acción (nombre, canal, dto, inversión, litros, clientes)
+  - Panel análisis: clientes nuevos, clientes que repitieron, delta litros, costo activación
+
+**Validación:**
+- Endpoint `/api/gerencia/acciones_ranking` → 200 OK, 19 acciones con datos de análisis
+- Ejemplo Smirnoff ICE 25%: 277 clientes, 78% nuevos en categoría, +77.3% litros vs abril, $28.937/cliente activado
+
+---
+
 ## 2026-05-26 — fix(planes_as): NaN Marca Frizze + regla fechas + regla fuente mensual
 
 **Problema 1 — Errores de Marca en ERP (afecta múltiples marcas):**

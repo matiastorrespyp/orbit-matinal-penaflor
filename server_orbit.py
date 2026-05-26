@@ -1995,30 +1995,86 @@ def gerencia_sellout_categoria():
 # ====== ACCIONES COMERCIALES RANKING ======
 @app.route("/api/gerencia/acciones_ranking")
 def gerencia_acciones_ranking():
+    """
+    Detalle de acciones comerciales del mes, enriquecido con análisis comparativo
+    vs mes anterior (clientes nuevos en categoría, delta litros, costo de activación).
+    Lee mod_acciones_ranking.csv (detalle) + mod_acciones_analisis.csv (análisis).
+    """
     df = read_csv(DATASETS / "mod_acciones_ranking.csv")
     if df.empty:
         return jsonify({"error": "Sin datos"}), 404
-    df.columns = [c.lstrip("﻿") for c in df.columns]
-    for c in ["litros_vendidos", "cajas_vendidas", "inversion_pesos", "importe_neto", "clientes_afectados"]:
+    df.columns = [c.strip() for c in df.columns]
+
+    num_cols_det = ["litros_vendidos", "cajas_vendidas", "inversion_pesos",
+                    "importe_neto", "clientes_afectados"]
+    for c in num_cols_det:
         if c in df.columns:
             df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
+
     fecha = str(df["fecha_calculo"].iloc[0]) if "fecha_calculo" in df.columns and len(df) else ""
+
+    # Cargar análisis histórico si existe
+    df_an = read_csv(DATASETS / "mod_acciones_analisis.csv")
+    analisis_map = {}
+    if not df_an.empty:
+        df_an.columns = [c.strip() for c in df_an.columns]
+        num_cols_an = ["clientes_mes_actual", "clientes_cat_mes_ant", "clientes_nuevos_cat",
+                       "clientes_retorno", "pct_clientes_nuevos", "litros_mes_actual",
+                       "litros_mes_anterior", "delta_litros_pct", "inversion_pesos",
+                       "costo_activacion"]
+        for c in num_cols_an:
+            if c in df_an.columns:
+                df_an[c] = pd.to_numeric(df_an[c], errors="coerce").fillna(0)
+        for _, row in df_an.iterrows():
+            g = str(row.get("accion_grupo", "")).strip()
+            if g:
+                analisis_map[g] = {
+                    "clientes_nuevos_cat":   int(row.get("clientes_nuevos_cat", 0)),
+                    "clientes_retorno":      int(row.get("clientes_retorno", 0)),
+                    "clientes_cat_mes_ant":  int(row.get("clientes_cat_mes_ant", 0)),
+                    "pct_clientes_nuevos":   round(float(row.get("pct_clientes_nuevos", 0)), 1),
+                    "litros_mes_actual":     round(float(row.get("litros_mes_actual", 0)), 1),
+                    "litros_mes_anterior":   round(float(row.get("litros_mes_anterior", 0)), 1),
+                    "delta_litros_pct":      round(float(row.get("delta_litros_pct", 0)), 1),
+                    "costo_activacion":      int(row.get("costo_activacion", 0)),
+                    "mes_anterior":          str(row.get("mes_anterior", "")),
+                }
 
     acciones = []
     for _, row in df.iterrows():
+        grupo  = str(row.get("accion_grupo", "")).strip()
+        nombre = str(row.get("accion_nombre", row.get("canal", ""))).strip()
+        an     = analisis_map.get(grupo, {})
+        # Cap delta_litros a ±9999% para evitar valores sin sentido (ej: Termidor vs 0 litros)
+        delta_l = an.get("delta_litros_pct", 0)
+        if abs(delta_l) > 9999:
+            delta_l = None
         acciones.append({
-            "canal":               str(row.get("canal", "")),
-            "categoria":           str(row.get("categoria", "")),
-            "litros_vendidos":     round(float(row["litros_vendidos"]), 1),
-            "cajas_vendidas":      int(row["cajas_vendidas"]),
-            "inversion_pesos":     int(row["inversion_pesos"]),
-            "importe_neto":        int(row["importe_neto"]),
-            "clientes_afectados":  int(row["clientes_afectados"]),
+            "accion_grupo":         grupo,
+            "accion_nombre":        nombre,
+            "tipo_accion":          str(row.get("tipo_accion", "")),
+            "canal":                str(row.get("canal", "")),
+            "categoria":            str(row.get("categoria", "")),
+            "descuento_display":    str(row.get("descuento_display", "")),
+            "litros_vendidos":      round(float(row["litros_vendidos"]), 1),
+            "cajas_vendidas":       int(row["cajas_vendidas"]),
+            "inversion_pesos":      int(row["inversion_pesos"]),
+            "importe_neto":         int(row["importe_neto"]),
+            "clientes_afectados":   int(row["clientes_afectados"]),
+            # análisis comparativo
+            "clientes_nuevos_cat":  an.get("clientes_nuevos_cat"),
+            "clientes_retorno":     an.get("clientes_retorno"),
+            "clientes_cat_mes_ant": an.get("clientes_cat_mes_ant"),
+            "pct_clientes_nuevos":  an.get("pct_clientes_nuevos"),
+            "litros_mes_anterior":  an.get("litros_mes_anterior"),
+            "delta_litros_pct":     delta_l,
+            "costo_activacion":     an.get("costo_activacion"),
+            "mes_anterior":         an.get("mes_anterior", ""),
         })
     acciones.sort(key=lambda x: x["inversion_pesos"], reverse=True)
     return jsonify({
         "generado_en":   datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "fuente":        "mod_acciones_ranking.csv",
+        "fuente":        "mod_acciones_ranking.csv + mod_acciones_analisis.csv",
         "fecha_calculo": fecha,
         "acciones":      acciones,
     })
