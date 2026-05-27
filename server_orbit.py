@@ -9,6 +9,15 @@ from datetime import datetime, timedelta
 import os
 app = Flask(__name__, static_folder=None)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0   # sin cache en portal.html
+
+@app.after_request
+def no_cache_portal(response):
+    """Fuerza no-store en portal.html para que el browser siempre descargue la version nueva."""
+    if response.content_type and "text/html" in response.content_type:
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
 BASE = Path(__file__).parent
 APP_DATA = BASE / "06_APP_DATA"
 CONFIG = BASE / "09_CONFIG"
@@ -1409,6 +1418,112 @@ def gerencia_once_titulares_zona():
         "total_clientes_zona": cli_total,
         "fuente": "ventas_acumulada.csv",
         "marcas": marcas,
+    })
+
+
+# ====== GERENCIA: 11T RESUMEN DISTRIBUIDORA ======
+@app.route("/api/gerencia/11t_empresa")
+def gerencia_11t_empresa():
+    """11T distribuidora: por marca, clientes con/sin cada titular (todos los vendedores).
+    Fuente: mod_11_titulares.csv  — columnas tiene_flag / falta_flag."""
+    df = read_csv(DATASETS / "mod_11_titulares.csv")
+    if df.empty:
+        return jsonify({"marcas": [], "error": "Sin datos en mod_11_titulares.csv"}), 200
+
+    df.columns = [c.lstrip("﻿").strip() for c in df.columns]
+    df["vendedor_codigo"] = pd.to_numeric(df["vendedor_codigo"], errors="coerce")
+    df = df[~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
+
+    for col in ("tiene_flag", "falta_flag"):
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
+
+    vendedores_activos = sorted(df["vendedor_codigo"].dropna().unique())
+
+    result = []
+    for marca, grp in df.groupby("marca_objetivo"):
+        con   = int(grp["tiene_flag"].sum())
+        sin   = int(grp["falta_flag"].sum())
+        total = con + sin
+        pct   = round(con / total * 100, 1) if total else 0.0
+
+        por_vendedor = {}
+        for v in vendedores_activos:
+            vg  = grp[grp["vendedor_codigo"] == v]
+            vc  = int(vg["tiene_flag"].sum())
+            vs  = int(vg["falta_flag"].sum())
+            vt  = vc + vs
+            por_vendedor[f"V{int(v)}"] = {
+                "con": vc, "sin": vs, "total": vt,
+                "pct": round(vc / vt * 100, 1) if vt else 0.0,
+            }
+
+        result.append({
+            "marca":        str(marca),
+            "con":          con,
+            "sin":          sin,
+            "total":        total,
+            "pct":          pct,
+            "por_vendedor": por_vendedor,
+        })
+
+    result.sort(key=lambda x: x["pct"], reverse=True)
+    return jsonify({
+        "generado_en":    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "fuente":         "mod_11_titulares.csv",
+        "total_marcas":   len(result),
+        "vendedores":     [f"V{int(v)}" for v in vendedores_activos],
+        "marcas":         result,
+    })
+
+
+# ====== GERENCIA: 11T POR VENDEDOR ======
+@app.route("/api/gerencia/11t_vendedor")
+def gerencia_11t_vendedor():
+    """11T detalle de un vendedor específico.
+    Parámetro: vendedor=V3 (o 3). Fuente: mod_11_titulares.csv."""
+    import re as _re
+    vend_raw = request.args.get("vendedor", "").strip().upper()
+    m = _re.search(r"\d+", vend_raw)
+    if not m:
+        return jsonify({"marcas": [], "error": "Parámetro vendedor inválido"}), 200
+    cod = int(m.group())
+
+    df = read_csv(DATASETS / "mod_11_titulares.csv")
+    if df.empty:
+        return jsonify({"marcas": [], "error": "Sin datos"}), 200
+
+    df.columns = [c.lstrip("﻿").strip() for c in df.columns]
+    df["vendedor_codigo"] = pd.to_numeric(df["vendedor_codigo"], errors="coerce")
+    df = df[df["vendedor_codigo"] == cod]
+
+    if df.empty:
+        return jsonify({"marcas": [], "vendedor": f"V{cod}", "error": "Sin datos para este vendedor"}), 200
+
+    for col in ("tiene_flag", "falta_flag"):
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
+
+    nombre = str(df["vendedor_nombre"].iloc[0]) if "vendedor_nombre" in df.columns else f"V{cod}"
+
+    result = []
+    for marca, grp in df.groupby("marca_objetivo"):
+        con   = int(grp["tiene_flag"].sum())
+        sin   = int(grp["falta_flag"].sum())
+        total = con + sin
+        pct   = round(con / total * 100, 1) if total else 0.0
+        result.append({
+            "marca": str(marca), "con": con, "sin": sin, "total": total, "pct": pct
+        })
+
+    result.sort(key=lambda x: x["pct"], reverse=True)
+    return jsonify({
+        "generado_en":      datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "fuente":           "mod_11_titulares.csv",
+        "vendedor":         f"V{cod}",
+        "vendedor_nombre":  nombre,
+        "total_marcas":     len(result),
+        "marcas":           result,
     })
 
 

@@ -1468,6 +1468,141 @@ function gDashboard(p){
     }
   })();
 
+  // ── 11T Resumen Distribuidora (empresa) ──
+  p.insertAdjacentHTML('beforeend',`
+    <div class="card" id="card-11t-empresa" style="margin-top:13px;">
+      <div class="card-hd">
+        <span class="card-title">🏅 11 Titulares · Resumen Distribuidora</span>
+        <span class="chip" id="chip-11t-emp">cargando…</span>
+      </div>
+      <div class="card-body nop" id="body-11t-emp">
+        <div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;">Cargando datos…</div>
+      </div>
+    </div>`);
+
+  (async()=>{
+    const bodyEl=document.getElementById('body-11t-emp');
+    const chipEl=document.getElementById('chip-11t-emp');
+    if(!bodyEl) return;
+    try{
+      const r=await fetch('/api/gerencia/11t_empresa');
+      if(!r.ok){ bodyEl.innerHTML=`<div style="padding:16px;color:var(--bd);font-size:12px;">Error HTTP ${r.status}</div>`; return; }
+      const data=await r.json();
+      const marcas=data.marcas||[];
+      const vends=data.vendedores||[];
+      if(chipEl) chipEl.textContent=marcas.length+' marcas';
+      if(!marcas.length){ bodyEl.innerHTML=`<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">Sin datos</div>`; return; }
+
+      // Tabla: Marca | Con | Sin | % empresa | barra | V3 V4 V6 V7 V8 V9 V10 (chips)
+      let html=`<div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead><tr>
+            <th>Marca</th>
+            <th style="text-align:right">Con</th>
+            <th style="text-align:right">Sin</th>
+            <th style="text-align:right">% Emp.</th>
+            <th style="min-width:80px"></th>
+            <th style="font-size:9px;color:var(--text3);">${vends.join(' · ')}</th>
+          </tr></thead>
+          <tbody>`;
+
+      marcas.forEach(m=>{
+        const pct=m.pct||0;
+        const cl=pct>=50?'ok':pct>=20?'wn':'bd';
+        const pctBar=Math.min(Math.round(pct),100);
+
+        // chips por vendedor
+        const chipsHTML=vends.map(v=>{
+          const vd=m.por_vendedor?.[v]||{};
+          const vp=vd.pct??0;
+          const vc=vd.con??0;
+          const vs=vd.sin??0;
+          if((vc+vs)===0) return `<span style="font-size:9px;color:var(--text3);">—</span>`;
+          const vCl=vp>=50?'ok':vp>=20?'wn':'bd';
+          return `<span title="${v}: ${vc} con / ${vs} sin (${vp}%)" style="display:inline-block;padding:1px 5px;border-radius:8px;font-size:9px;font-weight:600;background:var(--${vCl}-s);color:var(--${vCl});margin-right:3px;">${vp}%</span>`;
+        }).join('');
+
+        html+=`<tr>
+          <td style="font-size:12px;font-weight:600;">${m.marca}</td>
+          <td style="text-align:right;font-size:12px;color:var(--ok);">${m.con}</td>
+          <td style="text-align:right;font-size:12px;color:var(--bd);">${m.sin}</td>
+          <td style="text-align:right;"><span class="chip ${cl}" style="font-size:9px;">${pct}%</span></td>
+          <td><div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${pctBar}%"></div></div></td>
+          <td style="white-space:nowrap;">${chipsHTML}</td>
+        </tr>`;
+      });
+
+      html+=`</tbody></table></div>
+        <div style="font-size:9px;color:var(--text3);padding:4px 12px 6px;">Fuente: ${data.fuente||'mod_11_titulares.csv'} · ${data.generado_en||''}</div>`;
+      bodyEl.innerHTML=html;
+    }catch(e){
+      const bodyEl2=document.getElementById('body-11t-emp');
+      if(bodyEl2) bodyEl2.innerHTML=`<div style="padding:16px;color:var(--bd);font-size:12px;">Error: ${e.message}</div>`;
+    }
+  })();
+
+  // ── 11T por Vendedor seleccionado (selector superior) ──
+  const _11tVendSel=gFiltro||'';
+  p.insertAdjacentHTML('beforeend',`
+    <div class="card" id="card-11t-vend" style="margin-top:13px;${!_11tVendSel?'display:none':''}">
+      <div class="card-hd">
+        <span class="card-title">🏅 11 Titulares · ${_11tVendSel||'Vendedor'}</span>
+        <span class="chip" id="chip-11t-vend">cargando…</span>
+      </div>
+      <div class="card-body nop" id="body-11t-vend">
+        <div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;">Cargando…</div>
+      </div>
+    </div>`);
+
+  if(_11tVendSel){
+    (async()=>{
+      const bodyEl=document.getElementById('body-11t-vend');
+      const chipEl=document.getElementById('chip-11t-vend');
+      if(!bodyEl) return;
+      try{
+        const r=await fetch('/api/gerencia/11t_vendedor?vendedor='+encodeURIComponent(_11tVendSel));
+        if(!r.ok){ bodyEl.innerHTML=`<div style="padding:16px;color:var(--bd);font-size:12px;">Error HTTP ${r.status}</div>`; return; }
+        const data=await r.json();
+        const marcas=data.marcas||[];
+        const nomVend=data.vendedor_nombre||data.vendedor||_11tVendSel;
+        if(chipEl) chipEl.textContent=marcas.length+' marcas · '+nomVend;
+        if(!marcas.length){ bodyEl.innerHTML=`<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">Sin datos para ${_11tVendSel}</div>`; return; }
+
+        let html=`<table class="tbl">
+          <thead><tr>
+            <th>Marca</th>
+            <th style="text-align:right">Con</th>
+            <th style="text-align:right">Sin</th>
+            <th style="text-align:right">Total clientes</th>
+            <th style="text-align:right">%</th>
+            <th style="min-width:90px"></th>
+          </tr></thead>
+          <tbody>`;
+
+        marcas.forEach(m=>{
+          const pct=m.pct||0;
+          const cl=pct>=50?'ok':pct>=20?'wn':'bd';
+          const pctBar=Math.min(Math.round(pct),100);
+          html+=`<tr>
+            <td style="font-size:12px;font-weight:600;">${m.marca}</td>
+            <td style="text-align:right;font-size:12px;color:var(--ok);">${m.con}</td>
+            <td style="text-align:right;font-size:12px;color:var(--bd);">${m.sin}</td>
+            <td style="text-align:right;font-size:12px;color:var(--text3);">${m.total}</td>
+            <td style="text-align:right;"><span class="chip ${cl}" style="font-size:9px;">${pct}%</span></td>
+            <td><div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${pctBar}%"></div></div></td>
+          </tr>`;
+        });
+
+        html+=`</tbody></table>
+          <div style="font-size:9px;color:var(--text3);padding:4px 12px 6px;">Fuente: ${data.fuente||''} · ${data.generado_en||''}</div>`;
+        bodyEl.innerHTML=html;
+      }catch(e){
+        const bodyEl2=document.getElementById('body-11t-vend');
+        if(bodyEl2) bodyEl2.innerHTML=`<div style="padding:16px;color:var(--bd);font-size:12px;">Error: ${e.message}</div>`;
+      }
+    })();
+  }
+
   // — Sellout en litros por categoría —
   const sell=D.sellout_cat?.por_categoria||[];
   if(sell.length){

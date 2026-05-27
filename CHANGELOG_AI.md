@@ -1,5 +1,18 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-27 — feat(gerencia): panel 11T distribuidora + 11T por vendedor seleccionado
+
+**Qué se hizo:**
+- **Nuevo endpoint** `/api/gerencia/11t_empresa`: devuelve resumen 11T de toda la distribuidora (por marca: con/sin/total/% empresa + desglose por vendedor). Fuente: `mod_11_titulares.csv`.
+- **Nuevo endpoint** `/api/gerencia/11t_vendedor?vendedor=V3`: devuelve 11T detallado del vendedor seleccionado (por marca: con/sin/total/%). Fuente: `mod_11_titulares.csv`.
+- **Nueva tarjeta** "🏅 11 Titulares · Resumen Distribuidora" en `gDashboard`: tabla full-width con todas las marcas, % empresa, y chips por vendedor (con hover de con/sin/pct). Siempre visible.
+- **Nueva tarjeta** "🏅 11 Titulares · [Vendedor]" en `gDashboard`: tabla con desglose del vendedor seleccionado en el selector superior. Se muestra/oculta dinámicamente — visible solo cuando hay un vendedor seleccionado en `gVSel`.
+- Ambas tarjetas usan IIFEs async self-loading; se regeneran al cambiar el filtro (`gFiltV → gRender → gDashboard`).
+
+**Archivos tocados:**
+- `server_orbit.py` — 2 endpoints nuevos después de `gerencia_once_titulares_zona`
+- `PAV MATINAL PE_A FLOR/portal.html` — gDashboard(): 2 tarjetas + IIFEs insertados antes del bloque Sellout
+
 ## 2026-05-27 — fix(gerencia): 11T cards self-loading — bypass D state issue
 
 **Problema**: las dos tarjetas de 11 Titulares en el dashboard gerencial mostraban solo el título ("Cargando datos…" / "Sin datos") sin tabla, a pesar de que los endpoints `/api/gerencia/once_titulares` y `/api/gerencia/once_titulares_zona` devuelven datos correctos.

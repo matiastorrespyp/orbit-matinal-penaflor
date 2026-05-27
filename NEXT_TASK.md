@@ -1,5 +1,20 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-05-27 — Estado actual
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ Panel 11T en gerencia:
+  - Nuevo endpoint `/api/gerencia/11t_empresa`: resumen distribuidora por marca con chips por vendedor
+  - Nuevo endpoint `/api/gerencia/11t_vendedor?vendedor=V3`: detalle por vendedor
+  - Tarjeta "11T Distribuidora" (full-width, siempre visible) con % empresa y chips de cada vendor hover
+  - Tarjeta "11T Vendedor" (visible solo con vendedor seleccionado en selector superior) con tabla con/sin/pct por marca
+
+### PRÓXIMO PASO 🔲
+- Validar en el portal real (puerto 8502) que ambas tarjetas cargan con datos correctos
+- Verificar que al cambiar el selector de vendedor se regenera correctamente la tarjeta 11T vendedor
+
+---
+
 ## Sesión 2026-05-26 (noche) — Estado actual
 
 ### HECHO EN ESTA SESIÓN ✅
