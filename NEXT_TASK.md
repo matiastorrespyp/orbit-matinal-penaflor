@@ -3,15 +3,17 @@
 ## Sesión 2026-05-27 — Estado actual
 
 ### HECHO EN ESTA SESIÓN ✅
-- ✅ Panel 11T en gerencia:
-  - Nuevo endpoint `/api/gerencia/11t_empresa`: resumen distribuidora por marca con chips por vendedor
-  - Nuevo endpoint `/api/gerencia/11t_vendedor?vendedor=V3`: detalle por vendedor
-  - Tarjeta "11T Distribuidora" (full-width, siempre visible) con % empresa y chips de cada vendor hover
-  - Tarjeta "11T Vendedor" (visible solo con vendedor seleccionado en selector superior) con tabla con/sin/pct por marca
+- ✅ Panel 11T en gerencia (endpoints + tarjetas)
+- ✅ Tarjeta Sellout reemplazada:
+  - Endpoint `/api/gerencia/sellout_litros` — lee `ventas_acumulada.csv`, calcula litros vs objetivos
+  - Tarjeta en portal: Real / Objetivo / Alcance% (chip coloreado + barra) / Clientes
+  - Subcategorías: VINOS DEL AÑO por Linea (Alto/Medio/Medio Alto/Superior); SPIRITS por tipo (Importados/Nacionales)
+  - Datos validados: 6 categorías con datos reales
 
 ### PRÓXIMO PASO 🔲
-- Validar en el portal real (puerto 8502) que ambas tarjetas cargan con datos correctos
-- Verificar que al cambiar el selector de vendedor se regenera correctamente la tarjeta 11T vendedor
+- **Push a Render**: `git add server_orbit.py "PAV MATINAL PE_A FLOR/portal.html" CHANGELOG_AI.md NEXT_TASK.md && git push`
+- Validar en portal gerencia que la tarjeta Sellout muestra correctamente la tabla con objetivos y chips de alcance
+- Validar que CHAMPAÑA (70.4%) muestra chip amarillo y CERVEZA (25.2%) muestra chip rojo
 
 ---
 

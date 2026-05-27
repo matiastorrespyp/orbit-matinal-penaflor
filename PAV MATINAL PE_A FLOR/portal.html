@@ -1105,7 +1105,7 @@ async function loadAll(){
     if(accV)     D.acc_vigentes=Array.isArray(accV)?accV:[];
   }
   if(userData?.rol==='gerencia'){
-    const [cccEmp,onceTit,onceTitDia,inov,cobAcum,t11Acum,inovTot,plasAS,sellCat,accRank,dormidos]=await Promise.all([
+    const [cccEmp,onceTit,onceTitDia,inov,cobAcum,t11Acum,inovTot,plasAS,sellLitros,accRank,dormidos]=await Promise.all([
       safe('/api/gerencia/ccc_empresa'),
       safe('/api/gerencia/once_titulares'),
       safe('/api/gerencia/once_titulares_zona?dia='+(currentDay||'')),
@@ -1114,7 +1114,7 @@ async function loadAll(){
       safe('/api/gerencia/11t_acum'),
       safe('/api/gerencia/innovaciones_total?dia='+(currentDay||'')),
       safe('/api/gerencia/planes_as'),
-      safe('/api/gerencia/sellout_categoria'),
+      safe('/api/gerencia/sellout_litros'),
       safe('/api/gerencia/acciones_ranking'),
       safe('/api/gerencia/alertas_caida')
     ]);
@@ -1126,7 +1126,7 @@ async function loadAll(){
     if(t11Acum)     D.t11_acum=t11Acum;
     if(inovTot)     D.inov_total=inovTot;
     if(plasAS)      D.planes_as_g=plasAS;
-    if(sellCat)     D.sellout_cat=sellCat;
+    if(sellLitros)  D.sellout_litros=sellLitros;
     if(accRank)     D.acc_rank=accRank;
     if(dormidos)    D.dormidos=dormidos;
   }
@@ -1574,32 +1574,57 @@ function gDashboard(p){
     })();
   }
 
-  // — Sellout en litros por categoría —
-  const sell=D.sellout_cat?.por_categoria||[];
-  if(sell.length){
-    const maxL=Math.max(...sell.map(c=>c.litros_total),1);
+  // — Sellout en litros por categoría con objetivos —
+  const sellData=D.sellout_litros?.categorias||[];
+  if(sellData.length){
+    const fmtL=n=>Number(n||0).toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:0});
+    const alcColor=pct=> pct>=100?'ok': pct>=60?'wn':'bd';
     let sH=`<div style="margin-top:16px;" class="card">
-      <div class="card-hd"><span class="card-title">🍷 Sellout acumulado en litros · por categoría</span><span class="chip">${sell.length} categorías</span></div>
+      <div class="card-hd">
+        <span class="card-title">🍷 Sellout acumulado en litros · por categoría</span>
+        <span class="chip">${sellData.length} categorías</span>
+      </div>
       <div class="card-body nop">
         <table class="tbl">
-          <thead><tr><th>Categoría</th><th style="text-align:right">Litros</th><th style="text-align:right">Cajas</th><th style="text-align:right">Clientes</th><th style="min-width:100px">Proporción</th></tr></thead>
+          <thead><tr>
+            <th>Categoría</th>
+            <th style="text-align:right">Real</th>
+            <th style="text-align:right">Objetivo</th>
+            <th style="text-align:right">Alcance</th>
+            <th style="text-align:right">Clientes</th>
+          </tr></thead>
           <tbody>`;
-    sell.forEach(c=>{
-      const pctBar=Math.round(c.litros_total/maxL*100);
+    sellData.forEach(c=>{
+      const cl=alcColor(c.alcance_pct);
+      const barW=Math.min(Math.round(c.alcance_pct),100);
       sH+=`<tr>
         <td><b>${c.categoria}</b></td>
-        <td style="text-align:right;font-variant-numeric:tabular-nums">${c.litros_total.toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:0})} L</td>
-        <td style="text-align:right;font-variant-numeric:tabular-nums">${c.cajas_total.toLocaleString('es-AR')}</td>
+        <td style="text-align:right;font-variant-numeric:tabular-nums">${fmtL(c.litros)} L</td>
+        <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--text3)">${fmtL(c.objetivo)} L</td>
+        <td style="text-align:right">
+          <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;">
+            <div class="bar" style="height:4px;width:60px;"><div class="bar-f ${cl}" style="width:${barW}%"></div></div>
+            <span class="chip ${cl}" style="font-size:10px;padding:1px 5px;">${c.alcance_pct.toFixed(1)}%</span>
+          </div>
+        </td>
         <td style="text-align:right">${c.clientes}</td>
-        <td><div class="bar" style="height:5px;"><div class="bar-f ok" style="width:${pctBar}%"></div></div></td>
-      </tr>
-      ${c.por_segmento.filter(s=>s.litros>0).map(s=>`<tr style="background:rgba(255,255,255,.02)">
-        <td style="padding-left:24px;color:var(--text3);font-size:11px;">${s.segmento}</td>
-        <td style="text-align:right;font-size:11px;color:var(--text3)">${s.litros.toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:0})} L</td>
-        <td style="text-align:right;font-size:11px;color:var(--text3)">${s.cajas.toLocaleString('es-AR')}</td>
-        <td style="text-align:right;font-size:11px;color:var(--text3)">${s.clientes}</td>
-        <td></td>
-      </tr>`).join('')}`;
+      </tr>`;
+      (c.subcategorias||[]).forEach(s=>{
+        const scl=alcColor(s.alcance_pct);
+        const sBarW=Math.min(Math.round(s.alcance_pct),100);
+        sH+=`<tr style="background:rgba(255,255,255,.02)">
+          <td style="padding-left:22px;color:var(--text3);font-size:11px;">↳ ${s.nombre}</td>
+          <td style="text-align:right;font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums">${fmtL(s.litros)} L</td>
+          <td style="text-align:right;font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums">${fmtL(s.objetivo)} L</td>
+          <td style="text-align:right;font-size:11px">
+            <div style="display:flex;align-items:center;gap:4px;justify-content:flex-end;">
+              <div class="bar" style="height:3px;width:40px;"><div class="bar-f ${scl}" style="width:${sBarW}%"></div></div>
+              <span class="chip ${scl}" style="font-size:9px;padding:1px 4px;">${s.alcance_pct.toFixed(1)}%</span>
+            </div>
+          </td>
+          <td style="text-align:right;font-size:11px;color:var(--text3)">${s.clientes}</td>
+        </tr>`;
+      });
     });
     sH+=`</tbody></table></div></div>`;
     p.insertAdjacentHTML('beforeend', sH);

@@ -1,5 +1,36 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-27 — feat(gerencia): sellout en litros con objetivos y alcance por categoría
+
+**Qué se hizo:**
+- **Nuevo endpoint** `/api/gerencia/sellout_litros`: devuelve sellout acumulado en litros vs objetivos del mes.
+  - Fuente: `01_INPUTS/ventas_acumulada.csv` (PesoKg = litros precomputados por línea).
+  - Excluye V2, V5, V20. Solo ImporteNetoItem > 0.
+  - Objetivos hardcoded de `obj sell out.jpeg`: 6 categorías principales + subcategorías.
+  - Subcategorías: VINOS DEL AÑO → Alto/Medio/Medio Alto/Superior (por columna `Linea`).
+  - Subcategorías: SPIRITS → Importados (Whisky/Gin/Ron/Whisky Maltas) / Nacionales (Vodka/Licores).
+  - Retorna: litros real, objetivo, alcance_pct, clientes por categoría y subcategoría.
+- **Tarjeta Sellout reemplazada** en `gDashboard()`:
+  - Nueva columna "Objetivo" con los litros meta.
+  - Nueva columna "Alcance" con chip color: ok ≥100%, wn ≥60%, bd <60%.
+  - Mini barra proporcional antes del chip.
+  - Subcategorías indentadas con ↳ y chip de alcance propio.
+  - Eliminada columna "Cajas" y barra de proporción relativa (sustituidas por objetivo real).
+
+**Datos validados (ventas_acumulada.csv al 27-May-2026):**
+- VINOS DEL AÑO: 22.190L / 19.015L obj = 116.7% ✅ (sobre objetivo)
+- VINOS DE GUARDA: 1.063L / 678L = 156.8% ✅
+- SPIRITS: 31.231L / 17.752L = 175.9% ✅
+- RTD: 15.671L / 9.999L = 156.7% ✅
+- CHAMPAÑA: 483L / 686L = 70.4% ⚠️
+- CERVEZA ARTESANAL: 102L / 405L = 25.2% 🔴
+
+**Archivos tocados:**
+- `server_orbit.py` — endpoint `/api/gerencia/sellout_litros` añadido (línea ~2376)
+- `PAV MATINAL PE_A FLOR/portal.html` — tarjeta sellout reemplazada en `gDashboard()`
+
+---
+
 ## 2026-05-27 — feat(gerencia): panel 11T distribuidora + 11T por vendedor seleccionado
 
 **Qué se hizo:**

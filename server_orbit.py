@@ -2373,6 +2373,129 @@ def gerencia_sellout_categoria():
     })
 
 
+# ====== SELLOUT EN LITROS CON OBJETIVOS ======
+@app.route("/api/gerencia/sellout_litros")
+def gerencia_sellout_litros():
+    """
+    Sellout acumulado en litros vs objetivos del mes por categoría.
+    Fuente: 01_INPUTS/ventas_acumulada.csv
+    PesoKg = litros por línea (precomputado en el CSV).
+    Excluye V2, V5, V20. Solo ImporteNetoItem > 0.
+    Objetivos hardcoded de obj sell out.jpeg.
+    """
+    _EXCL = {2, 5, 20}
+
+    # Objetivos en litros — fuente: obj sell out.jpeg
+    OBJ = {
+        "VINOS DEL AÑO":    {"total": 19015, "sub": {"Alto": 11792, "Medio": 401, "Medio Alto": 4651, "Superior": 2171}},
+        "VINOS DE GUARDA":  {"total": 678,   "sub": {}},
+        "SPIRITS":          {"total": 17752,  "sub": {"Importados": 707, "Nacionales": 17045}},
+        "RTD":              {"total": 9999,   "sub": {}},
+        "CHAMPAÑA":         {"total": 686,    "sub": {}},
+        "CERVEZA ARTESANAL":{"total": 405,    "sub": {}},
+    }
+
+    RUBRO_CAT = {
+        "Vinos del Año":    "VINOS DEL AÑO",
+        "Vino de Guarda":   "VINOS DE GUARDA",
+        "Espumantes":       "CHAMPAÑA",
+        "CERVEZA ARTESANAL":"CERVEZA ARTESANAL",
+        "RTD (S)":          "RTD",
+        "Whisky":           "SPIRITS",
+        "Gin":              "SPIRITS",
+        "Ron":              "SPIRITS",
+        "Whisky (Maltas)":  "SPIRITS",
+        "Vodka":            "SPIRITS",
+        "Licores":          "SPIRITS",
+    }
+    SPIRITS_IMP = {"Whisky", "Gin", "Ron", "Whisky (Maltas)"}
+    SPIRITS_NAC = {"Vodka", "Licores"}
+
+    src = INPUTS / "ventas_acumulada.csv"
+    if not src.exists():
+        return jsonify({"error": "ventas_acumulada.csv no encontrado en 01_INPUTS"}), 404
+
+    df = None
+    for enc in ("utf-8-sig", "latin-1", "windows-1252"):
+        try:
+            df = pd.read_csv(src, sep=None, engine="python", encoding=enc)
+            break
+        except UnicodeDecodeError:
+            continue
+    if df is None:
+        return jsonify({"error": "No se pudo leer ventas_acumulada.csv"}), 500
+
+    df.columns = [c.strip() for c in df.columns]
+
+    # PesoKg puede venir con coma decimal
+    if "PesoKg" in df.columns:
+        if df["PesoKg"].dtype == object:
+            df["PesoKg"] = (df["PesoKg"].astype(str)
+                            .str.replace(",", ".", regex=False)
+                            .apply(pd.to_numeric, errors="coerce").fillna(0))
+        else:
+            df["PesoKg"] = pd.to_numeric(df["PesoKg"], errors="coerce").fillna(0)
+    else:
+        df["PesoKg"] = 0.0
+
+    for col in ("ImporteNetoItem", "CodVendedor"):
+        if col in df.columns:
+            if df[col].dtype == object:
+                df[col] = (df[col].astype(str).str.replace(",", ".", regex=False)
+                           .apply(pd.to_numeric, errors="coerce").fillna(0))
+            else:
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
+    df = df[~df["CodVendedor"].isin(_EXCL)]
+    df = df[df["ImporteNetoItem"] > 0]
+
+    df["_cat"] = df["Rubro"].astype(str).str.strip().map(RUBRO_CAT)
+    df["_rub"] = df["Rubro"].astype(str).str.strip()
+    df["_lin"] = df["Linea"].astype(str).str.strip() if "Linea" in df.columns else ""
+
+    resultado = []
+    for cat, obj_info in OBJ.items():
+        grp = df[df["_cat"] == cat]
+        litros   = round(float(grp["PesoKg"].sum()), 1)
+        clientes = int(grp["Cliente"].nunique()) if "Cliente" in grp.columns else 0
+        objetivo = obj_info["total"]
+        alcance  = round(litros / objetivo * 100, 1) if objetivo > 0 else 0.0
+
+        subs = []
+        if cat == "VINOS DEL AÑO":
+            for sn, so in obj_info["sub"].items():
+                sg = grp[grp["_lin"].str.lower() == sn.lower()]
+                sl = round(float(sg["PesoKg"].sum()), 1)
+                sc = int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0
+                sa = round(sl / so * 100, 1) if so > 0 else 0.0
+                subs.append({"nombre": sn, "litros": sl, "objetivo": so, "alcance_pct": sa, "clientes": sc})
+        elif cat == "SPIRITS":
+            for sn, srubs, so in [
+                ("Importados", SPIRITS_IMP, obj_info["sub"]["Importados"]),
+                ("Nacionales", SPIRITS_NAC, obj_info["sub"]["Nacionales"]),
+            ]:
+                sg = grp[grp["_rub"].isin(srubs)]
+                sl = round(float(sg["PesoKg"].sum()), 1)
+                sc = int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0
+                sa = round(sl / so * 100, 1) if so > 0 else 0.0
+                subs.append({"nombre": sn, "litros": sl, "objetivo": so, "alcance_pct": sa, "clientes": sc})
+
+        resultado.append({
+            "categoria":     cat,
+            "litros":        litros,
+            "objetivo":      objetivo,
+            "alcance_pct":   alcance,
+            "clientes":      clientes,
+            "subcategorias": subs,
+        })
+
+    return jsonify({
+        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "fuente":      "ventas_acumulada.csv · 01_INPUTS",
+        "categorias":  resultado,
+    })
+
+
 # ====== ACCIONES COMERCIALES RANKING ======
 @app.route("/api/gerencia/acciones_ranking")
 def gerencia_acciones_ranking():
