@@ -1001,7 +1001,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 
 /* ── estado ── */
 let userData = null, currentDay = null, gFiltro = "", gScreen = "dashboard";
-let D = { diag:{}, dash:[], cli:[], al:[], plan:[], pvr:{}, det:{}, msgs:[], cccEmpresa:{}, onceTit:{}, inov:null, plan_inov:null, cob_acum:null, t11_acum:null, inov_total:null, planes_as_g:null, planes_as_v:null, acc_vigentes:[] };
+let D = { diag:{}, dash:[], cli:[], al:[], plan:[], pvr:{}, det:{}, msgs:[], cccEmpresa:{}, onceTit:{}, onceTitDia:{}, inov:null, plan_inov:null, cob_acum:null, t11_acum:null, inov_total:null, planes_as_g:null, planes_as_v:null, acc_vigentes:[] };
 
 const CV = { V3:'#5BDED4', V4:'#F2B544', V6:'#5BC23A', V7:'#9B7BFF', V8:'#4DA3FF', V9:'#FF9D5C', V10:'#FF5D8B' };
 const DAYS = ['LU','MA','MI','JU','VI','SA'];
@@ -1105,9 +1105,10 @@ async function loadAll(){
     if(accV)     D.acc_vigentes=Array.isArray(accV)?accV:[];
   }
   if(userData?.rol==='gerencia'){
-    const [cccEmp,onceTit,inov,cobAcum,t11Acum,inovTot,plasAS,sellCat,accRank,dormidos]=await Promise.all([
+    const [cccEmp,onceTit,onceTitDia,inov,cobAcum,t11Acum,inovTot,plasAS,sellCat,accRank,dormidos]=await Promise.all([
       safe('/api/gerencia/ccc_empresa'),
       safe('/api/gerencia/once_titulares'),
+      safe('/api/gerencia/once_titulares_zona?dia='+(currentDay||'')),
       safe('/api/gerencia/innovaciones_segmento'),
       safe('/api/gerencia/cobertura_acum'),
       safe('/api/gerencia/11t_acum'),
@@ -1117,16 +1118,17 @@ async function loadAll(){
       safe('/api/gerencia/acciones_ranking'),
       safe('/api/gerencia/alertas_caida')
     ]);
-    if(cccEmp)   D.cccEmpresa=cccEmp;
-    if(onceTit)  D.onceTit=onceTit;
-    if(inov)     D.inov=inov;
-    if(cobAcum)  D.cob_acum=cobAcum;
-    if(t11Acum)  D.t11_acum=t11Acum;
-    if(inovTot)  D.inov_total=inovTot;
-    if(plasAS)   D.planes_as_g=plasAS;
-    if(sellCat)  D.sellout_cat=sellCat;
-    if(accRank)  D.acc_rank=accRank;
-    if(dormidos) D.dormidos=dormidos;
+    if(cccEmp)      D.cccEmpresa=cccEmp;
+    if(onceTit)     D.onceTit=onceTit;
+    if(onceTitDia)  D.onceTitDia=onceTitDia;
+    if(inov)        D.inov=inov;
+    if(cobAcum)     D.cob_acum=cobAcum;
+    if(t11Acum)     D.t11_acum=t11Acum;
+    if(inovTot)     D.inov_total=inovTot;
+    if(plasAS)      D.planes_as_g=plasAS;
+    if(sellCat)     D.sellout_cat=sellCat;
+    if(accRank)     D.acc_rank=accRank;
+    if(dormidos)    D.dormidos=dormidos;
   }
 }
 
@@ -1188,14 +1190,16 @@ async function setDay(d){
   currentDay=d; buildDaySel(d);
   const p=document.getElementById('gPage');
   if(p) p.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);">Cargando datos del día <b>'+d+'</b>…</div>';
-  const [cli,dash,inovTot]=await Promise.all([
+  const [cli,dash,inovTot,onceTitDia]=await Promise.all([
     safe('/api/clientes?dia='+d),
     safe('/api/dashboard?dia='+d),
-    safe('/api/gerencia/innovaciones_total?dia='+d)
+    safe('/api/gerencia/innovaciones_total?dia='+d),
+    safe('/api/gerencia/once_titulares_zona?dia='+d)
   ]);
-  if(cli)    D.cli=Array.isArray(cli)?cli:[];
-  if(dash)   D.dash=Array.isArray(dash)?dash:[];
-  if(inovTot) D.inov_total=inovTot;
+  if(cli)         D.cli=Array.isArray(cli)?cli:[];
+  if(dash)        D.dash=Array.isArray(dash)?dash:[];
+  if(inovTot)     D.inov_total=inovTot;
+  if(onceTitDia)  D.onceTitDia=onceTitDia;
   gRender();
 }
 function buildVDaySel(active){
@@ -1371,10 +1375,36 @@ function gDashboard(p){
       </div>
     </div>`;
   }
+  // 11 Titulares CCC zona del día (columna izquierda, debajo cobertura)
+  const otDia=(D.onceTitDia?.marcas||[]);
+  const otDiaTot=D.onceTitDia?.total_clientes_zona||0;
+  const otDiaDia=D.onceTitDia?.dia||currentDay||'–';
+  if(otDia.length){
+    const maxCCC=Math.max(...otDia.map(m=>m.ccc||0),1);
+    left+=`<div class="card">
+      <div class="card-hd"><span class="card-title">🏅 11 Titulares · CCC zona ${otDiaDia}</span><span class="chip">${otDiaTot} clientes</span></div>
+      <div class="card-body nop">
+        <table class="tbl">
+          <thead><tr><th>Marca</th><th style="text-align:right">CCC</th><th style="min-width:90px"></th></tr></thead>
+          <tbody>${otDia.map(m=>{
+            const ccc=m.ccc||0;
+            const pctBar=Math.round(ccc/maxCCC*100);
+            const pctCli=otDiaTot?Math.round(ccc/otDiaTot*100):0;
+            const cl=pctCli>=50?'ok':pctCli>=25?'wn':'bd';
+            return `<tr>
+              <td style="font-size:12px;font-weight:600;">${m.marca}</td>
+              <td style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;">${ccc}</td>
+              <td><div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${pctBar}%"></div></div>
+                  <div style="font-size:9px;color:var(--text3);text-align:right;margin-top:2px;">${pctCli}% zona</div></td>
+            </tr>`;}).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }
   left+=`</div>`;
 
-  // right: 11 titulares por marca + clientes sin compra
-  const clinSC=(D.cli||[]).filter(c=>c.compra_mes_flag===0||c.compra_mes_flag===null).slice(0,8);
+  // right: 11 titulares CCC vs Objetivo (total zonas)
   let right=`<div>`;
   const onceMarcas=(D.onceTit?.marcas||[]);
   const once11fuente=D.onceTit?.fuente||'';
@@ -1399,22 +1429,6 @@ function gDashboard(p){
     `<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;">Sin datos — ejecute el pipeline de ventas acumuladas</div>`}
     </div>
   </div>`;
-  if(clinSC.length){
-    right+=`<div class="card">
-      <div class="card-hd"><span class="card-title">🚨 Clientes sin Compra</span><span class="chip bd">${clinSC.length}+</span></div>
-      <div class="card-body nop">
-        <table class="tbl">
-          <thead><tr><th>Cliente</th><th>Seg.</th><th>Vend.</th><th>11T</th></tr></thead>
-          <tbody>${clinSC.map(c=>`<tr>
-            <td><b>${c.cliente_nombre||c.cliente_id}</b></td>
-            <td>${c.segmento||'–'}</td>
-            <td><span class="chip" style="color:${CV[c.vendedor_id]||'var(--text2)'};">${c.vendedor_id||'–'}</span></td>
-            <td>${c.faltan_11t||'–'}</td>
-          </tr>`).join('')}</tbody>
-        </table>
-      </div>
-    </div>`;
-  }
   right+=`</div>`;
   grid.innerHTML=left+right;
   p.appendChild(grid);

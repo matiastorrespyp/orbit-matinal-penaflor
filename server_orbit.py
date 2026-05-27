@@ -1284,6 +1284,134 @@ def gerencia_once_titulares():
     })
 
 
+# ====== GERENCIA: 11 TITULARES CCC ZONA DEL DÍA ======
+@app.route("/api/gerencia/once_titulares_zona")
+def gerencia_once_titulares_zona():
+    """11 Titulares: CCC por marca para los clientes de la zona del día.
+    Sin objetivos — muestra penetración dentro de la zona.
+    Fuente ventas : ventas_acumulada.csv
+    Fuente zona   : clientes.xlsx (DiasVisita == dia)"""
+    dia_raw = request.args.get("dia", "").strip()
+    dia_key = dia_raw.lower()[:2] if dia_raw else ""   # "LU"→"lu", "Ma"→"ma"
+
+    _MARCA_LOOKUP = {
+        "ALMA MORA":"ALMA MORA","ALARIS":"ALARIS","TRAPICHE ALARIS":"ALARIS",
+        "DON DAVID":"DON DAVID","DADA":"DADA","LOS ARBOLES":"LOS ARBOLES",
+        "FINCA LAS MORAS":"FINCA LAS MORAS","F LAS MORAS":"FINCA LAS MORAS",
+        "TRAPICHE RESERVA":"TRAPICHE RESERVA",
+        "FOND DE CAVE":"FOND DE CAVE","FOND CAVE":"FOND DE CAVE",
+        "CAZADOR":"CAZADOR","ANTARES":"ANTARES",
+        "GORDON'S FLAVOURS":"GORDON'S FLAVOURS","GORDONS FLAVOURS":"GORDON'S FLAVOURS",
+        "GORDON'S":"GORDON'S FLAVOURS","GORDONS":"GORDON'S FLAVOURS","GORDON S":"GORDON'S FLAVOURS",
+        "SMIRNOFF":"SMIRNOFF FLAVOURS","SMIRNOFF FLAVOURS":"SMIRNOFF FLAVOURS",
+        "SMIRNOFF ICE FLAVOURS":"SMIRNOFF ICE","SMIRNOFF ICE":"SMIRNOFF ICE",
+        "JW":"JW BLACK","JW BLACK":"JW BLACK","JW RED":"JW RED",
+        "MASCOTA":"MASCOTA","LA MASCOTA":"MASCOTA",
+        "NC ESPUMANTES":"NC ESPUMANTES","NAVARRO CORREAS":"NC ESPUMANTES",
+        "TRAPICHE MEDALLA":"TRAPICHE MEDALLA","GRAN MEDALLA":"TRAPICHE MEDALLA",
+    }
+    _ART_KW = [
+        ("SMIRNOFF ICE","SMIRNOFF ICE"),("SMF ICE","SMIRNOFF ICE"),
+        ("SMIRNOFF","SMIRNOFF FLAVOURS"),("GORDON","GORDON'S FLAVOURS"),
+        ("ANTARES","ANTARES"),("CAZADOR","CAZADOR"),
+        ("FOND DE CAVE","FOND DE CAVE"),("ALMA MORA","ALMA MORA"),
+        ("LOS ARBOLES","LOS ARBOLES"),("DADA","DADA"),
+        ("FINCA LAS MORAS","FINCA LAS MORAS"),("F.LAS MORAS","FINCA LAS MORAS"),
+        ("DON DAVID","DON DAVID"),("ALARIS","ALARIS"),
+        ("TRAPICHE RESERVA","TRAPICHE RESERVA"),
+        ("JW BLACK","JW BLACK"),("JW RED","JW RED"),
+    ]
+    _OBJ_ALIAS = {
+        "ALMA MORA":"ALMA MORA","TRAPICHE RESERVA":"TRAPICHE RESERVA",
+        "FINCA LAS MORAS":"FINCA LAS MORAS","ALARIS":"ALARIS",
+        "DON DAVID":"DON DAVID","DADA":"DADA",
+        "SIMRNOFF FLAVORS":"SMIRNOFF FLAVOURS","SMIRNOFF FLAVORS":"SMIRNOFF FLAVOURS",
+        "SMIRNOFF FLAVOURS":"SMIRNOFF FLAVOURS","LOS ARBOLES":"LOS ARBOLES",
+        "ANTARES":"ANTARES","SMIRNOFF ICE":"SMIRNOFF ICE","SMF ICE":"SMIRNOFF ICE",
+        "GORDONS FLAVOURS":"GORDON'S FLAVOURS","GORDONS FLAVORS":"GORDON'S FLAVOURS",
+        "GORDON'S FLAVOURS":"GORDON'S FLAVOURS",
+    }
+
+    # ── Ventas acumuladas ──
+    vac_path = INPUTS / "ventas_acumulada.csv"
+    if not vac_path.exists():
+        return jsonify({"error": "ventas_acumulada.csv no encontrado", "marcas": [], "dia": dia_raw}), 200
+    try:
+        vac = pd.read_csv(vac_path, sep=";", encoding="latin1", low_memory=False)
+        vac["ImporteNetoItem"] = pd.to_numeric(
+            vac["ImporteNetoItem"].astype(str).str.replace(",",".",regex=False), errors="coerce")
+        vac = vac[~vac["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS)]
+        vac = vac[vac["ImporteNetoItem"] > 0]
+    except Exception as e:
+        return jsonify({"error": str(e), "marcas": [], "dia": dia_raw}), 200
+
+    # ── Clientes de la zona del día ──
+    zona_ids = set()
+    cli_total = 0
+    try:
+        cli_path = INPUTS / "clientes.xlsx"
+        if cli_path.exists():
+            cli_df = pd.read_excel(cli_path)
+            dias_col = next((c for c in cli_df.columns if "diasvisita" in c.lower().replace(" ","")), None)
+            cod_col  = next((c for c in cli_df.columns if c.lower() in ("codigo","cod","id")), None)
+            vend_col = next((c for c in cli_df.columns if c.lower() == "codven"), None)
+            if dias_col and cod_col:
+                if vend_col:
+                    cli_df = cli_df[~pd.to_numeric(cli_df[vend_col], errors="coerce").isin(_VENDEDORES_EXCLUIDOS)]
+                if dia_key:
+                    cli_df = cli_df[cli_df[dias_col].astype(str).str.strip().str.lower() == dia_key]
+                zona_ids = set(pd.to_numeric(cli_df[cod_col], errors="coerce").dropna().astype(int))
+                cli_total = len(zona_ids)
+    except Exception:
+        pass
+
+    # ── Filtrar ventas a zona ──
+    if zona_ids:
+        vac = vac[vac["Cliente"].isin(zona_ids)]
+
+    # ── Normalizar marcas ──
+    vac["marca_upper"] = vac["Marca"].astype(str).str.upper().str.strip()
+    vac["marca_objetivo"] = vac["marca_upper"].map(_MARCA_LOOKUP)
+    unresolved = vac["marca_objetivo"].isna()
+    if unresolved.any():
+        for kw, mo in _ART_KW:
+            still = vac["marca_objetivo"].isna() & unresolved
+            if not still.any():
+                break
+            hits = vac.loc[still, "Articulo"].astype(str).str.upper().str.contains(kw, regex=False, na=False)
+            vac.loc[still & hits, "marca_objetivo"] = mo
+
+    # CCC por marca en la zona
+    ccc_map = (vac[vac["marca_objetivo"].notna()]
+               .groupby("marca_objetivo")["Cliente"]
+               .nunique().to_dict())
+
+    # Orden oficial desde objetivo 11T.xlsx
+    marcas_orden = []
+    try:
+        obj_df = pd.read_excel(INPUTS / "objetivo 11T.xlsx", header=1)
+        obj_df = obj_df.dropna(subset=obj_df.columns[1:2])
+        for _, row in obj_df.iterrows():
+            raw = str(row.iloc[1]).upper().strip()
+            mk = _OBJ_ALIAS.get(raw, raw)
+            if mk and mk not in marcas_orden:
+                marcas_orden.append(mk)
+    except Exception:
+        pass
+    if not marcas_orden:
+        marcas_orden = sorted(ccc_map.keys(), key=lambda x: ccc_map.get(x, 0), reverse=True)
+
+    marcas = [{"marca": m, "ccc": ccc_map.get(m, 0)} for m in marcas_orden]
+
+    return jsonify({
+        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "dia": dia_raw.upper() if dia_raw else "TODOS",
+        "total_clientes_zona": cli_total,
+        "fuente": "ventas_acumulada.csv",
+        "marcas": marcas,
+    })
+
+
 # ====== GERENCIA: COBERTURA POR SEGMENTO ======
 @app.route("/api/gerencia/cobertura_segmento")
 def gerencia_cobertura_segmento():
