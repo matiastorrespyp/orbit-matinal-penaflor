@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 
 import os
 app = Flask(__name__, static_folder=None)
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0   # sin cache en portal.html
 BASE = Path(__file__).parent
 APP_DATA = BASE / "06_APP_DATA"
 CONFIG = BASE / "09_CONFIG"
@@ -1159,25 +1160,11 @@ def gerencia_ccc_empresa():
 @app.route("/api/gerencia/once_titulares")
 def gerencia_once_titulares():
     """11 Titulares: CCC acumulado vs objetivo CCC.
-    Fuente CCC: ventas_acumulada.csv (período acumulado, clientes únicos con ImporteNetoItem > 0).
-    Fuente objetivo: objetivo 11T.xlsx (columna Objetivo = nro de clientes).
-    Excluye V2, V5, V20."""
-    vac_path = INPUTS / "ventas_acumulada.csv"
-    if not vac_path.exists():
-        return jsonify({"error": "ventas_acumulada.csv no encontrado", "marcas": []}), 500
+    Fuente primaria : ventas_acumulada.csv (importeNeto > 0, excluye V2/V5/V20).
+    Fuente fallback : mod_11_titulares.csv  (tiene_flag = 1).
+    Fuente objetivo : objetivo 11T.xlsx."""
 
-    try:
-        vac = pd.read_csv(vac_path, sep=";", encoding="latin1", low_memory=False)
-    except Exception as e:
-        return jsonify({"error": str(e), "marcas": []}), 500
-
-    # Fix decimal comma in ImporteNetoItem
-    vac["ImporteNetoItem"] = pd.to_numeric(
-        vac["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
-    vac = vac[~vac["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS)]
-    vac = vac[vac["ImporteNetoItem"] > 0]
-
-    # Brand alias lookup: Marca column (upper) → marca_objetivo
+    # ── Brand alias lookup ──
     _MARCA_LOOKUP = {
         "ALMA MORA": "ALMA MORA", "ALARIS": "ALARIS", "TRAPICHE ALARIS": "ALARIS",
         "DON DAVID": "DON DAVID", "DADA": "DADA", "LOS ARBOLES": "LOS ARBOLES",
@@ -1188,16 +1175,15 @@ def gerencia_once_titulares():
         "GORDON'S FLAVOURS": "GORDON'S FLAVOURS", "GORDONS FLAVOURS": "GORDON'S FLAVOURS",
         "GORDON'S": "GORDON'S FLAVOURS", "GORDONS": "GORDON'S FLAVOURS",
         "GORDON S": "GORDON'S FLAVOURS",
-        "SMIRNOFF": "SMIRNOFF FLAVOURS",           # bottle variants (DO etc.)
+        "SMIRNOFF": "SMIRNOFF FLAVOURS",
         "SMIRNOFF FLAVOURS": "SMIRNOFF FLAVOURS",
-        "SMIRNOFF ICE FLAVOURS": "SMIRNOFF ICE",   # SMF ICE cans
+        "SMIRNOFF ICE FLAVOURS": "SMIRNOFF ICE",
         "SMIRNOFF ICE": "SMIRNOFF ICE",
         "JW": "JW BLACK", "JW BLACK": "JW BLACK", "JW RED": "JW RED",
         "MASCOTA": "MASCOTA", "LA MASCOTA": "MASCOTA",
         "NC ESPUMANTES": "NC ESPUMANTES", "NAVARRO CORREAS": "NC ESPUMANTES",
         "TRAPICHE MEDALLA": "TRAPICHE MEDALLA", "GRAN MEDALLA": "TRAPICHE MEDALLA",
     }
-    # Keyword lookup for Articulo when Marca is broken (#¿NOMBRE? / NaN)
     _ART_KW = [
         ("SMIRNOFF ICE", "SMIRNOFF ICE"), ("SMF ICE", "SMIRNOFF ICE"),
         ("SMIRNOFF", "SMIRNOFF FLAVOURS"), ("GORDON", "GORDON'S FLAVOURS"),
@@ -1210,29 +1196,56 @@ def gerencia_once_titulares():
         ("JW BLACK", "JW BLACK"), ("JW RED", "JW RED"),
     ]
 
-    vac["marca_upper"] = vac["Marca"].astype(str).str.upper().str.strip()
-    vac["marca_objetivo"] = vac["marca_upper"].map(_MARCA_LOOKUP)
+    ccc_map = {}
+    fuente = ""
 
-    # Fill unresolved rows via Articulo keyword search
-    unresolved = vac["marca_objetivo"].isna()
-    if unresolved.any():
-        for kw, mo in _ART_KW:
-            still = vac["marca_objetivo"].isna() & unresolved
-            if not still.any():
-                break
-            hits = vac.loc[still, "Articulo"].astype(str).str.upper().str.contains(kw, regex=False, na=False)
-            vac.loc[still & hits, "marca_objetivo"] = mo
+    # ── Fuente primaria: ventas_acumulada.csv ──
+    vac_path = INPUTS / "ventas_acumulada.csv"
+    if vac_path.exists():
+        try:
+            vac = pd.read_csv(vac_path, sep=";", encoding="latin1", low_memory=False)
+            vac["ImporteNetoItem"] = pd.to_numeric(
+                vac["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
+            vac = vac[~vac["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS)]
+            vac = vac[vac["ImporteNetoItem"] > 0]
+            vac["marca_upper"] = vac["Marca"].astype(str).str.upper().str.strip()
+            vac["marca_objetivo"] = vac["marca_upper"].map(_MARCA_LOOKUP)
+            unresolved = vac["marca_objetivo"].isna()
+            if unresolved.any():
+                for kw, mo in _ART_KW:
+                    still = vac["marca_objetivo"].isna() & unresolved
+                    if not still.any():
+                        break
+                    hits = vac.loc[still, "Articulo"].astype(str).str.upper().str.contains(kw, regex=False, na=False)
+                    vac.loc[still & hits, "marca_objetivo"] = mo
+            ccc_map = (vac[vac["marca_objetivo"].notna()]
+                       .groupby("marca_objetivo")["Cliente"]
+                       .nunique().to_dict())
+            fuente = "ventas_acumulada.csv"
+        except Exception:
+            ccc_map = {}
 
-    # CCC per brand = unique clients
-    ccc_map = (vac[vac["marca_objetivo"].notna()]
-               .groupby("marca_objetivo")["Cliente"]
-               .nunique()
-               .to_dict())
+    # ── Fuente fallback: mod_11_titulares.csv (si la primaria no está disponible) ──
+    if not ccc_map:
+        t11_path = DATASETS / "mod_11_titulares.csv"
+        if t11_path.exists():
+            try:
+                t11 = pd.read_csv(t11_path, sep=",", encoding="utf-8-sig", low_memory=False)
+                t11["vendedor_codigo"] = pd.to_numeric(t11["vendedor_codigo"], errors="coerce")
+                t11 = t11[~t11["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
+                t11_ok = t11[t11["tiene_flag"].astype(str) == "1"]
+                ccc_map = t11_ok.groupby("marca_objetivo")["cliente_id"].nunique().to_dict()
+                fuente = "mod_11_titulares.csv (parcial)"
+            except Exception:
+                ccc_map = {}
 
-    # Load objectives (column Objetivo = target CCC clients)
+    if not ccc_map:
+        return jsonify({"error": "Sin fuente de CCC disponible", "marcas": [], "fuente": "N/A"}), 200
+
+    # ── Objetivos: objetivo 11T.xlsx ──
     _OBJ_ALIAS = {
         "ALMA MORA": "ALMA MORA", "TRAPICHE RESERVA": "TRAPICHE RESERVA",
-        "FINCA LAS MORAS": "FINCA LAS MORAS", "FINCA LAS MORAS": "FINCA LAS MORAS",
+        "FINCA LAS MORAS": "FINCA LAS MORAS",
         "ALARIS": "ALARIS", "DON DAVID": "DON DAVID", "DADA": "DADA",
         "SIMRNOFF FLAVORS": "SMIRNOFF FLAVOURS", "SMIRNOFF FLAVORS": "SMIRNOFF FLAVOURS",
         "SMIRNOFF FLAVOURS": "SMIRNOFF FLAVOURS",
@@ -1255,22 +1268,17 @@ def gerencia_once_titulares():
     except Exception:
         pass
 
-    # Build result ordered by CCC desc, only brands with objectives
+    # ── Resultado: por marca, ordenado por CCC desc ──
     marcas = []
     for marca_obj in sorted(obj_map.keys(), key=lambda x: ccc_map.get(x, 0), reverse=True):
         ccc = ccc_map.get(marca_obj, 0)
         obj = obj_map[marca_obj]
         pct = round(ccc / obj * 100, 1) if obj else None
-        marcas.append({
-            "marca": marca_obj,
-            "ccc": ccc,
-            "objetivo_ccc": obj,
-            "pct_objetivo": pct,
-        })
+        marcas.append({"marca": marca_obj, "ccc": ccc, "objetivo_ccc": obj, "pct_objetivo": pct})
 
     return jsonify({
         "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "fuente": "ventas_acumulada.csv",
+        "fuente": fuente,
         "total_marcas": len(marcas),
         "marcas": marcas,
     })
