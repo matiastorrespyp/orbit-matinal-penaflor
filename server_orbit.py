@@ -1421,6 +1421,46 @@ def gerencia_once_titulares_zona():
     })
 
 
+# ====== GERENCIA: RANKING RECHAZOS ======
+@app.route("/api/gerencia/ranking_rechazos")
+def gerencia_ranking_rechazos():
+    """Ranking de % rechazo por vendedor.
+    Fuente: 01_INPUTS/resultado.xlsx hoja Rechazos.
+    Filtra: solo Origen == Vendedor, excluye V2/V5/V20."""
+    try:
+        df = pd.read_excel(INPUTS / "resultado.xlsx", sheet_name="Rechazos")
+    except Exception as e:
+        return jsonify({"error": str(e), "vendedores": []}), 200
+
+    df.columns = [c.strip() for c in df.columns]
+
+    # Solo vendedores (excluir filas de supervisores)
+    if "Origen" in df.columns:
+        df = df[df["Origen"].astype(str).str.strip().str.lower() == "vendedor"]
+
+    df["VendedorCodigo"] = pd.to_numeric(df["VendedorCodigo"], errors="coerce")
+    df = df[~df["VendedorCodigo"].isin(_VENDEDORES_EXCLUIDOS)]
+    df["PorcRechazo"] = pd.to_numeric(df["PorcRechazo"], errors="coerce").fillna(0)
+
+    resultado = []
+    for _, row in df.iterrows():
+        cod = int(row["VendedorCodigo"])
+        nombre = str(row.get("VendedorNombre", f"V{cod}")).strip()
+        pct = round(float(row["PorcRechazo"]), 1)
+        resultado.append({
+            "vendedor_id":     f"V{cod}",
+            "vendedor_nombre": nombre,
+            "rechazo_pct":     pct,
+        })
+
+    resultado.sort(key=lambda x: x["rechazo_pct"], reverse=True)
+    return jsonify({
+        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "fuente":      "resultado.xlsx · hoja Rechazos",
+        "vendedores":  resultado,
+    })
+
+
 # ====== GERENCIA: 11T RESUMEN DISTRIBUIDORA ======
 @app.route("/api/gerencia/11t_empresa")
 def gerencia_11t_empresa():

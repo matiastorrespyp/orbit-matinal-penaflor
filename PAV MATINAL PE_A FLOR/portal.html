@@ -1375,21 +1375,26 @@ function gDashboard(p){
       </div>
     </div>`;
   }
-  // 11 Titulares CCC zona del día (columna izquierda, debajo cobertura) — placeholder, self-loading
-  left+=`<div class="card" id="card-11t-zona">
-    <div class="card-hd"><span class="card-title">🏅 11 Titulares · CCC zona <span id="lbl-11t-zona">${currentDay||'–'}</span></span><span class="chip" id="chip-11t-zona">cargando…</span></div>
-    <div class="card-body nop" id="body-11t-zona">
-      <div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">Cargando datos…</div>
-    </div>
-  </div>`;
   left+=`</div>`;
 
-  // right: 11 titulares CCC vs Objetivo (total zonas)
+  // right: 11T CCC vs Objetivo + 11T CCC zona + Ranking rechazos
   let right=`<div>`;
   right+=`<div class="card" id="card-11t-obj">
     <div class="card-hd"><span class="card-title">🏅 11 Titulares · CCC vs Objetivo</span><span class="chip" id="chip-11t-obj">cargando…</span></div>
     <div class="card-body nop" id="body-11t-obj">
       <div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;">Cargando datos…</div>
+    </div>
+  </div>`;
+  right+=`<div class="card" id="card-11t-zona" style="margin-top:13px;">
+    <div class="card-hd"><span class="card-title">🏅 11 Titulares · CCC zona <span id="lbl-11t-zona">${currentDay||'–'}</span></span><span class="chip" id="chip-11t-zona">cargando…</span></div>
+    <div class="card-body nop" id="body-11t-zona">
+      <div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">Cargando datos…</div>
+    </div>
+  </div>`;
+  right+=`<div class="card" id="card-rechazos" style="margin-top:13px;">
+    <div class="card-hd"><span class="card-title">🔴 Ranking de Rechazos</span><span class="chip" id="chip-rechazos">cargando…</span></div>
+    <div class="card-body nop" id="body-rechazos">
+      <div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">Cargando datos…</div>
     </div>
   </div>`;
   right+=`</div>`;
@@ -1465,6 +1470,45 @@ function gDashboard(p){
       </table>`;
     }catch(e){
       if(bodyEl) bodyEl.innerHTML=`<div style="padding:16px;color:var(--bd);font-size:12px;">Error: ${e.message}</div>`;
+    }
+  })();
+
+  // ── Ranking de Rechazos ──
+  (async()=>{
+    const bodyEl=document.getElementById('body-rechazos');
+    const chipEl=document.getElementById('chip-rechazos');
+    if(!bodyEl) return;
+    try{
+      const r=await fetch('/api/gerencia/ranking_rechazos');
+      if(!r.ok){ bodyEl.innerHTML=`<div style="padding:16px;color:var(--bd);font-size:12px;">Error HTTP ${r.status}</div>`; return; }
+      const data=await r.json();
+      const vendedores=data.vendedores||[];
+      if(chipEl) chipEl.textContent=vendedores.length+' vendedores';
+      if(!vendedores.length){ bodyEl.innerHTML=`<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">Sin datos de rechazos</div>`; return; }
+      const maxPct=Math.max(...vendedores.map(v=>v.rechazo_pct||0),1);
+      let html=`<table class="tbl">
+        <thead><tr>
+          <th>Vendedor</th>
+          <th style="text-align:right">% Rechazo</th>
+          <th style="min-width:90px"></th>
+        </tr></thead>
+        <tbody>`;
+      vendedores.forEach(v=>{
+        const pct=v.rechazo_pct||0;
+        const cl=pct>=10?'bd':pct>=3?'wn':'ok';
+        const pctBar=Math.round(pct/maxPct*100);
+        html+=`<tr>
+          <td><b style="font-size:12px;">${v.vendedor_id}</b> <span style="font-size:11px;color:var(--text2);">${v.vendedor_nombre}</span></td>
+          <td style="text-align:right;"><span class="chip ${cl}" style="font-size:10px;">${pct.toFixed(1)}%</span></td>
+          <td><div class="bar" style="height:5px;"><div class="bar-f ${cl}" style="width:${pctBar}%"></div></div></td>
+        </tr>`;
+      });
+      html+=`</tbody></table>
+        <div style="font-size:9px;color:var(--text3);padding:4px 12px 6px;">Fuente: resultado.xlsx · hoja Rechazos · ${data.generado_en||''}</div>`;
+      bodyEl.innerHTML=html;
+    }catch(e){
+      const bodyEl2=document.getElementById('body-rechazos');
+      if(bodyEl2) bodyEl2.innerHTML=`<div style="padding:16px;color:var(--bd);font-size:12px;">Error: ${e.message}</div>`;
     }
   })();
 
