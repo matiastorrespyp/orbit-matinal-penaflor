@@ -202,7 +202,10 @@ def _clientes_por_dia(dia: str) -> pd.DataFrame:
     ccc_ids = set(ventas_mes["cliente_id"].dropna().astype(int)) if not ventas_mes.empty else set()
 
     sub_col = next((c for c in cli.columns if "subseg" in c.lower() or "subramo" in c.lower()), None)
-    nombre_col = next((c for c in cli.columns if c.lower() in ("razonsocial", "nombre", "cliente")), "Nombre")
+    nombre_col = next(
+        (c for c in cli.columns if c.lower().replace("_","").replace(" ","") in ("razonsocial","nombre","cliente")),
+        next((c for c in cli.columns if "razon" in c.lower() or "nombre" in c.lower()), None)
+    )
 
     rows = []
     for _, row in cli.iterrows():
@@ -218,7 +221,7 @@ def _clientes_por_dia(dia: str) -> pd.DataFrame:
         estado = "SIN_COMPRA_MES" if compra_mes == 0 else "COBERTURA_OK"
         rows.append({
             "cliente_id": cid,
-            "cliente_nombre": str(row.get(nombre_col, cid)),
+            "cliente_nombre": str(row[nombre_col]) if (nombre_col and pd.notna(row.get(nombre_col))) else str(cid),
             "vendedor_codigo": vcod,
             "vendedor_id": f"V{vcod}",
             "dias_visita": dia_cap,
