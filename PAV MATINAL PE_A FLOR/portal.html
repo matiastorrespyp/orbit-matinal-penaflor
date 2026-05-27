@@ -1277,6 +1277,10 @@ function gDashboard(p){
     </div>`);
 
   // KPI row
+  const once11=(D.onceTit?.marcas||[]);
+  const once11ok=once11.filter(m=>(m.pct_objetivo??0)>=100).length;
+  const once11tot=once11.length||11;
+  const once11cl=once11ok>=9?'ok':once11ok>=6?'wn':'bd';
   p.insertAdjacentHTML('beforeend',`
     <div class="krow">
       <div class="kcard ok">
@@ -1288,6 +1292,11 @@ function gDashboard(p){
         <div class="kl">Tendencia %</div>
         <div class="kv">${tenG.toFixed(1)}<span class="ku">%</span></div>
         <div class="kh">${dR} días hábiles restantes</div>
+      </div>
+      <div class="kcard ${once11cl}">
+        <div class="kl">11 Titulares al objetivo</div>
+        <div class="kv">${once11ok}<span class="ku">/${once11tot}</span></div>
+        <div class="kh">marcas con CCC ≥ objetivo mes</div>
       </div>
       <div class="kcard info">
         <div class="kl">Clientes del Día</div>
