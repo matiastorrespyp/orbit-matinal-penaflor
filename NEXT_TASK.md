@@ -11,9 +11,9 @@
   - Datos validados: 6 categorías con datos reales
 
 ### PRÓXIMO PASO 🔲
-- **Push a Render**: `git add server_orbit.py "PAV MATINAL PE_A FLOR/portal.html" CHANGELOG_AI.md NEXT_TASK.md && git push`
-- Validar en portal gerencia que la tarjeta Sellout muestra correctamente la tabla con objetivos y chips de alcance
-- Validar que CHAMPAÑA (70.4%) muestra chip amarillo y CERVEZA (25.2%) muestra chip rojo
+- **Push a Render**: `git add server_orbit.py CHANGELOG_AI.md NEXT_TASK.md && git push`
+- Validar en portal gerencia que CHAMPAÑA muestra ~84% (chip amarillo) y CERVEZA ~56% (chip rojo)
+- Investigar gap SPIRITS Nacionales: sistema 15.139L vs imagen 17.800L (-2.661L) — posible diferencia de fecha de corte o productos faltantes en ventas.csv
 
 ---
 

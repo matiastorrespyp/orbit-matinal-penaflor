@@ -2374,12 +2374,28 @@ def gerencia_sellout_categoria():
 
 
 # ====== SELLOUT EN LITROS CON OBJETIVOS ======
+import re as _re
+
+def _infer_litros_por_nombre(nombre: str) -> float:
+    """Fallback nivel 2: infiere litros/unidad desde el nombre del artículo.
+    Busca el último grupo de 3-4 dígitos precedido por X o espacio (ej: 6X750 → 0.75).
+    """
+    matches = _re.findall(r'[X\s](\d{3,4})\b', str(nombre).upper())
+    if matches:
+        ml = int(matches[-1])
+        if 100 <= ml <= 9999:
+            return ml / 1000.0
+    return 0.0
+
+
 @app.route("/api/gerencia/sellout_litros")
 def gerencia_sellout_litros():
     """
     Sellout acumulado en litros vs objetivos del mes por categoría.
-    Fuente: 01_INPUTS/ventas_acumulada.csv
-    PesoKg = litros por línea (precomputado en el CSV).
+    Fuente: 01_INPUTS/ventas.csv (período comercial vigente)
+    Litros: PesoKg del CSV (precomputado).
+      Fallback 1: PesoKg=0 → CantBase × LitrosXunidad de producto activos.xlsx
+      Fallback 2: sin match en maestro → infiere ml del nombre del artículo
     Excluye V2, V5, V20. Solo ImporteNetoItem > 0.
     Objetivos hardcoded de obj sell out.jpeg.
     """
@@ -2411,9 +2427,10 @@ def gerencia_sellout_litros():
     SPIRITS_IMP = {"Whisky", "Gin", "Ron", "Whisky (Maltas)"}
     SPIRITS_NAC = {"Vodka", "Licores"}
 
-    src = INPUTS / "ventas_acumulada.csv"
+    # — Leer ventas.csv —
+    src = INPUTS / "ventas.csv"
     if not src.exists():
-        return jsonify({"error": "ventas_acumulada.csv no encontrado en 01_INPUTS"}), 404
+        return jsonify({"error": "ventas.csv no encontrado en 01_INPUTS"}), 404
 
     df = None
     for enc in ("utf-8-sig", "latin-1", "windows-1252"):
@@ -2423,31 +2440,49 @@ def gerencia_sellout_litros():
         except UnicodeDecodeError:
             continue
     if df is None:
-        return jsonify({"error": "No se pudo leer ventas_acumulada.csv"}), 500
+        return jsonify({"error": "No se pudo leer ventas.csv"}), 500
 
     df.columns = [c.strip() for c in df.columns]
 
-    # PesoKg puede venir con coma decimal
-    if "PesoKg" in df.columns:
-        if df["PesoKg"].dtype == object:
-            df["PesoKg"] = (df["PesoKg"].astype(str)
-                            .str.replace(",", ".", regex=False)
-                            .apply(pd.to_numeric, errors="coerce").fillna(0))
-        else:
-            df["PesoKg"] = pd.to_numeric(df["PesoKg"], errors="coerce").fillna(0)
-    else:
-        df["PesoKg"] = 0.0
-
-    for col in ("ImporteNetoItem", "CodVendedor"):
+    for col in ("PesoKg", "CantBase", "ImporteNetoItem", "CodVendedor"):
         if col in df.columns:
             if df[col].dtype == object:
                 df[col] = (df[col].astype(str).str.replace(",", ".", regex=False)
                            .apply(pd.to_numeric, errors="coerce").fillna(0))
             else:
                 df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+        else:
+            df[col] = 0.0
 
     df = df[~df["CodVendedor"].isin(_EXCL)]
     df = df[df["ImporteNetoItem"] > 0]
+
+    # — Fallback 1: maestro de productos para PesoKg=0 —
+    prod_src = INPUTS / "producto activos.xlsx"
+    cod2lxu = {}
+    if prod_src.exists():
+        try:
+            prod = pd.read_excel(prod_src, header=3)
+            prod.columns = [c.strip() for c in prod.columns]
+            # Buscar columnas por posición si los nombres tienen tildes
+            col_cod = next((c for c in prod.columns if "d" in c.lower() and "art" in c.lower()), None)
+            col_lxu = next((c for c in prod.columns if "litro" in c.lower() and "unidad" in c.lower()), None)
+            if col_cod and col_lxu:
+                prod["_cod"] = prod[col_cod].astype(str).str.strip().str.upper()
+                prod["_lxu"] = pd.to_numeric(prod[col_lxu], errors="coerce").fillna(0)
+                cod2lxu = prod.set_index("_cod")["_lxu"].to_dict()
+        except Exception:
+            pass
+
+    mask0 = df["PesoKg"] == 0
+    if mask0.any() and cod2lxu:
+        df["_cod"] = df["Codigo"].astype(str).str.strip().str.upper() if "Codigo" in df.columns else ""
+        df["_lxu_fb"] = df["_cod"].map(cod2lxu).fillna(0)
+        # Fallback 2: infiere del nombre del artículo donde no hubo match
+        still_zero = mask0 & (df["_lxu_fb"] == 0)
+        if still_zero.any() and "Articulo" in df.columns:
+            df.loc[still_zero, "_lxu_fb"] = df.loc[still_zero, "Articulo"].apply(_infer_litros_por_nombre)
+        df.loc[mask0, "PesoKg"] = df.loc[mask0, "CantBase"] * df.loc[mask0, "_lxu_fb"]
 
     df["_cat"] = df["Rubro"].astype(str).str.strip().map(RUBRO_CAT)
     df["_rub"] = df["Rubro"].astype(str).str.strip()
@@ -2491,7 +2526,7 @@ def gerencia_sellout_litros():
 
     return jsonify({
         "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "fuente":      "ventas_acumulada.csv · 01_INPUTS",
+        "fuente":      "ventas.csv · 01_INPUTS (con fallback maestro productos)",
         "categorias":  resultado,
     })
 

@@ -1,5 +1,22 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-27 — fix(gerencia): sellout litros — fallback PesoKg=0 y fuente corregida a ventas.csv
+
+**Qué se hizo:**
+- **Fuente corregida**: el endpoint `/api/gerencia/sellout_litros` ahora lee `ventas.csv` (no `ventas_acumulada.csv`).
+- **Fallback nivel 1**: cuando `PesoKg = 0` y `CantBase > 0`, calcula `CantBase × LitrosXunidad` desde `producto activos.xlsx`.
+  - Cubre 24 productos que venían sin litros en el CSV (DADA 7 SWEET, ANTARES LAGER, GORDONS GIN, etc.).
+  - CHAMPAÑA: de 256L → 580L (cuadra con imagen -56L de diferencia = venta de hoy).
+  - CERVEZA: de 43L → 228L (imagen 195L, sistema tiene +34L = venta de hoy incluida ✅).
+- **Fallback nivel 2**: productos no encontrados en el maestro → infiere ml del nombre del artículo por regex (`X750` → 0.75L, `X1000` → 1.0L, `X473` → 0.473L).
+  - Cubre 8 productos sin match en maestro (FRIZZE MANXANA, MARANTIQUA, ALARIS, etc.).
+- **Función helper** `_infer_litros_por_nombre()` agregada a nivel de módulo.
+
+**Archivos tocados:**
+- `server_orbit.py` — endpoint `gerencia_sellout_litros` + función `_infer_litros_por_nombre`
+
+---
+
 ## 2026-05-27 — feat(gerencia): sellout en litros con objetivos y alcance por categoría
 
 **Qué se hizo:**
