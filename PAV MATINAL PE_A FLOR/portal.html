@@ -477,6 +477,18 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 .vt-greet { font-size:11px; color:var(--text3); margin-top:1px; }
 .vt-live { display:inline-flex; align-items:center; gap:4px; font-size:9px; color:var(--ok); font-weight:700; letter-spacing:.5px; }
 .vt-live::before { content:""; width:5px; height:5px; border-radius:50%; background:var(--ok); animation:blink 1.6s ease-in-out infinite; }
+/* vendor day selector */
+.v-dsel { display:flex; gap:4px; margin-top:10px; }
+.v-dsel button {
+  flex:1; padding:6px 2px; border-radius:7px; font-size:11px; font-weight:600;
+  color:var(--text3); background:rgba(255,255,255,0.05);
+  border:1px solid var(--bs); white-space:nowrap; min-height:34px; cursor:pointer;
+  transition:all .12s;
+}
+.v-dsel button.active {
+  background:var(--mg); color:#fff; font-weight:700;
+  border-color:var(--mg); box-shadow:0 2px 8px var(--mg-g);
+}
 
 /* vendor tab content */
 .vcont { flex:1; overflow-y:auto; padding:16px 15px 88px; display:none; }
@@ -926,6 +938,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
         <button class="g-ghost" style="padding:5px 12px;font-size:10px;min-height:44px;" onclick="logout()">Salir</button>
       </div>
     </div>
+    <div class="v-dsel" id="vDaySel"></div>
   </header>
 
   <div class="vcont active" id="vT-inicio"></div>
@@ -1075,7 +1088,7 @@ async function reloadData(){
   }
   buildDaySel(currentDay);
   if(userData?.rol==='gerencia') gRender();
-  else vRenderAll();
+  else { buildVDaySel(currentDay); vRenderAll(); }
 }
 
 /* ── show app ── */
@@ -1101,6 +1114,7 @@ function showApp(){
     document.getElementById('appV').style.display='flex';
     const h=new Date().getHours();
     document.getElementById('vGreet').textContent=(h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches')+' · '+(userData.nombre||'').split(' ')[0];
+    buildVDaySel(diag.dia_operativo);
     vRenderAll();
     if(altasN) document.getElementById('vBadge').style.display='block';
   }
@@ -1123,6 +1137,20 @@ async function setDay(d){
   if(dash)   D.dash=Array.isArray(dash)?dash:[];
   if(inovTot) D.inov_total=inovTot;
   gRender();
+}
+function buildVDaySel(active){
+  const c=document.getElementById('vDaySel'); if(!c) return;
+  c.innerHTML=DAYS.map(d=>`<button class="${d===(active||currentDay)?'active':''}" onclick="vSetDay('${d}')">${d}</button>`).join('');
+}
+async function vSetDay(d){
+  currentDay=d; buildVDaySel(d);
+  const [cli,dash]=await Promise.all([
+    safe('/api/clientes?dia='+d),
+    safe('/api/dashboard?dia='+d)
+  ]);
+  if(cli)  D.cli=Array.isArray(cli)?cli:[];
+  if(dash) D.dash=Array.isArray(dash)?dash:[];
+  vRenderAll();
 }
 function gFiltV(v){ gFiltro=v; gRender(); }
 function logout(){
