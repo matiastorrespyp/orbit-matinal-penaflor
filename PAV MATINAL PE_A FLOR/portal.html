@@ -1375,63 +1375,98 @@ function gDashboard(p){
       </div>
     </div>`;
   }
-  // 11 Titulares CCC zona del día (columna izquierda, debajo cobertura)
-  const otDia=(D.onceTitDia?.marcas||[]);
-  const otDiaTot=D.onceTitDia?.total_clientes_zona||0;
-  const otDiaDia=D.onceTitDia?.dia||currentDay||'–';
-  if(otDia.length){
-    const maxCCC=Math.max(...otDia.map(m=>m.ccc||0),1);
-    left+=`<div class="card">
-      <div class="card-hd"><span class="card-title">🏅 11 Titulares · CCC zona ${otDiaDia}</span><span class="chip">${otDiaTot} clientes</span></div>
-      <div class="card-body nop">
-        <table class="tbl">
-          <thead><tr><th>Marca</th><th style="text-align:right">CCC</th><th style="min-width:90px"></th></tr></thead>
-          <tbody>${otDia.map(m=>{
-            const ccc=m.ccc||0;
-            const pctBar=Math.round(ccc/maxCCC*100);
-            const pctCli=otDiaTot?Math.round(ccc/otDiaTot*100):0;
-            const cl=pctCli>=50?'ok':pctCli>=25?'wn':'bd';
-            return `<tr>
-              <td style="font-size:12px;font-weight:600;">${m.marca}</td>
-              <td style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;">${ccc}</td>
-              <td><div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${pctBar}%"></div></div>
-                  <div style="font-size:9px;color:var(--text3);text-align:right;margin-top:2px;">${pctCli}% zona</div></td>
-            </tr>`;}).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`;
-  }
+  // 11 Titulares CCC zona del día (columna izquierda, debajo cobertura) — placeholder, self-loading
+  left+=`<div class="card" id="card-11t-zona">
+    <div class="card-hd"><span class="card-title">🏅 11 Titulares · CCC zona <span id="lbl-11t-zona">${currentDay||'–'}</span></span><span class="chip" id="chip-11t-zona">cargando…</span></div>
+    <div class="card-body nop" id="body-11t-zona">
+      <div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">Cargando datos…</div>
+    </div>
+  </div>`;
   left+=`</div>`;
 
   // right: 11 titulares CCC vs Objetivo (total zonas)
   let right=`<div>`;
-  const onceMarcas=(D.onceTit?.marcas||[]);
-  const once11fuente=D.onceTit?.fuente||'';
-  right+=`<div class="card">
-    <div class="card-hd"><span class="card-title">🏅 11 Titulares · CCC vs Objetivo</span><span class="chip">${onceMarcas.length||'–'} marcas</span></div>
-    <div class="card-body nop">
-    ${onceMarcas.length ? `<table class="tbl">
-      <thead><tr><th>Marca</th><th style="text-align:right">CCC</th><th style="text-align:right">Objetivo</th><th style="text-align:right">Avance</th><th style="min-width:80px"></th></tr></thead>
-      <tbody>${onceMarcas.map(m=>{
-        const ccc=m.ccc||0, obj=m.objetivo_ccc||0, pctObj=m.pct_objetivo;
-        const pctBar=obj?Math.min(Math.round(ccc/obj*100),100):0;
-        const cl=pctBar>=80?'ok':pctBar>=50?'wn':'bd';
-        return `<tr>
-          <td style="font-size:12px;font-weight:600;">${m.marca}</td>
-          <td style="text-align:right;font-size:12px;">${ccc.toLocaleString('es-AR')}</td>
-          <td style="text-align:right;font-size:12px;color:var(--text3);">${obj||'–'}</td>
-          <td style="text-align:right;"><span class="chip ${cl}" style="font-size:9px;">${pctObj!=null?pctObj+'%':'–'}</span></td>
-          <td><div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${pctBar}%"></div></div></td>
-        </tr>`;}).join('')}
-      </tbody>
-    </table>${once11fuente?`<div style="font-size:9px;color:var(--text3);padding:4px 12px 6px;">Fuente: ${once11fuente}</div>`:''}` :
-    `<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;">Sin datos — ejecute el pipeline de ventas acumuladas</div>`}
+  right+=`<div class="card" id="card-11t-obj">
+    <div class="card-hd"><span class="card-title">🏅 11 Titulares · CCC vs Objetivo</span><span class="chip" id="chip-11t-obj">cargando…</span></div>
+    <div class="card-body nop" id="body-11t-obj">
+      <div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;">Cargando datos…</div>
     </div>
   </div>`;
   right+=`</div>`;
   grid.innerHTML=left+right;
   p.appendChild(grid);
+
+  // Self-loading 11T CCC vs Objetivo: siempre fetch directo para no depender del estado de D
+  (async()=>{
+    const bodyEl=document.getElementById('body-11t-obj');
+    const chipEl=document.getElementById('chip-11t-obj');
+    if(!bodyEl) return;
+    try{
+      const r=await fetch('/api/gerencia/once_titulares');
+      if(!r.ok){ bodyEl.innerHTML=`<div style="padding:16px;color:var(--bd);font-size:12px;">Error HTTP ${r.status}</div>`; return; }
+      const data=await r.json();
+      D.onceTit=data;
+      const marcas=data.marcas||[];
+      if(chipEl) chipEl.textContent=marcas.length+' marcas';
+      if(!marcas.length){ bodyEl.innerHTML=`<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">Sin datos — ejecute el pipeline de ventas acumuladas</div>`; return; }
+      const fuente=data.fuente||'';
+      bodyEl.innerHTML=`<table class="tbl">
+        <thead><tr><th>Marca</th><th style="text-align:right">CCC</th><th style="text-align:right">Objetivo</th><th style="text-align:right">Avance</th><th style="min-width:80px"></th></tr></thead>
+        <tbody>${marcas.map(m=>{
+          const ccc=m.ccc||0,obj=m.objetivo_ccc||0,pctObj=m.pct_objetivo;
+          const pctBar=obj?Math.min(Math.round(ccc/obj*100),100):0;
+          const cl=pctBar>=80?'ok':pctBar>=50?'wn':'bd';
+          return `<tr>
+            <td style="font-size:12px;font-weight:600;">${m.marca}</td>
+            <td style="text-align:right;font-size:12px;">${ccc.toLocaleString('es-AR')}</td>
+            <td style="text-align:right;font-size:12px;color:var(--text3);">${obj||'–'}</td>
+            <td style="text-align:right;"><span class="chip ${cl}" style="font-size:9px;">${pctObj!=null?pctObj+'%':'–'}</span></td>
+            <td><div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${pctBar}%"></div></div></td>
+          </tr>`;}).join('')}
+        </tbody>
+      </table>${fuente?`<div style="font-size:9px;color:var(--text3);padding:4px 12px 6px;">Fuente: ${fuente}</div>`:''}`;
+    }catch(e){
+      if(bodyEl) bodyEl.innerHTML=`<div style="padding:16px;color:var(--bd);font-size:12px;">Error: ${e.message}</div>`;
+    }
+  })();
+
+  // Self-loading 11T CCC zona del día
+  (async()=>{
+    const bodyEl=document.getElementById('body-11t-zona');
+    const chipEl=document.getElementById('chip-11t-zona');
+    const lblEl=document.getElementById('lbl-11t-zona');
+    if(!bodyEl) return;
+    const dia=currentDay||'';
+    try{
+      const r=await fetch('/api/gerencia/once_titulares_zona?dia='+dia);
+      if(!r.ok){ bodyEl.innerHTML=`<div style="padding:16px;color:var(--bd);font-size:12px;">Error HTTP ${r.status}</div>`; return; }
+      const data=await r.json();
+      D.onceTitDia=data;
+      const marcas=data.marcas||[];
+      const tot=data.total_clientes_zona||0;
+      if(lblEl) lblEl.textContent=data.dia||dia||'–';
+      if(chipEl) chipEl.textContent=tot+' clientes';
+      if(!marcas.length){ bodyEl.innerHTML=`<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">Sin datos para zona ${dia}</div>`; return; }
+      const maxCCC=Math.max(...marcas.map(m=>m.ccc||0),1);
+      bodyEl.innerHTML=`<table class="tbl">
+        <thead><tr><th>Marca</th><th style="text-align:right">CCC</th><th style="min-width:90px"></th></tr></thead>
+        <tbody>${marcas.map(m=>{
+          const ccc=m.ccc||0;
+          const pctBar=Math.round(ccc/maxCCC*100);
+          const pctCli=tot?Math.round(ccc/tot*100):0;
+          const cl=pctCli>=50?'ok':pctCli>=25?'wn':'bd';
+          return `<tr>
+            <td style="font-size:12px;font-weight:600;">${m.marca}</td>
+            <td style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;">${ccc}</td>
+            <td><div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${pctBar}%"></div></div>
+                <div style="font-size:9px;color:var(--text3);text-align:right;margin-top:2px;">${pctCli}% zona</div></td>
+          </tr>`;}).join('')}
+        </tbody>
+      </table>`;
+    }catch(e){
+      if(bodyEl) bodyEl.innerHTML=`<div style="padding:16px;color:var(--bd);font-size:12px;">Error: ${e.message}</div>`;
+    }
+  })();
 
   // — Sellout en litros por categoría —
   const sell=D.sellout_cat?.por_categoria||[];

@@ -1,5 +1,21 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-27 — fix(gerencia): 11T cards self-loading — bypass D state issue
+
+**Problema**: las dos tarjetas de 11 Titulares en el dashboard gerencial mostraban solo el título ("Cargando datos…" / "Sin datos") sin tabla, a pesar de que los endpoints `/api/gerencia/once_titulares` y `/api/gerencia/once_titulares_zona` devuelven datos correctos.
+
+**Causa probable**: `D.onceTit` o `D.onceTitDia` no estaba disponible en el momento del render de `gDashboard()` (timing issue o race condition entre loadAll() y gRender()).
+
+**Fix aplicado** — `portal.html`:
+- Ambas tarjetas de 11T ahora usan **IIFEs async self-loading** en lugar de depender del estado de `D`
+- La tarjeta *CCC vs Objetivo* (col derecha) hace `fetch('/api/gerencia/once_titulares')` directamente después de que el DOM es insertado, y rellena `#body-11t-obj` con la tabla. También actualiza `D.onceTit` para consistencia.
+- La tarjeta *CCC zona del día* (col izquierda) hace `fetch('/api/gerencia/once_titulares_zona?dia=currentDay')` directamente, actualiza etiqueta, chip y tabla. También actualiza `D.onceTitDia`.
+- Si el endpoint devuelve error HTTP o lanza excepción, muestra mensaje de error visible en la tarjeta.
+- Placeholders "Cargando datos…" visibles mientras se resuelven los fetch.
+
+**Archivos tocados:**
+- `PAV MATINAL PE_A FLOR/portal.html` — gDashboard(): 2 tarjetas 11T reescritas con self-loading
+
 ## 2026-05-26 — feat(vendedor): acciones comerciales con tramos y marcas en Alertas
 
 **Acciones comerciales — pestaña Alertas del vendedor:**
