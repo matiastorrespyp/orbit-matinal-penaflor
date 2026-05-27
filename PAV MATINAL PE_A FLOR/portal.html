@@ -1746,12 +1746,11 @@ function vKpis(){
   // — INOV-6b: Plan de Acción Innovaciones — solo A y B, máx 6, en_zona_hoy del día seleccionado —
   const planInov=D.plan_inov||{};
   const planProds=(planInov.productos||[]).filter(pr=>!(esV3&&(pr.segmento||'').toUpperCase()==='AUTOSERVICIO'));
-  // IDs en zona para el día seleccionado (recalculado desde D.cli, que se actualiza al cambiar el día)
-  const misCliIds=new Set(
-    (D.cli||[])
-      .filter(c=>(c.vendedor_id||'').toUpperCase()===(userData.vendedor_id||'').toUpperCase())
-      .map(c=>Number(c.cliente_id))
-  );
+  // IDs y nombres del día seleccionado (D.cli se actualiza al cambiar el día)
+  const misCli=(D.cli||[]).filter(c=>(c.vendedor_id||'').toUpperCase()===(userData.vendedor_id||'').toUpperCase());
+  const misCliIds=new Set(misCli.map(c=>Number(c.cliente_id)));
+  const cliNomMap={};
+  misCli.forEach(c=>{ if(c.cliente_id && c.cliente_nombre) cliNomMap[Number(c.cliente_id)]=c.cliente_nombre; });
   if(planProds.length && !planInov.advertencia){
     h+=`<div class="card">
       <div class="card-hd"><span class="card-title">📋 Plan Innovaciones</span><span class="chip">${planProds.length} productos</span></div>
@@ -1759,7 +1758,7 @@ function vKpis(){
     planProds.forEach(pr=>{
       // Solo prio A y B + los que están en zona hoy, máx 6, en_zona_hoy recalculado
       const planFilt=(pr.plan||[])
-        .map(c=>({...c, en_zona_hoy: misCliIds.has(Number(c.cliente_id))}))
+        .map(c=>{const id=Number(c.cliente_id);return{...c,en_zona_hoy:misCliIds.has(id),cliente_nombre:c.cliente_nombre||cliNomMap[id]||null};})
         .filter(c=>c.en_zona_hoy || c.prioridad==='ALTA' || c.prioridad==='MEDIA')
         .sort((a,b)=>{
           if(a.en_zona_hoy!==b.en_zona_hoy) return a.en_zona_hoy?-1:1;
