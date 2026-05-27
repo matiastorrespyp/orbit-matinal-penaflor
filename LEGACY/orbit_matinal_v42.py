@@ -1209,6 +1209,8 @@ def main():
         "Real": "real_resultado",
     }, inplace=True)
 
+    if "PorcCambio" not in rechazos.columns:
+        rechazos["PorcCambio"] = 0.0
     rechazos_sel = rechazos[["VendedorCodigo", "PorcRechazo", "PorcCambio"]].copy()
     rechazos_sel.rename(columns={
         "VendedorCodigo": "vendedor_codigo",
