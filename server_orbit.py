@@ -1,7 +1,7 @@
 """
 ORBIT Server v3 — Flask API con diagnóstico, CCC real, 11T real, sin mock
 """
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, make_response
 import json, sqlite3, pandas as pd, math
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -410,8 +410,22 @@ def favicon():
 
 # ====== STATIC ======
 @app.route("/")
+@app.route("/portal.html")
+def portal_html():
+    """Sirve portal.html sin ETag ni Last-Modified para evitar cache en móviles."""
+    try:
+        content = (FRONTEND / "portal.html").read_bytes()
+        resp = make_response(content)
+        resp.headers["Content-Type"] = "text/html; charset=utf-8"
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "0"
+        return resp
+    except Exception as e:
+        return f"Error sirviendo portal: {e}", 500
+
 @app.route("/<path:filename>")
-def frontend(filename="portal.html"):
+def frontend(filename):
     return send_from_directory(str(FRONTEND), filename)
 
 # ====== AUTH ======
