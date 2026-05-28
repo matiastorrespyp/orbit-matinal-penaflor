@@ -2540,11 +2540,15 @@ def gerencia_sellout_litros():
                 sa = round(sl / so * 100, 1) if so > 0 else 0.0
                 subs.append({"nombre": sn, "litros": sl, "objetivo": so, "alcance_pct": sa, "clientes": sc})
         elif cat == "SPIRITS":
-            for sn, srubs, so in [
-                ("Importados", SPIRITS_IMP, obj_info["sub"]["Importados"]),
-                ("Nacionales", SPIRITS_NAC, obj_info["sub"]["Nacionales"]),
+            # Importados = Premium (S) + Super Premium (S) — regla Diageo Argentina
+            # Nacionales = Standard (S) (Smirnoff, JW Red, White Horse, Gordon's Standard, etc.)
+            _lin_imp = {"Premium (S)", "Super Premium (S)"}
+            mask_imp = grp["_lin"].isin(_lin_imp)
+            for sn, mask_s, so in [
+                ("Importados", mask_imp,  obj_info["sub"]["Importados"]),
+                ("Nacionales", ~mask_imp, obj_info["sub"]["Nacionales"]),
             ]:
-                sg = grp[grp["_rub"].isin(srubs)]
+                sg = grp[mask_s]
                 sl = round(float(sg["PesoKg"].sum()), 1)
                 sc = int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0
                 sa = round(sl / so * 100, 1) if so > 0 else 0.0
