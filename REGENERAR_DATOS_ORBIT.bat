@@ -113,6 +113,14 @@ mkdir "%BACKUP_DIR%\03_OUTPUTS"
 mkdir "%BACKUP_DIR%\02_HISTORY"
 mkdir "%BACKUP_DIR%\04_DATASETS_ORBIT"
 
+:: orbit.db contiene planificacion — datos criticos, siempre respaldar
+if exist "%BASE%\orbit.db" (
+    xcopy /y /q "%BASE%\orbit.db" "%BACKUP_DIR%\" >> "%LOG%" 2>&1
+    echo OK: backup orbit.db >> "%LOG%"
+) else (
+    echo AVISO: orbit.db no existe aun, omitiendo backup >> "%LOG%"
+)
+
 if exist "%BASE%\03_OUTPUTS\MATINAL_PENA_V42.xlsx" (
     xcopy /y /q "%BASE%\03_OUTPUTS\MATINAL_PENA_V42.xlsx" "%BACKUP_DIR%\03_OUTPUTS\" >> "%LOG%" 2>&1
     echo OK: backup MATINAL_PENA_V42.xlsx >> "%LOG%"

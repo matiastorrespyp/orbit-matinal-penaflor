@@ -1,5 +1,45 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-28 — fix(planificacion): errores silenciosos y datos cacheados en portal
+
+**Qué se hizo:**
+- `portal.html` — `submitPlan`: el `catch(e){}` era silencioso. Ahora muestra mensaje rojo visible al vendedor si el POST falla (sin conexión o error del servidor).
+- `portal.html` — `submitPlan`: si el servidor responde `ok:false`, muestra el mensaje de error del servidor.
+- `portal.html` — `gPlanificacion`: refetch de `/api/planificacion` al abrir la pantalla. Antes gerencia veía datos del login; ahora siempre muestra los planes más recientes.
+
+**Causa raíz de planes que no llegaban:**
+El servidor no estaba iniciado cuando los vendedores enviaron. El `catch(e){}` silenciaba el error de red. Los vendedores no recibían feedback de que el envío había fallado.
+
+**Archivos tocados:** `PAV MATINAL PE_A FLOR/portal.html`
+
+---
+
+## 2026-05-28 — fix(planvsreal): CCC T/A/O y 11T Plan muestran '–' aunque el valor sea 0
+
+**Qué se hizo:**
+- `portal.html`: cambio de `v.plan_ccc_trad||'–'` → `v.tiene_plan?v.plan_ccc_trad:'–'` (ídem para CCC A, CCC O, 11T).
+- En JavaScript `0 || '–'` devuelve `'–'`, por lo que cualquier campo con valor 0 se mostraba vacío aunque el vendedor sí tuviera plan cargado.
+- La guardia correcta es `tiene_plan` (booleano que el endpoint ya devuelve).
+
+**Archivos tocados:** `PAV MATINAL PE_A FLOR/portal.html`
+
+---
+
+## 2026-05-28 — feat(planificacion): protección de datos — backup automático, CSV de seguridad y auto-restore
+
+**Qué se hizo:**
+- **`server_orbit.py`**: al arrancar el servidor, copia `orbit.db` con timestamp a `99_BACKUPS_ORBIT/planificacion/orbit_YYYYMMDD_HHMMSS.db`.
+- **`server_orbit.py`**: si `planificacion` queda vacía y existe `planificacion_latest.csv`, restaura automáticamente los datos al arranque.
+- **`server_orbit.py`**: cada vez que un vendedor guarda (POST) o gerencia aprueba/edita (PATCH) un plan, exporta la tabla entera a `99_BACKUPS_ORBIT/planificacion/planificacion_latest.csv`.
+- **`REGENERAR_DATOS_ORBIT.bat`**: agrega `orbit.db` al paso de backup (paso 4) con el mismo mecanismo de timestamp que los demás archivos críticos.
+
+**Causa raíz del problema:**
+`orbit.db` tenía fecha de modificación 2026-05-18. Los planes cargados el 2026-05-27 no aparecían en Plan vs Real porque el archivo en uso era una copia anterior (posiblemente reemplazado manualmente o por restauración).
+
+**Archivos tocados:** `server_orbit.py`, `REGENERAR_DATOS_ORBIT.bat`
+
+---
+
 ## 2026-05-27 — fix(gerencia): sellout litros — fallback PesoKg=0 y fuente corregida a ventas.csv
 
 **Qué se hizo:**

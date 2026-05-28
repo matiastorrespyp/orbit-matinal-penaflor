@@ -1696,7 +1696,8 @@ function gClientes(p){
 }
 
 /* — Planificación — */
-function gPlanificacion(p){
+async function gPlanificacion(p){
+  const pl_fresh=await safe('/api/planificacion'); if(pl_fresh) D.plan=Array.isArray(pl_fresh)?pl_fresh:[];
   const hoy = new Date().toISOString().split('T')[0];
   const pl  = (D.plan||[]).filter(r => r.fecha === hoy);
   const aprobados  = pl.filter(r=>r.estado==='aprobada').length;
@@ -2189,10 +2190,10 @@ function gPlanVsReal(p){
             <td>${fmtM(v.real_ayer)}</td>
             <td class="${v.tiene_plan?dc:''}">${v.tiene_plan?(v.delta>=0?'+':'')+fmtM(v.delta):'–'}</td>
             <td><span class="chip ${pctCl}">${pct}</span></td>
-            <td>${v.plan_ccc_trad||'–'}</td>
-            <td>${esV3?'<span class="pvr-none">N/A</span>':(v.plan_ccc_as||'–')}</td>
-            <td>${v.plan_ccc_op||'–'}</td>
-            <td>${v.plan_once_t||'–'}</td>
+            <td>${v.tiene_plan?v.plan_ccc_trad:'–'}</td>
+            <td>${esV3?'<span class="pvr-none">N/A</span>':v.tiene_plan?v.plan_ccc_as:'–'}</td>
+            <td>${v.tiene_plan?v.plan_ccc_op:'–'}</td>
+            <td>${v.tiene_plan?v.plan_once_t:'–'}</td>
             <td><span class="chip ${v.plan_estado==='aprobada'?'ok':v.plan_estado==='modificada'?'vio':v.plan_estado==='enviada'?'info':''}">${v.plan_estado||'–'}</span></td>
           </tr>`;}).join('')}
         </tbody>
@@ -2328,6 +2329,7 @@ function vPlan(){
         ${planHoy.id?'Actualizar plan':'Enviar plan'} →
       </button>
       <div class="pf-ok" id="pfOk">✓ Plan enviado correctamente</div>
+      <div class="pf-ok" id="pfErr" style="background:rgba(220,50,50,.18);color:#ff6b6b;display:none;">✗ Error al enviar. Verificá la conexión e intentá de nuevo.</div>
     </div>
   </div>`;
 
@@ -2346,16 +2348,21 @@ async function submitPlan(vid){
     once_t:          parseInt(document.getElementById('pf_11t')?.value||0),
     acciones:        document.getElementById('pf_acciones')?.value||'',
   };
+  const okDiv=document.getElementById('pfOk'), errDiv=document.getElementById('pfErr');
   try{
     const r=await fetch('/api/planificacion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const d=await r.json();
     if(d.ok){
-      const ok=document.getElementById('pfOk');
-      if(ok){ok.style.display='block'; setTimeout(()=>ok.style.display='none',3000);}
+      if(okDiv){okDiv.style.display='block'; setTimeout(()=>okDiv.style.display='none',3000);}
+      if(errDiv) errDiv.style.display='none';
       const pl=await safe('/api/planificacion'); if(pl) D.plan=Array.isArray(pl)?pl:[];
       vPlan();
+    } else {
+      if(errDiv){errDiv.textContent='✗ '+(d.error||'Error al enviar. Intentá de nuevo.'); errDiv.style.display='block';}
     }
-  }catch(e){}
+  }catch(e){
+    if(errDiv){errDiv.textContent='✗ Sin conexión con el servidor. Verificá que ORBIT esté iniciado.'; errDiv.style.display='block';}
+  }
 }
 
 /* ════ INNOVACIONES GERENCIA ════ */

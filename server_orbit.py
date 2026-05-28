@@ -6,7 +6,7 @@ import json, sqlite3, pandas as pd, math
 from pathlib import Path
 from datetime import datetime, timedelta
 
-import os
+import os, shutil, csv as _csv
 app = Flask(__name__, static_folder=None)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0   # sin cache en portal.html
 
@@ -25,6 +25,8 @@ DATASETS = BASE / "04_DATASETS_ORBIT"
 INPUTS = BASE / "01_INPUTS"
 FRONTEND = BASE / "PAV MATINAL PE_A FLOR"
 DB_PATH = BASE / "orbit.db"
+PLAN_BACKUP_DIR = BASE / "99_BACKUPS_ORBIT" / "planificacion"
+PLAN_CSV_LATEST = PLAN_BACKUP_DIR / "planificacion_latest.csv"
 
 USERS = {
     "v3":{"pwd":"pav2026","rol":"vendedor","nombre":"Nadia Gambino"},
@@ -63,6 +65,84 @@ def init_db():
         mensaje TEXT NOT NULL, leido INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
     conn.commit()
     conn.close()
+
+def backup_orbit_db():
+    """Copia orbit.db con timestamp antes de cada arranque del servidor."""
+    if not DB_PATH.exists():
+        return
+    try:
+        PLAN_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        dest = PLAN_BACKUP_DIR / f"orbit_{ts}.db"
+        shutil.copy2(str(DB_PATH), str(dest))
+        print(f"[ORBIT] Backup orbit.db -> {dest.name}")
+    except Exception as e:
+        print(f"[WARN] backup_orbit_db: {e}")
+
+def export_planificacion_csv():
+    """Exporta la tabla planificacion a CSV de seguridad tras cada escritura."""
+    try:
+        PLAN_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(DB_PATH))
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute("SELECT * FROM planificacion ORDER BY fecha, vendedor_id").fetchall()
+        conn.close()
+        if not rows:
+            return
+        cols = rows[0].keys()
+        with open(str(PLAN_CSV_LATEST), "w", newline="", encoding="utf-8") as f:
+            w = _csv.DictWriter(f, fieldnames=cols)
+            w.writeheader()
+            w.writerows([dict(r) for r in rows])
+        print(f"[ORBIT] Planificacion -> CSV seguridad ({len(rows)} registros)")
+    except Exception as e:
+        print(f"[WARN] export_planificacion_csv: {e}")
+
+def restore_planificacion_if_empty():
+    """Si planificacion está vacía y existe CSV de backup, restaura los datos automáticamente."""
+    try:
+        conn = sqlite3.connect(str(DB_PATH))
+        count = conn.execute("SELECT COUNT(*) FROM planificacion").fetchone()[0]
+        conn.close()
+        if count > 0 or not PLAN_CSV_LATEST.exists():
+            return
+        with open(str(PLAN_CSV_LATEST), "r", encoding="utf-8") as f:
+            rows = list(_csv.DictReader(f))
+        if not rows:
+            return
+        conn = sqlite3.connect(str(DB_PATH))
+        restored = 0
+        for row in rows:
+            try:
+                conn.execute("""
+                    INSERT OR IGNORE INTO planificacion
+                      (id, fecha, vendedor_id, zona, dia_visita, venta_esperada,
+                       ccc_tradicional, ccc_autoservicio, ccc_onpremise,
+                       once_t, marcas, clientes_clave, acciones, estado,
+                       editado_por, comentario_gerencia, created_at, updated_at)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                """, (
+                    row.get("id") or None,
+                    row.get("fecha"), row.get("vendedor_id"),
+                    row.get("zona") or None, row.get("dia_visita") or None,
+                    float(row["venta_esperada"]) if row.get("venta_esperada") else None,
+                    int(row["ccc_tradicional"]) if row.get("ccc_tradicional") else None,
+                    int(row["ccc_autoservicio"]) if row.get("ccc_autoservicio") else None,
+                    int(row["ccc_onpremise"]) if row.get("ccc_onpremise") else None,
+                    int(row["once_t"]) if row.get("once_t") else None,
+                    row.get("marcas") or None, row.get("clientes_clave") or None,
+                    row.get("acciones") or None, row.get("estado") or "enviada",
+                    row.get("editado_por") or None, row.get("comentario_gerencia") or None,
+                    row.get("created_at") or None, row.get("updated_at") or None,
+                ))
+                restored += 1
+            except Exception:
+                pass
+        conn.commit()
+        conn.close()
+        print(f"[ORBIT] AUTO-RESTORE: {restored} planes recuperados desde CSV de seguridad")
+    except Exception as e:
+        print(f"[WARN] restore_planificacion_if_empty: {e}")
 
 def clean_code(v):
     s = str(v).upper().replace("V","").strip()
@@ -884,6 +964,7 @@ def planificacion():
              int(d.get("ccc_onpremise") or 0), int(d.get("once_t") or 0),
              d.get("marcas"), d.get("clientes_clave"), d.get("acciones")))
         conn.commit(); conn.close()
+        export_planificacion_csv()
         return jsonify({"ok": True, "vendedor_id": vid_raw, "fecha": fecha})
 
     # GET — filtros opcionales por fecha y/o vendedor_id
@@ -946,6 +1027,7 @@ def planificacion_patch(plan_id):
     conn.commit()
     updated = dict(conn.execute("SELECT * FROM planificacion WHERE id=?", (plan_id,)).fetchone())
     conn.close()
+    export_planificacion_csv()
     return jsonify({"ok": True, "plan": updated})
 
 @app.route("/api/mensajes", methods=["GET","POST"])
@@ -2774,7 +2856,10 @@ def gerencia_alertas_caida():
 
 # ====== STARTUP (gunicorn + __main__) ======
 # Se ejecuta cuando gunicorn importa el módulo, no solo en __main__
-init_db()
+backup_orbit_db()         # 1. copia orbit.db antes de cualquier cambio
+init_db()                 # 2. crea/migra tablas
+restore_planificacion_if_empty()  # 3. recupera desde CSV si la tabla quedó vacía
+export_planificacion_csv()        # 4. actualiza CSV de seguridad con estado actual
 
 if __name__ == "__main__":
     print("\n===== ORBIT SERVER v3 =====")
