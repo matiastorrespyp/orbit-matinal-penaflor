@@ -2474,9 +2474,10 @@ def gerencia_sellout_litros():
         except Exception:
             pass
 
+    df["_cod"] = df["Codigo"].astype(str).str.strip().str.upper() if "Codigo" in df.columns else ""
+
     mask0 = df["PesoKg"] == 0
     if mask0.any() and cod2lxu:
-        df["_cod"] = df["Codigo"].astype(str).str.strip().str.upper() if "Codigo" in df.columns else ""
         df["_lxu_fb"] = df["_cod"].map(cod2lxu).fillna(0)
         # Fallback 2: infiere del nombre del artículo donde no hubo match
         still_zero = mask0 & (df["_lxu_fb"] == 0)
@@ -2484,7 +2485,41 @@ def gerencia_sellout_litros():
             df.loc[still_zero, "_lxu_fb"] = df.loc[still_zero, "Articulo"].apply(_infer_litros_por_nombre)
         df.loc[mask0, "PesoKg"] = df.loc[mask0, "CantBase"] * df.loc[mask0, "_lxu_fb"]
 
-    df["_cat"] = df["Rubro"].astype(str).str.strip().map(RUBRO_CAT)
+    # — Categoría display: usa Categoria del maestro como fuente primaria —
+    # Fija errores de clasificación donde el Rubro en ventas.csv difiere del maestro
+    # Ej: LOS ARBOLES / TRAPICHE ALARIS están en Rubro=Vino de Guarda pero maestro=Vinos del año
+    CAT_MAESTRO_DISP = {
+        "Vinos del año":    "VINOS DEL AÑO",
+        "Vinos de guarda":  "VINOS DE GUARDA",
+        "Espumantes":       "CHAMPAÑA",
+        "Cerveza Artesanal":"CERVEZA ARTESANAL",
+        "RTD (S)":          "RTD",
+        "RTD":              "RTD",
+        "Whisky":           "SPIRITS",
+        "Gin":              "SPIRITS",
+        "Ron":              "SPIRITS",
+        "Licores":          "SPIRITS",
+        "Vodka":            "SPIRITS",
+        "Whisky (Maltas)":  "SPIRITS",
+    }
+    # Join con maestro para traer Categoria
+    if prod_src.exists() and cod2lxu:
+        try:
+            prod_cat = pd.read_excel(prod_src, header=3)
+            prod_cat.columns = [c.strip() for c in prod_cat.columns]
+            col_cod2 = next((c for c in prod_cat.columns if "d" in c.lower() and "art" in c.lower()), None)
+            col_cat  = next((c for c in prod_cat.columns if c.strip().lower() == "categoria"), None)
+            if col_cod2 and col_cat:
+                prod_cat["_cod"] = prod_cat[col_cod2].astype(str).str.strip().str.upper()
+                cod2cat = prod_cat.set_index("_cod")[col_cat].to_dict()
+                df["_cat_maestro"] = df["_cod"].map(cod2cat)
+                df["_cat"] = df["_cat_maestro"].map(CAT_MAESTRO_DISP)
+        except Exception:
+            df["_cat"] = None
+    # Fallback: si no hubo match en maestro, usar Rubro
+    no_cat = df["_cat"].isna()
+    df.loc[no_cat, "_cat"] = df.loc[no_cat, "Rubro"].astype(str).str.strip().map(RUBRO_CAT)
+
     df["_rub"] = df["Rubro"].astype(str).str.strip()
     df["_lin"] = df["Linea"].astype(str).str.strip() if "Linea" in df.columns else ""
 
