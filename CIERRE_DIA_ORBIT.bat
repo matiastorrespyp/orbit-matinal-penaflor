@@ -89,15 +89,58 @@ echo Esperando inicio del servidor...
 timeout /t 6 >nul
 
 echo.
-echo Abriendo portal...
+echo Abriendo portal local...
 start "" "%PORTAL%"
 
 echo.
 echo ============================================================
+echo PASO 4/4: Publicando datos en GitHub para actualizar Render...
+echo ============================================================
+echo.
+
+for /f "tokens=*" %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HHmm"') do set FECHA_COMMIT=%%i
+
+echo Preparando archivos para commit...
+git add 01_INPUTS\resultado.xlsx
+git add 01_INPUTS\ventas.csv
+git add 01_INPUTS\ventas_acumulada.csv
+git add 04_DATASETS_ORBIT\*.csv
+git add orbit.db
+
+git diff --cached --quiet
+if %ERRORLEVEL% equ 0 (
+    echo No hay cambios nuevos para publicar.
+) else (
+    git commit -m "data: cierre dia %FECHA_COMMIT% — datasets + inputs actualizados"
+    if %ERRORLEVEL% neq 0 (
+        echo ERROR: Fallo el commit. Verificar estado de git.
+    ) else (
+        git push origin master
+        if %ERRORLEVEL% neq 0 (
+            echo ERROR: Fallo el push. Verificar conexion a internet.
+        ) else (
+            echo OK: Datos publicados en GitHub.
+            echo.
+            echo ============================================================
+            echo SIGUIENTE PASO: Hacer deploy manual en Render
+            echo Abriendo Render dashboard...
+            echo ============================================================
+            start "" "https://dashboard.render.com"
+            echo.
+            echo En Render: seleccionar el servicio orbit-penaflor-pav
+            echo           hacer clic en "Manual Deploy" ^> "Deploy latest commit"
+            echo.
+            echo El portal https://orbit-matinal-penaflor.onrender.com
+            echo estara actualizado en 2-3 minutos.
+        )
+    )
+)
+
+echo.
+echo ============================================================
 echo LISTO
-echo 1. Ingresar al portal.
-echo 2. Ir a Gerencia.
-echo 3. Abrir panel Plan vs Real.
+echo Portal local : %PORTAL%
+echo Portal Render: https://orbit-matinal-penaflor.onrender.com
 echo ============================================================
 echo.
 
