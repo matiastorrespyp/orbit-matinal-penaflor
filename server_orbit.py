@@ -682,6 +682,13 @@ def dashboard():
     _corridos = max(dias["corridos"], 1)
     _total    = dias["total"]
 
+    # Venta ayer live — desde ventas.csv (día más reciente), evita depender del CSV estático
+    _ventas_dia_live, _ = _cargar_ventas_dia()
+    _venta_ayer_live = {}
+    if not _ventas_dia_live.empty:
+        for _cv, _grp in _ventas_dia_live.groupby("vendedor_codigo"):
+            _venta_ayer_live[int(_cv)] = round(float(_grp["importe_neto"].sum()), 2)
+
     # Fallback: objetivo/acumulado/avance desde resultado.xlsx para vendedores sin maestro de clientes
     resultado_fallback = {}
     resultado_path = INPUTS / "resultado.xlsx"
@@ -714,9 +721,11 @@ def dashboard():
         tv = t11_df[t11_df["vendedor_codigo"].astype(str).apply(clean_code) == cn] if not t11_df.empty else pd.DataFrame()
 
         obj = float(vv["objetivo_mes"].sum()) if not vv.empty else 0
+        cod_int = int(cn) if cn.isdigit() else 0
         acum = float(vv["acumulado_mes"].sum()) if not vv.empty else 0
         av = float(vv["avance_pct"].mean()) if not vv.empty else 0
-        venta_ayer = float(vv["venta_ayer"].sum()) if not vv.empty else 0
+        # venta_ayer live desde ventas.csv (día más reciente); fallback al CSV estático
+        venta_ayer = _venta_ayer_live.get(cod_int, float(vv["venta_ayer"].sum()) if not vv.empty else 0)
 
         sin_maestro = False
         if vv.empty and cn in resultado_fallback:
@@ -1256,11 +1265,15 @@ def matinal_resumen():
     if fecha_param:
         fecha_plan = fecha_param
     else:
-        # Fecha más reciente con planes en orbit.db
+        today_ar = _now_ar()[:10]
+        # Solo buscar planes de los últimos 3 días — evita que un plan viejo de prueba
+        # ancle Plan vs Real indefinidamente
+        cutoff = (datetime.now(_ARG_TZ) - timedelta(days=3)).strftime("%Y-%m-%d")
         row = conn.execute(
-            "SELECT fecha FROM planificacion ORDER BY fecha DESC LIMIT 1"
+            "SELECT fecha FROM planificacion WHERE fecha >= ? ORDER BY fecha DESC LIMIT 1",
+            (cutoff,)
         ).fetchone()
-        fecha_plan = row["fecha"] if row else _now_ar()[:10]
+        fecha_plan = row["fecha"] if row else today_ar
 
     planes = {row["vendedor_id"]: dict(row)
               for row in conn.execute(
