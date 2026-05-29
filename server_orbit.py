@@ -720,25 +720,30 @@ def dashboard():
         cv = ccc_df[ccc_df["vendedor_codigo"].astype(str).apply(clean_code) == cn] if not ccc_df.empty else pd.DataFrame()
         tv = t11_df[t11_df["vendedor_codigo"].astype(str).apply(clean_code) == cn] if not t11_df.empty else pd.DataFrame()
 
-        obj = float(vv["objetivo_mes"].sum()) if not vv.empty else 0
         cod_int = int(cn) if cn.isdigit() else 0
-        acum = float(vv["acumulado_mes"].sum()) if not vv.empty else 0
-        av = float(vv["avance_pct"].mean()) if not vv.empty else 0
-        # venta_ayer live desde ventas.csv (día más reciente); fallback al CSV estático
+
+        # resultado.xlsx es la fuente primaria para obj/acum/avance
+        # (se actualiza diariamente sin necesidad de regenerar el motor)
+        # mod_volumen_vendedor.csv es el fallback si resultado.xlsx no tiene al vendedor
+        sin_maestro = False
+        if cn in resultado_fallback:
+            fb = resultado_fallback[cn]
+            obj  = fb["objetivo"]
+            acum = fb["acumulado"]
+            av   = fb["avance"]
+        elif not vv.empty:
+            obj  = float(vv["objetivo_mes"].sum())
+            acum = float(vv["acumulado_mes"].sum())
+            av   = float(vv["avance_pct"].mean())
+        else:
+            obj = acum = av = 0
+            sin_maestro = True
+
+        # venta_ayer live desde ventas.csv; fallback al CSV estático
         venta_ayer = _venta_ayer_live.get(cod_int, float(vv["venta_ayer"].sum()) if not vv.empty else 0)
 
-        sin_maestro = False
-        if vv.empty and cn in resultado_fallback:
-            fb = resultado_fallback[cn]
-            obj = fb["objetivo"]
-            acum = fb["acumulado"]
-            av = fb["avance"]
-            sin_maestro = True
-        # Usar avance_pct del ERP (= tendencia_mes/objetivo*100) cuando está disponible.
-        # Fallback al recálculo dinámico solo si no hay dato oficial (sin_maestro o av==0).
-        tendencia_pct = round(av, 2) if (not vv.empty and av > 0) else (
-            round((acum / _corridos) * _total / obj * 100, 2) if obj else 0
-        )
+        # tendencia_pct: recalcular siempre con acum/obj reales
+        tendencia_pct = round((acum / _corridos) * _total / obj * 100, 2) if obj else 0
         cli_total = int(vv["clientes_planificados"].sum()) if not vv.empty and "clientes_planificados" in vv.columns else 0
         cli_sin = int(vv["clientes_sin_compra_mes"].sum()) if not vv.empty and "clientes_sin_compra_mes" in vv.columns else 0
         # Override with day-specific counts when dia requested (0 if vendor not scheduled that day)
