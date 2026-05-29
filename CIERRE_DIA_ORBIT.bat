@@ -127,18 +127,9 @@ if %GIT_DIFF_RESULT% equ 0 (
             echo ERROR: Fallo el push. Verificar conexion a internet.
         ) else (
             echo OK: Datos publicados en GitHub.
+            echo Render va a actualizar automaticamente en 2-3 minutos.
             echo.
-            echo ============================================================
-            echo SIGUIENTE PASO: Hacer deploy manual en Render
-            echo Abriendo Render dashboard...
-            echo ============================================================
-            start "" "https://dashboard.render.com"
-            echo.
-            echo En Render: seleccionar el servicio orbit-matinal-penaflor
-            echo           hacer clic en "Manual Deploy" ^> "Deploy latest commit"
-            echo.
-            echo El portal https://orbit-matinal-penaflor.onrender.com
-            echo estara actualizado en 2-3 minutos.
+            start "" "https://orbit-matinal-penaflor.onrender.com"
         )
     )
 )
@@ -146,8 +137,8 @@ if %GIT_DIFF_RESULT% equ 0 (
 echo.
 echo ============================================================
 echo LISTO
-echo Portal local : %PORTAL%
 echo Portal Render: https://orbit-matinal-penaflor.onrender.com
+echo (actualiza en 2-3 min luego del push)
 echo ============================================================
 echo.
 

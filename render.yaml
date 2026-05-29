@@ -31,7 +31,7 @@ services:
     # Health check — endpoint liviano, sin leer archivos de datos
     healthCheckPath: /api/healthz
 
-    # Auto-deploy DESHABILITADO — deployar manualmente desde Render dashboard
-    # para evitar que commits de datos/config borren orbit.db en produccion
+    # Auto-deploy activado — cada push a master despliega automaticamente.
+    # orbit.db se commitea con planes sincronizados antes de cada push.
     branch: master
-    autoDeploy: false
+    autoDeploy: true
