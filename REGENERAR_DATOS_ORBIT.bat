@@ -186,6 +186,26 @@ echo OK: exportador CSV completado >> "%LOG%"
 echo OK: exportador CSV completado
 
 :: ============================================================
+:: 6b. DATASETS ACUMULADOS
+::     Genera mod_planes_as.csv, mod_cobertura_acum.csv,
+::     mod_11t_acum.csv, mod_innovaciones_segmento.csv
+::     Lee directo desde 01_INPUTS — no depende del paso anterior.
+:: ============================================================
+echo [6b/8] Generando datasets acumulados (Plan AS, cobertura, innovaciones)... >> "%LOG%"
+echo [6b/8] Generando datasets acumulados...
+
+cd /d "%BASE%"
+py generar_datasets_acum.py >> "%LOG%" 2>&1
+
+if not exist "%BASE%\04_DATASETS_ORBIT\mod_planes_as.csv" (
+    echo ERROR: generar_datasets_acum.py no genero mod_planes_as.csv >> "%LOG%"
+    echo ERROR: generar_datasets_acum.py fallo. Ver log: %LOG%
+    exit /b 1
+)
+echo OK: datasets acumulados completados >> "%LOG%"
+echo OK: datasets acumulados completados
+
+:: ============================================================
 :: 7. VALIDAR OUTPUTS
 ::    Si falta cualquier output critico: ERROR + exit /b 1
 :: ============================================================
@@ -202,6 +222,9 @@ for %%f in (
     "04_DATASETS_ORBIT\mod_11_titulares.csv"
     "04_DATASETS_ORBIT\mod_alertas_descuentos.csv"
     "04_DATASETS_ORBIT\mod_gastos_accion.csv"
+    "04_DATASETS_ORBIT\mod_planes_as.csv"
+    "04_DATASETS_ORBIT\mod_cobertura_acum.csv"
+    "04_DATASETS_ORBIT\mod_innovaciones_segmento.csv"
 ) do (
     if exist "%BASE%\%%~f" (
         echo   OK: %%~f >> "%LOG%"
