@@ -2225,43 +2225,73 @@ function vAlertas(){
 function gPlanVsReal(p){
   const pvr  = D.pvr||{};
   const data = pvr.resumen||[];
+  const conPlan = data.filter(v=>v.tiene_plan).length;
+  const enMeta  = data.filter(v=>v.pct_cumplimiento!=null&&v.pct_cumplimiento>=90).length;
+  const fechaR  = pvr.fecha_real||pvr.fecha_plan||'–';
+  const fuenteR = pvr.fuente_real||'ventas.csv';
   let h=`<div class="gph">
     <div><div class="gph-title">Plan vs Real</div>
-    <div class="gph-sub">Plan cargado ayer (${pvr.fecha_plan||'–'}) vs venta real del día</div></div>
+    <div class="gph-sub">Plan: ${pvr.fecha_plan||'–'} · Real: ${fechaR} · Fuente: ${fuenteR}</div></div>
     <div class="gph-chips">
-      <span class="chip">${data.filter(v=>v.tiene_plan).length}/${data.length} con plan</span>
-      <span class="chip ok">${data.filter(v=>v.pct_cumplimiento!=null&&v.pct_cumplimiento>=90).length} en meta</span>
+      <span class="chip">${conPlan}/${data.length} con plan</span>
+      <span class="chip ok">${enMeta} en meta</span>
     </div>
   </div>`;
   if(!data.length){
-    h+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">📊</div><p>Sin planes cargados ayer para comparar.</p></div></div></div>`;
+    h+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">📊</div><p>Sin planes para comparar.<br>Verificar que el vendedor envió plan y que ventas.csv tiene datos del día.</p></div></div></div>`;
     p.innerHTML=h; return;
   }
   h+=`<div class="card">
-    <div class="card-hd"><span class="card-title">📊 Comparación por vendedor</span></div>
+    <div class="card-hd"><span class="card-title">📊 Comparación por vendedor</span>
+      <span style="font-size:10px;color:var(--text3);">Real desde ${fuenteR} · ${pvr.generado_en||''}</span>
+    </div>
     <div class="card-body nop pvr-wrap">
       <table class="tbl pvr-tbl">
-        <thead><tr>
-          <th>Vendedor</th><th>Plan venta</th><th>Real ayer</th><th>Diferencia</th><th>Cumpl %</th>
-          <th>CCC T</th><th>CCC A</th><th>CCC O</th><th>11T plan</th><th>Estado plan</th>
-        </tr></thead>
+        <thead>
+          <tr>
+            <th rowspan="2" style="vertical-align:bottom;">Vendedor</th>
+            <th rowspan="2" style="vertical-align:bottom;">Plan $</th>
+            <th rowspan="2" style="vertical-align:bottom;">Real $</th>
+            <th rowspan="2" style="vertical-align:bottom;">Dif</th>
+            <th rowspan="2" style="vertical-align:bottom;">Cumpl%</th>
+            <th colspan="2" style="text-align:center;border-bottom:1px solid var(--bs);">CCC Trad</th>
+            <th colspan="2" style="text-align:center;border-bottom:1px solid var(--bs);">CCC Auto</th>
+            <th colspan="2" style="text-align:center;border-bottom:1px solid var(--bs);">CCC OP</th>
+            <th rowspan="2" style="vertical-align:bottom;text-align:center;">11T<br>Plan</th>
+            <th rowspan="2" style="vertical-align:bottom;">Estado</th>
+          </tr>
+          <tr>
+            <th style="text-align:center;color:var(--text3);font-size:10px;">Plan</th>
+            <th style="text-align:center;color:var(--ok);font-size:10px;">Real</th>
+            <th style="text-align:center;color:var(--text3);font-size:10px;">Plan</th>
+            <th style="text-align:center;color:var(--ok);font-size:10px;">Real</th>
+            <th style="text-align:center;color:var(--text3);font-size:10px;">Plan</th>
+            <th style="text-align:center;color:var(--ok);font-size:10px;">Real</th>
+          </tr>
+        </thead>
         <tbody>${data.map(v=>{
-          const dc=v.delta>=0?'pvr-pos':'pvr-neg';
-          const pct=v.pct_cumplimiento!=null?v.pct_cumplimiento.toFixed(1)+'%':'–';
-          const pctCl=v.pct_cumplimiento==null?'':v.pct_cumplimiento>=90?'ok':v.pct_cumplimiento>=60?'wn':'bd';
-          const col=CV[v.vendedor_id]||'var(--text2)';
-          const esV3=v.vendedor_id==='V3';
+          const dc   = v.delta>=0?'pvr-pos':'pvr-neg';
+          const pct  = v.pct_cumplimiento!=null?v.pct_cumplimiento.toFixed(1)+'%':'–';
+          const pctCl= v.pct_cumplimiento==null?'':v.pct_cumplimiento>=90?'ok':v.pct_cumplimiento>=60?'wn':'bd';
+          const col  = CV[v.vendedor_id]||'var(--text2)';
+          const esV3 = v.vendedor_id==='V3';
+          const na   = `<span class="pvr-none">N/A</span>`;
+          const sp   = `<span class="pvr-none">–</span>`;
+          const cccCell=(plan,real,esNa)=> esNa
+            ? `<td style="text-align:center;">${na}</td><td style="text-align:center;">${na}</td>`
+            : `<td style="text-align:center;color:var(--text3);">${v.tiene_plan?plan:sp}</td>`
+            + `<td style="text-align:center;color:var(--ok);font-weight:600;">${v.tiene_real?real:sp}</td>`;
           return `<tr>
-            <td><span class="chip" style="color:${col}">${v.vendedor_id}</span> ${v.vendedor_nombre}</td>
-            <td>${v.tiene_plan?fmtM(v.plan_venta):'<span class="pvr-none">sin plan</span>'}</td>
-            <td>${fmtM(v.real_ayer)}</td>
-            <td class="${v.tiene_plan?dc:''}">${v.tiene_plan?(v.delta>=0?'+':'')+fmtM(v.delta):'–'}</td>
+            <td><span class="chip" style="color:${col}">${v.vendedor_id}</span><span style="font-size:11px;color:var(--text3);margin-left:4px;">${v.vendedor_nombre.split(' ')[0]}</span></td>
+            <td>${v.tiene_plan?fmtM(v.plan_venta):sp}</td>
+            <td style="font-weight:${v.tiene_real?'600':'400'};color:${v.tiene_real?'var(--text)':'var(--text3)'};">${v.tiene_real?fmtM(v.real_ayer):sp}</td>
+            <td class="${v.tiene_plan&&v.tiene_real?dc:''}">${v.tiene_plan&&v.tiene_real?(v.delta>=0?'+':'')+fmtM(v.delta):sp}</td>
             <td><span class="chip ${pctCl}">${pct}</span></td>
-            <td>${v.tiene_plan?v.plan_ccc_trad:'–'}</td>
-            <td>${esV3?'<span class="pvr-none">N/A</span>':v.tiene_plan?v.plan_ccc_as:'–'}</td>
-            <td>${v.tiene_plan?v.plan_ccc_op:'–'}</td>
-            <td>${v.tiene_plan?v.plan_once_t:'–'}</td>
-            <td><span class="chip ${v.plan_estado==='aprobada'?'ok':v.plan_estado==='modificada'?'vio':v.plan_estado==='enviada'?'info':''}">${v.plan_estado||'–'}</span></td>
+            ${cccCell(v.plan_ccc_trad, v.real_ccc_trad, false)}
+            ${cccCell(v.plan_ccc_as,   v.real_ccc_as,   esV3)}
+            ${cccCell(v.plan_ccc_op,   v.real_ccc_op,   false)}
+            <td style="text-align:center;">${v.tiene_plan?v.plan_once_t:sp}</td>
+            <td><span class="chip ${v.plan_estado==='aprobada'?'ok':v.plan_estado==='modificada'?'vio':v.plan_estado==='enviada'?'info':''}" style="font-size:9px;">${v.plan_estado||'–'}</span></td>
           </tr>`;}).join('')}
         </tbody>
       </table>

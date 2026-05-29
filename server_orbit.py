@@ -248,6 +248,57 @@ def _cargar_ventas_mes_actual() -> pd.DataFrame:
 
     return df[["cliente_id", "vendedor_codigo", "segmento_operativo"]].copy()
 
+def _cargar_ventas_dia(fecha_str: str = None):
+    """
+    Lee ventas.csv filtrado para UN día (fecha_str 'YYYY-MM-DD', o el día más reciente si None).
+    Devuelve (DataFrame, fecha_usada_str).
+    Columnas: cliente_id, vendedor_codigo, importe_neto, segmento_operativo.
+    Excluye V2/V5/V20. Aplica regla V3 sin autoservicio en el resultado del llamador.
+    """
+    path = INPUTS / "ventas.csv"
+    if not path.exists():
+        return pd.DataFrame(), ""
+
+    df = pd.DataFrame()
+    for enc in ("latin1", "utf-8-sig", "utf-8"):
+        try:
+            df = pd.read_csv(path, sep=";", encoding=enc)
+            break
+        except Exception:
+            continue
+
+    if df.empty:
+        return pd.DataFrame(), ""
+
+    req = {"Cliente", "CodVendedor", "ImporteNetoItem", "FechaComprobante", "Ramo", "Subramo"}
+    if not req.issubset(set(df.columns)):
+        return pd.DataFrame(), ""
+
+    df = df.copy()
+    df["cliente_id"]         = pd.to_numeric(df["Cliente"], errors="coerce")
+    df["vendedor_codigo"]    = pd.to_numeric(df["CodVendedor"], errors="coerce")
+    df["importe_neto"]       = df["ImporteNetoItem"].apply(_parse_num_ar)
+    df["fecha"]              = pd.to_datetime(df["FechaComprobante"], dayfirst=True, errors="coerce")
+    df["segmento_operativo"] = df.apply(
+        lambda r: _clasificar_segmento(str(r.get("Ramo", "")), str(r.get("Subramo", ""))), axis=1
+    )
+    df = df[~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
+    df = df.dropna(subset=["cliente_id", "vendedor_codigo", "fecha"])
+    df = df[df["importe_neto"] > 0]
+
+    if fecha_str:
+        target = pd.to_datetime(fecha_str).date()
+    else:
+        if df.empty:
+            return pd.DataFrame(), ""
+        target = df["fecha"].dt.date.max()
+
+    df_dia = df[df["fecha"].dt.date == target].copy()
+    fecha_usada = str(target)
+    if df_dia.empty:
+        return pd.DataFrame(), fecha_usada
+    return df_dia[["cliente_id", "vendedor_codigo", "importe_neto", "segmento_operativo"]].copy(), fecha_usada
+
 def _ccc_mes_por_vendedor(ventas_mes: pd.DataFrame) -> dict:
     """
     Calcula CCC Compradores Mes por vendedor y segmento.
@@ -1180,13 +1231,45 @@ def orbit_data():
         data = json.load(f)
     return jsonify(data)
 
-# ====== MATINAL RESUMEN: plan ayer vs real ayer ======
+# ====== MATINAL RESUMEN: plan vs real (fuente directa: ventas.csv) ======
 @app.route("/api/matinal/resumen")
 def matinal_resumen():
-    """Compara plan de fecha solicitada (default: ayer) con venta_ayer del CSV."""
-    ayer = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-    fecha_plan = request.args.get("fecha", ayer)
+    """
+    Plan del día vs real del día — calculado directo desde ventas.csv.
+    Usa el día más reciente con datos en ventas.csv como 'real'.
+    Si se pasa ?fecha=YYYY-MM-DD busca ese día en ventas.csv; si no existe, usa el más reciente.
+    """
+    fecha_param = request.args.get("fecha")
 
+    # Calcular real directo desde ventas.csv
+    if fecha_param:
+        ventas_dia, fecha_real = _cargar_ventas_dia(fecha_param)
+        if ventas_dia.empty:
+            ventas_dia, fecha_real = _cargar_ventas_dia()  # fallback al más reciente
+    else:
+        ventas_dia, fecha_real = _cargar_ventas_dia()
+
+    fecha_plan = fecha_param or fecha_real  # comparar plan de la misma fecha que el real
+
+    # Mapa de real por vendedor (venta + CCC por segmento)
+    real_map = {}
+    if not ventas_dia.empty:
+        for cod_v, grp in ventas_dia.groupby("vendedor_codigo"):
+            cod_int = int(cod_v)
+            ccc_t = int(grp[grp["segmento_operativo"] == "TRADICIONAL"]["cliente_id"].nunique())
+            ccc_a = int(grp[grp["segmento_operativo"] == "AUTOSERVICIO"]["cliente_id"].nunique())
+            ccc_o = int(grp[grp["segmento_operativo"] == "ON_PREMISE_VTK"]["cliente_id"].nunique())
+            if cod_int == 3:  # V3 no trabaja autoservicio
+                ccc_a = 0
+            real_map[cod_int] = {
+                "venta":     round(float(grp["importe_neto"].sum()), 2),
+                "ccc_trad":  ccc_t,
+                "ccc_as":    ccc_a,
+                "ccc_op":    ccc_o,
+                "ccc_total": int(grp["cliente_id"].nunique()),
+            }
+
+    # Plan desde orbit.db
     conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
     conn.row_factory = sqlite3.Row
     planes = {row["vendedor_id"]: dict(row)
@@ -1194,47 +1277,53 @@ def matinal_resumen():
                   "SELECT * FROM planificacion WHERE fecha=?", (fecha_plan,)).fetchall()}
     conn.close()
 
-    vol  = read_csv(DATASETS / "mod_volumen_vendedor.csv")
-    vend = read_csv(CONFIG   / "vendedores_activos.csv")
-
+    vend = read_csv(CONFIG / "vendedores_activos.csv")
     resultado = []
     if not vend.empty:
         for _, v in vend[vend["activo"] == 1].iterrows():
-            cod    = str(v["codigo_vendedor"]).strip()
-            cn     = clean_code(cod)
-            nombre = str(v["nombre_vendedor"]).strip()
+            cod     = str(v["codigo_vendedor"]).strip()
+            cn      = clean_code(cod)
+            nombre  = str(v["nombre_vendedor"]).strip()
+            cod_int = int(cn) if cn.isdigit() else 0
 
-            vv = vol[vol["vendedor_codigo"].astype(str).apply(clean_code) == cn] \
-                 if not vol.empty else pd.DataFrame()
-            real_ayer = float(vv["venta_ayer"].sum()) if not vv.empty else 0
+            real       = real_map.get(cod_int, {})
+            real_venta = float(real.get("venta") or 0)
 
-            plan = planes.get(cod, {})
+            plan       = planes.get(cod, {})
             plan_venta = float(plan.get("venta_esperada") or 0)
-            delta = real_ayer - plan_venta
-            pct   = round(real_ayer / plan_venta * 100, 1) if plan_venta else None
+            delta      = real_venta - plan_venta
+            pct        = round(real_venta / plan_venta * 100, 1) if plan_venta else None
 
             resultado.append({
                 "vendedor_id":      cod,
                 "vendedor_nombre":  nombre,
                 "fecha_plan":       fecha_plan,
+                "fecha_real":       fecha_real,
                 "plan_venta":       plan_venta,
-                "real_ayer":        round(real_ayer, 2),
+                "real_ayer":        real_venta,
                 "delta":            round(delta, 2),
                 "pct_cumplimiento": pct,
                 "plan_ccc_trad":    int(plan.get("ccc_tradicional") or 0),
                 "plan_ccc_as":      int(plan.get("ccc_autoservicio") or 0),
                 "plan_ccc_op":      int(plan.get("ccc_onpremise") or 0),
                 "plan_once_t":      int(plan.get("once_t") or 0),
+                "real_ccc_trad":    real.get("ccc_trad", 0),
+                "real_ccc_as":      real.get("ccc_as", 0),
+                "real_ccc_op":      real.get("ccc_op", 0),
+                "real_ccc_total":   real.get("ccc_total", 0),
                 "plan_acciones":    plan.get("acciones") or "",
                 "plan_estado":      plan.get("estado") or "sin_plan",
                 "plan_id":          plan.get("id"),
                 "tiene_plan":       bool(plan),
+                "tiene_real":       bool(real),
             })
 
     return jsonify({
-        "fecha_plan":   fecha_plan,
-        "generado_en":  datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "resumen":      resultado,
+        "fecha_plan":  fecha_plan,
+        "fecha_real":  fecha_real,
+        "fuente_real": "ventas.csv",
+        "generado_en": _now_ar(),
+        "resumen":     resultado,
     })
 
 
