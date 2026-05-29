@@ -6,11 +6,33 @@ Usar antes de iniciar el servidor local para Plan vs Real en la matinal.
 import urllib.request, json, sqlite3, sys
 from pathlib import Path
 
-RENDER_URL = "https://orbit-penaflor-pav.onrender.com/api/planificacion"
-DB_PATH    = Path(__file__).parent / "orbit.db"
+RENDER_BASE = "https://orbit-penaflor-pav.onrender.com"
+RENDER_URL  = RENDER_BASE + "/api/planificacion"
+DB_PATH     = Path(__file__).parent / "orbit.db"
 
 def sync():
-    print(f"  Conectando a Render para sincronizar planes...")
+    # Paso 1: Wake-up — Render puede estar dormido (plan gratuito/starter)
+    print(f"  Despertando servidor Render (puede tardar hasta 30 seg)...")
+    for intento in range(3):
+        try:
+            req_wake = urllib.request.Request(
+                RENDER_BASE + "/api/healthz",
+                headers={"User-Agent": "ORBIT-sync/1.0"}
+            )
+            with urllib.request.urlopen(req_wake, timeout=35) as resp:
+                status = json.loads(resp.read()).get("status","?")
+                print(f"  Render activo: {status}")
+                break
+        except Exception as e:
+            if intento < 2:
+                print(f"  Intento {intento+1} fallido ({e}), reintentando...")
+            else:
+                print(f"  AVISO: Render no respondió al wake-up: {e}")
+                print(f"  Continuando sin sincronizar. Plan vs Real mostrará solo planes locales.")
+                return False
+
+    # Paso 2: Descargar planes
+    print(f"  Descargando planes desde Render...")
     try:
         req = urllib.request.Request(RENDER_URL, headers={"User-Agent": "ORBIT-sync/1.0"})
         with urllib.request.urlopen(req, timeout=20) as resp:

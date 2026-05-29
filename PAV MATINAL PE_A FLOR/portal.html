@@ -1706,14 +1706,18 @@ function gClientes(p){
 async function gPlanificacion(p){
   const pl_fresh=await safe('/api/planificacion'); if(pl_fresh) D.plan=Array.isArray(pl_fresh)?pl_fresh:[];
   const hoy = diaHoy();
-  const pl  = (D.plan||[]).filter(r => r.fecha === hoy);
+  // Usar la fecha más reciente con planes — puede ser hoy o el día anterior
+  const _planFechas = [...new Set((D.plan||[]).map(r=>r.fecha))].sort().reverse();
+  const fechaRef = _planFechas.includes(hoy) ? hoy : (_planFechas[0] || hoy);
+  const pl  = (D.plan||[]).filter(r => r.fecha === fechaRef);
+  const esHoy = fechaRef === hoy;
   const aprobados  = pl.filter(r=>r.estado==='aprobada').length;
   const enviados   = pl.filter(r=>r.estado==='enviada').length;
   const modificados= pl.filter(r=>r.estado==='modificada').length;
 
   let html=`<div class="gph">
     <div><div class="gph-title">Planificación Matinal</div>
-    <div class="gph-sub">${hoy} · ${pl.length} planes recibidos de ${D.dash.length} vendedores</div></div>
+    <div class="gph-sub">${fechaRef}${esHoy?'':' <span style="color:var(--wn);font-size:10px;">(día anterior)</span>'} · ${pl.length} planes recibidos de ${D.dash.length} vendedores</div></div>
     <div class="gph-chips">
       <span class="chip ok">${aprobados} aprobados</span>
       <span class="chip info">${enviados} enviados</span>
@@ -1722,7 +1726,7 @@ async function gPlanificacion(p){
   </div>`;
 
   if(!pl.length){
-    html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">📋</div><p>Sin planes recibidos hoy.<br>Los vendedores los envían desde la app.</p></div></div></div>`;
+    html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">📋</div><p>Sin planes recibidos.<br>Verificá que los vendedores enviaron desde la app<br>y que el sync con Render funcionó.</p></div></div></div>`;
   } else {
     html+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:11px;">`;
     html+=pl.map(r=>{

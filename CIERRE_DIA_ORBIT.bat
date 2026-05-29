@@ -37,10 +37,36 @@ if errorlevel 1 (
 )
 
 echo.
-echo Sincronizando planes desde Render...
+echo ============================================================
+echo PASO 1/3: Regenerando datasets (motor legacy + CSVs)...
+echo Esto actualiza acumulado, sellout, CCC, 11T y todos los KPIs.
+echo Puede tardar 1-2 minutos.
+echo ============================================================
+echo.
+
+call "%ROOT%\REGENERAR_DATOS_ORBIT.bat"
+
+if errorlevel 1 (
+    echo.
+    echo AVISO: La regeneracion tuvo errores. Algunos datos pueden estar desactualizados.
+    echo Si el problema persiste, revisar el log en 99_LOGS_ORBIT.
+    echo.
+    choice /C SC /M "S=Continuar de todas formas, C=Cancelar"
+    if errorlevel 2 exit /b 1
+)
+
+echo.
+echo ============================================================
+echo PASO 2/3: Sincronizando planes desde Render...
 echo (Los vendedores los enviaron por sus telefonos al servidor en la nube)
+echo ============================================================
 echo.
 python "%ROOT%\sync_planes_render.py"
+echo.
+
+echo ============================================================
+echo PASO 3/3: Iniciando servidor local...
+echo ============================================================
 echo.
 
 echo Cerrando servidor ORBIT anterior si existe...
