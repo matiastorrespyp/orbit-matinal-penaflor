@@ -45,13 +45,15 @@ echo ============================================================
 echo.
 
 call "%ROOT%\REGENERAR_DATOS_ORBIT.bat"
+set REGEN_OK=%ERRORLEVEL%
 
-if errorlevel 1 (
+if %REGEN_OK% NEQ 0 (
     echo.
-    echo AVISO: La regeneracion tuvo errores. Algunos datos pueden estar desactualizados.
-    echo Si el problema persiste, revisar el log en 99_LOGS_ORBIT.
+    echo AVISO: La regeneracion reporto errores ^(codigo %REGEN_OK%^).
+    echo Los datos pueden estar desactualizados.
+    echo Revisar log en 99_LOGS_ORBIT si persiste.
     echo.
-    choice /C SC /M "S=Continuar de todas formas, C=Cancelar"
+    choice /C SC /N /M "S=Continuar de todas formas, C=Cancelar [S,C]? "
     if errorlevel 2 exit /b 1
 )
 
