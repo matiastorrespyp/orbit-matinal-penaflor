@@ -1,88 +1,78 @@
 @echo off
 setlocal enabledelayedexpansion
-chcp 65001 > nul
+
 title ORBIT - Cierre del Dia
 
-:: ============================================================
-:: CIERRE_DIA_ORBIT.bat
-:: Ejecutar DESPUES de pegar el nuevo ventas.csv.
-:: Reinicia el servidor ORBIT y abre Plan vs Real.
-:: NO toca 01_INPUTS. NO regenera datasets completos.
-:: ============================================================
-
-set BASE=C:\Orbit\MATINAL_PENAFLOR
-
-echo.
-echo  ===================================================
-echo   ORBIT ^| Cierre del Dia ^| PAV Penaflor
-echo  ===================================================
+echo ============================================================
+echo ORBIT MATINAL PENAFLOR - CIERRE DEL DIA
+echo ============================================================
 echo.
 
-:: 1. Validar que ventas.csv existe
-if not exist "%BASE%\01_INPUTS\ventas.csv" (
-    echo  ERROR: No existe 01_INPUTS\ventas.csv
-    echo  Pegar el archivo antes de ejecutar este BAT.
+set "ROOT=C:\Orbit\MATINAL_PENAFLOR"
+set "VENTAS=%ROOT%\01_INPUTS\ventas.csv"
+set "PORTAL=http://127.0.0.1:8502"
+
+cd /d "%ROOT%"
+
+echo Validando archivo ventas.csv...
+echo.
+
+if not exist "%VENTAS%" (
+    echo ERROR: No existe el archivo:
+    echo %VENTAS%
     echo.
+    echo Pegue primero el ventas.csv nuevo en 01_INPUTS.
     pause
     exit /b 1
 )
 
-:: 2. Verificar fecha mas reciente en ventas.csv
-echo  Verificando datos en ventas.csv...
-py -3.12 -c "
-import pandas as pd, sys
-try:
-    df = pd.read_csv(r'%BASE%\01_INPUTS\ventas.csv', sep=';', encoding='latin1', usecols=['FechaComprobante','CodVendedor','ImporteNetoItem'])
-    df['f'] = pd.to_datetime(df['FechaComprobante'], dayfirst=True, errors='coerce')
-    df['imp'] = pd.to_numeric(df['ImporteNetoItem'].astype(str).str.replace(',','.'), errors='coerce')
-    max_f = df['f'].dropna().max()
-    filas = len(df)
-    vend_unicos = df['CodVendedor'].dropna().nunique()
-    print(f'  Fecha mas reciente : {max_f.strftime(\"%d/%m/%Y\")}')
-    print(f'  Filas en archivo   : {filas:,}')
-    print(f'  Vendedores         : {vend_unicos}')
-except Exception as e:
-    print(f'  ERROR al leer ventas.csv: {e}')
-    sys.exit(1)
-" 2>&1
-if %ERRORLEVEL% neq 0 (
-    echo  Error al leer ventas.csv. Ver mensaje arriba.
+python -c "import pandas as pd; p=r'%VENTAS%'; df=pd.read_csv(p, sep=';', encoding='latin1'); print('Filas detectadas:', len(df)); assert 'FechaComprobante' in df.columns, 'Falta columna FechaComprobante'; f=pd.to_datetime(df['FechaComprobante'], dayfirst=True, errors='coerce'); print('Fecha mas reciente:', f.max().strftime('%%Y-%%m-%%d') if f.notna().any() else 'SIN_FECHA')"
+
+if errorlevel 1 (
     echo.
+    echo ERROR: ventas.csv no pudo validarse.
+    echo Revisar separador, encoding o columna FechaComprobante.
     pause
     exit /b 1
 )
 
 echo.
+echo Sincronizando planes desde Render...
+echo (Los vendedores los enviaron por sus telefonos al servidor en la nube)
+echo.
+python "%ROOT%\sync_planes_render.py"
+echo.
 
-:: 3. Cerrar instancias anteriores del servidor en puerto 8502
-echo  Cerrando instancias anteriores en puerto 8502...
-for /f "tokens=5" %%p in ('netstat -ano 2^>nul ^| findstr ":8502 " ^| findstr "LISTENING"') do (
-    if not "%%p"=="" (
-        taskkill /PID %%p /F >nul 2>&1
-    )
+echo Cerrando servidor ORBIT anterior si existe...
+echo.
+
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8502" ^| findstr "LISTENING"') do (
+    echo Cerrando proceso en puerto 8502: %%a
+    taskkill /PID %%a /F >nul 2>nul
 )
-timeout /t 1 /nobreak >nul
 
-:: 4. Iniciar servidor ORBIT en ventana separada
-echo  Iniciando servidor ORBIT...
-start "ORBIT Server" cmd /k "cd /d %BASE% && title ORBIT Server - Puerto 8502 && py -3.12 server_orbit.py"
-echo  Esperando que el servidor inicie (4 seg)...
-timeout /t 4 /nobreak >nul
-
-:: 5. Abrir el portal en el navegador
-echo  Abriendo portal...
-start "" "http://localhost:8502"
+timeout /t 2 >nul
 
 echo.
-echo  ===================================================
-echo   ORBIT iniciado correctamente.
+echo Iniciando servidor ORBIT local...
 echo.
-echo   URL: http://localhost:8502
-echo   Ir a: Plan vs Real (icono 📊 en el menu)
+
+start "ORBIT - Server Local" cmd /k cd /d "%ROOT%" ^&^& python server_orbit.py
+
+echo Esperando inicio del servidor...
+timeout /t 6 >nul
+
 echo.
-echo   Los datos de venta se leen directo de ventas.csv.
-echo   No necesitas regenerar datasets para ver Plan vs Real.
-echo  ===================================================
+echo Abriendo portal...
+start "" "%PORTAL%"
+
 echo.
+echo ============================================================
+echo LISTO
+echo 1. Ingresar al portal.
+echo 2. Ir a Gerencia.
+echo 3. Abrir panel Plan vs Real.
+echo ============================================================
+echo.
+
 pause
-endlocal

@@ -1006,6 +1006,13 @@ let D = { diag:{}, dash:[], cli:[], al:[], plan:[], pvr:{}, det:{}, msgs:[], ccc
 const CV = { V3:'#5BDED4', V4:'#F2B544', V6:'#5BC23A', V7:'#9B7BFF', V8:'#4DA3FF', V9:'#FF9D5C', V10:'#FF5D8B' };
 const DAYS = ['LU','MA','MI','JU','VI','SA'];
 
+// Devuelve YYYY-MM-DD en hora LOCAL del dispositivo (no UTC).
+// Evita que después de las 21hs Argentina (00hs UTC) el portal filtre por "mañana".
+function diaHoy(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
 const fmtM  = n => n ? '$'+(n/1e6).toFixed(1)+'M' : '$0';
 const fmtK  = n => n ? '$'+(n/1e3).toFixed(0)+'K' : '$0';
 const ini   = n => (n||'').split(' ').filter(Boolean).map(s=>s[0]).slice(0,2).join('').toUpperCase();
@@ -1663,20 +1670,20 @@ function gVendedores(p){
 
 /* — Clientes — */
 function gClientes(p){
-  const diaHoy=(currentDay||D.diag?.dia_operativo||'').toUpperCase();
+  const diaOp=(currentDay||D.diag?.dia_operativo||'').toUpperCase();
   const fmtARS=n=>n?'$'+(Number(n)||0).toLocaleString('es-AR',{maximumFractionDigits:0}):'–';
   const all=(D.cli||[])
     .filter(c=>gFiltro?(c.vendedor_id||'').toUpperCase()===gFiltro:true);
   // Solo clientes de la zona del día que NO compraron en el mes
   const filt=all.filter(c=>{
     const dias=(c.dias_visita||c.dia_visita||'').toUpperCase();
-    const esHoy=diaHoy&&(dias===diaHoy||dias.includes(diaHoy));
+    const esHoy=diaOp&&(dias===diaOp||dias.includes(diaOp));
     const sinCompra=(c.compra_mes_flag===0||c.compra_mes_flag===null);
     return esHoy&&sinCompra;
   });
   p.innerHTML=`
     <div class="gph"><div><div class="gph-title">Clientes Críticos</div>
-    <div class="gph-sub">Zona ${diaHoy} · sin compra en el mes · ${filt.length} clientes</div></div></div>
+    <div class="gph-sub">Zona ${diaOp} · sin compra en el mes · ${filt.length} clientes</div></div></div>
     <div class="card">
       <div class="card-body nop" style="max-height:67vh;overflow:auto;">
         <table class="tbl">
@@ -1698,7 +1705,7 @@ function gClientes(p){
 /* — Planificación — */
 async function gPlanificacion(p){
   const pl_fresh=await safe('/api/planificacion'); if(pl_fresh) D.plan=Array.isArray(pl_fresh)?pl_fresh:[];
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = diaHoy();
   const pl  = (D.plan||[]).filter(r => r.fecha === hoy);
   const aprobados  = pl.filter(r=>r.estado==='aprobada').length;
   const enviados   = pl.filter(r=>r.estado==='enviada').length;
@@ -2379,7 +2386,7 @@ async function aprobarPlan(id){
 
 /* ════ MI PLAN (vendedor) ════ */
 function vPlan(){
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = diaHoy();
   const vid = (userData?.vendedor_id||'').toUpperCase();
   const esV3 = vid==='V3';
   const planHoy = (D.plan||[]).find(r=>r.fecha===hoy && r.vendedor_id===vid)||{};
@@ -2444,7 +2451,7 @@ function vPlan(){
 async function submitPlan(vid){
   const esV3=vid==='V3';
   const payload={
-    fecha:           new Date().toISOString().split('T')[0],
+    fecha:           diaHoy(),
     vendedor_id:     vid,
     venta_esperada:  parseFloat(document.getElementById('pf_venta')?.value||0),
     ccc_tradicional: parseInt(document.getElementById('pf_trad')?.value||0),

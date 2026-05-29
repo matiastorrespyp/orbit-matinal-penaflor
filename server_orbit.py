@@ -608,18 +608,22 @@ def diagnostico():
     except Exception:
         botellas_mes = None
 
-    fecha_datos = None
+    # dia_operativo y fecha_corte siempre en tiempo real (no del dataset estático)
+    _DIAS_AR = {0:'LU', 1:'MA', 2:'MI', 3:'JU', 4:'VI', 5:'SA', 6:'DO'}
+    _now_diag = datetime.now(_ARG_TZ)
+    dia_op       = _DIAS_AR[_now_diag.weekday()]
+    fecha_corte_rt = _now_diag.strftime("%Y-%m-%d")
+
+    # fecha_datos = cuándo fue generado el último dataset (para transparencia)
+    fecha_datos = fecha_corte_rt  # fallback: hoy
     fecha_obj_str = None
-    dia_op = None
     modo_fecha = "SIN_DATOS"
     if not vol.empty:
         try:
             if "fecha_ejecucion" in vol.columns:
-                fecha_datos = str(vol["fecha_ejecucion"].iloc[0])
+                fecha_datos = str(vol["fecha_ejecucion"].iloc[0])  # fecha del último regenerar
             if "fecha_objetivo" in vol.columns:
                 fecha_obj_str = str(vol["fecha_objetivo"].iloc[0])
-            if "dia_objetivo" in vol.columns:
-                dia_op = str(vol["dia_objetivo"].iloc[0]).upper()
             modo_fecha = "REAL"
         except Exception:
             pass
@@ -640,11 +644,11 @@ def diagnostico():
         "botellas_mes": botellas_mes,
         "cartera_real_total": cartera_real_total,
         "dia_snapshot": dia_op,
-        "fecha_datos": fecha_datos,
-        "fecha_corte": fecha_datos,
+        "fecha_datos": fecha_datos,          # cuándo se regeneraron los datasets (puede ser de ayer)
+        "fecha_corte": fecha_corte_rt,       # hoy real-time (siempre actualizado)
         "fecha_objetivo": fecha_obj_str,
-        "fecha_matinal": fecha_obj_str,
-        "dia_operativo": dia_op,
+        "fecha_matinal": fecha_corte_rt,     # hoy real-time
+        "dia_operativo": dia_op,             # día actual real-time (LU/MA/MI/JU/VI/SA)
         "modo_fecha": modo_fecha,
     })
 
