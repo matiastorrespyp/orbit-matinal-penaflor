@@ -1,18 +1,36 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
-## Sesión 2026-05-27 — Estado actual
+## Sesión 2026-05-28 — Deploy Render
 
 ### HECHO EN ESTA SESIÓN ✅
-- ✅ Panel 11T en gerencia (endpoints + tarjetas)
-- ✅ Tarjeta Sellout reemplazada:
-  - Endpoint `/api/gerencia/sellout_litros` — lee `ventas_acumulada.csv`, calcula litros vs objetivos
-  - Tarjeta en portal: Real / Objetivo / Alcance% (chip coloreado + barra) / Clientes
-  - Subcategorías: VINOS DEL AÑO por Linea (Alto/Medio/Medio Alto/Superior); SPIRITS por tipo (Importados/Nacionales)
-  - Datos validados: 6 categorías con datos reales
+- ✅ `/api/healthz` agregado — endpoint liviano para Render health check y UptimeRobot
+- ✅ `render.yaml`: healthCheckPath → `/api/healthz`, workers 1, autoDeploy false
+- ✅ `Procfile`: workers 1 consistente con render.yaml
+- ✅ CHANGELOG y NEXT_TASK actualizados
 
 ### PRÓXIMO PASO 🔲
-- **Push a Render**: `git add server_orbit.py CHANGELOG_AI.md NEXT_TASK.md && git push`
-- Validar en portal gerencia que CHAMPAÑA muestra ~84% (chip amarillo) y CERVEZA ~56% (chip rojo)
+- **Push**: `git push origin master`
+- **Deploy manual en Render**: Dashboard → Manual Deploy (autoDeploy está apagado)
+- **Verificar en Render**: logs de arranque → debe aparecer `[ORBIT] Backup orbit.db` y `[ORBIT calendario]`
+- **Verificar `/api/healthz`**: debe devolver `{"status":"ok","service":"orbit-penaflor-pav","healthcheck":true}` HTTP 200
+- **Actualizar UptimeRobot**: cambiar URL monitoreada de `/api/diagnostico` → `/api/healthz` (más rápido, no depende de datos)
+- **Validar en portal gerencia**: CHAMPAÑA ~70% (chip wn), CERVEZA ~25% (chip rojo)
+
+### Pendiente técnico
+- Investigar gap SPIRITS Nacionales: sistema 15.139L vs imagen 17.800L (-2.661L)
+- Workflow mensual: en junio cambiar `reglas_acciones_mayo_2026_orbit.csv` → junio
+
+---
+
+## Sesión 2026-05-27 — Estado anterior
+
+### HECHO EN ESA SESIÓN ✅
+- ✅ Panel 11T en gerencia (endpoints + tarjetas)
+- ✅ Tarjeta Sellout reemplazada:
+  - Endpoint `/api/gerencia/sellout_litros` — lee ventas.csv, calcula litros vs objetivos
+  - Tarjeta en portal: Real / Objetivo / Alcance% (chip coloreado + barra) / Clientes
+  - Subcategorías: VINOS DEL AÑO por Linea; SPIRITS por tipo (Importados/Nacionales)
+  - Datos validados: 6 categorías con datos reales
 - Investigar gap SPIRITS Nacionales: sistema 15.139L vs imagen 17.800L (-2.661L) — posible diferencia de fecha de corte o productos faltantes en ventas.csv
 
 ---

@@ -13,11 +13,12 @@ services:
     buildCommand: pip install -r requirements.txt
 
     # Start — gunicorn sirve la app Flask
+    # 1 worker = sin conflictos de escritura en SQLite
     startCommand: >
       gunicorn server_orbit:app
       --bind 0.0.0.0:$PORT
       --timeout 120
-      --workers 2
+      --workers 1
       --worker-class sync
 
     # Environment variables
@@ -27,9 +28,10 @@ services:
       - key: PYTHON_VERSION
         value: "3.11.9"
 
-    # Health check
-    healthCheckPath: /api/diagnostico
+    # Health check — endpoint liviano, sin leer archivos de datos
+    healthCheckPath: /api/healthz
 
-    # Auto-deploy on every push to master
+    # Auto-deploy DESHABILITADO — deployar manualmente desde Render dashboard
+    # para evitar que commits de datos/config borren orbit.db en produccion
     branch: master
-    autoDeploy: true
+    autoDeploy: false

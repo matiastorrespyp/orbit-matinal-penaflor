@@ -1,5 +1,22 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-28 — chore(deploy): healthz liviano + estabilizar Render
+
+**Qué se hizo:**
+- `server_orbit.py`: nuevo endpoint `GET /api/healthz` — devuelve `{"status":"ok","service":"orbit-penaflor-pav","healthcheck":true}` con HTTP 200 sin leer ningún archivo ni base de datos. Pensado para Render health check y UptimeRobot.
+- `render.yaml`: `healthCheckPath` cambiado de `/api/diagnostico` → `/api/healthz`. El diagnostico completo sigue disponible pero no bloquea el deploy.
+- `render.yaml`: `--workers 2` → `--workers 1` (evita conflictos de escritura en SQLite).
+- `render.yaml`: `autoDeploy: true` → `autoDeploy: false` (deployar manualmente para no sobreescribir orbit.db en producción).
+- `Procfile`: agrega `--workers 1` para coherencia con render.yaml.
+- `server_orbit.py` (planificacion POST): agrega log IP + payload a `99_LOGS_ORBIT/planificacion_post.log`.
+
+**Causa raíz del 404 en UptimeRobot:**
+`/api/diagnostico` lee Excel y múltiples CSVs. En Render, estos archivos no existen. La llamada al health check durante el deploy podía tardar o devolver 500, haciendo que Render hiciera rollback a una versión anterior que sí tenía el endpoint pero en estado degradado.
+
+**Archivos tocados:** `server_orbit.py`, `render.yaml`, `Procfile`
+
+---
+
 ## 2026-05-28 — fix(planificacion): errores silenciosos y datos cacheados en portal
 
 **Qué se hizo:**

@@ -438,6 +438,11 @@ def login():
         return jsonify({"ok":True,"rol":u["rol"],"nombre":u["nombre"],"vendedor_id":user.upper()})
     return jsonify({"ok":False,"error":"Credenciales inválidas"}), 401
 
+# ====== HEALTHCHECK (Render / UptimeRobot) ======
+@app.route("/api/healthz")
+def healthz():
+    return jsonify({"status": "ok", "service": "orbit-penaflor-pav", "healthcheck": True}), 200
+
 # ====== DIAGNÓSTICO ======
 @app.route("/api/diagnostico")
 def diagnostico():
@@ -946,6 +951,15 @@ def planificacion():
 
     if request.method == "POST":
         d = request.get_json() or {}
+        _ip = request.remote_addr or "?"
+        _ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        _log_line = f"{_ts} | IP={_ip} | payload={d}\n"
+        try:
+            with open(str(BASE / "99_LOGS_ORBIT" / "planificacion_post.log"), "a", encoding="utf-8") as _lf:
+                _lf.write(_log_line)
+        except Exception:
+            pass
+        print(f"[PLAN POST] {_log_line.strip()}")
 
         # Normalizar y validar vendedor_id
         vid_raw = normalizar_vendedor_codigo(d.get("vendedor_id",""))
