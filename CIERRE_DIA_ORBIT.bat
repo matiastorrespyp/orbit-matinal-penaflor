@@ -102,22 +102,28 @@ echo.
 for /f "tokens=*" %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HHmm"') do set FECHA_COMMIT=%%i
 
 echo Preparando archivos para commit...
-git add 01_INPUTS\resultado.xlsx
-git add 01_INPUTS\ventas.csv
-git add 01_INPUTS\ventas_acumulada.csv
-git add 04_DATASETS_ORBIT\*.csv
-git add orbit.db
+git add "01_INPUTS/resultado.xlsx"
+git add "01_INPUTS/ventas.csv"
+git add "01_INPUTS/ventas_acumulada.csv"
+git add "02_HISTORY/historial_ventas_cliente.csv"
+git add "04_DATASETS_ORBIT/"
+git add "orbit.db"
 
 git diff --cached --quiet
-if %ERRORLEVEL% equ 0 (
+set GIT_DIFF_RESULT=%ERRORLEVEL%
+
+if %GIT_DIFF_RESULT% equ 0 (
     echo No hay cambios nuevos para publicar.
+    echo Render ya tiene los datos mas recientes.
 ) else (
     git commit -m "data: cierre dia %FECHA_COMMIT% — datasets + inputs actualizados"
-    if %ERRORLEVEL% neq 0 (
+    set COMMIT_OK=%ERRORLEVEL%
+    if %COMMIT_OK% neq 0 (
         echo ERROR: Fallo el commit. Verificar estado de git.
     ) else (
         git push origin master
-        if %ERRORLEVEL% neq 0 (
+        set PUSH_OK=%ERRORLEVEL%
+        if %PUSH_OK% neq 0 (
             echo ERROR: Fallo el push. Verificar conexion a internet.
         ) else (
             echo OK: Datos publicados en GitHub.
@@ -128,7 +134,7 @@ if %ERRORLEVEL% equ 0 (
             echo ============================================================
             start "" "https://dashboard.render.com"
             echo.
-            echo En Render: seleccionar el servicio orbit-penaflor-pav
+            echo En Render: seleccionar el servicio orbit-matinal-penaflor
             echo           hacer clic en "Manual Deploy" ^> "Deploy latest commit"
             echo.
             echo El portal https://orbit-matinal-penaflor.onrender.com

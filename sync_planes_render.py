@@ -6,7 +6,7 @@ Usar antes de iniciar el servidor local para Plan vs Real en la matinal.
 import urllib.request, json, sqlite3, sys
 from pathlib import Path
 
-RENDER_BASE = "https://orbit-penaflor-pav.onrender.com"
+RENDER_BASE = "https://orbit-matinal-penaflor.onrender.com"
 RENDER_URL  = RENDER_BASE + "/api/planificacion"
 DB_PATH     = Path(__file__).parent / "orbit.db"
 
