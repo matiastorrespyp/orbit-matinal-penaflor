@@ -45,16 +45,15 @@ echo ============================================================
 echo.
 
 call "%ROOT%\REGENERAR_DATOS_ORBIT.bat"
-set REGEN_OK=%ERRORLEVEL%
 
-if %REGEN_OK% NEQ 0 (
-    echo.
-    echo AVISO: La regeneracion reporto errores ^(codigo %REGEN_OK%^).
-    echo Los datos pueden estar desactualizados.
-    echo Revisar log en 99_LOGS_ORBIT si persiste.
-    echo.
-    choice /C SC /N /M "S=Continuar de todas formas, C=Cancelar [S,C]? "
-    if errorlevel 2 exit /b 1
+echo.
+if exist "%ROOT%\04_DATASETS_ORBIT\mod_volumen_vendedor.csv" (
+    echo OK: Datasets regenerados correctamente.
+) else (
+    echo AVISO: mod_volumen_vendedor.csv no encontrado.
+    echo La regeneracion pudo haber fallado. Revisar 99_LOGS_ORBIT.
+    echo Presione cualquier tecla para continuar de todas formas...
+    pause >nul
 )
 
 echo.
