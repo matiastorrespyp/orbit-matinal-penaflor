@@ -1,12 +1,17 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
-## Sesión 2026-05-28 — Deploy Render
+## Sesión 2026-05-28 — Deploy Render + Planificación
 
 ### HECHO EN ESTA SESIÓN ✅
 - ✅ `/api/healthz` agregado — endpoint liviano para Render health check y UptimeRobot
 - ✅ `render.yaml`: healthCheckPath → `/api/healthz`, workers 1, autoDeploy false
 - ✅ `Procfile`: workers 1 consistente con render.yaml
-- ✅ CHANGELOG y NEXT_TASK actualizados
+- ✅ Timestamps en hora Argentina (UTC-3) en planificación — antes mostraba UTC
+- ✅ POST planificación devuelve `hora_envio` en respuesta
+- ✅ Re-envíos preservan `created_at`, solo actualizan `updated_at`
+- ✅ Vista gerencia: cada card muestra "📅 Enviado hoy HH:MM" con `updated_at`
+- ✅ Tarjeta Total PyP: muestra TODOS los planes (no solo aprobados), con columnas Estado + Hora
+- ✅ Vista vendedor: muestra "📅 Enviado hoy a las HH:MM" cuando el plan ya existe
 
 ### PRÓXIMO PASO 🔲
 - **Push**: `git push origin master`

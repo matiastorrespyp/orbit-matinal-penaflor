@@ -1721,13 +1721,18 @@ async function gPlanificacion(p){
     html+=pl.map(r=>{
       const scl = r.estado==='aprobada'?'ok':r.estado==='modificada'?'vio':'info';
       const col = CV[r.vendedor_id]||'var(--text2)';
-      const horaEnvio = r.created_at ? r.created_at.split(' ')[1]?.substring(0,5) : null;
+      // Usar updated_at (último envío), con fallback a created_at
+      const dtEnvio = r.updated_at || r.created_at || null;
+      const horaEnvio  = dtEnvio ? dtEnvio.split(' ')[1]?.substring(0,5) : null;
+      const fechaEnvio = dtEnvio ? dtEnvio.split(' ')[0] : null;
+      const esHoy = fechaEnvio === hoy;
+      const tsLabel = horaEnvio ? (esHoy ? `hoy ${horaEnvio}` : `${fechaEnvio} ${horaEnvio}`) : null;
       return `<div class="pcard">
         <div class="pcard-hd">
           <span class="pcard-name" style="color:${col}">${r.vendedor_id}</span>
           <span class="chip ${scl}">${r.estado||'enviada'}</span>
         </div>
-        ${horaEnvio?`<div style="font-size:10px;color:var(--text3);margin-bottom:6px;">Enviado ${horaEnvio}</div>`:''}
+        ${tsLabel?`<div style="font-size:10px;color:var(--text3);margin-bottom:6px;">📅 Enviado ${tsLabel}</div>`:''}
         <div class="row-b sm m2 mb8"><span>Venta obj.</span><b>${fmtM(r.venta_esperada)}</b></div>
         <div class="row-b xs m3 mb4"><span>CCC T/A/O</span><span>${r.ccc_tradicional||0}/${r.ccc_autoservicio||0}/${r.ccc_onpremise||0}</span></div>
         <div class="row-b xs m3 mb8"><span>11T plan</span><span>${r.once_t||0}</span></div>
@@ -1740,53 +1745,65 @@ async function gPlanificacion(p){
       </div>`;}).join('');
     html+=`</div>`;
 
-    // ── Tarjeta Planificación Total PyP del día (solo aprobados) ──
-    const aprobadosList = pl.filter(r=>r.estado==='aprobada');
-    if(aprobadosList.length){
-      const totVenta = aprobadosList.reduce((s,r)=>s+(r.venta_esperada||0),0);
-      const totT     = aprobadosList.reduce((s,r)=>s+(r.ccc_tradicional||0),0);
-      const totA     = aprobadosList.reduce((s,r)=>s+(r.ccc_autoservicio||0),0);
-      const totO     = aprobadosList.reduce((s,r)=>s+(r.ccc_onpremise||0),0);
-      const tot11t   = aprobadosList.reduce((s,r)=>s+(r.once_t||0),0);
-      html+=`<div class="card" style="margin-top:14px;">
-        <div class="card-hd">
-          <span class="card-title">Planificacion Total PyP del dia</span>
-          <span class="chip ok">${aprobadosList.length} aprobado${aprobadosList.length!==1?'s':''}</span>
-        </div>
-        <div class="card-body nop" style="overflow-x:auto;">
-          <table class="tbl pvr-tbl" style="min-width:520px;">
-            <thead><tr>
-              <th>Vendedor</th>
-              <th style="text-align:right;">Venta esperada</th>
-              <th style="text-align:center;">CCC T</th>
-              <th style="text-align:center;">CCC A</th>
-              <th style="text-align:center;">CCC O</th>
-              <th style="text-align:center;">11T</th>
-            </tr></thead>
-            <tbody>
-              ${aprobadosList.map(r=>{
-                const col=CV[r.vendedor_id]||'var(--text2)';
-                return `<tr>
-                  <td><span class="chip" style="color:${col}">${r.vendedor_id}</span></td>
-                  <td style="text-align:right;">${fmtM(r.venta_esperada||0)}</td>
-                  <td style="text-align:center;">${r.ccc_tradicional||0}</td>
-                  <td style="text-align:center;">${r.ccc_autoservicio||0}</td>
-                  <td style="text-align:center;">${r.ccc_onpremise||0}</td>
-                  <td style="text-align:center;">${r.once_t||0}</td>
-                </tr>`;}).join('')}
-            </tbody>
-            <tfoot><tr style="border-top:2px solid var(--orbit-magenta);font-weight:700;">
-              <td style="color:var(--orbit-magenta);font-size:11px;letter-spacing:.5px;">TOTAL DIA</td>
-              <td style="text-align:right;color:var(--orbit-magenta);">${fmtM(totVenta)}</td>
-              <td style="text-align:center;color:var(--orbit-magenta);">${totT}</td>
-              <td style="text-align:center;color:var(--orbit-magenta);">${totA}</td>
-              <td style="text-align:center;color:var(--orbit-magenta);">${totO}</td>
-              <td style="text-align:center;color:var(--orbit-magenta);">${tot11t}</td>
-            </tr></tfoot>
-          </table>
-        </div>
-      </div>`;
-    }
+    // ── Tarjeta Planificación Total PyP del día (todos los planes) ──
+    const totVenta = pl.reduce((s,r)=>s+(r.venta_esperada||0),0);
+    const totT     = pl.reduce((s,r)=>s+(r.ccc_tradicional||0),0);
+    const totA     = pl.reduce((s,r)=>s+(r.ccc_autoservicio||0),0);
+    const totO     = pl.reduce((s,r)=>s+(r.ccc_onpremise||0),0);
+    const tot11t   = pl.reduce((s,r)=>s+(r.once_t||0),0);
+    const nAprobados = pl.filter(r=>r.estado==='aprobada').length;
+    const nEnviados  = pl.filter(r=>r.estado==='enviada').length;
+    const nMod       = pl.filter(r=>r.estado==='modificada').length;
+    html+=`<div class="card" style="margin-top:14px;">
+      <div class="card-hd">
+        <span class="card-title">📊 Total Planificación PyP del Día</span>
+        <span style="display:flex;gap:5px;">
+          ${nAprobados?`<span class="chip ok">${nAprobados} aprobado${nAprobados!==1?'s':''}</span>`:''}
+          ${nEnviados?`<span class="chip info">${nEnviados} enviado${nEnviados!==1?'s':''}</span>`:''}
+          ${nMod?`<span class="chip vio">${nMod} modificado${nMod!==1?'s':''}</span>`:''}
+        </span>
+      </div>
+      <div class="card-body nop" style="overflow-x:auto;">
+        <table class="tbl pvr-tbl" style="min-width:520px;">
+          <thead><tr>
+            <th>Vendedor</th>
+            <th style="text-align:right;">Venta esperada</th>
+            <th style="text-align:center;">CCC T</th>
+            <th style="text-align:center;">CCC A</th>
+            <th style="text-align:center;">CCC O</th>
+            <th style="text-align:center;">11T</th>
+            <th style="text-align:center;">Estado</th>
+            <th style="text-align:center;">Enviado</th>
+          </tr></thead>
+          <tbody>
+            ${pl.map(r=>{
+              const col=CV[r.vendedor_id]||'var(--text2)';
+              const scl2=r.estado==='aprobada'?'ok':r.estado==='modificada'?'vio':'info';
+              const dtE=r.updated_at||r.created_at||'';
+              const hr=dtE?dtE.split(' ')[1]?.substring(0,5):'–';
+              return `<tr>
+                <td><span style="color:${col};font-weight:600;">${r.vendedor_id}</span></td>
+                <td style="text-align:right;">${fmtM(r.venta_esperada||0)}</td>
+                <td style="text-align:center;">${r.ccc_tradicional||0}</td>
+                <td style="text-align:center;">${r.ccc_autoservicio||0}</td>
+                <td style="text-align:center;">${r.ccc_onpremise||0}</td>
+                <td style="text-align:center;">${r.once_t||0}</td>
+                <td style="text-align:center;"><span class="chip ${scl2}" style="font-size:9px;">${r.estado||'enviada'}</span></td>
+                <td style="text-align:center;font-size:11px;color:var(--text3);">${hr}</td>
+              </tr>`;}).join('')}
+          </tbody>
+          <tfoot><tr style="border-top:2px solid var(--orbit-magenta);font-weight:700;">
+            <td style="color:var(--orbit-magenta);font-size:11px;letter-spacing:.5px;">TOTAL DÍA</td>
+            <td style="text-align:right;color:var(--orbit-magenta);">${fmtM(totVenta)}</td>
+            <td style="text-align:center;color:var(--orbit-magenta);">${totT}</td>
+            <td style="text-align:center;color:var(--orbit-magenta);">${totA}</td>
+            <td style="text-align:center;color:var(--orbit-magenta);">${totO}</td>
+            <td style="text-align:center;color:var(--orbit-magenta);">${tot11t}</td>
+            <td colspan="2"></td>
+          </tr></tfoot>
+        </table>
+      </div>
+    </div>`;
   }
 
   html+=`<div class="card" style="margin-top:14px;">
@@ -2341,8 +2358,16 @@ function vPlan(){
   let h=`<div class="vsh">Mi Plan del Día</div>`;
 
   if(planHoy.id){
+    const dtV = planHoy.updated_at || planHoy.created_at || null;
+    const tsV = dtV ? (() => {
+      const [fd, ft] = dtV.split(' ');
+      const hr = ft?.substring(0,5) || '';
+      const esHoyV = fd === hoy;
+      return esHoyV ? `hoy a las ${hr}` : `${fd} a las ${hr}`;
+    })() : null;
     h+=`<div class="card" style="margin-bottom:12px;">
       <div class="card-hd"><span class="card-title">Plan cargado hoy</span><span class="chip ${scl}">${(planHoy.estado||'enviada').toUpperCase()}</span></div>
+      ${tsV?`<div style="font-size:10px;color:var(--text3);padding:0 14px 6px;">📅 Enviado ${tsV}</div>`:''}
       <div class="card-body">
         <div class="row-b sm m2 mb8"><span>Venta esperada</span><b>${fmtM(planHoy.venta_esperada)}</b></div>
         <div class="row-b xs m3 mb4"><span>CCC Trad</span><span>${planHoy.ccc_tradicional||0}</span></div>

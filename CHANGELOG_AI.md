@@ -1,5 +1,21 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-05-28 — feat(planificacion): timestamps Argentina + total todos los planes
+
+**Qué se hizo:**
+- `server_orbit.py`: agrega `_ARG_TZ = timezone(timedelta(hours=-3))` y helper `_now_ar()` para timestamps en hora Argentina.
+- `server_orbit.py` (POST /api/planificacion): reemplaza `CURRENT_TIMESTAMP` SQLite por `_now_ar()` en Python. En re-envíos (ON CONFLICT), solo actualiza `updated_at`, preserva `created_at` original. Devuelve `hora_envio` en la respuesta.
+- `portal.html` (gPlanificacion — gerencia): cada tarjeta de vendedor muestra "📅 Enviado hoy HH:MM" usando `updated_at` (último envío) en lugar de `created_at`. Incluye fecha si no es hoy.
+- `portal.html` (gPlanificacion — gerencia): tarjeta "📊 Total Planificación PyP del Día" ahora incluye TODOS los planes (no solo aprobados). Nueva columna Estado y columna Enviado con hora. Chips de conteo por estado.
+- `portal.html` (vPlan — vendedor): muestra "📅 Enviado hoy a las HH:MM" debajo del header cuando el plan ya fue cargado.
+
+**Causa raíz de horas incorrectas:**
+SQLite `CURRENT_TIMESTAMP` devuelve UTC. En Argentina (UTC-3) la diferencia era de 3 horas. Fix: usar Python `datetime.now(timezone(timedelta(hours=-3)))`.
+
+**Archivos tocados:** `server_orbit.py`, `PAV MATINAL PE_A FLOR/portal.html`
+
+---
+
 ## 2026-05-28 — chore(deploy): healthz liviano + estabilizar Render
 
 **Qué se hizo:**

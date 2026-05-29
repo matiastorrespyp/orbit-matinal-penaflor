@@ -4,7 +4,12 @@ ORBIT Server v3 — Flask API con diagnóstico, CCC real, 11T real, sin mock
 from flask import Flask, jsonify, request, send_from_directory, make_response
 import json, sqlite3, pandas as pd, math
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+_ARG_TZ = timezone(timedelta(hours=-3))
+def _now_ar():
+    """Hora actual en Argentina (UTC-3) como string 'YYYY-MM-DD HH:MM:SS'."""
+    return datetime.now(_ARG_TZ).strftime("%Y-%m-%d %H:%M:%S")
 
 import os, shutil, csv as _csv
 app = Flask(__name__, static_folder=None)
@@ -969,14 +974,15 @@ def planificacion():
 
         # Regla: V3 no trabaja autoservicio
         ccc_as = 0 if vid_raw == "V3" else int(d.get("ccc_autoservicio") or 0)
-        fecha  = d.get("fecha") or datetime.now().strftime("%Y-%m-%d")
+        fecha  = d.get("fecha") or _now_ar()[:10]
+        _ts    = _now_ar()  # hora Argentina para ambos timestamps
 
         conn.execute("""
             INSERT INTO planificacion
               (fecha, vendedor_id, zona, dia_visita, venta_esperada,
                ccc_tradicional, ccc_autoservicio, ccc_onpremise,
-               once_t, marcas, clientes_clave, acciones, estado, updated_at)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'enviada',CURRENT_TIMESTAMP)
+               once_t, marcas, clientes_clave, acciones, estado, created_at, updated_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'enviada',?,?)
             ON CONFLICT(fecha, vendedor_id) DO UPDATE SET
               zona=excluded.zona, dia_visita=excluded.dia_visita,
               venta_esperada=excluded.venta_esperada,
@@ -985,15 +991,16 @@ def planificacion():
               ccc_onpremise=excluded.ccc_onpremise,
               once_t=excluded.once_t, marcas=excluded.marcas,
               clientes_clave=excluded.clientes_clave, acciones=excluded.acciones,
-              estado='enviada', updated_at=CURRENT_TIMESTAMP""",
+              estado='enviada', updated_at=excluded.updated_at""",
             (fecha, vid_raw, d.get("zona"), d.get("dia_visita"),
              float(d.get("venta_esperada") or 0),
              int(d.get("ccc_tradicional") or 0), ccc_as,
              int(d.get("ccc_onpremise") or 0), int(d.get("once_t") or 0),
-             d.get("marcas"), d.get("clientes_clave"), d.get("acciones")))
+             d.get("marcas"), d.get("clientes_clave"), d.get("acciones"),
+             _ts, _ts))
         conn.commit(); conn.close()
         export_planificacion_csv()
-        return jsonify({"ok": True, "vendedor_id": vid_raw, "fecha": fecha})
+        return jsonify({"ok": True, "vendedor_id": vid_raw, "fecha": fecha, "hora_envio": _ts})
 
     # GET — filtros opcionales por fecha y/o vendedor_id
     if fecha_q and vid_q:
