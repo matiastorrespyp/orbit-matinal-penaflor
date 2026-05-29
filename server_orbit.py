@@ -1235,35 +1235,51 @@ def orbit_data():
         data = json.load(f)
     return jsonify(data)
 
-# ====== MATINAL RESUMEN: plan vs real (fuente directa: ventas.csv) ======
+# ====== MATINAL RESUMEN: plan vs real ======
 @app.route("/api/matinal/resumen")
 def matinal_resumen():
     """
-    Plan del día vs real del día — calculado directo desde ventas.csv.
-    Usa el día más reciente con datos en ventas.csv como 'real'.
-    Si se pasa ?fecha=YYYY-MM-DD busca ese día en ventas.csv; si no existe, usa el más reciente.
+    Compara plan vs real. El PLAN ancla la fecha (no ventas.csv).
+    - fecha_plan = parámetro ?fecha, o la fecha más reciente con planes en orbit.db.
+    - real = ventas de esa misma fecha en ventas.csv. Si no existe todavía → tiene_real=False.
+
+    Flujo:
+      Mañana matinal → muestra planes aprobados, real = '–' (ventas aún no actualizadas).
+      Después del .bat → ventas.csv se actualiza → real aparece solo, sin tocar nada más.
+      Planes del día siguiente → tienen otra fecha, no pisan estos.
     """
     fecha_param = request.args.get("fecha")
 
-    # Calcular real directo desde ventas.csv
+    # PASO 1: Determinar fecha_plan desde orbit.db
+    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+    conn.row_factory = sqlite3.Row
     if fecha_param:
-        ventas_dia, fecha_real = _cargar_ventas_dia(fecha_param)
-        if ventas_dia.empty:
-            ventas_dia, fecha_real = _cargar_ventas_dia()  # fallback al más reciente
+        fecha_plan = fecha_param
     else:
-        ventas_dia, fecha_real = _cargar_ventas_dia()
+        # Fecha más reciente con planes en orbit.db
+        row = conn.execute(
+            "SELECT fecha FROM planificacion ORDER BY fecha DESC LIMIT 1"
+        ).fetchone()
+        fecha_plan = row["fecha"] if row else _now_ar()[:10]
 
-    fecha_plan = fecha_param or fecha_real  # comparar plan de la misma fecha que el real
+    planes = {row["vendedor_id"]: dict(row)
+              for row in conn.execute(
+                  "SELECT * FROM planificacion WHERE fecha=?", (fecha_plan,)).fetchall()}
+    conn.close()
 
-    # Mapa de real por vendedor (venta + CCC por segmento)
+    # PASO 2: Buscar real para esa misma fecha en ventas.csv (puede no existir aún)
+    ventas_dia, fecha_real = _cargar_ventas_dia(fecha_plan)
+    tiene_real = not ventas_dia.empty  # False = aún no se corrió el .bat con ese día
+
+    # PASO 3: Calcular real_map solo si hay datos de ventas
     real_map = {}
-    if not ventas_dia.empty:
+    if tiene_real:
         for cod_v, grp in ventas_dia.groupby("vendedor_codigo"):
             cod_int = int(cod_v)
             ccc_t = int(grp[grp["segmento_operativo"] == "TRADICIONAL"]["cliente_id"].nunique())
             ccc_a = int(grp[grp["segmento_operativo"] == "AUTOSERVICIO"]["cliente_id"].nunique())
             ccc_o = int(grp[grp["segmento_operativo"] == "ON_PREMISE_VTK"]["cliente_id"].nunique())
-            if cod_int == 3:  # V3 no trabaja autoservicio
+            if cod_int == 3:
                 ccc_a = 0
             real_map[cod_int] = {
                 "venta":     round(float(grp["importe_neto"].sum()), 2),
@@ -1272,14 +1288,6 @@ def matinal_resumen():
                 "ccc_op":    ccc_o,
                 "ccc_total": int(grp["cliente_id"].nunique()),
             }
-
-    # Plan desde orbit.db
-    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    planes = {row["vendedor_id"]: dict(row)
-              for row in conn.execute(
-                  "SELECT * FROM planificacion WHERE fecha=?", (fecha_plan,)).fetchall()}
-    conn.close()
 
     vend = read_csv(CONFIG / "vendedores_activos.csv")
     resultado = []
@@ -1324,7 +1332,8 @@ def matinal_resumen():
 
     return jsonify({
         "fecha_plan":  fecha_plan,
-        "fecha_real":  fecha_real,
+        "fecha_real":  fecha_real or None,
+        "tiene_real":  tiene_real,
         "fuente_real": "ventas.csv",
         "generado_en": _now_ar(),
         "resumen":     resultado,

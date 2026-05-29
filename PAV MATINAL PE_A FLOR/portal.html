@@ -2236,21 +2236,30 @@ function vAlertas(){
 function gPlanVsReal(p){
   const pvr  = D.pvr||{};
   const data = pvr.resumen||[];
-  const conPlan = data.filter(v=>v.tiene_plan).length;
-  const enMeta  = data.filter(v=>v.pct_cumplimiento!=null&&v.pct_cumplimiento>=90).length;
-  const fechaR  = pvr.fecha_real||pvr.fecha_plan||'–';
-  const fuenteR = pvr.fuente_real||'ventas.csv';
+  const tieneReal = pvr.tiene_real === true;
+  const conPlan   = data.filter(v=>v.tiene_plan).length;
+  const enMeta    = tieneReal ? data.filter(v=>v.pct_cumplimiento!=null&&v.pct_cumplimiento>=90).length : 0;
+  const fuenteR   = pvr.fuente_real||'ventas.csv';
   let h=`<div class="gph">
     <div><div class="gph-title">Plan vs Real</div>
-    <div class="gph-sub">Plan: ${pvr.fecha_plan||'–'} · Real: ${fechaR} · Fuente: ${fuenteR}</div></div>
+    <div class="gph-sub">Plan: ${pvr.fecha_plan||'–'} · Real: ${tieneReal?(pvr.fecha_real||pvr.fecha_plan):'pendiente (ejecutar .bat)'}  </div></div>
     <div class="gph-chips">
       <span class="chip">${conPlan}/${data.length} con plan</span>
-      <span class="chip ok">${enMeta} en meta</span>
+      ${tieneReal
+        ? `<span class="chip ok">${enMeta} en meta</span>`
+        : `<span class="chip wn">Real no disponible aún</span>`}
     </div>
   </div>`;
   if(!data.length){
-    h+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">📊</div><p>Sin planes para comparar.<br>Verificar que el vendedor envió plan y que ventas.csv tiene datos del día.</p></div></div></div>`;
+    h+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">📊</div>
+      <p>Sin planes para este período.<br>Los vendedores deben enviar su plan desde la app.</p>
+      </div></div></div>`;
     p.innerHTML=h; return;
+  }
+  if(!tieneReal){
+    h+=`<div style="background:rgba(255,200,0,.08);border:1px solid rgba(255,200,0,.3);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:var(--wn);">
+      ⏳ Ventas del ${pvr.fecha_plan||'–'} aún no disponibles. Ejecutar <b>CIERRE_DIA_ORBIT.bat</b> después de pegar el ventas.csv del día para ver el real.
+    </div>`;
   }
   h+=`<div class="card">
     <div class="card-hd"><span class="card-title">📊 Comparación por vendedor</span>
