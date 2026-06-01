@@ -2688,32 +2688,35 @@ def _infer_litros_por_nombre(nombre: str) -> float:
 def _cargar_maestro_04D():
     """
     Carga 04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx (header fila 3).
-    Devuelve tres dicts keyed por Código Art. (str, upper):
-      cod2cat  → Categoria
-      cod2seg  → Segmento  (distingue Nacional/Importados en spirits;
-                            Alto/Medio Alto/Superior/Medio en VDA)
-      cod2lxu  → litros por unidad (Lts x caja / UxC)
+    Devuelve cuatro dicts keyed por Código Art. (str, upper):
+      cod2cat   → Categoria
+      cod2seg   → Segmento  (Nacional/Importados en spirits; Alto/Medio Alto/Superior/Medio en VDA)
+      cod2lxu   → litros por unidad (Lts x caja / UxC)
+      cod2linea → Linea Comercial (col C del maestro — marca canónica del producto)
     """
     path = INPUTS / "04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx"
-    cod2cat, cod2seg, cod2lxu = {}, {}, {}
+    cod2cat, cod2seg, cod2lxu, cod2linea = {}, {}, {}, {}
     if not path.exists():
-        return cod2cat, cod2seg, cod2lxu
+        return cod2cat, cod2seg, cod2lxu, cod2linea
     try:
         df = pd.read_excel(path, header=3)
         df.columns = [c.strip() for c in df.columns]
         col_cod = next((c for c in df.columns if "dig" in c.lower() or ("c" in c.lower() and "art" in c.lower())), None)
         if not col_cod:
-            return cod2cat, cod2seg, cod2lxu
+            return cod2cat, cod2seg, cod2lxu, cod2linea
         df["_cod"] = df[col_cod].astype(str).str.strip().str.upper()
         df["_lxc"] = pd.to_numeric(df.get("Lts x caja", pd.Series(dtype=float)), errors="coerce").fillna(0)
         df["_uxc"] = pd.to_numeric(df.get("UxC", pd.Series(dtype=float)), errors="coerce").fillna(0)
         df["_lxu"] = (df["_lxc"] / df["_uxc"]).where(df["_uxc"] > 0, 0)
-        cod2cat = df.set_index("_cod")["Categoria"].to_dict()
-        cod2seg = df.set_index("_cod")["Segmento"].to_dict()
-        cod2lxu = df.set_index("_cod")["_lxu"].to_dict()
+        cod2cat   = df.set_index("_cod")["Categoria"].to_dict()
+        cod2seg   = df.set_index("_cod")["Segmento"].to_dict()
+        cod2lxu   = df.set_index("_cod")["_lxu"].to_dict()
+        col_linea = next((c for c in df.columns if "linea" in c.lower() and "comercial" in c.lower()), None)
+        if col_linea:
+            cod2linea = df.set_index("_cod")[col_linea].to_dict()
     except Exception:
         pass
-    return cod2cat, cod2seg, cod2lxu
+    return cod2cat, cod2seg, cod2lxu, cod2linea
 
 
 # Mapeo Categoria 04D → bucket sell out
@@ -2774,8 +2777,8 @@ def _sellout_desde_ventas(df_raw: pd.DataFrame) -> list:
     # ── Código artículo normalizado
     df["_cod"] = df["Codigo"].astype(str).str.strip().str.upper() if "Codigo" in df.columns else ""
 
-    # ── Cargar maestro 04D (categoría, segmento, litros/unidad)
-    cod2cat_04d, cod2seg_04d, cod2lxu_04d = _cargar_maestro_04D()
+    # ── Cargar maestro 04D (categoría, segmento, litros/unidad, linea comercial)
+    cod2cat_04d, cod2seg_04d, cod2lxu_04d, cod2linea_04d = _cargar_maestro_04D()
 
     # ── Litros: CantBase × lxu maestro 04D (fuente primaria)
     #           → PesoKg si sin maestro  → inferir del nombre
@@ -2797,6 +2800,13 @@ def _sellout_desde_ventas(df_raw: pd.DataFrame) -> list:
 
     # ── Segmento VDA: maestro 04D
     df["_seg"] = df["_cod"].map(cod2seg_04d).astype(str).str.strip()
+
+    # ── Linea Comercial (marca): col C del maestro 04D → fallback Marca de ventas.csv
+    df["_linea"] = df["_cod"].map(cod2linea_04d)
+    no_linea = df["_linea"].isna()
+    if no_linea.any() and "Marca" in df.columns:
+        df.loc[no_linea, "_linea"] = df.loc[no_linea, "Marca"]
+    df["_linea"] = df["_linea"].fillna("").astype(str).str.strip()
 
     resultado = []
     for cat, obj_info in OBJ.items():
@@ -2835,17 +2845,19 @@ def _sellout_desde_ventas(df_raw: pd.DataFrame) -> list:
         resultado.append({
             "categoria": cat, "litros": litros, "objetivo": obj_total,
             "alcance_pct": alcance, "clientes": clientes, "subcategorias": subs,
+            "marcas": _marcas_de_grupo(grp),
         })
     return resultado
 
 
 def _marcas_de_grupo(sg: pd.DataFrame) -> list:
-    """Devuelve lista [{marca, litros}] ordenada desc para un subgrupo."""
-    if "Marca" not in sg.columns:
+    """Devuelve lista [{marca, litros}] ordenada desc. Usa _linea (Linea Comercial del maestro 04D); fallback Marca."""
+    col = "_linea" if "_linea" in sg.columns else ("Marca" if "Marca" in sg.columns else None)
+    if col is None:
         return []
     return [{"marca": str(mk), "litros": round(float(mv), 1)}
-            for mk, mv in sg.groupby("Marca")["litros"].sum()
-            .sort_values(ascending=False).items() if mv > 0]
+            for mk, mv in sg.groupby(col)["litros"].sum()
+            .sort_values(ascending=False).items() if mv > 0 and str(mk).strip()]
 
 
 def _preparar_df_ventas(src_path) -> pd.DataFrame:
@@ -3373,14 +3385,17 @@ def gerencia_cierre_mes():
     except Exception:
         pass
 
-    # ── Sell Out: misma fuente y lógica que el dashboard (ventas.csv × maestro 04D) ──
+    # ── Sell Out cierre: ventas_mes.csv (congelado); fallback a ventas.csv si no existe ──
     sellout = {"categorias": []}
     try:
-        so_src = INPUTS / "ventas.csv"
+        so_src = INPUTS / "ventas_mes.csv"
+        if not so_src.exists():
+            so_src = INPUTS / "ventas.csv"
         if so_src.exists():
             so_df = _preparar_df_ventas(so_src)
             if not so_df.empty:
                 sellout["categorias"] = _sellout_desde_ventas(so_df)
+                sellout["fuente"] = so_src.name
     except Exception:
         pass
 

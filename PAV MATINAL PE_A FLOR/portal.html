@@ -1597,60 +1597,83 @@ function gDashboard(p){
     })();
   }
 
-  // — Sellout en litros por categoría con objetivos —
+  // — Sellout en litros por categoría — expandible por clic —
   const sellData=D.sellout_litros?.categorias||[];
   if(sellData.length){
     const fmtL=n=>Number(n||0).toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:0});
-    const alcColor=pct=> pct>=100?'ok': pct>=60?'wn':'bd';
-    let sH=`<div style="margin-top:16px;" class="card">
-      <div class="card-hd">
+    const alcColor=pct=>pct>=100?'ok':pct>=60?'wn':'bd';
+    const soExp=new Set();
+    const soCont=document.createElement('div');
+    soCont.style.marginTop='16px';
+    p.appendChild(soCont);
+    function _renderSoDash(){
+      let sH=`<div class="card"><div class="card-hd">
         <span class="card-title">🍷 Sellout acumulado en litros · por categoría</span>
         <span class="chip">${sellData.length} categorías</span>
-      </div>
-      <div class="card-body nop">
-        <table class="tbl">
-          <thead><tr>
-            <th>Categoría</th>
-            <th style="text-align:right">Real</th>
-            <th style="text-align:right">Objetivo</th>
-            <th style="text-align:right">Alcance</th>
-            <th style="text-align:right">Clientes</th>
-          </tr></thead>
-          <tbody>`;
-    sellData.forEach(c=>{
-      const cl=alcColor(c.alcance_pct);
-      const barW=Math.min(Math.round(c.alcance_pct),100);
-      sH+=`<tr>
-        <td><b>${c.categoria}</b></td>
-        <td style="text-align:right;font-variant-numeric:tabular-nums">${fmtL(c.litros)} L</td>
-        <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--text3)">${fmtL(c.objetivo)} L</td>
-        <td style="text-align:right">
-          <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;">
-            <div class="bar" style="height:4px;width:60px;"><div class="bar-f ${cl}" style="width:${barW}%"></div></div>
-            <span class="chip ${cl}" style="font-size:10px;padding:1px 5px;">${c.alcance_pct.toFixed(1)}%</span>
-          </div>
-        </td>
-        <td style="text-align:right">${c.clientes}</td>
-      </tr>`;
-      (c.subcategorias||[]).forEach(s=>{
-        const scl=alcColor(s.alcance_pct);
-        const sBarW=Math.min(Math.round(s.alcance_pct),100);
-        sH+=`<tr style="background:rgba(255,255,255,.02)">
-          <td style="padding-left:22px;color:var(--text3);font-size:11px;">↳ ${s.nombre}</td>
-          <td style="text-align:right;font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums">${fmtL(s.litros)} L</td>
-          <td style="text-align:right;font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums">${fmtL(s.objetivo)} L</td>
-          <td style="text-align:right;font-size:11px">
-            <div style="display:flex;align-items:center;gap:4px;justify-content:flex-end;">
-              <div class="bar" style="height:3px;width:40px;"><div class="bar-f ${scl}" style="width:${sBarW}%"></div></div>
-              <span class="chip ${scl}" style="font-size:9px;padding:1px 4px;">${s.alcance_pct.toFixed(1)}%</span>
+      </div><div class="card-body nop"><table class="tbl">
+        <thead><tr>
+          <th>Categoría</th>
+          <th style="text-align:right">Real (L)</th>
+          <th style="text-align:right">Objetivo</th>
+          <th style="text-align:right">Avance</th>
+          <th style="text-align:right">Clientes</th>
+        </tr></thead><tbody>`;
+      sellData.forEach((c,ci)=>{
+        const cl=alcColor(c.alcance_pct);
+        const barW=Math.min(Math.round(c.alcance_pct),100);
+        const exp=soExp.has(ci);
+        const hasSubs=(c.subcategorias||[]).length>0;
+        const hasMarcas=(c.marcas||[]).length>0;
+        const canExp=hasSubs||hasMarcas;
+        sH+=`<tr style="cursor:${canExp?'pointer':'default'}" onclick="window._soTogDash(${ci})">
+          <td><b>${canExp?`<span style="font-size:10px;opacity:.45;margin-right:4px">${exp?'▼':'▶'}</span>`:''}${c.categoria}</b></td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums">${fmtL(c.litros)} L</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--text3)">${fmtL(c.objetivo)} L</td>
+          <td style="text-align:right">
+            <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;">
+              <div class="bar" style="height:4px;width:60px;"><div class="bar-f ${cl}" style="width:${barW}%"></div></div>
+              <span class="chip ${cl}" style="font-size:10px;padding:1px 5px;">${c.alcance_pct.toFixed(1)}%</span>
             </div>
           </td>
-          <td style="text-align:right;font-size:11px;color:var(--text3)">${s.clientes}</td>
+          <td style="text-align:right">${c.clientes}</td>
         </tr>`;
+        if(exp){
+          if(hasSubs){
+            (c.subcategorias||[]).forEach(s=>{
+              const scl=alcColor(s.alcance_pct);
+              const sBarW=Math.min(Math.round(s.alcance_pct),100);
+              sH+=`<tr style="background:rgba(255,255,255,.02)">
+                <td style="padding-left:22px;color:var(--text3);font-size:11px;">↳ ${s.nombre}</td>
+                <td style="text-align:right;font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums">${fmtL(s.litros)} L</td>
+                <td style="text-align:right;font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums">${fmtL(s.objetivo)} L</td>
+                <td style="text-align:right;font-size:11px">
+                  <div style="display:flex;align-items:center;gap:4px;justify-content:flex-end;">
+                    <div class="bar" style="height:3px;width:40px;"><div class="bar-f ${scl}" style="width:${sBarW}%"></div></div>
+                    <span class="chip ${scl}" style="font-size:9px;padding:1px 4px;">${s.alcance_pct.toFixed(1)}%</span>
+                  </div>
+                </td>
+                <td style="text-align:right;font-size:11px;color:var(--text3)">${s.clientes}</td>
+              </tr>`;
+              if((s.marcas||[]).length){
+                sH+=`<tr><td colspan="5" style="padding:4px 14px 8px 36px;background:rgba(255,255,255,.01);">
+                  <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                    ${s.marcas.map(m=>`<span style="font-size:9px;background:var(--surf2);border-radius:4px;padding:2px 7px;color:var(--text2);">${m.marca} <b style="color:var(--text)">${fmtL(m.litros)}L</b></span>`).join('')}
+                  </div></td></tr>`;
+              }
+            });
+          } else if(hasMarcas){
+            sH+=`<tr><td colspan="5" style="padding:4px 14px 8px 22px;background:rgba(255,255,255,.01);">
+              <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                ${c.marcas.map(m=>`<span style="font-size:9px;background:var(--surf2);border-radius:4px;padding:2px 7px;color:var(--text2);">${m.marca} <b style="color:var(--text)">${fmtL(m.litros)}L</b></span>`).join('')}
+              </div></td></tr>`;
+          }
+        }
       });
-    });
-    sH+=`</tbody></table></div></div>`;
-    p.insertAdjacentHTML('beforeend', sH);
+      sH+=`</tbody></table></div></div>`;
+      soCont.innerHTML=sH;
+    }
+    window._soTogDash=function(ci){soExp.has(ci)?soExp.delete(ci):soExp.add(ci);_renderSoDash();};
+    _renderSoDash();
   }
 }
 
@@ -3109,39 +3132,7 @@ function gCierreMes(p){
         const so=d.sellout||{};
         const soC=so.categorias||[];
         if(soC.length){
-          html+=`<div class="card" style="margin-top:14px;">
-            <div class="card-hd"><span class="card-title">📦 Sell Out · Litros vs Objetivo</span></div>
-            <div class="card-body nop">
-              <table class="tbl" style="font-size:11px;">
-                <thead><tr><th>Categoría</th><th style="text-align:right">Litros</th><th style="text-align:right">Objetivo</th><th style="min-width:70px"></th><th style="text-align:right">Alcance</th><th style="text-align:right">Clientes</th></tr></thead>
-                <tbody>${soC.map(c=>{
-                  const alc=c.alcance_pct,cl=alc!=null?(alc>=100?'ok':alc>=75?'wn':'bd'):'info';
-                  const barW=alc!=null?Math.min(alc,100):0;
-                  return `<tr>
-                    <td style="font-weight:600">${c.categoria}</td>
-                    <td style="text-align:right">${Number(c.litros).toLocaleString('es-AR',{maximumFractionDigits:0})} L</td>
-                    <td style="text-align:right;color:var(--text3)">${c.objetivo?Number(c.objetivo).toLocaleString('es-AR',{maximumFractionDigits:0})+' L':'–'}</td>
-                    <td><div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${barW}%"></div></div></td>
-                    <td style="text-align:right">${alc!=null?`<span class="chip ${cl}" style="font-size:9px;">${alc}%</span>`:'<span style="color:var(--text3);font-size:10px;">–</span>'}</td>
-                    <td style="text-align:right;color:var(--text3)">${c.clientes}</td>
-                  </tr>
-                  ${(c.subcategorias||[]).map(s=>{const sa=s.alcance_pct,scl=sa!=null?(sa>=100?'ok':sa>=75?'wn':'bd'):'info';
-                    const marcasHtml=(s.marcas||[]).length?`<tr style="background:var(--bg)"><td colspan="6" style="padding:4px 14px 8px 32px;">
-                      <div style="display:flex;flex-wrap:wrap;gap:4px;">
-                        ${(s.marcas||[]).map(m=>`<span style="font-size:9px;background:var(--surf2);border-radius:4px;padding:2px 7px;color:var(--text2);">${m.marca} <b style="color:var(--text)">${Number(m.litros).toLocaleString('es-AR',{maximumFractionDigits:0})}L</b></span>`).join('')}
-                      </div></td></tr>`:'';
-                    return `<tr style="background:var(--surf2)">
-                      <td style="padding-left:22px;font-size:10px;color:var(--text2);">↳ ${s.nombre}</td>
-                      <td style="text-align:right;font-size:10px">${Number(s.litros).toLocaleString('es-AR',{maximumFractionDigits:0})} L</td>
-                      <td style="text-align:right;font-size:10px;color:var(--text3)">${s.objetivo?Number(s.objetivo).toLocaleString('es-AR',{maximumFractionDigits:0})+' L':'–'}</td>
-                      <td><div class="bar" style="height:3px;"><div class="bar-f ${scl}" style="width:${Math.min(sa||0,100)}%"></div></div></td>
-                      <td style="text-align:right">${sa!=null?`<span class="chip ${scl}" style="font-size:9px;">${sa}%</span>`:''}</td>
-                      <td style="text-align:right;font-size:10px;color:var(--text3)">${s.clientes}</td>
-                    </tr>${marcasHtml}`;}).join('')}`;}).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>`;
+          html+=`<div id="so-cierre-cont" style="margin-top:14px;"></div>`;
         }
 
         // ── Planes AS ──
@@ -3201,6 +3192,71 @@ function gCierreMes(p){
         </div>`;
 
         bodyEl.innerHTML=html;
+
+        // ── Sell Out cierre — expandible por clic ──
+        const soCierreCont=bodyEl.querySelector('#so-cierre-cont');
+        if(soCierreCont&&soC.length){
+          const fmtLC=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
+          const alcC=pct=>pct!=null?(pct>=100?'ok':pct>=75?'wn':'bd'):'info';
+          const soExpC=new Set();
+          function _renderSoCierre(){
+            let sH=`<div class="card"><div class="card-hd">
+              <span class="card-title">📦 Sell Out cierre · Litros vs Objetivo</span>
+              <span class="chip">${soC.length} categorías</span>
+            </div><div class="card-body nop"><table class="tbl" style="font-size:11px;">
+              <thead><tr>
+                <th>Categoría</th><th style="text-align:right">Litros</th>
+                <th style="text-align:right">Objetivo</th><th style="min-width:60px"></th>
+                <th style="text-align:right">Cierre</th><th style="text-align:right">Clientes</th>
+              </tr></thead><tbody>`;
+            soC.forEach((c,ci)=>{
+              const alc=c.alcance_pct,cl=alcC(alc);
+              const barW=alc!=null?Math.min(alc,100):0;
+              const exp=soExpC.has(ci);
+              const hasSubs=(c.subcategorias||[]).length>0;
+              const hasMarcas=(c.marcas||[]).length>0;
+              const canExp=hasSubs||hasMarcas;
+              sH+=`<tr style="cursor:${canExp?'pointer':'default'}" onclick="window._soTogCierre(${ci})">
+                <td style="font-weight:600">${canExp?`<span style="font-size:9px;opacity:.45;margin-right:4px">${exp?'▼':'▶'}</span>`:''}${c.categoria}</td>
+                <td style="text-align:right">${fmtLC(c.litros)} L</td>
+                <td style="text-align:right;color:var(--text3)">${c.objetivo?fmtLC(c.objetivo)+' L':'–'}</td>
+                <td><div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${barW}%"></div></div></td>
+                <td style="text-align:right">${alc!=null?`<span class="chip ${cl}" style="font-size:9px;">${alc}%</span>`:'<span style="color:var(--text3);font-size:10px;">–</span>'}</td>
+                <td style="text-align:right;color:var(--text3)">${c.clientes}</td>
+              </tr>`;
+              if(exp){
+                if(hasSubs){
+                  (c.subcategorias||[]).forEach(s=>{
+                    const sa=s.alcance_pct,scl=alcC(sa);
+                    sH+=`<tr style="background:var(--surf2)">
+                      <td style="padding-left:22px;font-size:10px;color:var(--text2);">↳ ${s.nombre}</td>
+                      <td style="text-align:right;font-size:10px">${fmtLC(s.litros)} L</td>
+                      <td style="text-align:right;font-size:10px;color:var(--text3)">${s.objetivo?fmtLC(s.objetivo)+' L':'–'}</td>
+                      <td><div class="bar" style="height:3px;"><div class="bar-f ${scl}" style="width:${Math.min(sa||0,100)}%"></div></div></td>
+                      <td style="text-align:right">${sa!=null?`<span class="chip ${scl}" style="font-size:9px;">${sa}%</span>`:''}</td>
+                      <td style="text-align:right;font-size:10px;color:var(--text3)">${s.clientes}</td>
+                    </tr>`;
+                    if((s.marcas||[]).length){
+                      sH+=`<tr style="background:var(--bg)"><td colspan="6" style="padding:4px 14px 8px 32px;">
+                        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                          ${s.marcas.map(m=>`<span style="font-size:9px;background:var(--surf2);border-radius:4px;padding:2px 7px;color:var(--text2);">${m.marca} <b style="color:var(--text)">${fmtLC(m.litros)}L</b></span>`).join('')}
+                        </div></td></tr>`;
+                    }
+                  });
+                } else if(hasMarcas){
+                  sH+=`<tr style="background:var(--bg)"><td colspan="6" style="padding:4px 14px 8px 22px;">
+                    <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                      ${c.marcas.map(m=>`<span style="font-size:9px;background:var(--surf2);border-radius:4px;padding:2px 7px;color:var(--text2);">${m.marca} <b style="color:var(--text)">${fmtLC(m.litros)}L</b></span>`).join('')}
+                    </div></td></tr>`;
+                }
+              }
+            });
+            sH+=`</tbody></table></div></div>`;
+            soCierreCont.innerHTML=sH;
+          }
+          window._soTogCierre=function(ci){soExpC.has(ci)?soExpC.delete(ci):soExpC.add(ci);_renderSoCierre();};
+          _renderSoCierre();
+        }
       }catch(e){
         bodyEl.innerHTML=`<div class="card"><div class="card-body"><p style="color:var(--bd);padding:16px">Error: ${e.message}</p></div></div>`;
       }
