@@ -2803,10 +2803,12 @@ def _sellout_desde_ventas(df_raw: pd.DataFrame) -> list:
     df["_seg"] = df["_cod"].map(cod2seg_04d).astype(str).str.strip()
 
     # ── Linea Comercial (marca): col C del maestro 04D → fallback Marca de ventas.csv
-    df["_linea"] = df["_cod"].map(cod2linea_04d)
-    no_linea = df["_linea"].isna()
-    if no_linea.any() and "Marca" in df.columns:
-        df.loc[no_linea, "_linea"] = df.loc[no_linea, "Marca"]
+    # Usar where() para evitar asignación parcial sobre columna float64 (pandas 3.x)
+    linea_maestro = df["_cod"].map(cod2linea_04d)
+    if "Marca" in df.columns:
+        df["_linea"] = linea_maestro.where(linea_maestro.notna(), df["Marca"].astype(str))
+    else:
+        df["_linea"] = linea_maestro
     df["_linea"] = df["_linea"].fillna("").astype(str).str.strip()
 
     resultado = []
@@ -2887,22 +2889,18 @@ def _preparar_df_ventas(src_path) -> pd.DataFrame:
 @app.route("/api/gerencia/sellout_litros")
 def gerencia_sellout_litros():
     """Sellout en litros vs objetivos. Fuente: ventas.csv × 04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx."""
-    import traceback
-    try:
-        src = INPUTS / "ventas.csv"
-        if not src.exists():
-            return jsonify({"error": "ventas.csv no encontrado en 01_INPUTS"}), 404
-        df = _preparar_df_ventas(src)
-        if df.empty:
-            return jsonify({"error": "No se pudo leer ventas.csv"}), 500
-        resultado = _sellout_desde_ventas(df)
-        return jsonify({
-            "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "fuente":      "ventas.csv + 04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx",
-            "categorias":  resultado,
-        })
-    except Exception as e:
-        return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
+    src = INPUTS / "ventas.csv"
+    if not src.exists():
+        return jsonify({"error": "ventas.csv no encontrado en 01_INPUTS"}), 404
+    df = _preparar_df_ventas(src)
+    if df.empty:
+        return jsonify({"error": "No se pudo leer ventas.csv"}), 500
+    resultado = _sellout_desde_ventas(df)
+    return jsonify({
+        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "fuente":      "ventas.csv + 04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx",
+        "categorias":  resultado,
+    })
 
 
 # ====== ACCIONES COMERCIALES RANKING ======
