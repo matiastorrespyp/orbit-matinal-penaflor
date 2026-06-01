@@ -2679,15 +2679,24 @@ _SO_SEG_VDA = {"Alto": "Alto", "Medio Alto": "Medio Alto", "Superior": "Superior
 _SO_SEG_SPIRITS = {"Nacional": "Nacionales", "Importados": "Importados"}
 
 
-@app.route("/api/gerencia/sellout_litros")
-def gerencia_sellout_litros():
+def _sellout_desde_ventas(df_raw: pd.DataFrame) -> list:
     """
-    Sellout en litros vs objetivos por categoría.
-    Fuente ventas : ventas.csv (período comercial vigente). Excluye V2/V5/V20.
-    Categoría/Segmento: 04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx (fuente única de verdad).
-    Litros: PesoKg si > 0; fallback CantBase × lxu del maestro; fallback inferencia del nombre.
+    Calcula sell out en litros por categoría desde un DataFrame de ventas ya filtrado
+    (excl V2/V5/V20, importe > 0). Fuente de clasificación: 04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx.
+
+    Litros por línea = CantBase × (Lts x caja / UxC) del maestro 04D.
+    Fallback si sin match en maestro: PesoKg (ya en litros en el ERP).
+    Fallback final: inferir ml del nombre del artículo.
+
+    Spirits NO están en maestro 04D (son Diageo/P&P) → clasificar por keyword en Artículo:
+      Nacional  = SMIRNOFF, GORDON, WHITE HORSE, J&B
+      Importados = resto de spirits
+
+    Devuelve lista de dicts con estructura:
+      [{categoria, litros, objetivo, alcance_pct, clientes,
+        subcategorias: [{nombre, litros, objetivo, alcance_pct, clientes,
+                         marcas: [{marca, litros}]}]}]
     """
-    _EXCL = {2, 5, 20}
     OBJ = {
         "VINOS DEL AÑO":    {"total": 19015, "sub": {"Alto": 11792, "Medio Alto": 4651, "Superior": 2171, "Medio": 401}},
         "VINOS DE GUARDA":  {"total": 678,   "sub": {}},
@@ -2696,21 +2705,98 @@ def gerencia_sellout_litros():
         "CHAMPAÑA":         {"total": 686,    "sub": {}},
         "CERVEZA ARTESANAL":{"total": 405,    "sub": {}},
     }
+    _NAC_KW = ("SMIRNOFF", "GORDON", "WHITE HORSE", "J&B", "JYB")
 
-    src = INPUTS / "ventas.csv"
-    if not src.exists():
-        return jsonify({"error": "ventas.csv no encontrado en 01_INPUTS"}), 404
+    df = df_raw.copy()
 
+    # ── Código artículo normalizado
+    df["_cod"] = df["Codigo"].astype(str).str.strip().str.upper() if "Codigo" in df.columns else ""
+
+    # ── Cargar maestro 04D (categoría, segmento, litros/unidad)
+    cod2cat_04d, cod2seg_04d, cod2lxu_04d = _cargar_maestro_04D()
+
+    # ── Litros: CantBase × lxu maestro 04D (fuente primaria)
+    #           → PesoKg si sin maestro  → inferir del nombre
+    df["_lxu"] = df["_cod"].map(cod2lxu_04d).fillna(0)
+    df["litros"] = df["CantBase"] * df["_lxu"]
+    # Para productos sin lxu en maestro: usar PesoKg
+    no_lxu = df["litros"] == 0
+    if no_lxu.any():
+        df.loc[no_lxu, "litros"] = df.loc[no_lxu, "PesoKg"]
+    # Para productos con PesoKg=0 también: inferir del nombre
+    still_zero = df["litros"] == 0
+    if still_zero.any() and "Articulo" in df.columns:
+        df.loc[still_zero, "litros"] = df.loc[still_zero, "Articulo"].apply(_infer_litros_por_nombre) * df.loc[still_zero, "CantBase"]
+
+    # ── Categoría: maestro 04D → fallback Rubro
+    df["_cat"] = df["_cod"].map(cod2cat_04d).astype(str).str.strip().str.lower().map(_SO_CAT_MAP)
+    no_cat = df["_cat"].isna()
+    df.loc[no_cat, "_cat"] = df.loc[no_cat, "Rubro"].astype(str).str.strip().str.lower().map(_SO_CAT_MAP)
+
+    # ── Segmento VDA: maestro 04D
+    df["_seg"] = df["_cod"].map(cod2seg_04d).astype(str).str.strip()
+
+    resultado = []
+    for cat, obj_info in OBJ.items():
+        grp = df[df["_cat"] == cat]
+        litros   = round(float(grp["litros"].sum()), 1)
+        clientes = int(grp["Cliente"].nunique()) if "Cliente" in grp.columns else 0
+        obj_total = obj_info["total"]
+        alcance   = round(litros / obj_total * 100, 1) if obj_total else 0.0
+        subs = []
+
+        if cat == "VINOS DEL AÑO":
+            for sn, so_v in obj_info["sub"].items():
+                # Segmento del maestro 04D: Alto / Medio Alto / Superior / Medio
+                sg = grp[grp["_seg"].map(_SO_SEG_VDA) == sn]
+                sl = round(float(sg["litros"].sum()), 1)
+                sc = int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0
+                marcas = _marcas_de_grupo(sg)
+                subs.append({"nombre": sn, "litros": sl, "objetivo": so_v,
+                             "alcance_pct": round(sl/so_v*100,1) if so_v else 0.0,
+                             "clientes": sc, "marcas": marcas})
+
+        elif cat == "SPIRITS":
+            # Spirits NO están en maestro 04D → keyword por nombre de artículo
+            _art = grp["Articulo"].astype(str).str.upper() if "Articulo" in grp.columns else pd.Series("", index=grp.index)
+            mask_nac = _art.str.contains("|".join(_NAC_KW), na=False)
+            for sn, mask_s, so_v in [("Nacionales", mask_nac, obj_info["sub"]["Nacionales"]),
+                                      ("Importados", ~mask_nac, obj_info["sub"]["Importados"])]:
+                sg = grp[mask_s]
+                sl = round(float(sg["litros"].sum()), 1)
+                sc = int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0
+                marcas = _marcas_de_grupo(sg)
+                subs.append({"nombre": sn, "litros": sl, "objetivo": so_v,
+                             "alcance_pct": round(sl/so_v*100,1) if so_v else 0.0,
+                             "clientes": sc, "marcas": marcas})
+
+        resultado.append({
+            "categoria": cat, "litros": litros, "objetivo": obj_total,
+            "alcance_pct": alcance, "clientes": clientes, "subcategorias": subs,
+        })
+    return resultado
+
+
+def _marcas_de_grupo(sg: pd.DataFrame) -> list:
+    """Devuelve lista [{marca, litros}] ordenada desc para un subgrupo."""
+    if "Marca" not in sg.columns:
+        return []
+    return [{"marca": str(mk), "litros": round(float(mv), 1)}
+            for mk, mv in sg.groupby("Marca")["litros"].sum()
+            .sort_values(ascending=False).items() if mv > 0]
+
+
+def _preparar_df_ventas(src_path) -> pd.DataFrame:
+    """Lee ventas.csv, parsea columnas numéricas, excluye V2/V5/V20, filtra importe > 0."""
     df = None
     for enc in ("utf-8-sig", "latin-1", "windows-1252"):
         try:
-            df = pd.read_csv(src, sep=None, engine="python", encoding=enc)
+            df = pd.read_csv(src_path, sep=None, engine="python", encoding=enc)
             break
         except UnicodeDecodeError:
             continue
     if df is None:
-        return jsonify({"error": "No se pudo leer ventas.csv"}), 500
-
+        return pd.DataFrame()
     df.columns = [c.strip() for c in df.columns]
     for col in ("PesoKg", "CantBase", "ImporteNetoItem", "CodVendedor"):
         if col not in df.columns:
@@ -2719,72 +2805,20 @@ def gerencia_sellout_litros():
             df[col] = df[col].astype(str).str.replace(",", ".", regex=False).pipe(pd.to_numeric, errors="coerce").fillna(0)
         else:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+    df = df[~df["CodVendedor"].isin({2, 5, 20}) & (df["ImporteNetoItem"] > 0)].copy()
+    return df
 
-    df = df[~df["CodVendedor"].isin(_EXCL) & (df["ImporteNetoItem"] > 0)].copy()
-    df["_cod"] = df["Codigo"].astype(str).str.strip().str.upper() if "Codigo" in df.columns else ""
 
-    # Cargar maestro 04D — fuente única de categoría, segmento y litros/unidad
-    cod2cat_04d, cod2seg_04d, cod2lxu_04d = _cargar_maestro_04D()
-
-    # Litros: PesoKg → maestro 04D lxu → inferir del nombre
-    mask0 = df["PesoKg"] == 0
-    if mask0.any():
-        df["_lxu_fb"] = df["_cod"].map(cod2lxu_04d).fillna(0)
-        still = mask0 & (df["_lxu_fb"] == 0)
-        if still.any() and "Articulo" in df.columns:
-            df.loc[still, "_lxu_fb"] = df.loc[still, "Articulo"].apply(_infer_litros_por_nombre)
-        df.loc[mask0, "PesoKg"] = df.loc[mask0, "CantBase"] * df.loc[mask0, "_lxu_fb"]
-
-    # Categoría: maestro 04D → fallback Rubro (case-insensitive)
-    df["_cat"] = df["_cod"].map(cod2cat_04d).astype(str).str.strip().str.lower().map(_SO_CAT_MAP)
-    no_cat = df["_cat"].isna()
-    df.loc[no_cat, "_cat"] = df.loc[no_cat, "Rubro"].astype(str).str.strip().str.lower().map(_SO_CAT_MAP)
-
-    # Segmento: maestro 04D (usado para sub-buckets VDA y Spirits)
-    df["_seg"] = df["_cod"].map(cod2seg_04d).astype(str).str.strip()
-
-    resultado = []
-    for cat, obj_info in OBJ.items():
-        grp = df[df["_cat"] == cat]
-        litros   = round(float(grp["PesoKg"].sum()), 1)
-        clientes = int(grp["Cliente"].nunique()) if "Cliente" in grp.columns else 0
-        objetivo = obj_info["total"]
-        alcance  = round(litros / objetivo * 100, 1) if objetivo else 0.0
-
-        subs = []
-        if cat == "VINOS DEL AÑO":
-            for sn, so in obj_info["sub"].items():
-                sg = grp[grp["_seg"].map(_SO_SEG_VDA) == sn]
-                sl = round(float(sg["PesoKg"].sum()), 1)
-                sc = int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0
-                marcas = []
-                if "Marca" in sg.columns:
-                    marcas = [{"marca": str(mk), "litros": round(float(mv), 1)}
-                               for mk, mv in sg.groupby("Marca")["PesoKg"].sum()
-                               .sort_values(ascending=False).items() if mv > 0]
-                subs.append({"nombre": sn, "litros": sl, "objetivo": so,
-                             "alcance_pct": round(sl/so*100,1) if so else 0.0,
-                             "clientes": sc, "marcas": marcas})
-        elif cat == "SPIRITS":
-            for sn, so in obj_info["sub"].items():
-                # Mapeo: maestro Segmento "Nacional"→"Nacionales", "Importados"→"Importados"
-                sg = grp[grp["_seg"].map(_SO_SEG_SPIRITS) == sn]
-                sl = round(float(sg["PesoKg"].sum()), 1)
-                sc = int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0
-                marcas = []
-                if "Marca" in sg.columns:
-                    marcas = [{"marca": str(mk), "litros": round(float(mv), 1)}
-                               for mk, mv in sg.groupby("Marca")["PesoKg"].sum()
-                               .sort_values(ascending=False).items() if mv > 0]
-                subs.append({"nombre": sn, "litros": sl, "objetivo": so,
-                             "alcance_pct": round(sl/so*100,1) if so else 0.0,
-                             "clientes": sc, "marcas": marcas})
-
-        resultado.append({
-            "categoria": cat, "litros": litros, "objetivo": objetivo,
-            "alcance_pct": alcance, "clientes": clientes, "subcategorias": subs,
-        })
-
+@app.route("/api/gerencia/sellout_litros")
+def gerencia_sellout_litros():
+    """Sellout en litros vs objetivos. Fuente: ventas.csv × 04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx."""
+    src = INPUTS / "ventas.csv"
+    if not src.exists():
+        return jsonify({"error": "ventas.csv no encontrado en 01_INPUTS"}), 404
+    df = _preparar_df_ventas(src)
+    if df.empty:
+        return jsonify({"error": "No se pudo leer ventas.csv"}), 500
+    resultado = _sellout_desde_ventas(df)
     return jsonify({
         "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "fuente":      "ventas.csv + 04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx",
@@ -3277,121 +3311,14 @@ def gerencia_cierre_mes():
     except Exception:
         pass
 
-    # ── Sell Out (ventas_acumulada sin filtro empresa — incluye P&P que vende Peñaflor) ──
+    # ── Sell Out: misma fuente y lógica que el dashboard (ventas.csv × maestro 04D) ──
     sellout = {"categorias": []}
-    _SO_OBJ = {
-        "VINOS DEL AÑO":     {"total": 19015, "sub": {"Alto": 11792, "Medio": 401, "Medio Alto": 4651, "Superior": 2171}},
-        "VINOS DE GUARDA":   {"total": 678,   "sub": {}},
-        "SPIRITS":           {"total": 17752,  "sub": {"Nacionales": 17045, "Importados": 707}},
-        "RTD":               {"total": 9999,   "sub": {}},
-        "CHAMPAÑA":          {"total": 686,    "sub": {}},
-        "CERVEZA ARTESANAL": {"total": 405,    "sub": {}},
-    }
-    # Mapeo case-insensitive: clave en minúsculas, aplicar .str.lower() al rubro
-    _SO_RUBRO_CAT_LOWER = {
-        "vinos del año": "VINOS DEL AÑO",
-        "vinos del a\xf1o": "VINOS DEL AÑO",   # latin1 ñ
-        "vinos de mesa": "VINOS DEL AÑO",
-        "vino de guarda": "VINOS DE GUARDA",
-        "vinos de guarda": "VINOS DE GUARDA",
-        "espumantes": "CHAMPAÑA",
-        "sidra": "CHAMPAÑA",
-        "cerveza artesanal": "CERVEZA ARTESANAL",
-        "rtd (s)": "RTD",
-        "rtd": "RTD",
-        "whisky": "SPIRITS",
-        "gin": "SPIRITS",
-        "ron": "SPIRITS",
-        "whisky (maltas)": "SPIRITS",
-        "vodka": "SPIRITS",
-        "licores": "SPIRITS",
-    }
-    _SO_NAC_KW = ("SMIRNOFF", "GORDON", "WHITE HORSE", "J&B", "JYB")
-    # Mapeo Segmento del maestro → tier VDA
-    _SEG_TO_TIER = {
-        "Alto": "Alto", "Medio Alto": "Medio Alto",
-        "Superior": "Superior", "Medio": "Medio",
-        "Vinos de Mesa": "Medio",
-    }
     try:
-        so_src = INPUTS / "ventas_acumulada.csv"
+        so_src = INPUTS / "ventas.csv"
         if so_src.exists():
-            so = pd.read_csv(so_src, sep=";", encoding="latin1")
-            so["fecha"]   = pd.to_datetime(so["FechaComprobante"], dayfirst=True, errors="coerce")
-            so["importe"] = so["ImporteNetoItem"].apply(_parse_num_ar)
-            so["vend_c"]  = pd.to_numeric(so["CodVendedor"], errors="coerce")
-            so["cant"]    = so["CantBase"].apply(_parse_num_ar)
-            so["peso"]    = so["PesoKg"].apply(_parse_num_ar) if "PesoKg" in so.columns else 0.0
-            # Sin filtro empresa — incluye P&P que distribuye productos Peñaflor
-            so = so[
-                (so["fecha"] >= datetime(año, mes, 1)) & (so["fecha"] <= fecha_cierre) &
-                (so["importe"] > 0) & (~so["vend_c"].isin(_VENDEDORES_EXCLUIDOS))
-            ].copy()
-            # Litros: PesoKg → maestro 04D lxu → inferir del nombre
-            cod2cat_04d, cod2seg_04d, cod2lxu_04d = _cargar_maestro_04D()
-            if "Codigo" in so.columns:
-                so["_cod"] = so["Codigo"].astype(str).str.strip().str.upper()
-            else:
-                so["_cod"] = ""
-            mask0 = so["peso"] == 0
-            if mask0.any():
-                so["_lxu_fb"] = so["_cod"].map(cod2lxu_04d).fillna(0)
-                still = mask0 & (so["_lxu_fb"] == 0)
-                if still.any() and "Articulo" in so.columns:
-                    so.loc[still, "_lxu_fb"] = so.loc[still, "Articulo"].apply(_infer_litros_por_nombre)
-                so.loc[mask0, "peso"] = so.loc[mask0, "cant"] * so.loc[mask0, "_lxu_fb"]
-
-            # Categoria: maestro 04D → fallback Rubro
-            so["_cat"] = so["_cod"].map(cod2cat_04d).astype(str).str.strip().str.lower().map(_SO_CAT_MAP)
-            no_cat = so["_cat"].isna()
-            so.loc[no_cat, "_cat"] = so.loc[no_cat, "Rubro"].astype(str).str.strip().str.lower().map(_SO_CAT_MAP)
-            so["_seg"] = so["_cod"].map(cod2seg_04d).astype(str).str.strip()
-            so = so[so["_cat"].notna()].copy()
-
-            cats = []
-            for cat, obj_info in _SO_OBJ.items():
-                grp_c = so[so["_cat"] == cat]
-                litros    = round(float(grp_c["peso"].sum()), 1)
-                clientes  = int(grp_c["Cliente"].nunique()) if "Cliente" in grp_c.columns else 0
-                obj_total = obj_info["total"]
-                alcance   = round(litros / obj_total * 100, 1) if obj_total else None
-                subs = []
-
-                if cat == "VINOS DEL AÑO":
-                    for sn, so_v in obj_info["sub"].items():
-                        sg = grp_c[grp_c["_seg"].map(_SO_SEG_VDA) == sn]
-                        sl = round(float(sg["peso"].sum()), 1)
-                        marcas_tier = []
-                        if "Marca" in sg.columns:
-                            marcas_tier = [{"marca": str(mk), "litros": round(float(mv), 1)}
-                                           for mk, mv in sg.groupby("Marca")["peso"].sum()
-                                           .sort_values(ascending=False).items() if mv > 0]
-                        subs.append({
-                            "nombre": sn, "litros": sl, "objetivo": so_v,
-                            "alcance_pct": round(sl/so_v*100,1) if so_v else None,
-                            "clientes": int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0,
-                            "marcas": marcas_tier,
-                        })
-
-                elif cat == "SPIRITS":
-                    for sn, so_v in obj_info["sub"].items():
-                        sg = grp_c[grp_c["_seg"].map(_SO_SEG_SPIRITS) == sn]
-                        sl = round(float(sg["peso"].sum()), 1)
-                        marcas_sp = []
-                        if "Marca" in sg.columns:
-                            marcas_sp = [{"marca": str(mk), "litros": round(float(mv), 1)}
-                                         for mk, mv in sg.groupby("Marca")["peso"].sum()
-                                         .sort_values(ascending=False).items() if mv > 0]
-                        subs.append({"nombre": sn, "litros": sl, "objetivo": so_v,
-                                     "alcance_pct": round(sl/so_v*100,1) if so_v else None,
-                                     "clientes": int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0,
-                                     "marcas": marcas_sp})
-
-                cats.append({
-                    "categoria": cat, "litros": litros, "objetivo": obj_total,
-                    "alcance_pct": alcance, "clientes": clientes, "subcategorias": subs,
-                })
-            sellout["categorias"] = cats
+            so_df = _preparar_df_ventas(so_src)
+            if not so_df.empty:
+                sellout["categorias"] = _sellout_desde_ventas(so_df)
     except Exception:
         pass
 
