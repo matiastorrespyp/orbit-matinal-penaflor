@@ -3201,7 +3201,8 @@ def gerencia_cierre_mes():
         except Exception:
             pass
 
-        # CCC por marca desde ventas_acumulada filtrado al mes cerrado
+        # CCC por marca desde ventas_acumulada COMPLETO (sin filtro de fecha)
+        # — mismo criterio que el dashboard /api/gerencia/once_titulares
         ccc_map_11t = {}
         vac_path_11t = INPUTS / "ventas_acumulada.csv"
         if vac_path_11t.exists():
@@ -3209,9 +3210,7 @@ def gerencia_cierre_mes():
                 vac11 = pd.read_csv(vac_path_11t, sep=";", encoding="latin1", low_memory=False)
                 vac11["importe"] = pd.to_numeric(
                     vac11["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
-                vac11["fecha"] = pd.to_datetime(vac11["FechaComprobante"], dayfirst=True, errors="coerce")
                 vac11 = vac11[
-                    (vac11["fecha"] >= datetime(año, mes, 1)) & (vac11["fecha"] <= fecha_cierre) &
                     (~vac11["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS)) &
                     (vac11["importe"] > 0)
                 ]
