@@ -3143,8 +3143,8 @@ def gerencia_cierre_mes():
         empresa["acumulado"] / empresa["objetivo"] * 100, 2
     ) if empresa["objetivo"] else 0
 
-    # ── 11 Titulares ──
-    once_titulares = {"empresa": {}, "por_vendedor": [], "por_marca": []}
+    # ── 11 Titulares (totales empresa, sin apertura por vendedor) ──
+    once_titulares = {"empresa": {}, "por_marca": []}
     try:
         t11 = read_csv(DATASETS / "mod_11t_acum.csv")
         if not t11.empty:
@@ -3155,12 +3155,6 @@ def gerencia_cierre_mes():
                 "cumplidos": cumpl,
                 "pct": round(cumpl / total_comb * 100, 1) if total_comb else 0,
             }
-            pv = (t11.groupby(["vendedor_codigo", "vendedor_nombre"])
-                  .agg(total=("tiene_flag", "count"), cumplidos=("tiene_flag", "sum"))
-                  .reset_index())
-            pv["pct"] = (pv["cumplidos"] / pv["total"] * 100).round(1)
-            once_titulares["por_vendedor"] = pv.sort_values("pct", ascending=False).to_dict("records")
-
             pm = (t11.groupby("marca_objetivo")
                   .agg(total=("tiene_flag", "count"), cumplidos=("tiene_flag", "sum"))
                   .reset_index())
@@ -3169,29 +3163,50 @@ def gerencia_cierre_mes():
     except Exception:
         pass
 
-    # ── Innovaciones ──
+    # ── Innovaciones (denominador = CCC Mes: clientes con compra en el mes) ──
     innovaciones = {"resumen": {}, "por_producto": []}
     try:
         innov = read_csv(DATASETS / "mod_innovaciones_segmento.csv")
         if not innov.empty:
+            # CCC Mes: clientes únicos con compra en el mes cerrado (fuente ventas_acumulada sin filtro empresa)
+            ccc_mes_total = 0
+            vac_path2 = INPUTS / "ventas_acumulada.csv"
+            if vac_path2.exists():
+                try:
+                    _v2 = pd.read_csv(vac_path2, sep=";", encoding="latin1",
+                                      usecols=["FechaComprobante", "ImporteNetoItem", "CodVendedor", "Cliente"])
+                    _v2["fecha"]   = pd.to_datetime(_v2["FechaComprobante"], dayfirst=True, errors="coerce")
+                    _v2["importe"] = _v2["ImporteNetoItem"].apply(_parse_num_ar)
+                    _v2["vend_c"]  = pd.to_numeric(_v2["CodVendedor"], errors="coerce")
+                    _v2 = _v2[
+                        (_v2["fecha"] >= datetime(año, mes, 1)) & (_v2["fecha"] <= fecha_cierre) &
+                        (_v2["importe"] > 0) & (~_v2["vend_c"].isin(_VENDEDORES_EXCLUIDOS))
+                    ]
+                    ccc_mes_total = int(_v2["Cliente"].nunique())
+                except Exception:
+                    pass
+
+            denom = ccc_mes_total if ccc_mes_total > 0 else None
             pp = (innov.groupby(["producto_codigo", "producto_nombre"])
-                  .agg(compraron=("clientes_compraron", "sum"), cartera=("clientes_cartera", "max"))
+                  .agg(compraron=("clientes_compraron", "sum"))
                   .reset_index())
-            pp["pct"] = (pp["compraron"] / pp["cartera"] * 100).round(1)
+            if denom:
+                pp["pct"] = (pp["compraron"] / denom * 100).round(1)
+            else:
+                pp["pct"] = 0.0
             innovaciones["resumen"] = {
                 "productos": int(pp["producto_codigo"].nunique()),
                 "compraron_total": int(pp["compraron"].sum()),
-                "pct_promedio": round(pp["pct"].mean(), 1),
+                "ccc_mes": ccc_mes_total,
+                "pct_promedio": round(pp["pct"].mean(), 1) if denom else 0,
             }
             innovaciones["por_producto"] = (
-                pp.sort_values("pct", ascending=False)
-                .head(20)
-                .to_dict("records")
+                pp.sort_values("pct", ascending=False).head(20).to_dict("records")
             )
     except Exception:
         pass
 
-    # ── Sell Out (recalculado desde ventas_acumulada filtrado al mes) ──
+    # ── Sell Out (ventas_acumulada sin filtro empresa — incluye P&P que vende Peñaflor) ──
     sellout = {"categorias": []}
     _SO_OBJ = {
         "VINOS DEL AÑO":     {"total": 19015, "sub": {"Alto": 11792, "Medio": 401, "Medio Alto": 4651, "Superior": 2171}},
@@ -3201,14 +3216,24 @@ def gerencia_cierre_mes():
         "CHAMPAÑA":          {"total": 686,    "sub": {}},
         "CERVEZA ARTESANAL": {"total": 405,    "sub": {}},
     }
-    _SO_RUBRO_CAT = {
-        "Vinos del Año": "VINOS DEL AÑO", "Vinos de Mesa": "VINOS DEL AÑO",
-        "Vinos de guarda": "VINOS DE GUARDA",
-        "Espumantes": "CHAMPAÑA", "Sidra": "CHAMPAÑA",
-        "Cerveza Artesanal": "CERVEZA ARTESANAL",
-        "RTD (S)": "RTD", "RTD": "RTD",
-        "Whisky": "SPIRITS", "Gin": "SPIRITS", "Ron": "SPIRITS",
-        "Whisky (Maltas)": "SPIRITS", "Vodka": "SPIRITS", "Licores": "SPIRITS",
+    # Mapeo case-insensitive: clave en minúsculas, aplicar .str.lower() al rubro
+    _SO_RUBRO_CAT_LOWER = {
+        "vinos del año": "VINOS DEL AÑO",
+        "vinos del a\xf1o": "VINOS DEL AÑO",   # latin1 ñ
+        "vinos de mesa": "VINOS DEL AÑO",
+        "vino de guarda": "VINOS DE GUARDA",
+        "vinos de guarda": "VINOS DE GUARDA",
+        "espumantes": "CHAMPAÑA",
+        "sidra": "CHAMPAÑA",
+        "cerveza artesanal": "CERVEZA ARTESANAL",
+        "rtd (s)": "RTD",
+        "rtd": "RTD",
+        "whisky": "SPIRITS",
+        "gin": "SPIRITS",
+        "ron": "SPIRITS",
+        "whisky (maltas)": "SPIRITS",
+        "vodka": "SPIRITS",
+        "licores": "SPIRITS",
     }
     _SO_NAC_KW = ("SMIRNOFF", "GORDON", "WHITE HORSE", "J&B", "JYB")
     try:
@@ -3220,31 +3245,31 @@ def gerencia_cierre_mes():
             so["vend_c"]  = pd.to_numeric(so["CodVendedor"], errors="coerce")
             so["cant"]    = so["CantBase"].apply(_parse_num_ar)
             so["peso"]    = so["PesoKg"].apply(_parse_num_ar) if "PesoKg" in so.columns else 0.0
-            empresa_ok    = (so["Empresa"] == "Empresa") if "Empresa" in so.columns else pd.Series(True, index=so.index)
+            # Sin filtro empresa: ventas_acumulada incluye P&P que vende productos Peñaflor
             so = so[
-                empresa_ok &
                 (so["fecha"] >= datetime(año, mes, 1)) & (so["fecha"] <= fecha_cierre) &
                 (so["importe"] > 0) & (~so["vend_c"].isin(_VENDEDORES_EXCLUIDOS))
             ].copy()
-            # Fallback litros: PesoKg → inferir del nombre
+            # Fallback litros: PesoKg=0 → CantBase × litros inferidos del nombre
             mask0 = so["peso"] == 0
             if mask0.any():
                 so.loc[mask0, "peso"] = so.loc[mask0].apply(
-                    lambda r: r["cant"] * _infer_litros_por_nombre(r.get("Articulo", "")), axis=1
+                    lambda r: r["cant"] * _infer_litros_por_nombre(str(r.get("Articulo", ""))), axis=1
                 )
-            so["_cat"] = so["Rubro"].astype(str).str.strip().map(_SO_RUBRO_CAT)
+            # Mapeo case-insensitive
+            so["_cat"] = so["Rubro"].astype(str).str.strip().str.lower().map(_SO_RUBRO_CAT_LOWER)
             so = so[so["_cat"].notna()].copy()
             cats = []
             for cat, obj_info in _SO_OBJ.items():
                 grp_c = so[so["_cat"] == cat]
-                litros   = round(float(grp_c["peso"].sum()), 1)
-                clientes = int(grp_c["Cliente"].nunique()) if "Cliente" in grp_c.columns else 0
+                litros    = round(float(grp_c["peso"].sum()), 1)
+                clientes  = int(grp_c["Cliente"].nunique()) if "Cliente" in grp_c.columns else 0
                 obj_total = obj_info["total"]
-                alcance  = round(litros / obj_total * 100, 1) if obj_total else None
+                alcance   = round(litros / obj_total * 100, 1) if obj_total else None
                 subs = []
                 if cat == "VINOS DEL AÑO" and "Linea" in grp_c.columns:
                     for sn, so_v in obj_info["sub"].items():
-                        sg = grp_c[grp_c["Linea"].astype(str).str.lower() == sn.lower()]
+                        sg = grp_c[grp_c["Linea"].astype(str).str.strip().str.lower() == sn.lower()]
                         sl = round(float(sg["peso"].sum()), 1)
                         subs.append({"nombre": sn, "litros": sl, "objetivo": so_v,
                                      "alcance_pct": round(sl/so_v*100,1) if so_v else None,
@@ -3276,7 +3301,7 @@ def gerencia_cierre_mes():
                 "clientes": int(len(pa)),
                 "facturado": round(float(pa["total_facturado"].sum()), 0),
                 "sc_ganado": int(pa["sc_total_ganado"].sum()),
-                "sc_pendiente": int(pa["sc_pendiente"].sum()),
+                "sc_enviado": int(pa["sc_cajas_enviadas_total"].sum()),
             }
             pp = pa.groupby("plan_as").agg(
                 clientes=("cliente_id", "count"),

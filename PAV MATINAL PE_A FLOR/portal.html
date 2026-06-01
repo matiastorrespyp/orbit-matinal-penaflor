@@ -3028,31 +3028,20 @@ function gCierreMes(p){
             <div class="card-hd"><span class="card-title">🏅 11 Titulares</span><span class="chip ${t11cl}">${t11pct}% empresa</span></div>
             <div class="card-body">
               <div style="margin-bottom:10px;">
-                <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">${t11e.cumplidos.toLocaleString('es-AR')} cumplidos de ${t11e.total.toLocaleString('es-AR')} combinaciones cliente-marca</div>
+                <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">${t11e.cumplidos.toLocaleString('es-AR')} cumplidos de ${t11e.total.toLocaleString('es-AR')} combinaciones cliente-marca (distribuidora)</div>
                 <div class="bar"><div class="bar-f ${t11cl}" style="width:${Math.min(t11pct,100)}%"></div></div>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                <div>
-                  <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;">Por Vendedor</div>
-                  ${(t11.por_vendedor||[]).map(v=>{const p=v.pct||0,cl=p>=20?'ok':p>=10?'wn':'bd';
-                    return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                      <span style="font-size:11px;">V${v.vendedor_codigo} ${(v.vendedor_nombre||'').split(' ')[0]}</span>
-                      <div style="display:flex;align-items:center;gap:6px;">
-                        <div class="bar" style="width:60px;height:4px;"><div class="bar-f ${cl}" style="width:${Math.min(p,100)}%"></div></div>
-                        <span class="chip ${cl}" style="font-size:9px;">${p}%</span>
-                      </div>
-                    </div>`;}).join('')}
-                </div>
-                <div>
-                  <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;">Por Marca (Top 8)</div>
-                  ${(t11.por_marca||[]).slice(0,8).map(m=>{const p=m.pct||0,cl=p>=20?'ok':p>=10?'wn':'bd';
-                    return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                      <span style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;">${m.marca_objetivo}</span>
-                      <div style="display:flex;align-items:center;gap:6px;">
-                        <div class="bar" style="width:50px;height:4px;"><div class="bar-f ${cl}" style="width:${Math.min(p,100)}%"></div></div>
-                        <span class="chip ${cl}" style="font-size:9px;">${p}%</span>
-                      </div>
-                    </div>`;}).join('')}
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;">Por Marca</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;">
+                ${(t11.por_marca||[]).map(m=>{const p=m.pct||0,cl=p>=20?'ok':p>=10?'wn':'bd';
+                  return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+                    <span style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px;">${m.marca_objetivo}</span>
+                    <div style="display:flex;align-items:center;gap:5px;">
+                      <div class="bar" style="width:50px;height:4px;"><div class="bar-f ${cl}" style="width:${Math.min(p,100)}%"></div></div>
+                      <span class="chip ${cl}" style="font-size:9px;min-width:34px;text-align:center;">${p}%</span>
+                    </div>
+                  </div>`;}).join('')}
                 </div>
               </div>
             </div>
@@ -3066,10 +3055,11 @@ function gCierreMes(p){
           html+=`<div class="card" style="margin-top:14px;">
             <div class="card-hd"><span class="card-title">🚀 Innovaciones</span><span class="chip">${innovR.productos} productos</span></div>
             <div class="card-body nop">
-              <div style="display:flex;gap:16px;padding:10px 14px 6px;border-bottom:1px solid var(--b);">
+              <div style="display:flex;gap:16px;padding:10px 14px 6px;border-bottom:1px solid var(--b);flex-wrap:wrap;">
                 <div><div style="font-size:10px;color:var(--text3)">Productos</div><b style="font-size:18px">${innovR.productos}</b></div>
-                <div><div style="font-size:10px;color:var(--text3)">Compraron</div><b style="font-size:18px">${(innovR.compraron_total||0).toLocaleString('es-AR')}</b></div>
+                <div><div style="font-size:10px;color:var(--text3)">Base CCC Mes</div><b style="font-size:18px">${(innovR.ccc_mes||0).toLocaleString('es-AR')}</b></div>
                 <div><div style="font-size:10px;color:var(--text3)">Penet. Prom.</div><b style="font-size:18px">${innovR.pct_promedio||0}%</b></div>
+                <div style="font-size:10px;color:var(--text3);align-self:flex-end;padding-bottom:4px;">% = compraron / CCC Mes</div>
               </div>
               <table class="tbl" style="font-size:11px;">
                 <thead><tr><th>Producto</th><th style="text-align:right">Compraron</th><th style="text-align:right">Cartera</th><th style="min-width:60px"></th><th style="text-align:right">%</th></tr></thead>
@@ -3132,8 +3122,8 @@ function gCierreMes(p){
             <div class="card-body">
               <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
                 <div><div style="font-size:10px;color:var(--text3)">Facturado</div><b style="font-size:16px">${fmtM(paR.facturado)}</b></div>
-                <div><div style="font-size:10px;color:var(--text3)">Sin Cargo Ganado</div><b style="font-size:16px;color:var(--ok)">${paR.sc_ganado}</b></div>
-                <div><div style="font-size:10px;color:var(--text3)">SC Pendiente</div><b style="font-size:16px;color:${paR.sc_pendiente>0?'var(--wn)':'var(--ok)'}">${paR.sc_pendiente}</b></div>
+                <div><div style="font-size:10px;color:var(--text3)">SC Ganado</div><b style="font-size:16px;color:var(--ok)">${paR.sc_ganado}</b></div>
+                <div><div style="font-size:10px;color:var(--text3)">SC Enviado</div><b style="font-size:16px;color:var(--ok)">${paR.sc_enviado}</b></div>
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 ${ppPlans.map(p=>`<div style="background:var(--surf2);border-radius:8px;padding:8px 14px;min-width:100px;">
