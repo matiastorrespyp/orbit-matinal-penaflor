@@ -2704,7 +2704,7 @@ def _cargar_maestro_04D():
         col_cod = next((c for c in df.columns if "dig" in c.lower() or ("c" in c.lower() and "art" in c.lower())), None)
         if not col_cod:
             return cod2cat, cod2seg, cod2lxu, cod2linea
-        df["_cod"] = df[col_cod].astype(str).str.strip().str.upper()
+        df["_cod"] = df[col_cod].astype(str).str.strip().str.upper().str.replace(r"\.0$", "", regex=True)
         df["_lxc"] = pd.to_numeric(df.get("Lts x caja", pd.Series(dtype=float)), errors="coerce").fillna(0)
         df["_uxc"] = pd.to_numeric(df.get("UxC", pd.Series(dtype=float)), errors="coerce").fillna(0)
         df["_lxu"] = (df["_lxc"] / df["_uxc"]).where(df["_uxc"] > 0, 0)
@@ -2774,8 +2774,9 @@ def _sellout_desde_ventas(df_raw: pd.DataFrame) -> list:
 
     df = df_raw.copy()
 
-    # ── Código artículo normalizado
+    # ── Código artículo normalizado (strip + quitar ".0" de floats: "14605.0" → "14605")
     df["_cod"] = df["Codigo"].astype(str).str.strip().str.upper() if "Codigo" in df.columns else ""
+    df["_cod"] = df["_cod"].str.replace(r"\.0$", "", regex=True)
 
     # ── Cargar maestro 04D (categoría, segmento, litros/unidad, linea comercial)
     cod2cat_04d, cod2seg_04d, cod2lxu_04d, cod2linea_04d = _cargar_maestro_04D()
