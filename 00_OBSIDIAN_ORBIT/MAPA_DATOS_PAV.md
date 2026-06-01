@@ -7,17 +7,36 @@ Trazabilidad completa: fuente real → script generador → dataset intermedio �
 ## Flujo general
 
 ```
-01_INPUTS/           →  LEGACY/orbit_matinal_v42.py  →  04_DATASETS_ORBIT/
-  ventas.csv                                              mod_volumen_vendedor.csv
-  clientes.xlsx                                           mod_ccc_segmento.csv
-  resultado.xlsx                                          mod_11_titulares.csv
-  producto activos.xlsx                                   clientes_dia.csv
+01_INPUTS/                              →  LEGACY/orbit_matinal_v42.py  →  04_DATASETS_ORBIT/
+  ventas.csv            ← OPERACIÓN DIARIA / SEGUIMIENTO MENSUAL VIVO        mod_volumen_vendedor.csv
+  ventas_mes.csv        ← CIERRE MENSUAL CONGELADO                           mod_ccc_segmento.csv
+  ventas_acumuladas.csv ← 11T (período comercial completo)                   mod_11_titulares.csv
+  clientes.xlsx                                                               clientes_dia.csv
+  resultado.xlsx        ← OBJETIVOS / RECHAZOS
+  04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx  ← clasificación sell out (ambos)
 
-04_DATASETS_ORBIT/   →  server_orbit.py (Flask)       →  PAV MATINAL PE_A FLOR/
-  + 01_INPUTS/                                            data.js (fetch sync)
-    ventas.csv (CCC Mes directo)                          portal.html / index.html
-    clientes.xlsx (cartera real)
+04_DATASETS_ORBIT/   →  server_orbit.py (Flask)             →  PAV MATINAL PE_A FLOR/
+  + 01_INPUTS/                                                  portal.html / index.html
+    ventas.csv             → Sell Out dashboard / CCC Día / CCC Mes / Alertas día
+    ventas_mes.csv         → Sell Out cierre / Dormidos / Planes AS
+    ventas_acumuladas.csv  → 11T
+    clientes.xlsx          → cartera real
 ```
+
+### Regla de fuentes por indicador (resumen)
+
+| Indicador | Fuente ventas | Fuente clasificación | Filtro fecha |
+|---|---|---|---|
+| Sell Out litros (dashboard) | ventas.csv | **04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx** | Período vigente |
+| Sell Out litros (cierre mes) | ventas_mes.csv | **04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx** | Mes cerrado |
+| CCC Día | ventas.csv | _clasificar_segmento() | Último día operativo |
+| CCC Mes | ventas.csv | _clasificar_segmento() | Mes calendario |
+| 11T CCC vs objetivo | ventas_acumuladas.csv | objetivo 11T.xlsx | **Sin filtro — acumulado completo** |
+| Acumulado $ vendedor | resultado.xlsx | — | Período ERP |
+| Alertas día | ventas.csv + acciones comerciales mes.xlsx | — | Último día operativo |
+| Acciones cierre | ventas_mes.csv + acciones comerciales mes.xlsx | — | Mes cerrado |
+| Dormidos | ventas_mes.csv + clientes.xlsx + historial_ventas_cliente.csv | — | Mes cerrado |
+| Planes AS | ventas_mes.csv + reconocimiento de planes as.xlsx + escala_junio.xlsx | — | Mes cerrado |
 
 ---
 
@@ -93,8 +112,12 @@ Trazabilidad completa: fuente real → script generador → dataset intermedio �
 |-------|--------|---------|----------|
 | once_titulares_cumplidos | mod_11_titulares.tiene_flag (sum) | mod_11_titulares.csv | /api/dashboard → kpis.once_titulares_cumplidos |
 | once_titulares_total | mod_11_titulares (count filas por vendedor) | mod_11_titulares.csv | /api/dashboard → kpis.once_titulares_total |
+| **CCC por marca (gerencia/cierre)** | **ventas_acumuladas.csv COMPLETO** | **sin filtro fecha** | **/api/gerencia/once_titulares** |
 
 **Advertencia:** `once_titulares_total` para V3 = 11 marcas × 42 clientes Vi = 462 combinaciones. No es un conteo de clientes.
+
+**REGLA CRÍTICA — fuente para CCC 11T:**
+El endpoint `/api/gerencia/once_titulares` y el bloque 11T del cierre de mes leen `ventas_acumuladas.csv` **sin filtro de fecha**. El indicador es acumulado del período comercial completo. Filtrar por mes calendario da valores incorrectos y distintos al dashboard. Validado 2026-06-01.
 
 ---
 
@@ -110,9 +133,11 @@ Trazabilidad completa: fuente real → script generador → dataset intermedio �
 
 | Archivo | Ruta | Fuente | Actualización | Estado |
 |---------|------|--------|---------------|--------|
-| ventas.csv | 01_INPUTS/ | ERP Peñaflor | Diaria | OK — fuente primaria CCC Mes |
+| ventas.csv | 01_INPUTS/ | ERP Peñaflor | Diaria / Mes vivo | CCC Día, CCC Mes, Sell Out dashboard, Alertas día |
+| ventas_mes.csv | 01_INPUTS/ | ERP Peñaflor | Cierre mensual congelado | Sell Out cierre, Dormidos, Planes AS, Acciones cierre |
+| ventas_acumuladas.csv | 01_INPUTS/ | ERP Peñaflor | Acumulado período completo | Fuente exclusiva 11T |
 | clientes.xlsx | 01_INPUTS/ | Maestro clientes | Periódica | OK — 2045 clientes |
-| resultado.xlsx | 01_INPUTS/ | ERP objetivos | Mensual | OK — objetivos y acumulado |
+| resultado.xlsx | 01_INPUTS/ | ERP objetivos | Mensual | OK — objetivos, acumulado de ventas y rechazos |
 | producto activos.xlsx | 01_INPUTS/ | Catálogo | Periódica | Pendiente auditar |
 
 ---
