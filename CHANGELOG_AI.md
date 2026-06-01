@@ -1524,3 +1524,13 @@ __pycache__/
 **Sin mock activo en el flujo principal** (Flask → data.js → portal). 7 vendedores correctos. V2/V5 excluidos. V3 sin autoservicios. Días comerciales correctos.
 
 **No se modificó ningún archivo del proyecto durante esta auditoría.**
+## 2026-06-01 - Render unico + planificacion persistente
+
+- `server_orbit.py`: `orbit.db` puede vivir en `ORBIT_DB_PATH` para usar Render Persistent Disk; backups de planificacion pueden ir a `ORBIT_PLAN_BACKUP_DIR`.
+- `server_orbit.py`: la fecha de planificacion por defecto ahora apunta a la proxima matinal desde las 12:00, evitando que los planes enviados la noche anterior queden fechados en el dia equivocado.
+- `server_orbit.py`: `/api/matinal/resumen` por defecto usa modo cierre y elige la ultima fecha anterior a hoy con planes, para que los planes nuevos no tapen el cierre Plan vs Real del dia anterior.
+- `portal.html`: Mi Plan muestra y envia la fecha objetivo de planificacion, no siempre `hoy`.
+- `sync_planes_render.py`: descarga todas las planificaciones desde Render con `limit=all`.
+- `CIERRE_DIA_ORBIT.bat`: deja de levantar/abrir portal local y publica el cierre hacia Render.
+- `render.yaml`: agrega disco persistente `orbit-data` y variables `ORBIT_DB_PATH` / `ORBIT_PLAN_BACKUP_DIR`.
+- `portal.html`: Planificacion gerencial incorpora selector de fecha de matinal para revisar planes historicos por dia.

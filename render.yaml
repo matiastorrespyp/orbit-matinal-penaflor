@@ -7,7 +7,7 @@ services:
   - type: web
     name: orbit-matinal-penaflor
     runtime: python
-    plan: free              # tier gratuito de Render
+    plan: starter           # requiere Persistent Disk para no perder planificaciones
 
     # Build
     buildCommand: pip install -r requirements.txt
@@ -27,9 +27,18 @@ services:
         value: "false"
       - key: PYTHON_VERSION
         value: "3.11.9"
+      - key: ORBIT_DB_PATH
+        value: /var/data/orbit.db
+      - key: ORBIT_PLAN_BACKUP_DIR
+        value: /var/data/planificacion
 
     # Health check — endpoint liviano, sin leer archivos de datos
     healthCheckPath: /api/healthz
+
+    disk:
+      name: orbit-data
+      mountPath: /var/data
+      sizeGB: 1
 
     # Auto-deploy activado — cada push a master despliega automaticamente.
     # orbit.db se commitea con planes sincronizados antes de cada push.

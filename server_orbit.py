@@ -29,8 +29,13 @@ CONFIG = BASE / "09_CONFIG"
 DATASETS = BASE / "04_DATASETS_ORBIT"
 INPUTS = BASE / "01_INPUTS"
 FRONTEND = BASE / "PAV MATINAL PE_A FLOR"
-DB_PATH = BASE / "orbit.db"
-PLAN_BACKUP_DIR = BASE / "99_BACKUPS_ORBIT" / "planificacion"
+DB_PATH = Path(os.environ.get("ORBIT_DB_PATH", str(BASE / "orbit.db")))
+if DB_PATH.parent != BASE:
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+PLAN_BACKUP_DIR = Path(os.environ.get(
+    "ORBIT_PLAN_BACKUP_DIR",
+    str((BASE / "99_BACKUPS_ORBIT" / "planificacion") if DB_PATH.parent == BASE else (DB_PATH.parent / "planificacion"))
+))
 PLAN_CSV_LATEST = PLAN_BACKUP_DIR / "planificacion_latest.csv"
 
 USERS = {
@@ -45,6 +50,14 @@ USERS = {
 }
 
 def init_db():
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    repo_db = BASE / "orbit.db"
+    if DB_PATH != repo_db and not DB_PATH.exists() and repo_db.exists():
+        try:
+            shutil.copy2(str(repo_db), str(DB_PATH))
+            print(f"[ORBIT] Seed DB persistente desde repo -> {DB_PATH}")
+        except Exception as e:
+            print(f"[WARN] seed orbit.db persistente: {e}")
     conn = sqlite3.connect(str(DB_PATH))
     c = conn.cursor()
     c.execute("""CREATE TABLE IF NOT EXISTS planificacion(
@@ -186,6 +199,36 @@ def _parse_num_ar(valor):
         return float(s)
     except Exception:
         return 0.0
+
+def _feriados_config():
+    path = CONFIG / "feriados.csv"
+    if not path.exists():
+        return set()
+    try:
+        df = pd.read_csv(path)
+        col = "fecha" if "fecha" in df.columns else df.columns[0]
+        fechas = pd.to_datetime(df[col], errors="coerce").dropna()
+        return {d.date() for d in fechas}
+    except Exception:
+        return set()
+
+def _es_dia_operativo(d):
+    # Matinal Penaflor opera lunes a sabado; domingos y feriados no cuentan.
+    return d.weekday() != 6 and d not in _feriados_config()
+
+def _siguiente_dia_operativo(d):
+    nxt = d + timedelta(days=1)
+    while not _es_dia_operativo(nxt):
+        nxt += timedelta(days=1)
+    return nxt
+
+def _fecha_planificacion_default(now=None):
+    """Fecha objetivo para planes enviados por vendedores."""
+    now = now or datetime.now(_ARG_TZ)
+    hoy = now.date()
+    if now.hour >= 12 or not _es_dia_operativo(hoy):
+        return _siguiente_dia_operativo(hoy).isoformat()
+    return hoy.isoformat()
 
 def _clasificar_segmento(ramo: str, subsegmento: str) -> str:
     texto = f"{str(ramo).upper()} | {str(subsegmento).upper()}"
@@ -648,6 +691,7 @@ def diagnostico():
         "fecha_corte": fecha_corte_rt,       # hoy real-time (siempre actualizado)
         "fecha_objetivo": fecha_obj_str,
         "fecha_matinal": fecha_corte_rt,     # hoy real-time
+        "fecha_planificacion_default": _fecha_planificacion_default(_now_diag),
         "dia_operativo": dia_op,             # día actual real-time (LU/MA/MI/JU/VI/SA)
         "modo_fecha": modo_fecha,
     })
@@ -1020,6 +1064,7 @@ def vendedor_detalle(vid):
 def planificacion():
     fecha_q = request.args.get("fecha")
     vid_q   = request.args.get("vendedor_id")
+    limit_q = (request.args.get("limit") or "").strip().lower()
     conn = sqlite3.connect(str(DB_PATH), timeout=10, check_same_thread=False)
     conn.row_factory = sqlite3.Row
 
@@ -1043,7 +1088,8 @@ def planificacion():
 
         # Regla: V3 no trabaja autoservicio
         ccc_as = 0 if vid_raw == "V3" else int(d.get("ccc_autoservicio") or 0)
-        fecha  = d.get("fecha") or _now_ar()[:10]
+        fecha_raw = str(d.get("fecha") or "").strip().lower()
+        fecha  = _fecha_planificacion_default() if fecha_raw in ("", "auto", "default") else d.get("fecha")
         _ts    = _now_ar()  # hora Argentina para ambos timestamps
 
         conn.execute("""
@@ -1085,8 +1131,12 @@ def planificacion():
             "SELECT * FROM planificacion WHERE vendedor_id=? ORDER BY fecha DESC LIMIT 30",
             (vid_q.upper(),)).fetchall()
     else:
-        rows = conn.execute(
-            "SELECT * FROM planificacion ORDER BY fecha DESC, vendedor_id LIMIT 100").fetchall()
+        if limit_q == "all":
+            rows = conn.execute(
+                "SELECT * FROM planificacion ORDER BY fecha DESC, vendedor_id").fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM planificacion ORDER BY fecha DESC, vendedor_id LIMIT 500").fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
 
@@ -1263,6 +1313,7 @@ def matinal_resumen():
       Planes del día siguiente → tienen otra fecha, no pisan estos.
     """
     fecha_param = request.args.get("fecha")
+    modo = (request.args.get("modo") or "cierre").strip().lower()
 
     # PASO 1: Determinar fecha_plan desde orbit.db
     conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
@@ -1271,13 +1322,23 @@ def matinal_resumen():
         fecha_plan = fecha_param
     else:
         today_ar = _now_ar()[:10]
-        # Solo buscar planes de los últimos 3 días — evita que un plan viejo de prueba
-        # ancle Plan vs Real indefinidamente
-        cutoff = (datetime.now(_ARG_TZ) - timedelta(days=3)).strftime("%Y-%m-%d")
-        row = conn.execute(
-            "SELECT fecha FROM planificacion WHERE fecha >= ? ORDER BY fecha DESC LIMIT 1",
-            (cutoff,)
-        ).fetchone()
+        # Ventana acotada: evita que un plan viejo de prueba ancle Plan vs Real indefinidamente.
+        cutoff = (datetime.now(_ARG_TZ) - timedelta(days=10)).strftime("%Y-%m-%d")
+        if modo in ("actual", "ultimo", "plan"):
+            row = conn.execute(
+                "SELECT fecha FROM planificacion WHERE fecha >= ? ORDER BY fecha DESC LIMIT 1",
+                (cutoff,)
+            ).fetchone()
+        else:
+            row = conn.execute(
+                "SELECT fecha FROM planificacion WHERE fecha < ? AND fecha >= ? ORDER BY fecha DESC LIMIT 1",
+                (today_ar, cutoff)
+            ).fetchone()
+            if not row:
+                row = conn.execute(
+                    "SELECT fecha FROM planificacion WHERE fecha >= ? ORDER BY fecha DESC LIMIT 1",
+                    (cutoff,)
+                ).fetchone()
         fecha_plan = row["fecha"] if row else today_ar
 
     planes = {row["vendedor_id"]: dict(row)
@@ -1352,6 +1413,7 @@ def matinal_resumen():
         "fecha_plan":  fecha_plan,
         "fecha_real":  fecha_real or None,
         "tiene_real":  tiene_real,
+        "modo":        modo,
         "fuente_real": "ventas.csv",
         "generado_en": _now_ar(),
         "resumen":     resultado,

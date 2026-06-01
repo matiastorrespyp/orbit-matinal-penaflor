@@ -524,3 +524,11 @@ Se oculta automáticamente si no hay datos. Commit `c3f7813`.
 - ✓ `ccc_dia` ahora toma el valor real de `mod_ccc_segmento`; `ccc_mes` queda en 0 (honesto).
 - ✓ `acumulado=0` corregido en `app_publish.py`: `"acumulado_mes"` agregado como primer candidato en `build_avance_map()`.
 - ✓ V7 y V9 visibles en `/api/dashboard` con fallback desde `resultado.xlsx` (`sin_maestro: true`). Deuda: actualizar `clientes.xlsx`.
+## Siguiente tarea - validar flujo Render Plan vs Real
+
+1. Confirmar que Render acepto el disco persistente `orbit-data` y que `ORBIT_DB_PATH=/var/data/orbit.db` aparece en el entorno.
+2. Enviar un plan desde un usuario vendedor despues del mediodia y verificar que queda fechado para la proxima matinal.
+3. Aprobar el plan desde gerencia en Render.
+4. Al dia siguiente, actualizar `ventas.csv`, ejecutar `CIERRE_DIA_ORBIT.bat` y verificar en Render que Plan vs Real muestra el cierre de la fecha anterior aunque ya existan planes nuevos.
+5. Validar en la solapa Planificacion que el selector "Matinal YYYY-MM-DD" trae todos los vendedores de la fecha elegida.
+6. Si Render rechaza `plan: starter` o `disk` por configuracion de cuenta, corregir el servicio desde el dashboard de Render antes de reintentar deploy.

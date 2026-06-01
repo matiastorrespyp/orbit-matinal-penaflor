@@ -113,3 +113,20 @@ En el panel de Render podés agregar:
 ---
 
 *Generado automáticamente por ORBIT Pipeline · $(date)*
+---
+
+## Actualizacion operativa 2026-06-01 - Render como portal unico
+
+- Portal operativo: `https://orbit-matinal-penaflor.onrender.com/`.
+- No usar el portal local como destino de actualizacion diaria.
+- `render.yaml` queda configurado con `plan: starter` y disco persistente `orbit-data` montado en `/var/data`.
+- `server_orbit.py` lee `ORBIT_DB_PATH`; en Render debe ser `/var/data/orbit.db`.
+- Las planificaciones de vendedores se guardan en SQLite persistente y se respaldan en `/var/data/planificacion`.
+- `CIERRE_DIA_ORBIT.bat` ya no levanta ni abre `http://127.0.0.1:8502`; sincroniza planes desde Render, regenera datasets, publica por Git y abre Render.
+
+Flujo correcto:
+
+1. Vendedores cargan la planificacion en Render.
+2. Gerencia valida/aprueba en Render.
+3. Al dia siguiente se actualiza `ventas.csv` y se ejecuta `CIERRE_DIA_ORBIT.bat`.
+4. El cierre Plan vs Real se consulta en Render.

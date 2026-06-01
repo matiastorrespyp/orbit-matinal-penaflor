@@ -1002,7 +1002,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 'use strict';
 
 /* ── estado ── */
-let userData = null, currentDay = null, gFiltro = "", gScreen = "dashboard";
+let userData = null, currentDay = null, gFiltro = "", gScreen = "dashboard", gPlanFechaSel = null;
 let D = { diag:{}, dash:[], cli:[], al:[], plan:[], pvr:{}, det:{}, msgs:[], cccEmpresa:{}, onceTit:{}, onceTitDia:{}, inov:null, plan_inov:null, cob_acum:null, t11_acum:null, inov_total:null, planes_as_g:null, planes_as_v:null, acc_vigentes:[] };
 
 const CV = { V3:'#5BDED4', V4:'#F2B544', V6:'#5BC23A', V7:'#9B7BFF', V8:'#4DA3FF', V9:'#FF9D5C', V10:'#FF5D8B' };
@@ -1012,6 +1012,14 @@ const DAYS = ['LU','MA','MI','JU','VI','SA'];
 // Evita que después de las 21hs Argentina (00hs UTC) el portal filtre por "mañana".
 function diaHoy(){
   const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function fechaPlanObjetivo(){
+  if(D.diag?.fecha_planificacion_default) return D.diag.fecha_planificacion_default;
+  const d = new Date();
+  if(d.getHours() < 12) return diaHoy();
+  d.setDate(d.getDate()+1);
+  while(d.getDay()===0) d.setDate(d.getDate()+1);
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
@@ -1266,6 +1274,11 @@ function gRender(){
   else if(gScreen==='acciones_comerciales')  gAccionesComerciales(p);
   else if(gScreen==='dormidos')              gDormidos(p);
   else if(gScreen==='cierre_mes')            gCierreMes(p);
+}
+
+function cambiarFechaPlanificacion(fecha){
+  gPlanFechaSel = fecha || null;
+  gRender();
 }
 
 /* — Dashboard — */
@@ -1707,11 +1720,14 @@ function gClientes(p){
 
 /* — Planificación — */
 async function gPlanificacion(p){
-  const pl_fresh=await safe('/api/planificacion'); if(pl_fresh) D.plan=Array.isArray(pl_fresh)?pl_fresh:[];
+  const pl_fresh=await safe('/api/planificacion?limit=all'); if(pl_fresh) D.plan=Array.isArray(pl_fresh)?pl_fresh:[];
   const hoy = diaHoy();
   // Usar la fecha más reciente con planes — puede ser hoy o el día anterior
   const _planFechas = [...new Set((D.plan||[]).map(r=>r.fecha))].sort().reverse();
-  const fechaRef = _planFechas.includes(hoy) ? hoy : (_planFechas[0] || hoy);
+  if(!gPlanFechaSel || !_planFechas.includes(gPlanFechaSel)){
+    gPlanFechaSel = _planFechas.includes(hoy) ? hoy : (_planFechas[0] || hoy);
+  }
+  const fechaRef = gPlanFechaSel;
   const pl  = (D.plan||[]).filter(r => r.fecha === fechaRef);
   const esHoy = fechaRef === hoy;
   const aprobados  = pl.filter(r=>r.estado==='aprobada').length;
@@ -1722,6 +1738,9 @@ async function gPlanificacion(p){
     <div><div class="gph-title">Planificación Matinal</div>
     <div class="gph-sub">${fechaRef}${esHoy?'':' <span style="color:var(--wn);font-size:10px;">(día anterior)</span>'} · ${pl.length} planes recibidos de ${D.dash.length} vendedores</div></div>
     <div class="gph-chips">
+      <select onchange="cambiarFechaPlanificacion(this.value)" style="background:var(--surf2);color:var(--text);border:1px solid var(--b);border-radius:6px;padding:5px 8px;font-size:12px;">
+        ${_planFechas.map(f=>`<option value="${f}" ${f===fechaRef?'selected':''}>Matinal ${f}</option>`).join('')}
+      </select>
       <span class="chip ok">${aprobados} aprobados</span>
       <span class="chip info">${enviados} enviados</span>
       ${modificados?`<span class="chip vio">${modificados} modificados</span>`:''}
@@ -2403,12 +2422,13 @@ async function aprobarPlan(id){
 /* ════ MI PLAN (vendedor) ════ */
 function vPlan(){
   const hoy = diaHoy();
+  const fechaPlan = fechaPlanObjetivo();
   const vid = (userData?.vendedor_id||'').toUpperCase();
   const esV3 = vid==='V3';
-  const planHoy = (D.plan||[]).find(r=>r.fecha===hoy && r.vendedor_id===vid)||{};
+  const planHoy = (D.plan||[]).find(r=>r.fecha===fechaPlan && r.vendedor_id===vid)||{};
   const scl = planHoy.id?(planHoy.estado==='aprobada'?'ok':planHoy.estado==='modificada'?'vio':'info'):'';
 
-  let h=`<div class="vsh">Mi Plan del Día</div>`;
+  let h=`<div class="vsh">Mi Plan para ${fechaPlan}</div>`;
 
   if(planHoy.id){
     const dtV = planHoy.updated_at || planHoy.created_at || null;
@@ -2419,7 +2439,7 @@ function vPlan(){
       return esHoyV ? `hoy a las ${hr}` : `${fd} a las ${hr}`;
     })() : null;
     h+=`<div class="card" style="margin-bottom:12px;">
-      <div class="card-hd"><span class="card-title">Plan cargado hoy</span><span class="chip ${scl}">${(planHoy.estado||'enviada').toUpperCase()}</span></div>
+      <div class="card-hd"><span class="card-title">Plan cargado para ${fechaPlan}</span><span class="chip ${scl}">${(planHoy.estado||'enviada').toUpperCase()}</span></div>
       ${tsV?`<div style="font-size:10px;color:var(--text3);padding:0 14px 6px;">📅 Enviado ${tsV}</div>`:''}
       <div class="card-body">
         <div class="row-b sm m2 mb8"><span>Venta esperada</span><b>${fmtM(planHoy.venta_esperada)}</b></div>
@@ -2467,7 +2487,7 @@ function vPlan(){
 async function submitPlan(vid){
   const esV3=vid==='V3';
   const payload={
-    fecha:           diaHoy(),
+    fecha:           fechaPlanObjetivo(),
     vendedor_id:     vid,
     venta_esperada:  parseFloat(document.getElementById('pf_venta')?.value||0),
     ccc_tradicional: parseInt(document.getElementById('pf_trad')?.value||0),

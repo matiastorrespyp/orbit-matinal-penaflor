@@ -7,7 +7,7 @@ import urllib.request, json, sqlite3, sys
 from pathlib import Path
 
 RENDER_BASE = "https://orbit-matinal-penaflor.onrender.com"
-RENDER_URL  = RENDER_BASE + "/api/planificacion"
+RENDER_URL  = RENDER_BASE + "/api/planificacion?limit=all"
 DB_PATH     = Path(__file__).parent / "orbit.db"
 
 def sync():

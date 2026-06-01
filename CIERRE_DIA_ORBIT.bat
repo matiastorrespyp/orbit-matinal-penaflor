@@ -10,7 +10,7 @@ echo.
 
 set "ROOT=C:\Orbit\MATINAL_PENAFLOR"
 set "VENTAS=%ROOT%\01_INPUTS\ventas.csv"
-set "PORTAL=http://127.0.0.1:8502"
+set "PORTAL=https://orbit-matinal-penaflor.onrender.com"
 
 cd /d "%ROOT%"
 
@@ -66,36 +66,7 @@ python "%ROOT%\sync_planes_render.py"
 echo.
 
 echo ============================================================
-echo PASO 3/3: Iniciando servidor local...
-echo ============================================================
-echo.
-
-echo Cerrando servidor ORBIT anterior si existe...
-echo.
-
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8502" ^| findstr "LISTENING"') do (
-    echo Cerrando proceso en puerto 8502: %%a
-    taskkill /PID %%a /F >nul 2>nul
-)
-
-timeout /t 2 >nul
-
-echo.
-echo Iniciando servidor ORBIT local...
-echo.
-
-start "ORBIT - Server Local" cmd /k cd /d "%ROOT%" ^&^& python server_orbit.py
-
-echo Esperando inicio del servidor...
-timeout /t 6 >nul
-
-echo.
-echo Abriendo portal local...
-start "" "%PORTAL%"
-
-echo.
-echo ============================================================
-echo PASO 4/4: Publicando datos en GitHub para actualizar Render...
+echo PASO 3/3: Publicando datos en GitHub para actualizar Render...
 echo ============================================================
 echo.
 
