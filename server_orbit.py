@@ -2661,8 +2661,9 @@ def gerencia_sellout_litros():
         "Vodka":            "SPIRITS",
         "Licores":          "SPIRITS",
     }
-    SPIRITS_IMP = {"Whisky", "Gin", "Ron", "Whisky (Maltas)"}
-    SPIRITS_NAC = {"Vodka", "Licores"}
+    # Nacionales: Smirnoff (700), Gordon's (700), White Horse, J&B — Diageo portfolio local
+    # Importados: JW/Johnnie Walker, Tanqueray, Buchanan's, Singleton, Baileys, Sheridans, Zacapa, Old Parr
+    _SPIRITS_NAC_KW = ("SMIRNOFF", "GORDON", "WHITE HORSE", "J&B", "JYB")
 
     # — Leer ventas.csv —
     src = INPUTS / "ventas.csv"
@@ -2714,9 +2715,10 @@ def gerencia_sellout_litros():
     df["_cod"] = df["Codigo"].astype(str).str.strip().str.upper() if "Codigo" in df.columns else ""
 
     mask0 = df["PesoKg"] == 0
-    if mask0.any() and cod2lxu:
-        df["_lxu_fb"] = df["_cod"].map(cod2lxu).fillna(0)
-        # Fallback 2: infiere del nombre del artículo donde no hubo match
+    if mask0.any():
+        # Fallback 1: maestro de productos (si existe)
+        df["_lxu_fb"] = df["_cod"].map(cod2lxu).fillna(0) if cod2lxu else 0.0
+        # Fallback 2: inferir del nombre del artículo (siempre, para los que quedaron en 0)
         still_zero = mask0 & (df["_lxu_fb"] == 0)
         if still_zero.any() and "Articulo" in df.columns:
             df.loc[still_zero, "_lxu_fb"] = df.loc[still_zero, "Articulo"].apply(_infer_litros_por_nombre)
@@ -2777,13 +2779,13 @@ def gerencia_sellout_litros():
                 sa = round(sl / so * 100, 1) if so > 0 else 0.0
                 subs.append({"nombre": sn, "litros": sl, "objetivo": so, "alcance_pct": sa, "clientes": sc})
         elif cat == "SPIRITS":
-            # Importados = Premium (S) + Super Premium (S) — regla Diageo Argentina
-            # Nacionales = Standard (S) (Smirnoff, JW Red, White Horse, Gordon's Standard, etc.)
-            _lin_imp = {"Premium (S)", "Super Premium (S)"}
-            mask_imp = grp["_lin"].isin(_lin_imp)
+            # Nacionales: Smirnoff (700), Gordon's (700), White Horse, J&B
+            # Importados: JW, Tanqueray, Buchanan's, Singleton, Baileys, Sheridans, Zacapa, Old Parr
+            _art = grp["Articulo"].astype(str).str.upper()
+            mask_nac = _art.str.contains("|".join(_SPIRITS_NAC_KW), na=False)
             for sn, mask_s, so in [
-                ("Importados", mask_imp,  obj_info["sub"]["Importados"]),
-                ("Nacionales", ~mask_imp, obj_info["sub"]["Nacionales"]),
+                ("Nacionales", mask_nac,  obj_info["sub"]["Nacionales"]),
+                ("Importados", ~mask_nac, obj_info["sub"]["Importados"]),
             ]:
                 sg = grp[mask_s]
                 sl = round(float(sg["PesoKg"].sum()), 1)
@@ -3189,45 +3191,79 @@ def gerencia_cierre_mes():
     except Exception:
         pass
 
-    # ── Sell Out ──
+    # ── Sell Out (recalculado desde ventas_acumulada filtrado al mes) ──
     sellout = {"categorias": []}
+    _SO_OBJ = {
+        "VINOS DEL AÑO":     {"total": 19015, "sub": {"Alto": 11792, "Medio": 401, "Medio Alto": 4651, "Superior": 2171}},
+        "VINOS DE GUARDA":   {"total": 678,   "sub": {}},
+        "SPIRITS":           {"total": 17752,  "sub": {"Nacionales": 17045, "Importados": 707}},
+        "RTD":               {"total": 9999,   "sub": {}},
+        "CHAMPAÑA":          {"total": 686,    "sub": {}},
+        "CERVEZA ARTESANAL": {"total": 405,    "sub": {}},
+    }
+    _SO_RUBRO_CAT = {
+        "Vinos del Año": "VINOS DEL AÑO", "Vinos de Mesa": "VINOS DEL AÑO",
+        "Vinos de guarda": "VINOS DE GUARDA",
+        "Espumantes": "CHAMPAÑA", "Sidra": "CHAMPAÑA",
+        "Cerveza Artesanal": "CERVEZA ARTESANAL",
+        "RTD (S)": "RTD", "RTD": "RTD",
+        "Whisky": "SPIRITS", "Gin": "SPIRITS", "Ron": "SPIRITS",
+        "Whisky (Maltas)": "SPIRITS", "Vodka": "SPIRITS", "Licores": "SPIRITS",
+    }
+    _SO_NAC_KW = ("SMIRNOFF", "GORDON", "WHITE HORSE", "J&B", "JYB")
     try:
-        so = read_csv(DATASETS / "mod_sellout_categoria.csv")
-        if not so.empty:
-            so.columns = [c.strip() for c in so.columns]
-            # Agrupar por Categoria (suma de subcategorías)
-            CAT_OBJ = {
-                "VINOS DEL AÑO":     19015,
-                "VINOS DE GUARDA":   678,
-                "SPIRITS":           17752,
-                "RTD":               9999,
-                "CHAMPAÑA":          686,
-                "CERVEZA ARTESANAL": 405,
-            }
-            RUBRO_CAT = {
-                "Vinos del Año": "VINOS DEL AÑO", "Vinos de Mesa": "VINOS DEL AÑO",
-                "Vinos de guarda": "VINOS DE GUARDA",
-                "Espumantes": "CHAMPAÑA",
-                "Cerveza Artesanal": "CERVEZA ARTESANAL",
-                "RTD (S)": "RTD", "RTD": "RTD",
-                "Whisky": "SPIRITS", "Gin": "SPIRITS", "Ron": "SPIRITS",
-                "Whisky (Maltas)": "SPIRITS", "Vodka": "SPIRITS", "Licores": "SPIRITS",
-                "Sidra": "SPIRITS",
-            }
-            so["cat"] = so["Categoria"].map(RUBRO_CAT).fillna(so["Categoria"].str.upper())
-            grp = so.groupby("cat").agg(litros=("litros", "sum"), clientes=("clientes", "sum")).reset_index()
+        so_src = INPUTS / "ventas_acumulada.csv"
+        if so_src.exists():
+            so = pd.read_csv(so_src, sep=";", encoding="latin1")
+            so["fecha"]   = pd.to_datetime(so["FechaComprobante"], dayfirst=True, errors="coerce")
+            so["importe"] = so["ImporteNetoItem"].apply(_parse_num_ar)
+            so["vend_c"]  = pd.to_numeric(so["CodVendedor"], errors="coerce")
+            so["cant"]    = so["CantBase"].apply(_parse_num_ar)
+            so["peso"]    = so["PesoKg"].apply(_parse_num_ar) if "PesoKg" in so.columns else 0.0
+            empresa_ok    = (so["Empresa"] == "Empresa") if "Empresa" in so.columns else pd.Series(True, index=so.index)
+            so = so[
+                empresa_ok &
+                (so["fecha"] >= datetime(año, mes, 1)) & (so["fecha"] <= fecha_cierre) &
+                (so["importe"] > 0) & (~so["vend_c"].isin(_VENDEDORES_EXCLUIDOS))
+            ].copy()
+            # Fallback litros: PesoKg → inferir del nombre
+            mask0 = so["peso"] == 0
+            if mask0.any():
+                so.loc[mask0, "peso"] = so.loc[mask0].apply(
+                    lambda r: r["cant"] * _infer_litros_por_nombre(r.get("Articulo", "")), axis=1
+                )
+            so["_cat"] = so["Rubro"].astype(str).str.strip().map(_SO_RUBRO_CAT)
+            so = so[so["_cat"].notna()].copy()
             cats = []
-            for _, r in grp.iterrows():
-                obj = CAT_OBJ.get(str(r["cat"]).upper(), 0)
-                alc = round(r["litros"] / obj * 100, 1) if obj else None
+            for cat, obj_info in _SO_OBJ.items():
+                grp_c = so[so["_cat"] == cat]
+                litros   = round(float(grp_c["peso"].sum()), 1)
+                clientes = int(grp_c["Cliente"].nunique()) if "Cliente" in grp_c.columns else 0
+                obj_total = obj_info["total"]
+                alcance  = round(litros / obj_total * 100, 1) if obj_total else None
+                subs = []
+                if cat == "VINOS DEL AÑO" and "Linea" in grp_c.columns:
+                    for sn, so_v in obj_info["sub"].items():
+                        sg = grp_c[grp_c["Linea"].astype(str).str.lower() == sn.lower()]
+                        sl = round(float(sg["peso"].sum()), 1)
+                        subs.append({"nombre": sn, "litros": sl, "objetivo": so_v,
+                                     "alcance_pct": round(sl/so_v*100,1) if so_v else None,
+                                     "clientes": int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0})
+                elif cat == "SPIRITS":
+                    _art = grp_c["Articulo"].astype(str).str.upper()
+                    mask_nac = _art.str.contains("|".join(_SO_NAC_KW), na=False)
+                    for sn, mask_s, so_v in [("Nacionales", mask_nac, obj_info["sub"]["Nacionales"]),
+                                             ("Importados", ~mask_nac, obj_info["sub"]["Importados"])]:
+                        sg = grp_c[mask_s]
+                        sl = round(float(sg["peso"].sum()), 1)
+                        subs.append({"nombre": sn, "litros": sl, "objetivo": so_v,
+                                     "alcance_pct": round(sl/so_v*100,1) if so_v else None,
+                                     "clientes": int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0})
                 cats.append({
-                    "categoria": r["cat"],
-                    "litros": round(float(r["litros"]), 1),
-                    "objetivo": obj if obj else None,
-                    "alcance_pct": alc,
-                    "clientes": int(r["clientes"]),
+                    "categoria": cat, "litros": litros, "objetivo": obj_total,
+                    "alcance_pct": alcance, "clientes": clientes, "subcategorias": subs,
                 })
-            sellout["categorias"] = sorted(cats, key=lambda x: x["litros"], reverse=True)
+            sellout["categorias"] = cats
     except Exception:
         pass
 

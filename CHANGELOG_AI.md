@@ -1,5 +1,19 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-01 — fix(sellout): clasificación Nacionales/Importados + fallback litros PesoKg=0
+
+**Causa raíz:**
+1. `SPIRITS_NAC`/`SPIRITS_IMP` usaban el campo `Linea` (Standard/Premium) — JW Red caía en Nacionales porque es Standard, pero debería ser Importado. J&B Rare tenía `Linea=Whisky` y PesoKg=0, sin litros.
+2. Bloque fallback PesoKg=0 tenía condición `if mask0.any() and cod2lxu:` — si el maestro de productos no existe, la inferencia por nombre nunca corría. Gordon's Tropical, J&B Rare y Smirnoff Tamarindo mostraban 0 L.
+
+**Fix aplicado:**
+- `server_orbit.py` (`gerencia_sellout_litros`): reemplaza clasificación por `Linea` con keywords por nombre de artículo: `SMIRNOFF`, `GORDON`, `WHITE HORSE`, `J&B` → Nacionales; resto → Importados.
+- `server_orbit.py`: fallback PesoKg=0 siempre corre (`and cod2lxu` eliminado); inferencia del nombre es el fallback final garantizado.
+- `server_orbit.py` (`gerencia_cierre_mes`): sellout del cierre ahora lee `ventas_acumulada.csv` filtrado al mes con la misma lógica corregida (reemplaza lectura de `mod_sellout_categoria.csv` pre-computado).
+- `portal.html` (`gCierreMes`): tabla sellout muestra subcategorías (Nacionales/Importados, Líneas Vinos del Año) con barra y chip de color.
+
+**Archivos tocados:** `server_orbit.py`, `PAV MATINAL PE_A FLOR/portal.html`
+
 ## 2026-06-01 — feat(cierre_mes): 11T + Innovaciones + Sell Out + Planes AS + Acciones
 
 **Qué se hizo:**

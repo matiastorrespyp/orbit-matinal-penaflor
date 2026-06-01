@@ -3106,7 +3106,16 @@ function gCierreMes(p){
                     <td><div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${barW}%"></div></div></td>
                     <td style="text-align:right">${alc!=null?`<span class="chip ${cl}" style="font-size:9px;">${alc}%</span>`:'<span style="color:var(--text3);font-size:10px;">–</span>'}</td>
                     <td style="text-align:right;color:var(--text3)">${c.clientes}</td>
-                  </tr>`;}).join('')}
+                  </tr>
+                  ${(c.subcategorias||[]).map(s=>{const sa=s.alcance_pct,scl=sa!=null?(sa>=100?'ok':sa>=75?'wn':'bd'):'info';
+                    return `<tr style="background:var(--surf2)">
+                      <td style="padding-left:22px;font-size:10px;color:var(--text2);">↳ ${s.nombre}</td>
+                      <td style="text-align:right;font-size:10px">${Number(s.litros).toLocaleString('es-AR',{maximumFractionDigits:0})} L</td>
+                      <td style="text-align:right;font-size:10px;color:var(--text3)">${s.objetivo?Number(s.objetivo).toLocaleString('es-AR',{maximumFractionDigits:0})+' L':'–'}</td>
+                      <td><div class="bar" style="height:3px;"><div class="bar-f ${scl}" style="width:${Math.min(sa||0,100)}%"></div></div></td>
+                      <td style="text-align:right">${sa!=null?`<span class="chip ${scl}" style="font-size:9px;">${sa}%</span>`:''}</td>
+                      <td style="text-align:right;font-size:10px;color:var(--text3)">${s.clientes}</td>
+                    </tr>`;}).join('')}`;}).join('')}
                 </tbody>
               </table>
             </div>
