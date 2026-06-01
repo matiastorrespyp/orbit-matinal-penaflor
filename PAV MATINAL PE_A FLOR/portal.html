@@ -3098,6 +3098,10 @@ function gCierreMes(p){
                     <td style="text-align:right;color:var(--text3)">${c.clientes}</td>
                   </tr>
                   ${(c.subcategorias||[]).map(s=>{const sa=s.alcance_pct,scl=sa!=null?(sa>=100?'ok':sa>=75?'wn':'bd'):'info';
+                    const marcasHtml=(s.marcas||[]).length?`<tr style="background:var(--bg)"><td colspan="6" style="padding:4px 14px 8px 32px;">
+                      <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                        ${(s.marcas||[]).map(m=>`<span style="font-size:9px;background:var(--surf2);border-radius:4px;padding:2px 7px;color:var(--text2);">${m.marca} <b style="color:var(--text)">${Number(m.litros).toLocaleString('es-AR',{maximumFractionDigits:0})}L</b></span>`).join('')}
+                      </div></td></tr>`:'';
                     return `<tr style="background:var(--surf2)">
                       <td style="padding-left:22px;font-size:10px;color:var(--text2);">↳ ${s.nombre}</td>
                       <td style="text-align:right;font-size:10px">${Number(s.litros).toLocaleString('es-AR',{maximumFractionDigits:0})} L</td>
@@ -3105,7 +3109,7 @@ function gCierreMes(p){
                       <td><div class="bar" style="height:3px;"><div class="bar-f ${scl}" style="width:${Math.min(sa||0,100)}%"></div></div></td>
                       <td style="text-align:right">${sa!=null?`<span class="chip ${scl}" style="font-size:9px;">${sa}%</span>`:''}</td>
                       <td style="text-align:right;font-size:10px;color:var(--text3)">${s.clientes}</td>
-                    </tr>`;}).join('')}`;}).join('')}
+                    </tr>${marcasHtml}`;}).join('')}`;}).join('')}
                 </tbody>
               </table>
             </div>

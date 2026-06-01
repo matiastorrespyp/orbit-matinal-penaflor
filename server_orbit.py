@@ -3236,6 +3236,12 @@ def gerencia_cierre_mes():
         "licores": "SPIRITS",
     }
     _SO_NAC_KW = ("SMIRNOFF", "GORDON", "WHITE HORSE", "J&B", "JYB")
+    # Mapeo Segmento del maestro → tier VDA
+    _SEG_TO_TIER = {
+        "Alto": "Alto", "Medio Alto": "Medio Alto",
+        "Superior": "Superior", "Medio": "Medio",
+        "Vinos de Mesa": "Medio",
+    }
     try:
         so_src = INPUTS / "ventas_acumulada.csv"
         if so_src.exists():
@@ -3245,7 +3251,7 @@ def gerencia_cierre_mes():
             so["vend_c"]  = pd.to_numeric(so["CodVendedor"], errors="coerce")
             so["cant"]    = so["CantBase"].apply(_parse_num_ar)
             so["peso"]    = so["PesoKg"].apply(_parse_num_ar) if "PesoKg" in so.columns else 0.0
-            # Sin filtro empresa: ventas_acumulada incluye P&P que vende productos Peñaflor
+            # Sin filtro empresa — incluye P&P que distribuye productos Peñaflor
             so = so[
                 (so["fecha"] >= datetime(año, mes, 1)) & (so["fecha"] <= fecha_cierre) &
                 (so["importe"] > 0) & (~so["vend_c"].isin(_VENDEDORES_EXCLUIDOS))
@@ -3256,9 +3262,35 @@ def gerencia_cierre_mes():
                 so.loc[mask0, "peso"] = so.loc[mask0].apply(
                     lambda r: r["cant"] * _infer_litros_por_nombre(str(r.get("Articulo", ""))), axis=1
                 )
-            # Mapeo case-insensitive
-            so["_cat"] = so["Rubro"].astype(str).str.strip().str.lower().map(_SO_RUBRO_CAT_LOWER)
+            # Enriquecer con maestro de productos: Categoria y Segmento
+            prod_src = INPUTS / "producto activos.xlsx"
+            cod2cat_so, cod2seg_so = {}, {}
+            if prod_src.exists():
+                try:
+                    _prod = pd.read_excel(prod_src, header=3)
+                    _prod.columns = [c.strip() for c in _prod.columns]
+                    _col_cod = next((c for c in _prod.columns if "c" in c.lower() and "d" in c.lower() and "art" in c.lower()), None)
+                    if _col_cod:
+                        _prod["_cod"] = _prod[_col_cod].astype(str).str.strip().str.upper()
+                        cod2cat_so = _prod.set_index("_cod")["Categoria"].to_dict()
+                        cod2seg_so = _prod.set_index("_cod")["Segmento"].to_dict()
+                except Exception:
+                    pass
+            if "Codigo" in so.columns:
+                so["_cod"] = so["Codigo"].astype(str).str.strip().str.upper()
+                so["_cat_maestro"] = so["_cod"].map(cod2cat_so)
+                so["_seg_maestro"] = so["_cod"].map(cod2seg_so)
+            else:
+                so["_cat_maestro"] = None
+                so["_seg_maestro"] = None
+
+            # Categoria final: maestro → rubro fallback (case-insensitive)
+            CAT_VDA_SET = {"vinos del año", "vinos del a\xf1o", "vinos de mesa"}
+            so["_cat"] = so["_cat_maestro"].astype(str).str.strip().str.lower().map(_SO_RUBRO_CAT_LOWER)
+            no_cat = so["_cat"].isna()
+            so.loc[no_cat, "_cat"] = so.loc[no_cat, "Rubro"].astype(str).str.strip().str.lower().map(_SO_RUBRO_CAT_LOWER)
             so = so[so["_cat"].notna()].copy()
+
             cats = []
             for cat, obj_info in _SO_OBJ.items():
                 grp_c = so[so["_cat"] == cat]
@@ -3267,13 +3299,29 @@ def gerencia_cierre_mes():
                 obj_total = obj_info["total"]
                 alcance   = round(litros / obj_total * 100, 1) if obj_total else None
                 subs = []
-                if cat == "VINOS DEL AÑO" and "Linea" in grp_c.columns:
+
+                if cat == "VINOS DEL AÑO":
+                    # Tier: Segmento del maestro → fallback Linea de ventas
+                    grp_c = grp_c.copy()
+                    grp_c["_tier"] = grp_c["_seg_maestro"].astype(str).str.strip().map(_SEG_TO_TIER)
+                    no_tier = grp_c["_tier"].isna()
+                    grp_c.loc[no_tier, "_tier"] = grp_c.loc[no_tier, "Linea"].astype(str).str.strip().map(_SEG_TO_TIER)
                     for sn, so_v in obj_info["sub"].items():
-                        sg = grp_c[grp_c["Linea"].astype(str).str.strip().str.lower() == sn.lower()]
+                        sg = grp_c[grp_c["_tier"] == sn]
                         sl = round(float(sg["peso"].sum()), 1)
-                        subs.append({"nombre": sn, "litros": sl, "objetivo": so_v,
-                                     "alcance_pct": round(sl/so_v*100,1) if so_v else None,
-                                     "clientes": int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0})
+                        # Apertura por marca dentro del tier
+                        marcas_tier = []
+                        if "Marca" in sg.columns:
+                            m_grp = sg.groupby("Marca")["peso"].sum().sort_values(ascending=False)
+                            marcas_tier = [{"marca": str(mk), "litros": round(float(mv), 1)}
+                                           for mk, mv in m_grp.items() if mv > 0]
+                        subs.append({
+                            "nombre": sn, "litros": sl, "objetivo": so_v,
+                            "alcance_pct": round(sl/so_v*100,1) if so_v else None,
+                            "clientes": int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0,
+                            "marcas": marcas_tier,
+                        })
+
                 elif cat == "SPIRITS":
                     _art = grp_c["Articulo"].astype(str).str.upper()
                     mask_nac = _art.str.contains("|".join(_SO_NAC_KW), na=False)
@@ -3281,9 +3329,16 @@ def gerencia_cierre_mes():
                                              ("Importados", ~mask_nac, obj_info["sub"]["Importados"])]:
                         sg = grp_c[mask_s]
                         sl = round(float(sg["peso"].sum()), 1)
+                        marcas_sp = []
+                        if "Marca" in sg.columns:
+                            m_grp = sg.groupby("Marca")["peso"].sum().sort_values(ascending=False)
+                            marcas_sp = [{"marca": str(mk), "litros": round(float(mv), 1)}
+                                         for mk, mv in m_grp.items() if mv > 0]
                         subs.append({"nombre": sn, "litros": sl, "objetivo": so_v,
                                      "alcance_pct": round(sl/so_v*100,1) if so_v else None,
-                                     "clientes": int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0})
+                                     "clientes": int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0,
+                                     "marcas": marcas_sp})
+
                 cats.append({
                     "categoria": cat, "litros": litros, "objetivo": obj_total,
                     "alcance_pct": alcance, "clientes": clientes, "subcategorias": subs,
