@@ -1,5 +1,18 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-01 — feat(cierre_mes): 11T + Innovaciones + Sell Out + Planes AS + Acciones
+
+**Qué se hizo:**
+- `server_orbit.py` (`/api/gerencia/cierre_mes`): extendido con 5 bloques nuevos:
+  - `once_titulares`: empresa (cumplidos/total/%), por vendedor, por marca; fuente `mod_11t_acum.csv`
+  - `innovaciones`: resumen (productos, compraron, penet. promedio), top 20 por producto; fuente `mod_innovaciones_segmento.csv`
+  - `sellout`: litros vs objetivo por categoría (remap al diccionario OBJ del endpoint sellout_litros); fuente `mod_sellout_categoria.csv`
+  - `planes_as`: resumen (clientes, facturado, SC ganado/pendiente) + desglose por plan; fuente `mod_planes_as.csv`
+  - `acciones`: resumen (total acciones, inversión, clientes) + top 10 por inversión; fuente `mod_acciones_ranking.csv`
+- `portal.html` (`gCierreMes`): renderiza las 5 secciones nuevas después de la tabla de vendedores con barras, chips de color y tablas.
+
+**Archivos tocados:** `server_orbit.py`, `PAV MATINAL PE_A FLOR/portal.html`
+
 ## 2026-06-01 — feat(gerencia): pantalla Cierre de Mes
 
 **Qué se hizo:**

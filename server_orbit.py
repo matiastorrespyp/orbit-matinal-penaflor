@@ -3141,12 +3141,156 @@ def gerencia_cierre_mes():
         empresa["acumulado"] / empresa["objetivo"] * 100, 2
     ) if empresa["objetivo"] else 0
 
+    # ── 11 Titulares ──
+    once_titulares = {"empresa": {}, "por_vendedor": [], "por_marca": []}
+    try:
+        t11 = read_csv(DATASETS / "mod_11t_acum.csv")
+        if not t11.empty:
+            total_comb = len(t11)
+            cumpl = int(t11["tiene_flag"].sum())
+            once_titulares["empresa"] = {
+                "total": total_comb,
+                "cumplidos": cumpl,
+                "pct": round(cumpl / total_comb * 100, 1) if total_comb else 0,
+            }
+            pv = (t11.groupby(["vendedor_codigo", "vendedor_nombre"])
+                  .agg(total=("tiene_flag", "count"), cumplidos=("tiene_flag", "sum"))
+                  .reset_index())
+            pv["pct"] = (pv["cumplidos"] / pv["total"] * 100).round(1)
+            once_titulares["por_vendedor"] = pv.sort_values("pct", ascending=False).to_dict("records")
+
+            pm = (t11.groupby("marca_objetivo")
+                  .agg(total=("tiene_flag", "count"), cumplidos=("tiene_flag", "sum"))
+                  .reset_index())
+            pm["pct"] = (pm["cumplidos"] / pm["total"] * 100).round(1)
+            once_titulares["por_marca"] = pm.sort_values("pct", ascending=False).to_dict("records")
+    except Exception:
+        pass
+
+    # ── Innovaciones ──
+    innovaciones = {"resumen": {}, "por_producto": []}
+    try:
+        innov = read_csv(DATASETS / "mod_innovaciones_segmento.csv")
+        if not innov.empty:
+            pp = (innov.groupby(["producto_codigo", "producto_nombre"])
+                  .agg(compraron=("clientes_compraron", "sum"), cartera=("clientes_cartera", "max"))
+                  .reset_index())
+            pp["pct"] = (pp["compraron"] / pp["cartera"] * 100).round(1)
+            innovaciones["resumen"] = {
+                "productos": int(pp["producto_codigo"].nunique()),
+                "compraron_total": int(pp["compraron"].sum()),
+                "pct_promedio": round(pp["pct"].mean(), 1),
+            }
+            innovaciones["por_producto"] = (
+                pp.sort_values("pct", ascending=False)
+                .head(20)
+                .to_dict("records")
+            )
+    except Exception:
+        pass
+
+    # ── Sell Out ──
+    sellout = {"categorias": []}
+    try:
+        so = read_csv(DATASETS / "mod_sellout_categoria.csv")
+        if not so.empty:
+            so.columns = [c.strip() for c in so.columns]
+            # Agrupar por Categoria (suma de subcategorías)
+            CAT_OBJ = {
+                "VINOS DEL AÑO":     19015,
+                "VINOS DE GUARDA":   678,
+                "SPIRITS":           17752,
+                "RTD":               9999,
+                "CHAMPAÑA":          686,
+                "CERVEZA ARTESANAL": 405,
+            }
+            RUBRO_CAT = {
+                "Vinos del Año": "VINOS DEL AÑO", "Vinos de Mesa": "VINOS DEL AÑO",
+                "Vinos de guarda": "VINOS DE GUARDA",
+                "Espumantes": "CHAMPAÑA",
+                "Cerveza Artesanal": "CERVEZA ARTESANAL",
+                "RTD (S)": "RTD", "RTD": "RTD",
+                "Whisky": "SPIRITS", "Gin": "SPIRITS", "Ron": "SPIRITS",
+                "Whisky (Maltas)": "SPIRITS", "Vodka": "SPIRITS", "Licores": "SPIRITS",
+                "Sidra": "SPIRITS",
+            }
+            so["cat"] = so["Categoria"].map(RUBRO_CAT).fillna(so["Categoria"].str.upper())
+            grp = so.groupby("cat").agg(litros=("litros", "sum"), clientes=("clientes", "sum")).reset_index()
+            cats = []
+            for _, r in grp.iterrows():
+                obj = CAT_OBJ.get(str(r["cat"]).upper(), 0)
+                alc = round(r["litros"] / obj * 100, 1) if obj else None
+                cats.append({
+                    "categoria": r["cat"],
+                    "litros": round(float(r["litros"]), 1),
+                    "objetivo": obj if obj else None,
+                    "alcance_pct": alc,
+                    "clientes": int(r["clientes"]),
+                })
+            sellout["categorias"] = sorted(cats, key=lambda x: x["litros"], reverse=True)
+    except Exception:
+        pass
+
+    # ── Planes AS ──
+    planes_as = {"resumen": {}, "por_plan": []}
+    try:
+        pa = read_csv(DATASETS / "mod_planes_as.csv")
+        if not pa.empty:
+            planes_as["resumen"] = {
+                "clientes": int(len(pa)),
+                "facturado": round(float(pa["total_facturado"].sum()), 0),
+                "sc_ganado": int(pa["sc_total_ganado"].sum()),
+                "sc_pendiente": int(pa["sc_pendiente"].sum()),
+            }
+            pp = pa.groupby("plan_as").agg(
+                clientes=("cliente_id", "count"),
+                facturado=("total_facturado", "sum"),
+                sc_ganado=("sc_total_ganado", "sum"),
+            ).reset_index()
+            planes_as["por_plan"] = pp.to_dict("records")
+    except Exception:
+        pass
+
+    # ── Acciones Comerciales ──
+    acciones = {"resumen": {}, "detalle": []}
+    try:
+        ac = read_csv(DATASETS / "mod_acciones_ranking.csv")
+        if not ac.empty:
+            acciones["resumen"] = {
+                "total_acciones": int(len(ac)),
+                "inversion_total": round(float(ac["inversion_pesos"].sum()), 0),
+                "clientes_afectados": int(ac["clientes_afectados"].sum()),
+                "importe_neto": round(float(ac["importe_neto"].sum()), 0),
+            }
+            top = ac.sort_values("inversion_pesos", ascending=False).head(10)
+            acciones["detalle"] = [
+                {
+                    "nombre": r["accion_nombre"],
+                    "tipo": r.get("tipo_accion", ""),
+                    "canal": r.get("canal", ""),
+                    "categoria": r.get("categoria", ""),
+                    "descuento": r.get("descuento_display", ""),
+                    "litros": round(float(r.get("litros_vendidos", 0)), 1),
+                    "inversion": round(float(r["inversion_pesos"]), 0),
+                    "importe_neto": round(float(r.get("importe_neto", 0)), 0),
+                    "clientes": int(r.get("clientes_afectados", 0)),
+                }
+                for _, r in top.iterrows()
+            ]
+    except Exception:
+        pass
+
     return jsonify({
         "mes":              f"{año:04d}-{mes:02d}",
         "nombre_mes":       nombre_mes,
         "calendario":       cal,
         "empresa":          empresa,
         "vendedores":       vendedores,
+        "once_titulares":   once_titulares,
+        "innovaciones":     innovaciones,
+        "sellout":          sellout,
+        "planes_as":        planes_as,
+        "acciones":         acciones,
         "fuente_objetivos": "resultado.xlsx",
         "fuente_ccc":       "ventas_acumulada.csv",
     })

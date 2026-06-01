@@ -3019,9 +3019,154 @@ function gCierreMes(p){
 
         html+=`</div></div>`;
 
+        // ── 11 Titulares ──
+        const t11=d.once_titulares||{};
+        const t11e=t11.empresa||{};
+        if(t11e.total){
+          const t11pct=t11e.pct||0, t11cl=t11pct>=20?'ok':t11pct>=10?'wn':'bd';
+          html+=`<div class="card" style="margin-top:14px;">
+            <div class="card-hd"><span class="card-title">🏅 11 Titulares</span><span class="chip ${t11cl}">${t11pct}% empresa</span></div>
+            <div class="card-body">
+              <div style="margin-bottom:10px;">
+                <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">${t11e.cumplidos.toLocaleString('es-AR')} cumplidos de ${t11e.total.toLocaleString('es-AR')} combinaciones cliente-marca</div>
+                <div class="bar"><div class="bar-f ${t11cl}" style="width:${Math.min(t11pct,100)}%"></div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div>
+                  <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;">Por Vendedor</div>
+                  ${(t11.por_vendedor||[]).map(v=>{const p=v.pct||0,cl=p>=20?'ok':p>=10?'wn':'bd';
+                    return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                      <span style="font-size:11px;">V${v.vendedor_codigo} ${(v.vendedor_nombre||'').split(' ')[0]}</span>
+                      <div style="display:flex;align-items:center;gap:6px;">
+                        <div class="bar" style="width:60px;height:4px;"><div class="bar-f ${cl}" style="width:${Math.min(p,100)}%"></div></div>
+                        <span class="chip ${cl}" style="font-size:9px;">${p}%</span>
+                      </div>
+                    </div>`;}).join('')}
+                </div>
+                <div>
+                  <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;">Por Marca (Top 8)</div>
+                  ${(t11.por_marca||[]).slice(0,8).map(m=>{const p=m.pct||0,cl=p>=20?'ok':p>=10?'wn':'bd';
+                    return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                      <span style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;">${m.marca_objetivo}</span>
+                      <div style="display:flex;align-items:center;gap:6px;">
+                        <div class="bar" style="width:50px;height:4px;"><div class="bar-f ${cl}" style="width:${Math.min(p,100)}%"></div></div>
+                        <span class="chip ${cl}" style="font-size:9px;">${p}%</span>
+                      </div>
+                    </div>`;}).join('')}
+                </div>
+              </div>
+            </div>
+          </div>`;
+        }
+
+        // ── Innovaciones ──
+        const innov=d.innovaciones||{};
+        const innovR=innov.resumen||{};
+        if(innovR.productos){
+          html+=`<div class="card" style="margin-top:14px;">
+            <div class="card-hd"><span class="card-title">🚀 Innovaciones</span><span class="chip">${innovR.productos} productos</span></div>
+            <div class="card-body nop">
+              <div style="display:flex;gap:16px;padding:10px 14px 6px;border-bottom:1px solid var(--b);">
+                <div><div style="font-size:10px;color:var(--text3)">Productos</div><b style="font-size:18px">${innovR.productos}</b></div>
+                <div><div style="font-size:10px;color:var(--text3)">Compraron</div><b style="font-size:18px">${(innovR.compraron_total||0).toLocaleString('es-AR')}</b></div>
+                <div><div style="font-size:10px;color:var(--text3)">Penet. Prom.</div><b style="font-size:18px">${innovR.pct_promedio||0}%</b></div>
+              </div>
+              <table class="tbl" style="font-size:11px;">
+                <thead><tr><th>Producto</th><th style="text-align:right">Compraron</th><th style="text-align:right">Cartera</th><th style="min-width:60px"></th><th style="text-align:right">%</th></tr></thead>
+                <tbody>${(innov.por_producto||[]).map(p=>{const pc=p.pct||0,cl=pc>=30?'ok':pc>=10?'wn':'bd';
+                  return `<tr>
+                    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.producto_nombre}</td>
+                    <td style="text-align:right">${p.compraron}</td>
+                    <td style="text-align:right;color:var(--text3)">${p.cartera}</td>
+                    <td><div class="bar" style="height:3px;"><div class="bar-f ${cl}" style="width:${Math.min(pc,100)}%"></div></div></td>
+                    <td style="text-align:right"><span class="chip ${cl}" style="font-size:9px;">${pc}%</span></td>
+                  </tr>`;}).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>`;
+        }
+
+        // ── Sell Out ──
+        const so=d.sellout||{};
+        const soC=so.categorias||[];
+        if(soC.length){
+          html+=`<div class="card" style="margin-top:14px;">
+            <div class="card-hd"><span class="card-title">📦 Sell Out · Litros vs Objetivo</span></div>
+            <div class="card-body nop">
+              <table class="tbl" style="font-size:11px;">
+                <thead><tr><th>Categoría</th><th style="text-align:right">Litros</th><th style="text-align:right">Objetivo</th><th style="min-width:70px"></th><th style="text-align:right">Alcance</th><th style="text-align:right">Clientes</th></tr></thead>
+                <tbody>${soC.map(c=>{
+                  const alc=c.alcance_pct,cl=alc!=null?(alc>=100?'ok':alc>=75?'wn':'bd'):'info';
+                  const barW=alc!=null?Math.min(alc,100):0;
+                  return `<tr>
+                    <td style="font-weight:600">${c.categoria}</td>
+                    <td style="text-align:right">${Number(c.litros).toLocaleString('es-AR',{maximumFractionDigits:0})} L</td>
+                    <td style="text-align:right;color:var(--text3)">${c.objetivo?Number(c.objetivo).toLocaleString('es-AR',{maximumFractionDigits:0})+' L':'–'}</td>
+                    <td><div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${barW}%"></div></div></td>
+                    <td style="text-align:right">${alc!=null?`<span class="chip ${cl}" style="font-size:9px;">${alc}%</span>`:'<span style="color:var(--text3);font-size:10px;">–</span>'}</td>
+                    <td style="text-align:right;color:var(--text3)">${c.clientes}</td>
+                  </tr>`;}).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>`;
+        }
+
+        // ── Planes AS ──
+        const pa=d.planes_as||{};
+        const paR=pa.resumen||{};
+        if(paR.clientes){
+          const ppPlans=pa.por_plan||[];
+          html+=`<div class="card" style="margin-top:14px;">
+            <div class="card-hd"><span class="card-title">🏆 Planes AS</span><span class="chip">${paR.clientes} clientes</span></div>
+            <div class="card-body">
+              <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
+                <div><div style="font-size:10px;color:var(--text3)">Facturado</div><b style="font-size:16px">${fmtM(paR.facturado)}</b></div>
+                <div><div style="font-size:10px;color:var(--text3)">Sin Cargo Ganado</div><b style="font-size:16px;color:var(--ok)">${paR.sc_ganado}</b></div>
+                <div><div style="font-size:10px;color:var(--text3)">SC Pendiente</div><b style="font-size:16px;color:${paR.sc_pendiente>0?'var(--wn)':'var(--ok)'}">${paR.sc_pendiente}</b></div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                ${ppPlans.map(p=>`<div style="background:var(--surf2);border-radius:8px;padding:8px 14px;min-width:100px;">
+                  <div style="font-size:10px;color:var(--text3);">Plan ${p.plan_as}</div>
+                  <div style="font-size:15px;font-weight:700;">${p.clientes} clientes</div>
+                  <div style="font-size:10px;color:var(--text2);">${fmtM(p.facturado)}</div>
+                </div>`).join('')}
+              </div>
+            </div>
+          </div>`;
+        }
+
+        // ── Acciones Comerciales ──
+        const ac=d.acciones||{};
+        const acR=ac.resumen||{};
+        if(acR.total_acciones){
+          html+=`<div class="card" style="margin-top:14px;">
+            <div class="card-hd"><span class="card-title">💰 Acciones Comerciales</span><span class="chip">${acR.total_acciones} acciones</span></div>
+            <div class="card-body nop">
+              <div style="display:flex;gap:16px;flex-wrap:wrap;padding:10px 14px 8px;border-bottom:1px solid var(--b);">
+                <div><div style="font-size:10px;color:var(--text3)">Inversión</div><b>${fmtM(acR.inversion_total)}</b></div>
+                <div><div style="font-size:10px;color:var(--text3)">Importe Neto</div><b>${fmtM(acR.importe_neto)}</b></div>
+                <div><div style="font-size:10px;color:var(--text3)">Clientes</div><b>${(acR.clientes_afectados||0).toLocaleString('es-AR')}</b></div>
+              </div>
+              <table class="tbl" style="font-size:11px;">
+                <thead><tr><th>Acción</th><th>Canal</th><th style="text-align:right">Inversión</th><th style="text-align:right">Litros</th><th style="text-align:right">Clientes</th></tr></thead>
+                <tbody>${(ac.detalle||[]).map(a=>`<tr>
+                  <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${a.nombre}">${a.nombre}</td>
+                  <td><span class="chip" style="font-size:9px;">${a.canal}</span></td>
+                  <td style="text-align:right">${fmtM(a.inversion)}</td>
+                  <td style="text-align:right">${Number(a.litros).toLocaleString('es-AR',{maximumFractionDigits:0})} L</td>
+                  <td style="text-align:right">${a.clientes}</td>
+                </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>`;
+        }
+
         // Fuente
-        html+=`<div style="font-size:10px;color:var(--text3);padding:6px 2px 16px;">
-          Fuente $: ${d.fuente_objetivos} · Fuente CCC: ${d.fuente_ccc}
+        html+=`<div style="font-size:10px;color:var(--text3);padding:6px 2px 20px;">
+          Fuente $: ${d.fuente_objetivos} · CCC: ${d.fuente_ccc} · 11T/Innov/SO/PlAS/Acc: datasets ORBIT
         </div>`;
 
         bodyEl.innerHTML=html;
