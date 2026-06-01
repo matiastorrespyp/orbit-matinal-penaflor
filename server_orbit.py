@@ -3009,6 +3009,149 @@ def gerencia_alertas_caida():
         return jsonify({"error": str(e)}), 500
 
 
+# ====== CIERRE DE MES ======
+@app.route("/api/gerencia/cierre_mes")
+def gerencia_cierre_mes():
+    """
+    Resumen de cierre mensual por vendedor y empresa.
+    ?mes=YYYY-MM  (default: mes anterior al actual)
+    Fuente $:   resultado.xlsx hoja Avance
+    Fuente CCC: ventas_acumulada.csv filtrado al mes
+    """
+    from calendar import monthrange
+
+    MESES_ES = {
+        1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
+        7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"
+    }
+
+    hoy = datetime.now()
+    mes_param = request.args.get("mes", "")
+    if mes_param:
+        try:
+            año, mes = map(int, mes_param.split("-"))
+        except Exception:
+            return jsonify({"error": "Formato inválido. Use YYYY-MM"}), 400
+    else:
+        if hoy.month == 1:
+            año, mes = hoy.year - 1, 12
+        else:
+            año, mes = hoy.year, hoy.month - 1
+
+    ultimo_dia = monthrange(año, mes)[1]
+    fecha_cierre = datetime(año, mes, ultimo_dia, 23, 59, 59)
+    nombre_mes = f"{MESES_ES.get(mes, str(mes))} {año}"
+
+    # Calendario del mes cerrado
+    cal = contar_dias_habiles(fecha_corte=fecha_cierre)
+
+    # Objetivos y acumulado desde resultado.xlsx (fuente primaria)
+    obj_por_vend = {}
+    resultado_path = INPUTS / "resultado.xlsx"
+    if resultado_path.exists():
+        try:
+            avance_df = pd.read_excel(resultado_path, sheet_name="Avance")
+            for _, r in avance_df.iterrows():
+                cn = clean_code(str(r.get("VendedorCodigo", "")))
+                if not cn or int(cn) in _VENDEDORES_EXCLUIDOS:
+                    continue
+                obj_por_vend[cn] = {
+                    "nombre": str(r.get("VendedorNombre", "")).strip().title(),
+                    "objetivo": float(r.get("ValorObjetivo", 0) or 0),
+                    "acumulado": float(r.get("Acumulado", 0) or 0),
+                }
+        except Exception:
+            pass
+
+    # CCC desde ventas_acumulada.csv filtrado al mes cerrado
+    ccc_por_vend = {}
+    vac_path = INPUTS / "ventas_acumulada.csv"
+    if vac_path.exists():
+        try:
+            vac = pd.read_csv(vac_path, sep=";", encoding="latin1")
+            vac["fecha"]    = pd.to_datetime(vac["FechaComprobante"], dayfirst=True, errors="coerce")
+            vac["importe"]  = vac["ImporteNetoItem"].apply(_parse_num_ar)
+            vac["vend_cod"] = pd.to_numeric(vac["CodVendedor"], errors="coerce")
+            mes_ini = datetime(año, mes, 1)
+            # Filtrar solo ventas Peñaflor (Empresa='Empresa'), no P&P Logística
+            empresa_ok = (vac["Empresa"] == "Empresa") if "Empresa" in vac.columns else pd.Series(True, index=vac.index)
+            vac = vac[
+                empresa_ok &
+                (vac["fecha"] >= mes_ini) & (vac["fecha"] <= fecha_cierre) &
+                (vac["importe"] > 0) & (~vac["vend_cod"].isin(_VENDEDORES_EXCLUIDOS))
+            ].copy()
+            vac["segmento"] = vac.apply(
+                lambda r: _clasificar_segmento(str(r.get("Ramo", "")), str(r.get("Subramo", ""))), axis=1
+            )
+            for (vend_cod, seg), grp in vac.groupby(["vend_cod", "segmento"]):
+                cn = clean_code(str(int(vend_cod)))
+                if cn not in ccc_por_vend:
+                    ccc_por_vend[cn] = {"TRADICIONAL": 0, "AUTOSERVICIO": 0, "ON_PREMISE_VTK": 0, "OTROS": 0}
+                ccc_por_vend[cn][seg] = int(grp["Cliente"].nunique())
+        except Exception:
+            pass
+
+    # Vendedores activos
+    vend_df = read_csv(CONFIG / "vendedores_activos.csv")
+    vend_activos = {}
+    if not vend_df.empty:
+        for _, v in vend_df[vend_df["activo"] == 1].iterrows():
+            cn = clean_code(str(v["codigo_vendedor"]))
+            if int(cn) not in _VENDEDORES_EXCLUIDOS:
+                vend_activos[cn] = str(v["nombre_vendedor"]).strip()
+
+    vendedores = []
+    for cn, nombre_config in vend_activos.items():
+        ob  = obj_por_vend.get(cn, {})
+        ccc = ccc_por_vend.get(cn, {})
+
+        objetivo   = ob.get("objetivo", 0)
+        acumulado  = ob.get("acumulado", 0)
+        avance_pct = round(acumulado / objetivo * 100, 2) if objetivo else 0
+        nombre     = ob.get("nombre") or nombre_config
+
+        ccc_trad  = ccc.get("TRADICIONAL", 0)
+        ccc_auto  = 0 if cn == "3" else ccc.get("AUTOSERVICIO", 0)
+        ccc_op    = ccc.get("ON_PREMISE_VTK", 0)
+        ccc_total = ccc_trad + ccc_auto + ccc_op + ccc.get("OTROS", 0)
+
+        vendedores.append({
+            "codigo":           cn,
+            "nombre":           nombre,
+            "objetivo":         objetivo,
+            "acumulado":        acumulado,
+            "avance_pct":       avance_pct,
+            "ccc_total":        ccc_total,
+            "ccc_tradicional":  ccc_trad,
+            "ccc_autoservicio": ccc_auto,
+            "ccc_onpremise":    ccc_op,
+        })
+
+    vendedores.sort(key=lambda x: x["avance_pct"], reverse=True)
+
+    empresa = {
+        "objetivo":         sum(v["objetivo"]         for v in vendedores),
+        "acumulado":        sum(v["acumulado"]         for v in vendedores),
+        "ccc_total":        sum(v["ccc_total"]         for v in vendedores),
+        "ccc_tradicional":  sum(v["ccc_tradicional"]  for v in vendedores),
+        "ccc_autoservicio": sum(v["ccc_autoservicio"] for v in vendedores),
+        "ccc_onpremise":    sum(v["ccc_onpremise"]    for v in vendedores),
+    }
+    empresa["avance_pct"] = round(
+        empresa["acumulado"] / empresa["objetivo"] * 100, 2
+    ) if empresa["objetivo"] else 0
+
+    return jsonify({
+        "mes":              f"{año:04d}-{mes:02d}",
+        "nombre_mes":       nombre_mes,
+        "calendario":       cal,
+        "empresa":          empresa,
+        "vendedores":       vendedores,
+        "fuente_objetivos": "resultado.xlsx",
+        "fuente_ccc":       "ventas_acumulada.csv",
+    })
+
+
 # ====== STARTUP (gunicorn + __main__) ======
 # Se ejecuta cuando gunicorn importa el módulo, no solo en __main__
 backup_orbit_db()         # 1. copia orbit.db antes de cualquier cambio

@@ -918,6 +918,8 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       <div class="gs-item" data-sc="innovaciones"        onclick="gSw('innovaciones',this)"><span class="gs-ico">🚀</span>Innovaciones</div>
       <div class="gs-item" data-sc="planes_as"           onclick="gSw('planes_as',this)"><span class="gs-ico">🏆</span>Planes AS</div>
       <div class="gs-item" data-sc="acciones_comerciales" onclick="gSw('acciones_comerciales',this)"><span class="gs-ico">💰</span>Acciones Comerciales</div>
+      <div class="gs-sec">Reportes</div>
+      <div class="gs-item" data-sc="cierre_mes" onclick="gSw('cierre_mes',this)"><span class="gs-ico">🏁</span>Cierre de Mes</div>
     </div>
     <div class="gs-foot">
       <div class="gs-foot-user">
@@ -1247,7 +1249,7 @@ function gSw(id,el){
   gScreen=id;
   document.querySelectorAll('.gs-item').forEach(n=>n.classList.remove('active'));
   (el||document.querySelector(`[data-sc="${id}"]`))?.classList.add('active');
-  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',planificacion:'Planificación',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales'};
+  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',planificacion:'Planificación',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',cierre_mes:'Cierre de Mes'};
   document.getElementById('gTopTitle').textContent=tt[id]||'';
   gRender();
 }
@@ -1263,6 +1265,7 @@ function gRender(){
   else if(gScreen==='planes_as')             gPlanesAS(p);
   else if(gScreen==='acciones_comerciales')  gAccionesComerciales(p);
   else if(gScreen==='dormidos')              gDormidos(p);
+  else if(gScreen==='cierre_mes')            gCierreMes(p);
 }
 
 /* — Dashboard — */
@@ -2912,6 +2915,124 @@ function vPlanesAS(){
     </div>`;
   }).join('');
   document.getElementById('vT-planes_as').innerHTML=h;
+}
+
+/* ════ CIERRE DE MES ════ */
+function gCierreMes(p){
+  p.innerHTML=`<div class="gph">
+    <div><div class="gph-title">Cierre de Mes</div>
+    <div class="gph-sub" id="cierre-sub">Cargando…</div></div>
+    <div class="gph-chips" id="cierre-chips"></div>
+  </div>
+  <div id="cierre-body"><div class="card"><div class="card-body"><div class="empty"><div class="eico" style="font-size:28px">⏳</div><p>Cargando datos del cierre…</p></div></div></div></div>`;
+
+  (async()=>{
+    const bodyEl=document.getElementById('cierre-body');
+    const subEl =document.getElementById('cierre-sub');
+    const chipsEl=document.getElementById('cierre-chips');
+
+    // Selector de mes
+    const now=new Date();
+    const meses=[];
+    // Últimos 3 meses completos
+    for(let i=1;i<=3;i++){
+      let d=new Date(now.getFullYear(), now.getMonth()-i, 1);
+      meses.push({val:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`, label:d.toLocaleDateString('es-AR',{month:'long',year:'numeric'})});
+    }
+    let selMes=meses[0].val;
+
+    function mesSelector(){
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+        <span style="font-size:12px;color:var(--text2);">Mes:</span>
+        <select id="cierre-mes-sel" onchange="cierre_cambiarMes(this.value)" style="background:var(--surf2);color:var(--text);border:1px solid var(--b);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">
+          ${meses.map(m=>`<option value="${m.val}" ${m.val===selMes?'selected':''}>${m.label.charAt(0).toUpperCase()+m.label.slice(1)}</option>`).join('')}
+        </select>
+      </div>`;
+    }
+
+    async function cargarCierre(mes){
+      try{
+        const r=await fetch(`/api/gerencia/cierre_mes?mes=${mes}`);
+        if(!r.ok){ bodyEl.innerHTML=`<div class="card"><div class="card-body"><p style="color:var(--bd);padding:16px">Error HTTP ${r.status}</p></div></div>`; return; }
+        const d=await r.json();
+
+        const emp=d.empresa||{}, vends=d.vendedores||[], cal=d.calendario||{};
+        const av=emp.avance_pct||0, cl=av>=100?'ok':av>=80?'wn':'bd';
+
+        if(subEl) subEl.textContent=`${d.nombre_mes} · ${cal.total||'–'} días hábiles`;
+        if(chipsEl) chipsEl.innerHTML=`<span class="chip ${cl}">${av.toFixed(1)}% avance</span><span class="chip">${cal.total||'–'} días hábiles</span>`;
+
+        let html=mesSelector();
+
+        // Tarjeta empresa
+        html+=`<div class="krow" style="margin-bottom:16px;">
+          <div class="kcard ok">
+            <div class="kl">Acumulado compañía</div>
+            <div class="kv">${fmtM(emp.acumulado)}</div>
+            <div class="kh">Objetivo: ${fmtM(emp.objetivo)}</div>
+          </div>
+          <div class="kcard ${cl}">
+            <div class="kl">Avance final</div>
+            <div class="kv">${av.toFixed(1)}<span class="ku">%</span></div>
+            <div class="kh">${cal.total||'–'} días hábiles del mes</div>
+          </div>
+          <div class="kcard info">
+            <div class="kl">CCC Compradores</div>
+            <div class="kv">${emp.ccc_total}</div>
+            <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
+              <span class="chip" style="font-size:9px;">TRAD ${emp.ccc_tradicional}</span>
+              <span class="chip" style="font-size:9px;">AS ${emp.ccc_autoservicio}</span>
+              <span class="chip" style="font-size:9px;">OP ${emp.ccc_onpremise}</span>
+            </div>
+          </div>
+        </div>`;
+
+        // Tabla vendedores
+        html+=`<div class="card">
+          <div class="card-hd"><span class="card-title">🏁 Cierre por Vendedor</span><span class="chip">${vends.length} vendedores</span></div>
+          <div class="card-body nop">`;
+
+        vends.forEach(v=>{
+          const vav=v.avance_pct||0, vcl=vav>=100?'ok':vav>=80?'wn':'bd';
+          const barW=Math.min(Math.max(vav,0),100);
+          const falta=vav<100?` · falta ${fmtM(v.objetivo-v.acumulado)}`:'';
+          html+=`<div class="rrow" style="align-items:flex-start;padding:12px 14px;">
+            <div class="rdot" style="background:var(--mg);flex-shrink:0;margin-top:2px;">${v.nombre.charAt(0)}</div>
+            <div class="rinfo" style="flex:1;min-width:0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <b style="font-size:13px;">V${v.codigo} · ${v.nombre}</b>
+                <span class="chip ${vcl}" style="font-size:11px;font-weight:700;">${vav.toFixed(1)}%</span>
+              </div>
+              <div class="rsub" style="margin:3px 0 6px;">${fmtM(v.acumulado)} acumulado / ${fmtM(v.objetivo)} objetivo${falta}</div>
+              <div class="bar" style="height:6px;border-radius:3px;">
+                <div class="bar-f ${vcl}" style="width:${barW}%;border-radius:3px;"></div>
+              </div>
+              <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+                <span style="font-size:11px;color:var(--text2);">CCC: <b style="color:var(--text)">${v.ccc_total}</b></span>
+                <span class="chip" style="font-size:10px;">TRAD ${v.ccc_tradicional}</span>
+                ${v.ccc_autoservicio>0?`<span class="chip" style="font-size:10px;">AS ${v.ccc_autoservicio}</span>`:''}
+                ${v.ccc_onpremise>0?`<span class="chip" style="font-size:10px;">OP ${v.ccc_onpremise}</span>`:''}
+              </div>
+            </div>
+          </div>`;
+        });
+
+        html+=`</div></div>`;
+
+        // Fuente
+        html+=`<div style="font-size:10px;color:var(--text3);padding:6px 2px 16px;">
+          Fuente $: ${d.fuente_objetivos} · Fuente CCC: ${d.fuente_ccc}
+        </div>`;
+
+        bodyEl.innerHTML=html;
+      }catch(e){
+        bodyEl.innerHTML=`<div class="card"><div class="card-body"><p style="color:var(--bd);padding:16px">Error: ${e.message}</p></div></div>`;
+      }
+    }
+
+    window.cierre_cambiarMes=function(mes){ selMes=mes; cargarCierre(mes); };
+    cargarCierre(selMes);
+  })();
 }
 
 /* ── mensajes ── */

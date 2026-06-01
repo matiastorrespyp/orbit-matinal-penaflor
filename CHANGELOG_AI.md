@@ -1,5 +1,20 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-01 — feat(gerencia): pantalla Cierre de Mes
+
+**Qué se hizo:**
+- `server_orbit.py`: nuevo endpoint `GET /api/gerencia/cierre_mes?mes=YYYY-MM`.
+  - Default: mes anterior (mayo al estar en junio).
+  - Objetivos y acumulado $ desde `resultado.xlsx` hoja "Avance".
+  - CCC desde `ventas_acumulada.csv` filtrado al mes, con filtro `Empresa='Empresa'` para excluir P&P Logística.
+  - Reglas: excluye V2/V5/V20; V3 `ccc_autoservicio=0`; clasifica por `_clasificar_segmento()`.
+  - Devuelve: empresa (totales) + vendedores (ordenados por avance desc) + calendario del mes cerrado.
+- `portal.html` (sidebar): nuevo ítem "🏁 Cierre de Mes" bajo sección "Reportes".
+- `portal.html` (gCierreMes): pantalla self-loading con selector de mes (últimos 3 meses), tarjetas KPI empresa, tabla por vendedor con barra de avance y desglose CCC (TRAD/AS/OP).
+- `portal.html` (gSw, gRender): registrado en título y router.
+
+**Archivos tocados:** `server_orbit.py`, `PAV MATINAL PE_A FLOR/portal.html`
+
 ## 2026-05-28 — feat(planificacion): timestamps Argentina + total todos los planes
 
 **Qué se hizo:**
