@@ -3144,22 +3144,111 @@ def gerencia_cierre_mes():
     ) if empresa["objetivo"] else 0
 
     # ── 11 Titulares (totales empresa, sin apertura por vendedor) ──
-    once_titulares = {"empresa": {}, "por_marca": []}
+    # ── 11 Titulares: CCC por marca vs objetivo CCC (mismo cálculo que /api/gerencia/once_titulares) ──
+    # Fuente CCC: ventas_acumulada filtrado al mes cerrado
+    # Fuente objetivo: objetivo 11T.xlsx
+    once_titulares = {"marcas": [], "empresa": {}}
     try:
-        t11 = read_csv(DATASETS / "mod_11t_acum.csv")
-        if not t11.empty:
-            total_comb = len(t11)
-            cumpl = int(t11["tiene_flag"].sum())
-            once_titulares["empresa"] = {
-                "total": total_comb,
-                "cumplidos": cumpl,
-                "pct": round(cumpl / total_comb * 100, 1) if total_comb else 0,
-            }
-            pm = (t11.groupby("marca_objetivo")
-                  .agg(total=("tiene_flag", "count"), cumplidos=("tiene_flag", "sum"))
-                  .reset_index())
-            pm["pct"] = (pm["cumplidos"] / pm["total"] * 100).round(1)
-            once_titulares["por_marca"] = pm.sort_values("pct", ascending=False).to_dict("records")
+        _MARCA_LKP = {
+            "ALMA MORA": "ALMA MORA", "ALARIS": "ALARIS", "TRAPICHE ALARIS": "ALARIS",
+            "DON DAVID": "DON DAVID", "DADA": "DADA", "LOS ARBOLES": "LOS ARBOLES",
+            "FINCA LAS MORAS": "FINCA LAS MORAS", "F LAS MORAS": "FINCA LAS MORAS",
+            "TRAPICHE RESERVA": "TRAPICHE RESERVA",
+            "FOND DE CAVE": "FOND DE CAVE", "FOND CAVE": "FOND DE CAVE",
+            "CAZADOR": "CAZADOR", "ANTARES": "ANTARES",
+            "GORDON'S FLAVOURS": "GORDON'S FLAVOURS", "GORDONS FLAVOURS": "GORDON'S FLAVOURS",
+            "GORDONS": "GORDON'S FLAVOURS", "GORDON'S": "GORDON'S FLAVOURS",
+            "SMIRNOFF": "SMIRNOFF FLAVOURS", "SMIRNOFF FLAVOURS": "SMIRNOFF FLAVOURS",
+            "SMIRNOFF ICE": "SMIRNOFF ICE",
+            "JW BLACK": "JW BLACK", "JW RED": "JW RED",
+            "MASCOTA": "MASCOTA", "NC ESPUMANTES": "NC ESPUMANTES",
+            "TRAPICHE MEDALLA": "TRAPICHE MEDALLA",
+        }
+        _ART_KW_11T = [
+            ("SMIRNOFF ICE", "SMIRNOFF ICE"), ("SMF ICE", "SMIRNOFF ICE"),
+            ("SMIRNOFF", "SMIRNOFF FLAVOURS"), ("GORDON", "GORDON'S FLAVOURS"),
+            ("ANTARES", "ANTARES"), ("CAZADOR", "CAZADOR"),
+            ("FOND DE CAVE", "FOND DE CAVE"), ("ALMA MORA", "ALMA MORA"),
+            ("LOS ARBOLES", "LOS ARBOLES"), ("DADA", "DADA"),
+            ("FINCA LAS MORAS", "FINCA LAS MORAS"), ("DON DAVID", "DON DAVID"),
+            ("ALARIS", "ALARIS"), ("TRAPICHE RESERVA", "TRAPICHE RESERVA"),
+            ("JW BLACK", "JW BLACK"), ("JW RED", "JW RED"),
+        ]
+        _OBJ_ALIAS_11T = {
+            "ALMA MORA": "ALMA MORA", "TRAPICHE RESERVA": "TRAPICHE RESERVA",
+            "FINCA LAS MORAS": "FINCA LAS MORAS", "FINCA LAS MORAS": "FINCA LAS MORAS",
+            "ALARIS": "ALARIS", "DON DAVID": "DON DAVID", "DADA": "DADA",
+            "SIMRNOFF FLAVORS": "SMIRNOFF FLAVOURS", "SMIRNOFF FLAVORS": "SMIRNOFF FLAVOURS",
+            "SMIRNOFF FLAVOURS": "SMIRNOFF FLAVOURS",
+            "LOS ARBOLES": "LOS ARBOLES", "ANTARES": "ANTARES",
+            "SMIRNOFF ICE": "SMIRNOFF ICE", "SMF ICE": "SMIRNOFF ICE",
+            "GORDONS FLAVOURS": "GORDON'S FLAVOURS", "GORDONS FLAVORS": "GORDON'S FLAVOURS",
+            "GORDON'S FLAVOURS": "GORDON'S FLAVOURS",
+        }
+
+        # Objetivos desde objetivo 11T.xlsx
+        obj_map_11t = {}
+        try:
+            obj_df = pd.read_excel(INPUTS / "objetivo 11T.xlsx", header=1)
+            obj_df = obj_df.dropna(subset=obj_df.columns[1:2])
+            for _, row in obj_df.iterrows():
+                raw = str(row.iloc[1]).upper().strip()
+                mk = _OBJ_ALIAS_11T.get(raw, raw)
+                try:
+                    obj_map_11t[mk] = int(float(row.iloc[2]))
+                except (ValueError, TypeError):
+                    pass
+        except Exception:
+            pass
+
+        # CCC por marca desde ventas_acumulada filtrado al mes cerrado
+        ccc_map_11t = {}
+        vac_path_11t = INPUTS / "ventas_acumulada.csv"
+        if vac_path_11t.exists():
+            try:
+                vac11 = pd.read_csv(vac_path_11t, sep=";", encoding="latin1", low_memory=False)
+                vac11["importe"] = pd.to_numeric(
+                    vac11["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
+                vac11["fecha"] = pd.to_datetime(vac11["FechaComprobante"], dayfirst=True, errors="coerce")
+                vac11 = vac11[
+                    (vac11["fecha"] >= datetime(año, mes, 1)) & (vac11["fecha"] <= fecha_cierre) &
+                    (~vac11["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS)) &
+                    (vac11["importe"] > 0)
+                ]
+                vac11["marca_objetivo"] = vac11["Marca"].astype(str).str.upper().str.strip().map(_MARCA_LKP)
+                unresolved = vac11["marca_objetivo"].isna()
+                if unresolved.any():
+                    for kw, mo in _ART_KW_11T:
+                        still = vac11["marca_objetivo"].isna()
+                        if not still.any():
+                            break
+                        hits = vac11.loc[still, "Articulo"].astype(str).str.upper().str.contains(kw, regex=False, na=False)
+                        vac11.loc[still & hits, "marca_objetivo"] = mo
+                ccc_map_11t = (vac11[vac11["marca_objetivo"].notna()]
+                               .groupby("marca_objetivo")["Cliente"].nunique().to_dict())
+            except Exception:
+                pass
+
+        # Construir resultado — solo marcas con objetivo definido
+        marcas_11t = []
+        total_ccc = 0
+        total_obj = 0
+        for mk in sorted(obj_map_11t.keys(), key=lambda x: ccc_map_11t.get(x, 0), reverse=True):
+            ccc_v = ccc_map_11t.get(mk, 0)
+            obj_v = obj_map_11t[mk]
+            pct   = round(ccc_v / obj_v * 100, 1) if obj_v else None
+            marcas_11t.append({"marca": mk, "ccc": ccc_v, "objetivo": obj_v, "pct": pct})
+            total_ccc += ccc_v
+            total_obj += obj_v
+
+        once_titulares["marcas"] = marcas_11t
+        once_titulares["empresa"] = {
+            "ccc_total": total_ccc,
+            "objetivo_total": total_obj,
+            "pct": round(total_ccc / total_obj * 100, 1) if total_obj else 0,
+            "marcas_sobre_objetivo": sum(1 for m in marcas_11t if (m["pct"] or 0) >= 100),
+            "total_marcas": len(marcas_11t),
+        }
     except Exception:
         pass
 

@@ -3019,31 +3019,39 @@ function gCierreMes(p){
 
         html+=`</div></div>`;
 
-        // ── 11 Titulares ──
+        // ── 11 Titulares: CCC vs Objetivo ──
         const t11=d.once_titulares||{};
         const t11e=t11.empresa||{};
-        if(t11e.total){
-          const t11pct=t11e.pct||0, t11cl=t11pct>=20?'ok':t11pct>=10?'wn':'bd';
+        const t11marcas=t11.marcas||[];
+        if(t11marcas.length){
+          const sobObj=t11e.marcas_sobre_objetivo||0, totM=t11e.total_marcas||t11marcas.length;
+          const t11cl=sobObj>=totM?'ok':sobObj>=totM*0.6?'wn':'bd';
           html+=`<div class="card" style="margin-top:14px;">
-            <div class="card-hd"><span class="card-title">🏅 11 Titulares</span><span class="chip ${t11cl}">${t11pct}% empresa</span></div>
-            <div class="card-body">
-              <div style="margin-bottom:10px;">
-                <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">${t11e.cumplidos.toLocaleString('es-AR')} cumplidos de ${t11e.total.toLocaleString('es-AR')} combinaciones cliente-marca (distribuidora)</div>
-                <div class="bar"><div class="bar-f ${t11cl}" style="width:${Math.min(t11pct,100)}%"></div></div>
-              </div>
-              <div>
-                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;">Por Marca</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;">
-                ${(t11.por_marca||[]).map(m=>{const p=m.pct||0,cl=p>=20?'ok':p>=10?'wn':'bd';
-                  return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
-                    <span style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px;">${m.marca_objetivo}</span>
-                    <div style="display:flex;align-items:center;gap:5px;">
-                      <div class="bar" style="width:50px;height:4px;"><div class="bar-f ${cl}" style="width:${Math.min(p,100)}%"></div></div>
-                      <span class="chip ${cl}" style="font-size:9px;min-width:34px;text-align:center;">${p}%</span>
-                    </div>
-                  </div>`;}).join('')}
-                </div>
-              </div>
+            <div class="card-hd">
+              <span class="card-title">🏅 11 Titulares · CCC vs Objetivo</span>
+              <span class="chip ${t11cl}">${sobObj}/${totM} marcas ≥ 100%</span>
+            </div>
+            <div class="card-body nop">
+              <table class="tbl" style="font-size:12px;">
+                <thead><tr>
+                  <th>Marca</th>
+                  <th style="text-align:right">CCC</th>
+                  <th style="text-align:right">Objetivo</th>
+                  <th style="min-width:80px"></th>
+                  <th style="text-align:right">Avance</th>
+                </tr></thead>
+                <tbody>${t11marcas.map(m=>{
+                  const p=m.pct||0, cl=p>=100?'ok':p>=75?'wn':'bd';
+                  const bw=Math.min(p,100);
+                  return `<tr>
+                    <td style="font-weight:600">${m.marca}</td>
+                    <td style="text-align:right">${(m.ccc||0).toLocaleString('es-AR')}</td>
+                    <td style="text-align:right;color:var(--text3)">${(m.objetivo||0).toLocaleString('es-AR')}</td>
+                    <td><div class="bar" style="height:5px;"><div class="bar-f ${cl}" style="width:${bw}%"></div></div></td>
+                    <td style="text-align:right"><span class="chip ${cl}" style="font-size:10px;">${p}%</span></td>
+                  </tr>`;}).join('')}
+                </tbody>
+              </table>
             </div>
           </div>`;
         }
