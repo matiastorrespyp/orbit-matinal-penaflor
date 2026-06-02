@@ -2792,12 +2792,14 @@ def _sellout_desde_ventas(df_raw: pd.DataFrame) -> list:
     # Para productos con PesoKg=0 también: inferir del nombre
     still_zero = df["litros"] == 0
     if still_zero.any() and "Articulo" in df.columns:
-        df.loc[still_zero, "litros"] = df.loc[still_zero, "Articulo"].apply(_infer_litros_por_nombre) * df.loc[still_zero, "CantBase"]
+        infer_l = df["Articulo"].apply(_infer_litros_por_nombre) * df["CantBase"]
+        df["litros"] = df["litros"].where(~still_zero, infer_l)
 
-    # ── Categoría: maestro 04D → fallback Rubro
-    df["_cat"] = df["_cod"].map(cod2cat_04d).astype(str).str.strip().str.lower().map(_SO_CAT_MAP)
-    no_cat = df["_cat"].isna()
-    df.loc[no_cat, "_cat"] = df.loc[no_cat, "Rubro"].astype(str).str.strip().str.lower().map(_SO_CAT_MAP)
+    # ── Categoría: maestro 04D → fallback Rubro (where() para evitar loc parcial en pandas 3.x)
+    cat_maestro = df["_cod"].map(cod2cat_04d).astype(object)
+    cat_maestro_norm = cat_maestro.str.strip().str.lower().map(_SO_CAT_MAP) if cat_maestro.notna().any() else cat_maestro
+    cat_rubro = df["Rubro"].astype(str).str.strip().str.lower().map(_SO_CAT_MAP) if "Rubro" in df.columns else pd.Series(None, index=df.index, dtype=object)
+    df["_cat"] = cat_maestro_norm.where(cat_maestro_norm.notna(), cat_rubro)
 
     # ── Segmento VDA: maestro 04D
     df["_seg"] = df["_cod"].map(cod2seg_04d).astype(str).str.strip()
