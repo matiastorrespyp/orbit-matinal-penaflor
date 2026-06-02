@@ -2886,6 +2886,51 @@ def _preparar_df_ventas(src_path) -> pd.DataFrame:
     return df
 
 
+@app.route("/api/debug/sellout_codigos")
+def debug_sellout_codigos():
+    """Diagnóstico: muestra cómo se leen los códigos en ventas.csv vs maestro 04D."""
+    try:
+        src = INPUTS / "ventas.csv"
+        maestro_path = INPUTS / "04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx"
+        result = {}
+        if src.exists():
+            df = _preparar_df_ventas(src)
+            raw = None
+            for enc in ("utf-8-sig", "latin-1", "windows-1252"):
+                try:
+                    raw = pd.read_csv(src, sep=None, engine="python", encoding=enc, nrows=20)
+                    break
+                except Exception:
+                    continue
+            if raw is not None:
+                raw.columns = [c.strip() for c in raw.columns]
+                cod_col = "Codigo" if "Codigo" in raw.columns else None
+                result["ventas_cols"] = raw.columns.tolist()
+                if cod_col:
+                    result["ventas_codigo_dtype"] = str(raw[cod_col].dtype)
+                    result["ventas_codigo_raw_sample"] = [str(v) for v in raw[cod_col].dropna().head(10).tolist()]
+            if not df.empty and "Codigo" in df.columns:
+                df["_cod_norm"] = df["Codigo"].astype(str).str.strip().str.upper().str.replace(r"\.0$", "", regex=True)
+                result["ventas_cod_norm_sample"] = df["_cod_norm"].head(10).tolist()
+        if maestro_path.exists():
+            mdf = pd.read_excel(maestro_path, header=3)
+            mdf.columns = [c.strip() for c in mdf.columns]
+            col_cod = next((c for c in mdf.columns if "dig" in c.lower() or ("c" in c.lower() and "art" in c.lower())), None)
+            result["maestro_cols"] = mdf.columns.tolist()
+            result["maestro_cod_col"] = col_cod
+            if col_cod:
+                result["maestro_cod_dtype"] = str(mdf[col_cod].dtype)
+                result["maestro_cod_raw_sample"] = [str(v) for v in mdf[col_cod].dropna().head(10).tolist()]
+                mdf["_cod"] = mdf[col_cod].astype(str).str.strip().str.upper().str.replace(r"\.0$", "", regex=True)
+                result["maestro_cod_norm_sample"] = mdf["_cod"].head(10).tolist()
+        else:
+            result["maestro"] = "NO ENCONTRADO"
+        return jsonify(result)
+    except Exception as e:
+        import traceback
+        return jsonify({"error": str(e), "trace": traceback.format_exc()[:800]}), 500
+
+
 @app.route("/api/gerencia/sellout_litros")
 def gerencia_sellout_litros():
     """Sellout en litros vs objetivos. Fuente: ventas.csv × 04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx."""
