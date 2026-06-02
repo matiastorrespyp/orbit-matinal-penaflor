@@ -2687,33 +2687,48 @@ def _infer_litros_por_nombre(nombre: str) -> float:
 
 def _cargar_maestro_04D():
     """
-    Carga 04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx (header fila 3).
-    Devuelve cuatro dicts keyed por Código Art. (str, upper):
+    Carga maestro de productos 04D. Prefiere CSV liviano (09_CONFIG/maestro_04D_productos.csv)
+    sobre el xlsx original (19MB con imágenes, tarda ~40s). Fallback al xlsx si el CSV no existe.
+    Devuelve cuatro dicts keyed por Código Art. (str, upper, sin .0):
       cod2cat   → Categoria
-      cod2seg   → Segmento  (Nacional/Importados en spirits; Alto/Medio Alto/Superior/Medio en VDA)
+      cod2seg   → Segmento  (Nacional/Importados spirits; Alto/Medio Alto/Superior/Medio VDA)
       cod2lxu   → litros por unidad (Lts x caja / UxC)
-      cod2linea → Linea Comercial (col C del maestro — marca canónica del producto)
+      cod2linea → Linea Comercial (marca canónica)
     """
-    path = INPUTS / "04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx"
     cod2cat, cod2seg, cod2lxu, cod2linea = {}, {}, {}, {}
-    if not path.exists():
-        return cod2cat, cod2seg, cod2lxu, cod2linea
+    csv_path  = CONFIG / "maestro_04D_productos.csv"
+    xlsx_path = INPUTS / "04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx"
+
     try:
-        df = pd.read_excel(path, header=3)
-        df.columns = [c.strip() for c in df.columns]
-        col_cod = next((c for c in df.columns if "dig" in c.lower() or ("c" in c.lower() and "art" in c.lower())), None)
-        if not col_cod:
+        if csv_path.exists():
+            df = pd.read_csv(csv_path, dtype=str, encoding="utf-8-sig")
+            df.columns = [c.strip() for c in df.columns]
+            df["_cod"] = df["Codigo"].astype(str).str.strip().str.upper().str.replace(r"\.0$", "", regex=True)
+            lxc = pd.to_numeric(df.get("Lts x caja", pd.Series(dtype=float)), errors="coerce").fillna(0)
+            uxc = pd.to_numeric(df.get("UxC", pd.Series(dtype=float)), errors="coerce").fillna(0)
+            df["_lxu"] = (lxc / uxc).where(uxc > 0, 0.0)
+        elif xlsx_path.exists():
+            df = pd.read_excel(xlsx_path, header=3)
+            df.columns = [c.strip() for c in df.columns]
+            col_cod = next((c for c in df.columns if "dig" in c.lower() or ("c" in c.lower() and "art" in c.lower())), None)
+            if not col_cod:
+                return cod2cat, cod2seg, cod2lxu, cod2linea
+            df["_cod"] = df[col_cod].astype(str).str.strip().str.upper().str.replace(r"\.0$", "", regex=True)
+            lxc = pd.to_numeric(df["Lts x caja"] if "Lts x caja" in df.columns else pd.Series(dtype=float), errors="coerce").fillna(0)
+            uxc = pd.to_numeric(df["UxC"] if "UxC" in df.columns else pd.Series(dtype=float), errors="coerce").fillna(0)
+            df["_lxu"] = (lxc / uxc).where(uxc > 0, 0.0)
+            if "Linea Comercial" not in df.columns:
+                col_linea = next((c for c in df.columns if "linea" in c.lower() and "comercial" in c.lower()), None)
+                if col_linea:
+                    df = df.rename(columns={col_linea: "Linea Comercial"})
+        else:
             return cod2cat, cod2seg, cod2lxu, cod2linea
-        df["_cod"] = df[col_cod].astype(str).str.strip().str.upper().str.replace(r"\.0$", "", regex=True)
-        df["_lxc"] = pd.to_numeric(df.get("Lts x caja", pd.Series(dtype=float)), errors="coerce").fillna(0)
-        df["_uxc"] = pd.to_numeric(df.get("UxC", pd.Series(dtype=float)), errors="coerce").fillna(0)
-        df["_lxu"] = (df["_lxc"] / df["_uxc"]).where(df["_uxc"] > 0, 0)
+
         cod2cat   = df.set_index("_cod")["Categoria"].to_dict()
         cod2seg   = df.set_index("_cod")["Segmento"].to_dict()
         cod2lxu   = df.set_index("_cod")["_lxu"].to_dict()
-        col_linea = next((c for c in df.columns if "linea" in c.lower() and "comercial" in c.lower()), None)
-        if col_linea:
-            cod2linea = df.set_index("_cod")[col_linea].to_dict()
+        if "Linea Comercial" in df.columns:
+            cod2linea = df.set_index("_cod")["Linea Comercial"].to_dict()
     except Exception:
         pass
     return cod2cat, cod2seg, cod2lxu, cod2linea
