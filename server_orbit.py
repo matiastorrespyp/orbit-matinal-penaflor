@@ -3534,6 +3534,82 @@ def gerencia_cierre_mes():
     })
 
 
+# ====== DEBUG TEMPORAL — diagnóstico ventas_mes.csv en Render ======
+@app.route("/api/debug/ventas_mes")
+def debug_ventas_mes():
+    """Endpoint temporal para diagnosticar ventas_mes.csv en Render.
+    No expone datos de clientes, importes ni nombres."""
+    import hashlib, subprocess
+
+    src = INPUTS / "ventas_mes.csv"
+    info = {"ruta": str(src), "existe": src.exists()}
+
+    if not src.exists():
+        return jsonify(info)
+
+    # Tamaño
+    info["tamanio_bytes"] = src.stat().st_size
+
+    # MD5
+    try:
+        h = hashlib.md5(src.read_bytes()).hexdigest()
+        info["md5"] = h
+    except Exception as e:
+        info["md5"] = f"error: {e}"
+
+    # Git commit
+    try:
+        result = subprocess.run(
+            ["git", "log", "-1", "--format=%H %ai"],
+            cwd=str(BASE), capture_output=True, text=True, timeout=5
+        )
+        info["git_commit"] = result.stdout.strip() if result.returncode == 0 else "no disponible"
+    except Exception:
+        info["git_commit"] = "no disponible"
+
+    # Leer CSV — solo columnas de diagnóstico, sin datos sensibles
+    df_raw = pd.DataFrame()
+    for enc in ("utf-8-sig", "latin-1", "windows-1252"):
+        try:
+            df_raw = pd.read_csv(src, sep=",", quotechar='"', encoding=enc,
+                                 usecols=lambda c: c.strip() in
+                                 ("FechaComprobante", "ImporteNetoItem", "CodVendedor"))
+            df_raw.columns = [c.strip() for c in df_raw.columns]
+            break
+        except UnicodeDecodeError:
+            continue
+        except Exception as e:
+            info["error_lectura"] = str(e)
+            break
+
+    info["filas_raw"] = len(df_raw)
+
+    if df_raw.empty:
+        info["filas_validas"] = 0
+        return jsonify(info)
+
+    # Fechas (sin importes ni clientes)
+    if "FechaComprobante" in df_raw.columns:
+        fechas = pd.to_datetime(df_raw["FechaComprobante"], dayfirst=True, errors="coerce").dropna()
+        fechas_sorted = fechas.sort_values()
+        info["primeras_3_fechas"] = [str(f.date()) for f in fechas_sorted.head(3)]
+        info["ultimas_3_fechas"]  = [str(f.date()) for f in fechas_sorted.tail(3)]
+
+    # Filas válidas (misma lógica que _leer_ventas_mes_csv)
+    for col in ("ImporteNetoItem", "CodVendedor"):
+        if col not in df_raw.columns:
+            df_raw[col] = 0.0
+        elif df_raw[col].dtype == object:
+            df_raw[col] = df_raw[col].astype(str).str.replace(",", ".", regex=False).pipe(pd.to_numeric, errors="coerce").fillna(0)
+        else:
+            df_raw[col] = pd.to_numeric(df_raw[col], errors="coerce").fillna(0)
+
+    df_valid = df_raw[~df_raw["CodVendedor"].isin({2, 5, 20}) & (df_raw["ImporteNetoItem"] > 0)]
+    info["filas_validas"] = int(len(df_valid))
+
+    return jsonify(info)
+
+
 # ====== STARTUP (gunicorn + __main__) ======
 # Se ejecuta cuando gunicorn importa el módulo, no solo en __main__
 backup_orbit_db()         # 1. copia orbit.db antes de cualquier cambio
