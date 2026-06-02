@@ -2910,23 +2910,19 @@ def _preparar_df_ventas(src_path) -> pd.DataFrame:
 
 @app.route("/api/gerencia/sellout_litros")
 def gerencia_sellout_litros():
-    """Sellout en litros vs objetivos. Fuente: ventas.csv × 04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx."""
-    import traceback
-    try:
-        src = INPUTS / "ventas.csv"
-        if not src.exists():
-            return jsonify({"error": "ventas.csv no encontrado en 01_INPUTS"}), 404
-        df = _preparar_df_ventas(src)
-        if df.empty:
-            return jsonify({"error": "No se pudo leer ventas.csv"}), 500
-        resultado = _sellout_desde_ventas(df)
-        return jsonify({
-            "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "fuente":      "ventas.csv + 04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx",
-            "categorias":  resultado,
-        })
-    except Exception as e:
-        return jsonify({"error": str(e), "trace": traceback.format_exc()[-1200:]}), 500
+    """Sellout en litros vs objetivos. Fuente: ventas.csv × maestro_04D_productos.csv."""
+    src = INPUTS / "ventas.csv"
+    if not src.exists():
+        return jsonify({"error": "ventas.csv no encontrado en 01_INPUTS"}), 404
+    df = _preparar_df_ventas(src)
+    if df.empty:
+        return jsonify({"error": "No se pudo leer ventas.csv"}), 500
+    resultado = _sellout_desde_ventas(df)
+    return jsonify({
+        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "fuente":      "ventas.csv + maestro_04D_productos.csv",
+        "categorias":  resultado,
+    })
 
 
 # ====== ACCIONES COMERCIALES RANKING ======
