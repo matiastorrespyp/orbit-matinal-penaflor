@@ -3410,17 +3410,17 @@ def gerencia_cierre_mes():
     except Exception:
         pass
 
-    # ── Sell Out cierre: ventas_mes.csv (congelado); fallback a ventas.csv si no existe ──
-    sellout = {"categorias": []}
+    # ── Sell Out cierre: ventas_mes.csv ÚNICAMENTE. Sin fallback a ventas.csv.
+    # Si ventas_mes.csv no existe → dato no disponible (no mezclar con datos del día).
+    sellout = {"categorias": [], "fuente": "ventas_mes.csv"}
     try:
         so_src = INPUTS / "ventas_mes.csv"
-        if not so_src.exists():
-            so_src = INPUTS / "ventas.csv"
         if so_src.exists():
             so_df = _preparar_df_ventas(so_src)
             if not so_df.empty:
                 sellout["categorias"] = _sellout_desde_ventas(so_df)
-                sellout["fuente"] = so_src.name
+        else:
+            sellout["disponible"] = False
     except Exception:
         pass
 
