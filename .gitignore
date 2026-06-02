@@ -5,7 +5,6 @@ __pycache__/
 *.bak_antes_crlf
 04_DATASETS_ORBIT/mod_vda_ventas_base.csv
 01_INPUTS/producto activos.xlsx
-01_INPUTS/04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx
 01_INPUTS/RAW_PRODUCTOS/
 02_HISTORY/_BACKUP_ANTES_MODULO_VDA_2026-05-12/
 
@@ -27,7 +26,7 @@ screenshots/
 # ORBIT - auditorias locales
 ESTADO_ARCHIVOS_GENERADOS_PENDIENTES.txt
 
-# ORBIT - outputs mixtos no críticos
+# ORBIT - outputs mixtos no crï¿½ticos
 04_DATASETS_ORBIT/datasets_inventory.csv
 04_DATASETS_ORBIT/log_motor.csv
 05_INTELLIGENCE_ORBIT/*.csv
