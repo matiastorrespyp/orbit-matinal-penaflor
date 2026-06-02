@@ -722,7 +722,21 @@ def dashboard():
     # CCC Compradores Mes — desde ventas.csv del mes actual (no clientes_dia)
     ventas_mes = _cargar_ventas_mes_actual()
     ccc_mes_map = _ccc_mes_por_vendedor(ventas_mes)
-    dias = contar_dias_habiles()
+
+    # Corridos: usar última fecha con datos reales en ventas.csv, no datetime.now()
+    # Si ventas.csv tiene datos hasta June 1 y hoy es June 2, corridos=1 (no 2)
+    _fecha_corte_ventas = None
+    try:
+        _src_v = INPUTS / "ventas.csv"
+        if _src_v.exists():
+            _dv = _preparar_df_ventas(_src_v)
+            if not _dv.empty and "FechaComprobante" in _dv.columns:
+                _ultima = pd.to_datetime(_dv["FechaComprobante"], dayfirst=True, errors="coerce").max()
+                if pd.notna(_ultima):
+                    _fecha_corte_ventas = _ultima.to_pydatetime()
+    except Exception:
+        pass
+    dias = contar_dias_habiles(fecha_corte=_fecha_corte_ventas)
     _corridos = max(dias["corridos"], 1)
     _total    = dias["total"]
 
@@ -3410,19 +3424,25 @@ def gerencia_cierre_mes():
     except Exception:
         pass
 
-    # ── Sell Out cierre: ventas_mes.csv ÚNICAMENTE. Sin fallback a ventas.csv.
-    # Si ventas_mes.csv no existe → dato no disponible (no mezclar con datos del día).
+    # ── Sell Out cierre: ventas_mes.csv + maestro 04D. Misma lógica que auditoría.
+    # Sin fallback a ventas.csv. Si ventas_mes.csv no existe → disponible: False.
     sellout = {"categorias": [], "fuente": "ventas_mes.csv"}
-    try:
-        so_src = INPUTS / "ventas_mes.csv"
-        if so_src.exists():
-            so_df = _preparar_df_ventas(so_src)
-            if not so_df.empty:
-                sellout["categorias"] = _sellout_desde_ventas(so_df)
+    so_src = INPUTS / "ventas_mes.csv"
+    if not so_src.exists():
+        sellout["disponible"] = False
+        sellout["error"] = "ventas_mes.csv no encontrado en 01_INPUTS"
+    else:
+        # Leer ventas_mes.csv con el mismo preprocesamiento que la auditoría
+        so_df = _preparar_df_ventas(so_src)
+        sellout["filas_ventas_mes"] = len(so_df)
+        if so_df.empty:
+            sellout["error"] = "ventas_mes.csv sin filas válidas (importe>0, excl V2/V5/V20)"
         else:
-            sellout["disponible"] = False
-    except Exception:
-        pass
+            # Mismo cruce ventas × maestro 04D que generó auditoria_sellout_cierre_mes.csv
+            try:
+                sellout["categorias"] = _sellout_desde_ventas(so_df)
+            except Exception as _e:
+                sellout["error"] = str(_e)
 
     # ── Planes AS ──
     planes_as = {"resumen": {}, "por_plan": []}
