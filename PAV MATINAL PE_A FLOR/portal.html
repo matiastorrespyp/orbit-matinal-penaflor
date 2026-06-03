@@ -2964,10 +2964,95 @@ function vPlanesAS(){
 function gCierreMes(p){
   p.innerHTML=`<div class="gph">
     <div><div class="gph-title">Cierre de Mes</div>
+    <div class="gph-sub">Cierre mensual histórico versionado + vista dinámica del período</div></div>
+  </div>
+  <div id="cierre-historico"><div class="card"><div class="card-body"><div class="empty"><div class="eico" style="font-size:28px">⏳</div><p>Cargando cierre mensual histórico…</p></div></div></div></div>
+  <div class="gph" style="margin-top:20px;border-top:1px solid var(--b);padding-top:14px;">
+    <div><div class="gph-title" style="font-size:16px;">Vista dinámica (no histórica)</div>
     <div class="gph-sub" id="cierre-sub">Cargando…</div></div>
     <div class="gph-chips" id="cierre-chips"></div>
   </div>
   <div id="cierre-body"><div class="card"><div class="card-body"><div class="empty"><div class="eico" style="font-size:28px">⏳</div><p>Cargando datos del cierre…</p></div></div></div></div>`;
+
+  /* ── Cierre Mensual Histórico (solo lectura, fuente /api/gerencia/cierres_historicos) ── */
+  async function _renderCierreHistorico(){
+    const cont=document.getElementById('cierre-historico');
+    if(!cont) return;
+    try{
+      const r=await fetch('/api/gerencia/cierres_historicos');
+      if(!r.ok){ cont.innerHTML=`<div class="card"><div class="card-body"><p style="color:var(--bd);padding:16px">Cierre histórico: HTTP ${r.status}</p></div></div>`; return; }
+      const j=await r.json();
+      const cs=j.cierres||[];
+      if(!cs.length){ cont.innerHTML=`<div class="card"><div class="card-body"><div class="empty"><div class="eico" style="font-size:28px">🗄️</div><p>Sin cierres mensuales históricos generados.</p></div></div></div>`; return; }
+      let sel=0;  // cs viene ordenado desc por (periodo,version): [0] = más reciente
+      function _render(){
+        const c=cs[sel]||cs[0];
+        const m=c.manifest||{};
+        const top3=c.ranking_top3||[];
+        const ganador=top3.find(x=>x.ranking_general===1)||top3[0]||null;
+        const estOk=(c.estado||'').toUpperCase()==='PASS';
+        const det=m.vendedores_detectados||[];
+        const exc=m.vendedores_excluidos_csv||[];
+        const warns=c.warn||[];
+        const vcode=v=>'V'+String(v||'').replace(/^V/i,'');
+        const selHtml = cs.length>1 ? `<select onchange="window._cierreHistSel(this.value)" style="background:var(--surf2);color:var(--text);border:1px solid var(--b);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;">${cs.map((x,i)=>`<option value="${i}" ${i===sel?'selected':''}>${x.periodo} · ${x.version}</option>`).join('')}</select>` : '';
+        let h=`<div class="card" style="border:1px solid var(--mg);">
+          <div class="card-hd">
+            <span class="card-title">🗄️ Cierre Mensual Histórico</span>
+            <span style="display:flex;gap:6px;align-items:center;">${selHtml}<span class="chip ${estOk?'ok':'bd'}">${c.estado||'–'}</span></span>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;">
+              <span class="chip">Período ${c.periodo||'–'}</span>
+              <span class="chip">${c.version||'–'}</span>
+              <span class="chip" style="font-size:10px;">🕒 ${c.timestamp_argentina||'–'}</span>
+              <span class="chip ok" style="font-size:10px;">versionado · no pisa cierres anteriores</span>
+            </div>
+            <div class="krow" style="margin-bottom:12px;">
+              <div class="kcard info"><div class="kl">Fuente de ventas</div><div class="kv" style="font-size:14px;">${m.fuente_ventas||'–'}</div><div class="kh">Cierre congelado del mes</div></div>
+              <div class="kcard info"><div class="kl">Filas leídas</div><div class="kv">${(m.filas_leidas||0).toLocaleString('es-AR')}</div><div class="kh">${m.fecha_min||'–'} → ${m.fecha_max||'–'}</div></div>
+              <div class="kcard ${estOk?'ok':'bd'}"><div class="kl">Estado</div><div class="kv" style="font-size:18px;">${m.estado||c.estado||'–'}</div><div class="kh">V3 solo tradicional: ${m.v3_solo_tradicional_pass?'sí':'no'}</div></div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:18px;margin-bottom:12px;">
+              <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Vendedores detectados (${det.length})</div><div style="display:flex;gap:4px;flex-wrap:wrap;">${det.map(v=>`<span class="chip" style="font-size:10px;">${v}</span>`).join('')||'<span style="color:var(--text3)">–</span>'}</div></div>
+              <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Vendedores excluidos</div><div style="display:flex;gap:4px;flex-wrap:wrap;">${exc.map(v=>`<span class="chip bd" style="font-size:10px;">${v}</span>`).join('')||'<span style="color:var(--text3)">–</span>'}</div></div>
+            </div>`;
+        if(ganador){
+          const etqs=(ganador.etiqueta_destacada||'').split('|').filter(Boolean);
+          h+=`<div style="background:var(--surf2);border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+            <div style="font-size:10px;color:var(--text3);">🏆 Ganador general</div>
+            <div style="font-size:16px;font-weight:700;">${vcode(ganador.vendedor_codigo)} · ${ganador.vendedor_nombre||''}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px;">Score total <b style="color:var(--text)">${ganador.score_total}</b></div>
+            ${etqs.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;">${etqs.map(e=>`<span class="chip ok" style="font-size:9px;">${e.replace(/_/g,' ')}</span>`).join('')}</div>`:''}
+          </div>`;
+        }
+        h+=`<div class="card-hd" style="padding:0 0 6px;"><span class="card-title" style="font-size:13px;">Ranking Top 3</span></div>
+          <table class="tbl" style="font-size:12px;">
+            <thead><tr><th>#</th><th>Vendedor</th><th style="text-align:right">Score</th><th style="text-align:right">11T</th><th style="text-align:right">Innov.</th></tr></thead>
+            <tbody>${top3.map(rw=>`<tr>
+              <td><span class="chip ${rw.ranking_general===1?'ok':''}" style="font-size:10px;">#${rw.ranking_general}</span></td>
+              <td style="font-weight:600">${vcode(rw.vendedor_codigo)} · ${rw.vendedor_nombre||''}</td>
+              <td style="text-align:right;font-weight:700">${rw.score_total}</td>
+              <td style="text-align:right;color:var(--text3)">${(rw.clientes_11_titulares||0).toLocaleString('es-AR')}</td>
+              <td style="text-align:right;color:var(--text3)">${(rw.clientes_innovaciones||0).toLocaleString('es-AR')}</td>
+            </tr>`).join('')}</tbody>
+          </table>`;
+        if(warns.length){
+          h+=`<div style="margin-top:12px;background:rgba(226,20,122,.08);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;">
+            <div style="font-size:11px;font-weight:600;color:var(--bd);margin-bottom:4px;">⚠️ Advertencias</div>
+            ${warns.map(w=>`<div style="font-size:11px;color:var(--text2);">• ${w}</div>`).join('')}
+          </div>`;
+        }
+        h+=`</div></div>`;
+        cont.innerHTML=h;
+      }
+      window._cierreHistSel=function(i){ sel=parseInt(i,10)||0; _render(); };
+      _render();
+    }catch(e){
+      cont.innerHTML=`<div class="card"><div class="card-body"><p style="color:var(--bd);padding:16px">Cierre histórico — error: ${e.message}</p></div></div>`;
+    }
+  }
+  _renderCierreHistorico();
 
   (async()=>{
     const bodyEl=document.getElementById('cierre-body');
