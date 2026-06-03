@@ -577,7 +577,7 @@ def diagnostico():
         if _sv.exists():
             _dv2 = _preparar_df_ventas(_sv)
             if not _dv2.empty and "FechaComprobante" in _dv2.columns:
-                _ult = pd.to_datetime(_dv2["FechaComprobante"], dayfirst=True, errors="coerce").max()
+                _ult = pd.to_datetime(_dv2["FechaComprobante"], format="%d/%m/%Y", errors="coerce").max()
                 if pd.notna(_ult):
                     _fecha_corte_datos = _ult.to_pydatetime()
     except Exception:
