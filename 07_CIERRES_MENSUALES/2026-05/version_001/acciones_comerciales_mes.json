@@ -1,0 +1,273 @@
+{
+  "resumen_empresa": {
+    "clientes_con_descuento": 963,
+    "clientes_sin_cargo": 41,
+    "lineas_con_descuento": 4734,
+    "lineas_sin_cargo": 175,
+    "inversion_estimada": 38278456.0,
+    "nota_inversion": "valorDescuento x CantBase"
+  },
+  "tramos_descuento": [
+    {
+      "tipo": "DESCUENTO",
+      "descuento": "30%",
+      "clientes_impactados": 4,
+      "importe_neto": 38637.0,
+      "inversion_estimada": 16559.0,
+      "lineas": 4
+    },
+    {
+      "tipo": "DESCUENTO",
+      "descuento": "25%",
+      "clientes_impactados": 32,
+      "importe_neto": 591623.0,
+      "inversion_estimada": 197207.0,
+      "lineas": 38
+    },
+    {
+      "tipo": "DESCUENTO",
+      "descuento": "20%",
+      "clientes_impactados": 7,
+      "importe_neto": 865640.0,
+      "inversion_estimada": 216410.0,
+      "lineas": 18
+    },
+    {
+      "tipo": "DESCUENTO",
+      "descuento": "19%",
+      "clientes_impactados": 1,
+      "importe_neto": 5239306.0,
+      "inversion_estimada": 1228974.0,
+      "lineas": 9
+    },
+    {
+      "tipo": "DESCUENTO",
+      "descuento": "18%",
+      "clientes_impactados": 1,
+      "importe_neto": 18002.0,
+      "inversion_estimada": 3952.0,
+      "lineas": 1
+    },
+    {
+      "tipo": "DESCUENTO",
+      "descuento": "17%",
+      "clientes_impactados": 20,
+      "importe_neto": 3445071.0,
+      "inversion_estimada": 705618.0,
+      "lineas": 70
+    },
+    {
+      "tipo": "DESCUENTO",
+      "descuento": "15%",
+      "clientes_impactados": 124,
+      "importe_neto": 154915921.0,
+      "inversion_estimada": 27338179.0,
+      "lineas": 501
+    },
+    {
+      "tipo": "DESCUENTO",
+      "descuento": "14%",
+      "clientes_impactados": 1,
+      "importe_neto": 7457100.0,
+      "inversion_estimada": 1213949.0,
+      "lineas": 2
+    },
+    {
+      "tipo": "DESCUENTO",
+      "descuento": "13%",
+      "clientes_impactados": 35,
+      "importe_neto": 983171.0,
+      "inversion_estimada": 146910.0,
+      "lineas": 72
+    },
+    {
+      "tipo": "DESCUENTO",
+      "descuento": "12%",
+      "clientes_impactados": 8,
+      "importe_neto": 4441150.0,
+      "inversion_estimada": 605610.0,
+      "lineas": 59
+    },
+    {
+      "tipo": "DESCUENTO",
+      "descuento": "10%",
+      "clientes_impactados": 776,
+      "importe_neto": 42645781.0,
+      "inversion_estimada": 4738407.0,
+      "lineas": 2835
+    },
+    {
+      "tipo": "DESCUENTO",
+      "descuento": "8%",
+      "clientes_impactados": 16,
+      "importe_neto": 1437898.0,
+      "inversion_estimada": 125035.0,
+      "lineas": 99
+    },
+    {
+      "tipo": "DESCUENTO",
+      "descuento": "7%",
+      "clientes_impactados": 16,
+      "importe_neto": 2873152.0,
+      "inversion_estimada": 216259.0,
+      "lineas": 38
+    },
+    {
+      "tipo": "DESCUENTO",
+      "descuento": "6%",
+      "clientes_impactados": 198,
+      "importe_neto": 20562055.0,
+      "inversion_estimada": 1312473.0,
+      "lineas": 756
+    },
+    {
+      "tipo": "DESCUENTO",
+      "descuento": "5%",
+      "clientes_impactados": 62,
+      "importe_neto": 2211899.0,
+      "inversion_estimada": 116415.0,
+      "lineas": 127
+    },
+    {
+      "tipo": "DESCUENTO",
+      "descuento": "4%",
+      "clientes_impactados": 8,
+      "importe_neto": 184279.0,
+      "inversion_estimada": 7678.0,
+      "lineas": 60
+    },
+    {
+      "tipo": "DESCUENTO",
+      "descuento": "3%",
+      "clientes_impactados": 15,
+      "importe_neto": 2871884.0,
+      "inversion_estimada": 88821.0,
+      "lineas": 45
+    }
+  ],
+  "sin_cargo": {
+    "lineas": 175,
+    "clientes_impactados": 41,
+    "marcas": [
+      "Alaris",
+      "Alma Mora",
+      "Dada",
+      "Don David",
+      "ELEMENTOS",
+      "Finca Las Moras",
+      "Fond de Cave Reserva",
+      "Frizze",
+      "Los Arboles",
+      "Smirnoff",
+      "Smirnoff Ice",
+      "Smirnoff Ice Flavours",
+      "cazador"
+    ],
+    "por_vendedor": [
+      {
+        "vendedor_codigo": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL",
+        "clientes_sin_cargo": 1,
+        "marcas_sin_cargo": [
+          "Alaris"
+        ],
+        "lineas_sin_cargo": 1
+      },
+      {
+        "vendedor_codigo": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA",
+        "clientes_sin_cargo": 23,
+        "marcas_sin_cargo": [
+          "Alaris",
+          "Alma Mora",
+          "ELEMENTOS",
+          "Finca Las Moras",
+          "Fond de Cave Reserva",
+          "Smirnoff",
+          "Smirnoff Ice Flavours",
+          "cazador"
+        ],
+        "lineas_sin_cargo": 106
+      },
+      {
+        "vendedor_codigo": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO",
+        "clientes_sin_cargo": 12,
+        "marcas_sin_cargo": [
+          "Alaris",
+          "Alma Mora",
+          "Dada",
+          "Don David",
+          "Los Arboles",
+          "Smirnoff Ice",
+          "Smirnoff Ice Flavours"
+        ],
+        "lineas_sin_cargo": 50
+      },
+      {
+        "vendedor_codigo": "V10",
+        "vendedor_nombre": "ORTEGA MILAGROS",
+        "clientes_sin_cargo": 5,
+        "marcas_sin_cargo": [
+          "Alaris",
+          "Alma Mora",
+          "Finca Las Moras",
+          "Frizze"
+        ],
+        "lineas_sin_cargo": 18
+      }
+    ],
+    "nota": "CantBase usado internamente — no expuesto"
+  },
+  "por_vendedor_descuentos": [
+    {
+      "vendedor_codigo": "V3",
+      "vendedor_nombre": "NADIA GAMBINO",
+      "clientes_con_desc": 233,
+      "importe_neto_desc": 9743525.0,
+      "inversion_estimada": 1106773.0
+    },
+    {
+      "vendedor_codigo": "V4",
+      "vendedor_nombre": "GRIBAUDO ANGEL",
+      "clientes_con_desc": 222,
+      "importe_neto_desc": 23321895.0,
+      "inversion_estimada": 3591109.0
+    },
+    {
+      "vendedor_codigo": "V6",
+      "vendedor_nombre": "PEYRONEL ANDREA",
+      "clientes_con_desc": 182,
+      "importe_neto_desc": 33342562.0,
+      "inversion_estimada": 4686834.0
+    },
+    {
+      "vendedor_codigo": "V7",
+      "vendedor_nombre": "JOFRE GUILLERMO",
+      "clientes_con_desc": 27,
+      "importe_neto_desc": 2220948.0,
+      "inversion_estimada": 228657.0
+    },
+    {
+      "vendedor_codigo": "V8",
+      "vendedor_nombre": "ALVAREZ VANESA",
+      "clientes_con_desc": 111,
+      "importe_neto_desc": 91207461.0,
+      "inversion_estimada": 14461599.0
+    },
+    {
+      "vendedor_codigo": "V9",
+      "vendedor_nombre": "SANCHEZ FERNANDO",
+      "clientes_con_desc": 81,
+      "importe_neto_desc": 33570072.0,
+      "inversion_estimada": 4840085.0
+    },
+    {
+      "vendedor_codigo": "V10",
+      "vendedor_nombre": "ORTEGA MILAGROS",
+      "clientes_con_desc": 107,
+      "importe_neto_desc": 57376106.0,
+      "inversion_estimada": 9363399.0
+    }
+  ]
+}

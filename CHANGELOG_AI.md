@@ -1,5 +1,80 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-03 — feat(cierre): endpoint read-only /api/gerencia/cierres_historicos
+
+**Qué se hizo:**
+- Agregado endpoint `GET /api/gerencia/cierres_historicos` en `server_orbit.py` (inserción entre línea 3565 y bloque STARTUP).
+- Solo lectura: lee `07_CIERRES_MENSUALES/index_cierres_mensuales.json` y los archivos internos de cada versión.
+- No genera cierres. No ejecuta `tools/generar_cierre_mensual.py`. No toca ningún input de ventas.
+
+**Respuesta del endpoint:**
+- `estado`: OK / SIN_CIERRES / ERROR
+- `total_cierres`: cantidad de cierres en el índice
+- Por cierre: `periodo`, `version`, `timestamp_argentina`, `estado`, `manifest` resumido, `ranking_top3`
+- Si falta `manifest.json` o `ranking_vendedores_mes.json` → agrega `warn` a esa entrada, no rompe el endpoint
+
+**Validaciones PASS:**
+- `python -m py_compile server_orbit.py` → PASS
+- Endpoint probado local `http://localhost:8502/api/gerencia/cierres_historicos` → `estado: OK`, `total_cierres: 1`, cierre `2026-05/version_001`, top3: V8 (84.81) · V10 (48.54) · V9 (44.82)
+- CantBase y botellas no expuestos
+- `portal.html` no tocado
+- `ventas_mes.csv`, `ventas.csv`, `ventas_acumulada.csv` no tocados
+- No commit, no push, no deploy. Render pendiente de verificación post-deploy.
+
+**Archivos tocados:** `server_orbit.py` (nuevo endpoint ~75 líneas), `CHANGELOG_AI.md`, `NEXT_TASK.md`.
+
+---
+
+## 2026-06-03 — feat(cierre): cierre mensual histórico versionado + ranking vendedores
+
+**Qué se hizo:**
+- Creado `tools/generar_cierre_mensual.py` — script standalone de generación de cierre mensual histórico versionado.
+- Generado primer cierre histórico: `07_CIERRES_MENSUALES/2026-05/version_001/`.
+- Fuente exclusiva de ventas: `01_INPUTS/ventas_mes.csv`. Prohibido usar `ventas.csv` o `ventas_acumulada.csv` para valores finales.
+- Maestros/catálogos usados solo como referencia: `04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx` (litros), `INNOVACIONES/Innovaciones.xlsx` (códigos), `vendedores_activos.csv`.
+
+**Archivos generados en `07_CIERRES_MENSUALES/2026-05/version_001/`:**
+- `manifest.json` — trazabilidad: fuente, hash, timestamps AR/UTC, filas, fechas, vendedores, estado PASS.
+- `snapshot_inputs.json` — estado de cada input al momento del cierre.
+- `cierre_mensual_resumen.csv` / `.json` — resumen por vendedor: dinero, litros, CCC, 11T, innovaciones.
+- `ranking_vendedores_mes.csv` / `.json` — scores ponderados y rankings por categoría.
+- `acciones_comerciales_mes.csv` / `.json` — descuentos por tramo y sin cargo.
+- `detalle_11_titulares_mes.csv` — cobertura 11T por vendedor × marca.
+- `detalle_innovaciones_mes.csv` — clientes por vendedor × producto innovación.
+- `index_cierres_mensuales.csv` / `.json` — índice global de todos los cierres.
+
+**Ranking mensual validado (Mayo 2026):**
+
+| Categoría | Ganador | Valor |
+|---|---|---|
+| General | V8 ALVAREZ VANESA | score 84.81 |
+| Volumen/Dinero | V8 ALVAREZ VANESA | score_vd 100.0 |
+| 11 Titulares | V3 NADIA GAMBINO | 231 clientes cubiertos |
+| Innovaciones | V8 ALVAREZ VANESA | 44 clientes |
+
+**Ponderación aplicada:** litros 20% · dinero 20% · 11 titulares 30% · innovaciones 30%.
+
+**Validaciones PASS:**
+- Fuente ventas = `ventas_mes.csv` exclusivamente.
+- V3 solo Tradicionales — `segmentos: ['TRADICIONAL']`.
+- V1 y V20 excluidos del cierre (detectados en CSV, filtrados).
+- py_compile PASS. dry-run PASS.
+- Versionado inmutable: segunda ejecución detecta `version_002` sin pisar `version_001`.
+- Timestamp Argentina correcto: `2026-06-03T13:55:41-03:00` / UTC `2026-06-03T16:55:41Z`.
+- `server_orbit.py` y `portal.html` no tocados.
+- No commit, no push, no deploy.
+
+**Riesgos comerciales detectados (para seguimiento):**
+- V3 puede ganar 11T por ventaja estructural: opera solo TRADICIONAL, casi toda su cartera compra marcas 11T naturalmente. Evaluar normalizar por % de cobertura en etapa futura.
+- JW BLACK y JW RED con 0 clientes cubiertos en mayo (V4, V7, V8, V10).
+- V7 JOFRE GUILLERMO score 8.78 — muy bajo. Revisar cartera/datos/actividad del mes.
+- Tramo descuento 19% concentrado en 1 cliente ($1.2M inversión estimada). Validar si es acción especial o error ERP.
+- Innovaciones bajas en general salvo V8 (44 clientes) y V9 (33 clientes). V4=1, V3=3.
+
+**Archivos tocados:** `tools/generar_cierre_mensual.py` (nuevo), `07_CIERRES_MENSUALES/` (nueva carpeta), `CHANGELOG_AI.md`, `NEXT_TASK.md`.
+
+---
+
 ## 2026-06-03 — fix(pav): calendario matinal dashboard
 
 **Problema:**

@@ -1,5 +1,56 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-03 — Endpoint /api/gerencia/cierres_historicos
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ `GET /api/gerencia/cierres_historicos` agregado en `server_orbit.py` — solo lectura.
+- ✅ Lee `07_CIERRES_MENSUALES/index_cierres_mensuales.json` + manifest + ranking_top3 por versión.
+- ✅ Sin index → responde `{"cierres":[], "estado":"SIN_CIERRES"}`.
+- ✅ Archivo interno faltante → `warn` por entrada, endpoint no rompe.
+- ✅ No expone CantBase ni botellas. No recalcula. No llama al script de cierre.
+- ✅ `py_compile server_orbit.py` PASS.
+- ✅ Probado local: `estado:OK`, `total_cierres:1`, cierre `2026-05/version_001`, top3 V8·V10·V9.
+- ✅ `portal.html`, `ventas_mes.csv`, `ventas.csv`, `ventas_acumulada.csv` no tocados.
+- ✅ No commit, no push, no deploy.
+
+### PENDIENTE INMEDIATO 🔲
+1. **Commit + push + deploy en Render** — incluir `server_orbit.py` (endpoint nuevo) + `tools/generar_cierre_mensual.py` + `07_CIERRES_MENSUALES/` + documentación. Requiere aprobación explícita.
+2. **Verificar en Render** — `GET /api/gerencia/cierres_historicos` debe responder `estado:OK` con el cierre de mayo.
+
+### PRÓXIMOS PASOS (requieren aprobación antes de implementar)
+1. **Tarjeta visual portal gerencial** — mostrar cierres históricos en portal.html consumiendo `/api/gerencia/cierres_historicos`. Selector de período, version, fecha, estado, top-3 ranking. No implementar hasta aprobación.
+2. **Ranking 11T por porcentaje** — evaluar cambiar `clientes_11_titulares` (conteo absoluto) por `pct_cobertura_11t` para comparación equitativa entre carteras de distinto tamaño. Requiere decisión comercial.
+3. **Reglas acciones junio** — cambiar `reglas_acciones_mayo_2026_orbit.csv` por `reglas_acciones_junio_2026_orbit.csv` antes del próximo pipeline diario.
+
+---
+
+## Sesión 2026-06-03 — Cierre Mensual Histórico + Ranking
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ `tools/generar_cierre_mensual.py` creado — cierre mensual histórico versionado.
+- ✅ Primer cierre generado: `07_CIERRES_MENSUALES/2026-05/version_001/` — 12 archivos, PASS.
+- ✅ Ranking Mayo 2026: ganador general V8 ALVAREZ VANESA (84.81), mejor 11T V3 NADIA GAMBINO (231 clientes), mejor innovaciones V8 (44 clientes).
+- ✅ Versionado inmutable validado: dry-run detecta `version_002` sin pisar `version_001`.
+- ✅ V3 solo Tradicionales validada. V1 y V20 excluidos. CantBase no expuesto en salidas.
+- ✅ Timestamps AR correctos (`America/Argentina/Cordoba`, UTC-3).
+- ✅ Auditoría read-only PASS en todos los archivos generados.
+
+### RIESGOS DETECTADOS — Seguimiento pendiente
+1. **V3 ventaja estructural en 11T**: opera solo TRADICIONAL, cartera naturalmente compra marcas 11T. Evaluar normalizar ranking 11T por % de cobertura (no solo conteo absoluto) antes del próximo cierre.
+2. **JW BLACK / JW RED = 0 clientes en mayo**: V4, V7, V8, V10 sin cobertura. Acción comercial pendiente.
+3. **V7 score 8.78**: desempeño muy bajo. Revisar cartera, actividad y datos del mes antes del próximo cierre.
+4. **Tramo 19% concentrado en 1 cliente**: $1.2M inversión estimada, 9 líneas. Validar con el equipo comercial si es acción especial o error ERP.
+5. **Innovaciones bajas**: solo V8 y V9 tienen adopción real. Producto con mejor adopción: CAZADOR MALBEC 6X750 (74814).
+
+### PRÓXIMOS PASOS RECOMENDADOS
+- **Workflow mensual**: cuando cierre junio, correr `python tools/generar_cierre_mensual.py` — detectará `version_001` de junio y creará nueva carpeta sin tocar mayo.
+- **Portal — tarjeta cierres históricos**: exponer `07_CIERRES_MENSUALES/index_cierres_mensuales.json` como endpoint `/api/gerencia/cierres_historicos` en `server_orbit.py` (etapa futura, requiere aprobación).
+- **Ranking — normalización 11T**: evaluar cambiar `clientes_11_titulares` por `pct_cobertura_11t` para hacer comparación más equitativa entre vendedores con carteras de distinto tamaño.
+- **Ranking — acciones comerciales por vendedor**: agregar al ranking el uso de descuentos (inversión estimada por vendedor) como métricas informativas adicionales.
+- **Actualizar `reglas_acciones` para junio**: cambiar `reglas_acciones_mayo_2026_orbit.csv` por `reglas_acciones_junio_2026_orbit.csv` antes del próximo pipeline.
+
+---
+
 ## Sesión 2026-05-28 — Deploy Render + Planificación
 
 ### HECHO EN ESTA SESIÓN ✅

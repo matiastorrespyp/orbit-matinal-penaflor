@@ -1,0 +1,29 @@
+{
+  "ventas_mes_csv": {
+    "existe": true,
+    "ruta": "C:\\Orbit\\MATINAL_PENAFLOR\\01_INPUTS\\ventas_mes.csv",
+    "tamano_bytes": 3100996,
+    "modificado": "2026-06-01T23:01:35.861453-03:00",
+    "filas_leidas": 5366,
+    "fecha_min": "2026-05-04",
+    "fecha_max": "2026-05-30"
+  },
+  "maestro_04d_xlsx": {
+    "existe": true,
+    "ruta": "C:\\Orbit\\MATINAL_PENAFLOR\\01_INPUTS\\04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx",
+    "tamano_bytes": 19202919,
+    "modificado": "2026-06-01T14:36:30.366255-03:00"
+  },
+  "innovaciones_xlsx": {
+    "existe": true,
+    "ruta": "C:\\Orbit\\MATINAL_PENAFLOR\\01_INPUTS\\INNOVACIONES\\Innovaciones.xlsx",
+    "tamano_bytes": 15589,
+    "modificado": "2026-05-19T16:13:20.684752-03:00"
+  },
+  "vendedores_activos_csv": {
+    "existe": true,
+    "ruta": "C:\\Orbit\\MATINAL_PENAFLOR\\09_CONFIG\\vendedores_activos.csv",
+    "tamano_bytes": 204,
+    "modificado": "2026-05-01T20:46:55.935766-03:00"
+  }
+}

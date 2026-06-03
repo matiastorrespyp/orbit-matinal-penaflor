@@ -1,0 +1,68 @@
+{
+  "periodo": "2026-05",
+  "version": "version_001",
+  "timestamp_utc": "2026-06-03T16:55:41Z",
+  "timestamp_argentina": "2026-06-03T13:55:41-03:00",
+  "zona_horaria": "America/Argentina/Cordoba",
+  "fuente_ventas": "01_INPUTS/ventas_mes.csv",
+  "fuente_ventas_hash_head": "ff70fde09c376de8",
+  "fuente_ventas_tamano_bytes": 3100996,
+  "filas_leidas": 5366,
+  "fecha_min": "2026-05-04",
+  "fecha_max": "2026-05-30",
+  "vendedores_detectados": [
+    "V3",
+    "V4",
+    "V6",
+    "V7",
+    "V8",
+    "V9",
+    "V10"
+  ],
+  "vendedores_excluidos_csv": [
+    "V1",
+    "V20"
+  ],
+  "regla_excluidos": "Solo V3,V4,V6,V7,V8,V9,V10 incluidos",
+  "regla_v3": "V3 solo TRADICIONAL",
+  "v3_solo_tradicional_pass": true,
+  "v3_segmentos_detectados": [
+    "TRADICIONAL"
+  ],
+  "codigos_innovaciones": [
+    14425,
+    14619,
+    30139,
+    42376,
+    44396,
+    74749,
+    74786,
+    74813,
+    74814,
+    74815,
+    74816,
+    74827,
+    74830,
+    74840,
+    80094
+  ],
+  "archivos_generados": [
+    "manifest.json",
+    "snapshot_inputs.json",
+    "cierre_mensual_resumen.csv",
+    "cierre_mensual_resumen.json",
+    "ranking_vendedores_mes.csv",
+    "ranking_vendedores_mes.json",
+    "acciones_comerciales_mes.csv",
+    "acciones_comerciales_mes.json",
+    "detalle_11_titulares_mes.csv",
+    "detalle_innovaciones_mes.csv"
+  ],
+  "estado": "PASS",
+  "nota_botellas": "CantBase solo interno — salidas no exponen botellas",
+  "fuentes_prohibidas": [
+    "ventas.csv",
+    "ventas_acumulada.csv",
+    "resultado.xlsx"
+  ]
+}

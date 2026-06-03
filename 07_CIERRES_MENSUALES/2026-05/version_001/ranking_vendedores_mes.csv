@@ -1,0 +1,8 @@
+vendedor_codigo,vendedor_nombre,litros_vendidos,dinero_vendido,clientes_11_titulares,clientes_innovaciones,score_litros,score_dinero,score_volumen_dinero,score_11_titulares,score_innovaciones,score_total,ranking_general,ranking_volumen_dinero,ranking_11_titulares,ranking_innovaciones,etiqueta_destacada
+V8,ALVAREZ VANESA,19387.8,117046215.0,114,44,100.0,100.0,100.0,49.35,100.0,84.81,1,1,4,1,MEJOR_GENERAL|MEJOR_VOLUMEN_DINERO|MEJOR_INNOVACIONES
+V10,ORTEGA MILAGROS,9190.03,59471564.0,107,22,47.4,50.81,49.11,46.32,50.0,48.54,2,2,5,3,
+V9,SANCHEZ FERNANDO,5395.83,35749124.0,82,33,27.83,30.54,29.19,35.5,75.0,44.82,3,3,6,2,
+V6,PEYRONEL ANDREA,4523.9,35677658.0,187,14,23.33,30.48,26.91,80.95,31.82,44.59,4,4,3,4,
+V3,NADIA GAMBINO,2217.82,9812968.0,231,3,11.44,8.38,9.91,100.0,6.82,36.01,5,6,1,6,MEJOR_11_TITULARES
+V4,GRIBAUDO ANGEL,4336.65,25182726.0,204,1,22.37,21.52,21.94,88.31,2.27,35.95,6,5,2,7,
+V7,JOFRE GUILLERMO,454.26,2639539.0,29,6,2.34,2.26,2.3,12.55,13.64,8.78,7,7,7,5,

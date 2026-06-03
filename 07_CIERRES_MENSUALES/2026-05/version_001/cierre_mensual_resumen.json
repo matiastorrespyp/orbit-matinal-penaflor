@@ -1,0 +1,92 @@
+{
+  "empresa": {
+    "periodo": "2026-05",
+    "fecha_min": "2026-05-04",
+    "fecha_max": "2026-05-30",
+    "filas_ventas_mes": 5366,
+    "vendedores_incluidos": [
+      "V3",
+      "V4",
+      "V6",
+      "V7",
+      "V8",
+      "V9",
+      "V10"
+    ],
+    "importe_neto_total": 285579795.0,
+    "litros_total": 45506.29,
+    "ccc_total": 1026
+  },
+  "vendedores": [
+    {
+      "vendedor_codigo": "V3",
+      "vendedor_nombre": "NADIA GAMBINO",
+      "solo_tradicional": true,
+      "dinero_vendido": 9812968.0,
+      "litros_vendidos": 2217.82,
+      "ccc": 234,
+      "clientes_11_titulares": 231,
+      "clientes_innovaciones": 3
+    },
+    {
+      "vendedor_codigo": "V4",
+      "vendedor_nombre": "GRIBAUDO ANGEL",
+      "solo_tradicional": false,
+      "dinero_vendido": 25182726.0,
+      "litros_vendidos": 4336.65,
+      "ccc": 242,
+      "clientes_11_titulares": 204,
+      "clientes_innovaciones": 1
+    },
+    {
+      "vendedor_codigo": "V6",
+      "vendedor_nombre": "PEYRONEL ANDREA",
+      "solo_tradicional": false,
+      "dinero_vendido": 35677658.0,
+      "litros_vendidos": 4523.9,
+      "ccc": 192,
+      "clientes_11_titulares": 187,
+      "clientes_innovaciones": 14
+    },
+    {
+      "vendedor_codigo": "V7",
+      "vendedor_nombre": "JOFRE GUILLERMO",
+      "solo_tradicional": false,
+      "dinero_vendido": 2639539.0,
+      "litros_vendidos": 454.26,
+      "ccc": 32,
+      "clientes_11_titulares": 29,
+      "clientes_innovaciones": 6
+    },
+    {
+      "vendedor_codigo": "V8",
+      "vendedor_nombre": "ALVAREZ VANESA",
+      "solo_tradicional": false,
+      "dinero_vendido": 117046215.0,
+      "litros_vendidos": 19387.8,
+      "ccc": 124,
+      "clientes_11_titulares": 114,
+      "clientes_innovaciones": 44
+    },
+    {
+      "vendedor_codigo": "V9",
+      "vendedor_nombre": "SANCHEZ FERNANDO",
+      "solo_tradicional": false,
+      "dinero_vendido": 35749124.0,
+      "litros_vendidos": 5395.83,
+      "ccc": 91,
+      "clientes_11_titulares": 82,
+      "clientes_innovaciones": 33
+    },
+    {
+      "vendedor_codigo": "V10",
+      "vendedor_nombre": "ORTEGA MILAGROS",
+      "solo_tradicional": false,
+      "dinero_vendido": 59471564.0,
+      "litros_vendidos": 9190.03,
+      "ccc": 111,
+      "clientes_11_titulares": 107,
+      "clientes_innovaciones": 22
+    }
+  ]
+}

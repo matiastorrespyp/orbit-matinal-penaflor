@@ -3564,6 +3564,103 @@ def gerencia_cierre_mes():
     })
 
 
+# ====== CIERRES HISTORICOS ======
+@app.route("/api/gerencia/cierres_historicos")
+def gerencia_cierres_historicos():
+    """Lista de cierres mensuales historicos generados en 07_CIERRES_MENSUALES/.
+    Solo lectura. No genera cierres nuevos. No toca ventas_mes.csv ni ningun input.
+    """
+    cierres_dir = BASE / "07_CIERRES_MENSUALES"
+    idx_path    = cierres_dir / "index_cierres_mensuales.json"
+
+    if not idx_path.exists():
+        return jsonify({"cierres": [], "estado": "SIN_CIERRES",
+                        "nota": "07_CIERRES_MENSUALES/index_cierres_mensuales.json no encontrado"})
+
+    try:
+        with open(idx_path, encoding="utf-8") as f:
+            indice = json.load(f)
+    except Exception as e:
+        return jsonify({"cierres": [], "estado": "ERROR",
+                        "error": "No se pudo leer el indice: " + str(e)}), 500
+
+    cierres = []
+    for entrada in indice:
+        periodo  = entrada.get("periodo", "")
+        version  = entrada.get("version", "")
+        carpeta  = cierres_dir.parent / entrada.get("carpeta", "")
+        ts_ar    = entrada.get("timestamp_argentina", "")
+        estado   = entrada.get("estado", "")
+
+        cierre = {
+            "periodo":             periodo,
+            "version":             version,
+            "timestamp_argentina": ts_ar,
+            "estado":              estado,
+            "manifest":            None,
+            "ranking_top3":        [],
+            "warn":                [],
+        }
+
+        manifest_path = carpeta / "manifest.json"
+        if manifest_path.exists():
+            try:
+                with open(manifest_path, encoding="utf-8") as f:
+                    m = json.load(f)
+                cierre["manifest"] = {
+                    "filas_leidas":            m.get("filas_leidas"),
+                    "fecha_min":               m.get("fecha_min"),
+                    "fecha_max":               m.get("fecha_max"),
+                    "vendedores_detectados":   m.get("vendedores_detectados", []),
+                    "vendedores_excluidos_csv": m.get("vendedores_excluidos_csv", []),
+                    "v3_solo_tradicional_pass": m.get("v3_solo_tradicional_pass"),
+                    "fuente_ventas":           m.get("fuente_ventas"),
+                    "fuente_ventas_hash_head": m.get("fuente_ventas_hash_head"),
+                    "estado":                  m.get("estado"),
+                }
+            except Exception as e:
+                cierre["warn"].append("manifest.json no legible: " + str(e))
+        else:
+            cierre["warn"].append("manifest.json no encontrado")
+
+        ranking_path = carpeta / "ranking_vendedores_mes.json"
+        if ranking_path.exists():
+            try:
+                with open(ranking_path, encoding="utf-8") as f:
+                    rank = json.load(f)
+                top3 = sorted(rank, key=lambda r: r.get("ranking_general", 99))[:3]
+                cierre["ranking_top3"] = [
+                    {
+                        "ranking_general":    r.get("ranking_general"),
+                        "vendedor_codigo":    r.get("vendedor_codigo"),
+                        "vendedor_nombre":    r.get("vendedor_nombre"),
+                        "score_total":        r.get("score_total"),
+                        "clientes_11_titulares":  r.get("clientes_11_titulares"),
+                        "clientes_innovaciones":  r.get("clientes_innovaciones"),
+                        "etiqueta_destacada": r.get("etiqueta_destacada", ""),
+                    }
+                    for r in top3
+                ]
+            except Exception as e:
+                cierre["warn"].append("ranking_vendedores_mes.json no legible: " + str(e))
+        else:
+            cierre["warn"].append("ranking_vendedores_mes.json no encontrado")
+
+        if not cierre["warn"]:
+            cierre.pop("warn")
+
+        cierres.append(cierre)
+
+    cierres.sort(key=lambda c: (c.get("periodo",""), c.get("version","")), reverse=True)
+
+    return jsonify({
+        "cierres":       cierres,
+        "total_cierres": len(cierres),
+        "estado":        "OK",
+        "nota":          "Solo lectura. No recalcula ni modifica datos.",
+    })
+
+
 # ====== STARTUP (gunicorn + __main__) ======
 # Se ejecuta cuando gunicorn importa el módulo, no solo en __main__
 backup_orbit_db()         # 1. copia orbit.db antes de cualquier cambio
