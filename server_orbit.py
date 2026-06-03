@@ -2922,13 +2922,15 @@ def _preparar_df_ventas(src_path) -> pd.DataFrame:
 
 
 def _leer_ventas_mes_csv(src_path) -> pd.DataFrame:
-    """Lee ventas_mes.csv con sep=',' y quotechar='"' explícitos.
-    sep=None con engine='python' usa csv.Sniffer que falla en Linux con decimales europeos
-    entre comillas (ej: "6620,94"), parseando mal ImporteNetoItem y filtrando casi todas las filas."""
+    """Lee ventas_mes.csv robusto para Windows (CRLF) y Linux (LF).
+    - sep=',' + quotechar='"' + engine='python' + dtype=str evita que el motor C
+      de pandas deje comillas residuales en campos como "6620,94" al leer en Linux.
+    - strip('"') elimina cualquier comilla residual antes de la conversión numérica."""
     df = None
     for enc in ("utf-8-sig", "latin-1", "windows-1252"):
         try:
-            df = pd.read_csv(src_path, sep=",", quotechar='"', encoding=enc)
+            df = pd.read_csv(src_path, sep=",", quotechar='"',
+                             engine="python", dtype=str, encoding=enc)
             break
         except UnicodeDecodeError:
             continue
@@ -2938,10 +2940,13 @@ def _leer_ventas_mes_csv(src_path) -> pd.DataFrame:
     for col in ("PesoKg", "CantBase", "ImporteNetoItem", "CodVendedor"):
         if col not in df.columns:
             df[col] = 0.0
-        elif df[col].dtype == object:
-            df[col] = df[col].astype(str).str.replace(",", ".", regex=False).pipe(pd.to_numeric, errors="coerce").fillna(0)
         else:
-            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+            df[col] = (df[col].astype(str)
+                               .str.strip()
+                               .str.strip('"')
+                               .str.replace(",", ".", regex=False)
+                               .pipe(pd.to_numeric, errors="coerce")
+                               .fillna(0))
     df = df[~df["CodVendedor"].isin({2, 5, 20}) & (df["ImporteNetoItem"] > 0)].copy()
     return df
 
