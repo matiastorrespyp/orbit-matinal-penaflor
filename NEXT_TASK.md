@@ -1,5 +1,30 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-03 — fix horario Argentina (commit daf443b)
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ Auditado uso de `datetime.now()` y `CURRENT_TIMESTAMP` en `server_orbit.py`.
+- ✅ `planificacion_patch()`: `updated_at=CURRENT_TIMESTAMP` (UTC) → `updated_at=?` con `_now_ar()`.
+- ✅ `planificacion()` POST log: `datetime.now()` → `_now_ar()`.
+- ✅ `backup_orbit_db()`: nombre de archivo → `_now_ar()`.
+- ✅ `mensajes()` POST: `created_at` explícito con `_now_ar()`.
+- ✅ ~30 endpoints con `generado_en` / `last_sync`: `datetime.now()` → `_now_ar()`.
+- ✅ `py_compile` PASS. Render auto-deploy PASS.
+- ✅ `last_sync` y `generado_en` en producción coinciden con hora Argentina (15:23 AR vs 18:23 UTC).
+- ✅ Login gerencia, `/api/dashboard`, `/api/diagnostico`, `/api/gerencia/cierres_historicos` PASS.
+- ✅ `portal.html`, inputs y datos no tocados. Archivos de datos sin stage/commit.
+
+### PENDIENTES 🔲
+1. **PATCH planificación en producción** — probar con un plan controlado o de prueba para confirmar que `updated_at` queda en hora Argentina. No ejecutar sobre planes reales sin coordinación.
+2. **Migración de históricos** — los registros antiguos en `orbit.db` con `created_at`/`updated_at` en UTC no se migraron. Evaluar si se deben corregir. **No migrar sin aprobación explícita.**
+3. **Mensajes históricos** — misma situación: mensajes anteriores al commit `daf443b` tienen `created_at` UTC.
+4. **Regla permanente**: toda hora visible en portal debe usar `_now_ar()`. No usar `datetime.now()` naive ni `CURRENT_TIMESTAMP` SQLite en campos que llegan al usuario.
+
+### `datetime.now()` residuales sin corregir (cálculos internos, no visibles)
+- Líneas 284, 474, 666, 3216 — cálculos de fecha/calendario internos. No afectan timestamps visibles.
+
+---
+
 ## Sesión 2026-06-03 — QA Render producción (post-commit 5a9b7a0)
 
 ### HECHO EN ESTA SESIÓN ✅

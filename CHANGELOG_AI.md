@@ -1,5 +1,42 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-03 — fix(horario): normalizar timestamps visibles a hora Argentina
+
+**Commit en producción:** `daf443b`
+
+**Problema corregido:** varios campos de `server_orbit.py` usaban `datetime.now()` naive o `CURRENT_TIMESTAMP` de SQLite, que en Render (servidor UTC) devolvían la hora UTC — 3 horas adelantada respecto a Argentina.
+
+**Zona oficial aplicada:** `America/Argentina/Cordoba` / UTC-3 via `_now_ar()` (ya existía en el código, no se usaba de forma consistente).
+
+**Cambios aplicados:**
+
+| Función | Campo | Antes | Después |
+|---|---|---|---|
+| `planificacion_patch()` | `updated_at` | `CURRENT_TIMESTAMP` (UTC SQLite) | `updated_at=?` con `_now_ar()` |
+| `planificacion()` POST | log a archivo | `datetime.now().strftime(...)` | `_now_ar()` |
+| `backup_orbit_db()` | nombre de archivo | `datetime.now().strftime(...)` | `_now_ar().replace(...)` |
+| `mensajes()` POST | `created_at` | `DEFAULT CURRENT_TIMESTAMP` implícito | `created_at=_now_ar()` explícito |
+| ~30 endpoints | `generado_en` y `last_sync` | `datetime.now().strftime(...)` | `_now_ar()` |
+
+**Validaciones PASS:**
+- `python -m py_compile server_orbit.py` PASS.
+- Render auto-deploy activo (65 segundos).
+- Login gerencia HTTP 200 PASS.
+- `/api/dashboard` — `last_sync: 2026-06-03 15:23:09` = hora Argentina ✓
+- `/api/diagnostico` — `generado_en: 2026-06-03 15:23:14` = hora Argentina ✓
+- `/api/gerencia/cierres_historicos` — estado OK, sin warn, top3 V8/V10/V9 ✓
+- `portal.html`, inputs y datos no tocados.
+- Archivos pendientes fuera de objetivo sin stage y sin commit.
+
+**PATCH planificación:** no probado en producción — sin planes activos disponibles para modificar de forma segura.
+
+**`datetime.now()` residuales sin corrección** (fuera del alcance aprobado):
+- Líneas 284, 474, 666, 3216 — cálculos internos de fecha/calendario, no timestamps visibles al usuario.
+
+**Archivos tocados:** `server_orbit.py`, `CHANGELOG_AI.md`, `NEXT_TASK.md`.
+
+---
+
 ## 2026-06-03 — qa(render): validación producción post-commit 5a9b7a0
 
 **QA Render producción — solo lectura, sin modificaciones.**
