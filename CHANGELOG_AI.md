@@ -1,5 +1,24 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-02 — data: cierre diario y sincronización 11T dashboard
+
+**Qué se hizo:**
+- Se ejecutó `CIERRE_DIA_ORBIT.bat` para publicar inputs y datasets actualizados.
+- El BAT completó la regeneración de datos (motor legacy + exportador CSV) pero no pudo ejecutar el commit/push en modo no-interactivo (el `pause` final bloquea stdin). Se realizó el commit manual con exactamente los mismos archivos que el BAT hubiera incluido.
+- `orbit.db` **no fue commiteado** — el fix de planificación persistente (`7b08c88`) funcionó correctamente: ausente del BAT, presente en `.gitignore`, ausente del commit.
+
+**Archivos commiteados (`6a05ef1`):**
+- `01_INPUTS/ventas.csv`, `ventas_acumulada.csv`, `resultado.xlsx`
+- `02_HISTORY/historial_ventas_cliente.csv`
+- `04_DATASETS_ORBIT/` — 19 datasets regenerados
+
+**Resultado en Render:**
+- `/api/gerencia/once_titulares` usa `ventas_acumulada.csv` ✓
+- ALMA MORA dashboard: 757 → **472** (coincide con local)
+- 11 marcas sincronizadas con la fuente actualizada
+
+**Archivos tocados:** ninguno de código — solo datos.
+
 ## 2026-06-02 — fix(pav): persistencia planificación — orbit.db dejó de commitearse
 
 **Problema:**
