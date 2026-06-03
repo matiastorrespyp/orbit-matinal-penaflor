@@ -1,5 +1,38 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-02 — fix(pav): corregir sell out cierre mensual (ventas_mes.csv en Render)
+
+**Problema:**
+`/api/gerencia/cierre_mes` devolvía `filas_ventas_mes=53` y Vinos del Año=192 L en Render (producción).
+Localmente el mismo endpoint producía 5067 filas válidas y ≈14900 L. El dashboard sellout_litros no estaba afectado.
+
+**Diagnóstico:**
+`ventas_mes.csv` usa coma como separador y decimales europeos entre comillas (`"6620,94"`).
+Git checkoutea el archivo con CRLF en Windows y con LF en Linux (Render). El motor C de pandas con `sep=None` (y luego con `sep=","` sin `engine="python"`) no dequoteaba correctamente los campos en Linux, dejando comillas residuales en `ImporteNetoItem`. Eso hacía que `pd.to_numeric` devolviera NaN → 0 → casi todas las filas fallaban el filtro `> 0`. Solo las 53 filas con importe entero (sin coma decimal en el CSV) pasaban.
+
+Se confirmó la causa con un endpoint de diagnóstico temporal (`/api/debug/ventas_mes`) que expuso `md5`, tamaño, filas raw y filas válidas sin datos sensibles. El md5 de Render (LF) difería del local (CRLF) en exactamente 5553 bytes = 1 byte × 5553 filas.
+
+**Solución:**
+Nueva función `_leer_ventas_mes_csv(src_path)` en `server_orbit.py`:
+- `pd.read_csv(..., sep=",", quotechar='"', engine="python", dtype=str)` — el motor Python dequotea correctamente en Linux; `dtype=str` evita conversión automática que ocultaba el problema.
+- Cadena de limpieza antes de `pd.to_numeric`: `.str.strip().str.strip('"').str.replace(",", ".", regex=False)` — elimina espacios, `\r` residuales y cualquier comilla no eliminada.
+- Aplicada a `PesoKg`, `CantBase`, `ImporteNetoItem`, `CodVendedor`.
+- Usada solo en `/api/gerencia/cierre_mes`. `_preparar_df_ventas` (ventas.csv, dashboard, sellout_litros) **sin tocar**.
+
+**Resultado final en Render:**
+- `filas_ventas_mes`: 5067 ✓
+- Vinos del Año: 14923.5 L ✓
+- Spirits: 18585.9 L, RTD: 12792.8 L, Vinos de Guarda: 403.5 L
+- `sellout_litros` sigue usando `ventas.csv` sin cambios ✓
+
+**Commits de esta sesión:**
+- `e31e348` — `fix(pav): corregir parser ventas_mes para sell out cierre` (primer intento, `sep=","` sin engine=python — insuficiente)
+- `ff38ba1` — `debug(pav): exponer diagnostico seguro ventas_mes render` (endpoint temporal de diagnóstico)
+- `b1f4c2a` — `fix(pav): robustecer lectura ventas_mes en linux` (fix definitivo)
+- `4242821` — `chore(pav): remover endpoint debug ventas_mes` (limpieza)
+
+**Archivos tocados:** `server_orbit.py`
+
 ## 2026-06-01 — fix(sellout): clasificación Nacionales/Importados + fallback litros PesoKg=0
 
 **Causa raíz:**
