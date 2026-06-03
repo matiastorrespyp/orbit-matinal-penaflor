@@ -1,5 +1,37 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-03 — fix(pav): calendario matinal dashboard
+
+**Problema:**
+`/api/diagnostico` mostraba en Render `corridos=3`, `total=26`, `dia_operativo=JU` y `fecha_matinal=2026-06-04` en lugar de los valores correctos. El portal mostraba "3 de 26 días" y la matinal apuntaba al día equivocado.
+
+**Causas identificadas y corregidas:**
+
+1. **`total=26` → `total=24`** (`49d2c28`): feriados.csv solo tenía mayo. Se agregaron los feriados del resto de 2026 incluyendo `2026-06-15` (Güemes trasladado) y `2026-06-20` (Día de la Bandera). Los dos días de junio reducen el total de 26 a 24.
+
+2. **`corridos=3` y `fecha_matinal=JU`** (`49d2c28` + `936efa1`): el calendario usaba `datetime.now()` del servidor (UTC → ya era Jun 3 cuando AR era Jun 2). Se cambió a leer la última `FechaComprobante` de `ventas.csv` con `sep=";"` explícito. `sep=None` en Linux (mismo bug que `ventas_mes.csv`) perdía las filas de Jun 2 por columnas mal alineadas.
+
+3. **Parser de fecha ambiguo** (`b17eec3`): `'2/6/2026'` con `dayfirst=True` daba resultados inconsistentes entre Windows (Jun 2) y Linux (Feb 6 o NaT). Se cambió a `format="%d/%m/%Y"` explícito.
+
+4. **`fecha_corte` top-level = reloj del servidor** (`40c5d82`): `"fecha_corte"` en la respuesta era `datetime.now()` (Jun 3 en Render) mientras `calendario.fecha_corte` era Jun 1. Ambos se unificaron a `_fecha_corte_datos.strftime(...)` = última fecha de `ventas.csv`.
+
+**Resultado en Render (`40c5d82`):**
+- `fecha_corte`: `2026-06-02` ✓
+- `corridos`: `2` ✓
+- `total`: `24` ✓
+- `restantes`: `22` ✓
+- `dia_operativo`: `MI` ✓
+- `fecha_matinal`: `2026-06-03` ✓
+- `feriados_detectados_del_mes`: `['2026-06-15', '2026-06-20']` ✓
+
+**Commits:**
+- `49d2c28` — feriados junio 2026 + hora AR para calendario
+- `b17eec3` — parser `format="%d/%m/%Y"` para FechaComprobante
+- `936efa1` — matinal desde última fecha de datos (no `datetime.now()`)
+- `40c5d82` — unificar `fecha_corte` top-level desde `ventas.csv`
+
+**Archivos tocados:** `server_orbit.py`, `09_CONFIG/feriados.csv`
+
 ## 2026-06-02 — data: cierre diario y sincronización 11T dashboard
 
 **Qué se hizo:**
