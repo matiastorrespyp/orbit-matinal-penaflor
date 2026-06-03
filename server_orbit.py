@@ -570,13 +570,22 @@ def diagnostico():
             acum = float(vv["acumulado_mes"].sum()) if not vv.empty else 0
             vendedores_detectados.append({"codigo": cod, "nombre": str(v["nombre_vendedor"]), "objetivo": obj, "acumulado": acum})
 
-    # fecha_corte desde ventas.csv — misma lógica que /api/dashboard
+    # fecha_corte desde ventas.csv con sep=";" explícito.
+    # sep=None falla en Linux (mismo patrón que ventas_mes.csv): columnas mal alineadas,
+    # filas del día más reciente quedan con ImporteNetoItem=0 y se pierden.
     _fecha_corte_datos = None
     try:
         _sv = INPUTS / "ventas.csv"
         if _sv.exists():
-            _dv2 = _preparar_df_ventas(_sv)
-            if not _dv2.empty and "FechaComprobante" in _dv2.columns:
+            _dv2 = pd.DataFrame()
+            for _enc in ("latin1", "utf-8-sig", "utf-8"):
+                try:
+                    _dv2 = pd.read_csv(_sv, sep=";", encoding=_enc,
+                                       usecols=["FechaComprobante"], low_memory=False)
+                    break
+                except (UnicodeDecodeError, ValueError):
+                    continue
+            if not _dv2.empty:
                 _ult = pd.to_datetime(_dv2["FechaComprobante"], format="%d/%m/%Y", errors="coerce").max()
                 if pd.notna(_ult):
                     _fecha_corte_datos = _ult.to_pydatetime()
@@ -704,7 +713,7 @@ def diagnostico():
         "cartera_real_total": cartera_real_total,
         "dia_snapshot": dia_op,
         "fecha_datos": fecha_datos,          # cuándo se regeneraron los datasets (puede ser de ayer)
-        "fecha_corte": fecha_corte_rt,       # hoy real-time (siempre actualizado)
+        "fecha_corte": _fecha_corte_datos.strftime("%Y-%m-%d"),  # última fecha de datos en ventas.csv
         "fecha_objetivo": fecha_obj_str,
         "fecha_matinal": _sig_matinal.isoformat(),  # próxima matinal = siguiente día operativo
         "fecha_planificacion_default": _fecha_planificacion_default(_now_diag),
