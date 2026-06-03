@@ -11,6 +11,14 @@ __pycache__/
 # ORBIT - base de datos persistente (Render usa /var/data/orbit.db — no commitear local)
 orbit.db
 
+# ORBIT - credenciales Google Sheets (NUNCA commitear — service account)
+GSHEETS_CREDENTIALS_JSON*
+gsheets_credentials*.json
+*service-account*.json
+*service_account*.json
+google_credentials*.json
+.secrets/
+
 # ORBIT - archivos locales / temporales
 .claude/settings.local.json
 diff_*.txt

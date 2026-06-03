@@ -31,6 +31,14 @@ services:
         value: /var/data/orbit.db
       - key: ORBIT_PLAN_BACKUP_DIR
         value: /var/data/planificacion
+      # Google Sheets = fuente de verdad de planificaciones.
+      # Los valores secretos se cargan a mano en el dashboard de Render (sync: false).
+      - key: GSHEETS_SHEET_NAME
+        value: planificaciones
+      - key: GSHEETS_SPREADSHEET_ID
+        sync: false
+      - key: GSHEETS_CREDENTIALS_JSON
+        sync: false
 
     # Health check — endpoint liviano, sin leer archivos de datos
     healthCheckPath: /api/healthz

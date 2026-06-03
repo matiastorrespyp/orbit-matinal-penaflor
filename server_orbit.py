@@ -116,17 +116,225 @@ def export_planificacion_csv():
     except Exception as e:
         print(f"[WARN] export_planificacion_csv: {e}")
 
+# ====== GOOGLE SHEETS — fuente de verdad de planificaciones ======
+# SQLite es solo cache. La fuente de verdad es Google Sheets.
+# Credenciales: NUNCA en Git. Se inyectan por variable de entorno en Render.
+#   GSHEETS_SPREADSHEET_ID   = id del spreadsheet (cadena en la URL)
+#   GSHEETS_SHEET_NAME       = nombre de la pestaña (default "planificaciones")
+#   GSHEETS_CREDENTIALS_JSON = JSON del service account (o base64 del JSON)
+_GSHEETS_SPREADSHEET_ID = os.environ.get("GSHEETS_SPREADSHEET_ID", "").strip()
+_GSHEETS_SHEET_NAME     = os.environ.get("GSHEETS_SHEET_NAME", "planificaciones").strip() or "planificaciones"
+_GSHEETS_SCOPES         = ["https://www.googleapis.com/auth/spreadsheets"]
+
+# Orden canónico de columnas en la hoja (orden aprobado).
+PLAN_SHEET_COLS = [
+    "id", "fecha", "vendedor_id", "zona", "dia_visita", "venta_esperada",
+    "ccc_tradicional", "ccc_autoservicio", "ccc_onpremise", "once_t",
+    "marcas", "clientes_clave", "acciones", "estado",
+    "created_at", "updated_at", "editado_por", "comentario_gerencia",
+]
+
+def _plan_id(fecha, vendedor_id):
+    """ID determinístico del plan: fecha + '_' + vendedor_id. Ej: 2026-06-04_V8"""
+    return f"{str(fecha).strip()}_{str(vendedor_id).strip().upper()}"
+
+def _gsheet_cell(v):
+    """Normaliza un valor de plan a celda de hoja (None -> '')."""
+    return "" if v is None else v
+
+def _gsheets_credentials_info():
+    """Devuelve el dict de credenciales del service account o None."""
+    raw = os.environ.get("GSHEETS_CREDENTIALS_JSON", "").strip()
+    if not raw:
+        return None
+    try:
+        return json.loads(raw)
+    except Exception:
+        try:
+            import base64
+            return json.loads(base64.b64decode(raw).decode("utf-8"))
+        except Exception:
+            return None
+
+def gsheets_enabled():
+    """True si hay id de hoja y credenciales configuradas."""
+    return bool(_GSHEETS_SPREADSHEET_ID) and _gsheets_credentials_info() is not None
+
+def _gsheets_get_worksheet():
+    """Devuelve (worksheet, None) o (None, mensaje_error). Crea la pestaña/header si falta."""
+    if not _GSHEETS_SPREADSHEET_ID:
+        return None, "GSHEETS_SPREADSHEET_ID no configurado"
+    try:
+        import gspread
+        from google.oauth2.service_account import Credentials
+    except Exception as e:
+        return None, f"gspread/google-auth no disponible: {e}"
+    info = _gsheets_credentials_info()
+    if not info:
+        return None, "GSHEETS_CREDENTIALS_JSON no configurado o inválido"
+    try:
+        creds = Credentials.from_service_account_info(info, scopes=_GSHEETS_SCOPES)
+        gc = gspread.authorize(creds)
+        sh = gc.open_by_key(_GSHEETS_SPREADSHEET_ID)
+        try:
+            ws = sh.worksheet(_GSHEETS_SHEET_NAME)
+        except Exception:
+            ws = sh.add_worksheet(title=_GSHEETS_SHEET_NAME,
+                                  rows=1000, cols=len(PLAN_SHEET_COLS))
+            ws.update(range_name="A1", values=[PLAN_SHEET_COLS])
+            return ws, None
+        if not ws.row_values(1):   # header faltante
+            ws.update(range_name="A1", values=[PLAN_SHEET_COLS])
+        return ws, None
+    except Exception as e:
+        return None, f"error abriendo Google Sheet: {e}"
+
+def _gsheets_find_row(values, header, plan_id):
+    """Devuelve (num_fila_1based, fila_existente) buscando por columna 'id'. (None, None) si no está."""
+    idx = {name: i for i, name in enumerate(header)}
+    id_i = idx.get("id")
+    if id_i is None:
+        return None, None
+    for r in range(1, len(values)):
+        row = values[r]
+        if len(row) > id_i and str(row[id_i]).strip() == str(plan_id).strip():
+            return r + 1, row
+    return None, None
+
+def gsheets_upsert_plan(plan):
+    """Inserta o actualiza una fila por 'id' (= fecha_vendedor_id).
+    Devuelve (True, None) o (False, error). Preserva created_at en re-envíos."""
+    ws, err = _gsheets_get_worksheet()
+    if err:
+        return False, err
+    try:
+        plan = dict(plan)
+        plan["id"] = _plan_id(plan.get("fecha"), plan.get("vendedor_id"))
+        values = ws.get_all_values()
+        header = values[0] if values else list(PLAN_SHEET_COLS)
+        row_num, existing = _gsheets_find_row(values, header, plan["id"])
+        idx = {name: i for i, name in enumerate(header)}
+        # No pisar created_at en re-envíos: conservar el de la hoja si existe.
+        if row_num and existing and "created_at" in idx:
+            ci = idx["created_at"]
+            ex_created = existing[ci] if len(existing) > ci else ""
+            if ex_created:
+                plan["created_at"] = ex_created
+        ordered = [_gsheet_cell(plan.get(c)) for c in header]
+        if row_num:
+            ws.update(range_name=f"A{row_num}", values=[ordered])
+        else:
+            ws.append_row(ordered, value_input_option="RAW")
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
+def gsheets_verify_plan(plan_id, expected):
+    """Relee la fila por 'id' y verifica que los campos esperados coinciden. True/False."""
+    ws, err = _gsheets_get_worksheet()
+    if err:
+        return False
+    try:
+        values = ws.get_all_values()
+        if not values:
+            return False
+        header = values[0]
+        idx = {name: i for i, name in enumerate(header)}
+        _, row = _gsheets_find_row(values, header, plan_id)
+        if not row:
+            return False
+        for k, v in (expected or {}).items():
+            if k in idx:
+                cell = row[idx[k]] if len(row) > idx[k] else ""
+                if str(cell).strip() != str(v).strip():
+                    return False
+        return True
+    except Exception:
+        return False
+
+def gsheets_read_all():
+    """Lee todas las filas de la hoja como lista de dicts. [] si no hay/no disponible."""
+    ws, err = _gsheets_get_worksheet()
+    if err:
+        return []
+    try:
+        values = ws.get_all_values()
+        if len(values) < 2:
+            return []
+        header = values[0]
+        out = []
+        for r in range(1, len(values)):
+            row = values[r]
+            d = {header[i]: (row[i] if i < len(row) else "") for i in range(len(header))}
+            if str(d.get("fecha", "")).strip() and str(d.get("vendedor_id", "")).strip():
+                out.append(d)
+        return out
+    except Exception:
+        return []
+
+def hydrate_planificacion_from_sheets():
+    """Carga la cache SQLite desde Google Sheets (fuente de verdad). Devuelve nº de filas."""
+    rows = gsheets_read_all()
+    if not rows:
+        return 0
+    def _num(v, cast):
+        try:
+            return cast(v) if str(v).strip() != "" else None
+        except Exception:
+            return None
+    conn = sqlite3.connect(str(DB_PATH))
+    inserted = 0
+    for row in rows:
+        try:
+            conn.execute("""
+                INSERT OR IGNORE INTO planificacion
+                  (fecha, vendedor_id, zona, dia_visita, venta_esperada,
+                   ccc_tradicional, ccc_autoservicio, ccc_onpremise,
+                   once_t, marcas, clientes_clave, acciones, estado,
+                   editado_por, comentario_gerencia, created_at, updated_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """, (
+                str(row.get("fecha", "")).strip(),
+                str(row.get("vendedor_id", "")).strip().upper(),
+                row.get("zona") or None, row.get("dia_visita") or None,
+                _num(row.get("venta_esperada"), float),
+                _num(row.get("ccc_tradicional"), int),
+                _num(row.get("ccc_autoservicio"), int),
+                _num(row.get("ccc_onpremise"), int),
+                _num(row.get("once_t"), int),
+                row.get("marcas") or None, row.get("clientes_clave") or None,
+                row.get("acciones") or None, row.get("estado") or "enviada",
+                row.get("editado_por") or None, row.get("comentario_gerencia") or None,
+                row.get("created_at") or None, row.get("updated_at") or None,
+            ))
+            inserted += 1
+        except Exception:
+            pass
+    conn.commit()
+    conn.close()
+    print(f"[ORBIT] Cache hidratada desde Google Sheets: {inserted} planes")
+    return inserted
+
 def restore_planificacion_if_empty():
-    """Si planificacion está vacía y existe CSV de backup, restaura los datos automáticamente."""
+    """Si planificacion está vacía: restaura desde CSV de backup; si no hay CSV,
+    restaura desde Google Sheets (fuente de verdad)."""
     try:
         conn = sqlite3.connect(str(DB_PATH))
         count = conn.execute("SELECT COUNT(*) FROM planificacion").fetchone()[0]
         conn.close()
-        if count > 0 or not PLAN_CSV_LATEST.exists():
+        if count > 0:
+            return
+        if not PLAN_CSV_LATEST.exists():
+            # No hay CSV local: intentar fuente de verdad (Google Sheets).
+            if gsheets_enabled():
+                hydrate_planificacion_from_sheets()
             return
         with open(str(PLAN_CSV_LATEST), "r", encoding="utf-8") as f:
             rows = list(_csv.DictReader(f))
         if not rows:
+            # CSV existe pero está vacío: intentar fuente de verdad (Google Sheets).
+            if gsheets_enabled():
+                hydrate_planificacion_from_sheets()
             return
         conn = sqlite3.connect(str(DB_PATH))
         restored = 0
@@ -1131,6 +1339,30 @@ def planificacion():
         fecha  = _fecha_planificacion_default() if fecha_raw in ("", "auto", "default") else d.get("fecha")
         _ts    = _now_ar()  # hora Argentina para ambos timestamps
 
+        # FAIL-CLOSED: Google Sheets es la fuente de verdad. Si no guarda y verifica,
+        # no se toca SQLite y se devuelve 503. SQLite queda solo como cache.
+        plan = {
+            "fecha": fecha, "vendedor_id": vid_raw,
+            "zona": d.get("zona"), "dia_visita": d.get("dia_visita"),
+            "venta_esperada": float(d.get("venta_esperada") or 0),
+            "ccc_tradicional": int(d.get("ccc_tradicional") or 0),
+            "ccc_autoservicio": ccc_as,
+            "ccc_onpremise": int(d.get("ccc_onpremise") or 0),
+            "once_t": int(d.get("once_t") or 0),
+            "marcas": d.get("marcas"), "clientes_clave": d.get("clientes_clave"),
+            "acciones": d.get("acciones"), "estado": "enviada",
+            "created_at": _ts, "updated_at": _ts,
+        }
+        ok_w, gerr = gsheets_upsert_plan(plan)
+        if not ok_w:
+            conn.close()
+            return jsonify({"ok": False,
+                            "error": f"No se pudo guardar en Google Sheets: {gerr}"}), 503
+        if not gsheets_verify_plan(_plan_id(fecha, vid_raw), {"updated_at": _ts}):
+            conn.close()
+            return jsonify({"ok": False,
+                            "error": "Guardado no verificado en Google Sheets"}), 503
+
         conn.execute("""
             INSERT INTO planificacion
               (fecha, vendedor_id, zona, dia_visita, venta_esperada,
@@ -1156,7 +1388,15 @@ def planificacion():
         export_planificacion_csv()
         return jsonify({"ok": True, "vendedor_id": vid_raw, "fecha": fecha, "hora_envio": _ts})
 
-    # GET — filtros opcionales por fecha y/o vendedor_id
+    # GET — lee SQLite (cache) si tiene datos; si está vacío, hidrata desde Google Sheets.
+    total = conn.execute("SELECT COUNT(*) FROM planificacion").fetchone()[0]
+    if total == 0 and gsheets_enabled():
+        conn.close()
+        hydrate_planificacion_from_sheets()
+        conn = sqlite3.connect(str(DB_PATH), timeout=10, check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+
+    # filtros opcionales por fecha y/o vendedor_id
     if fecha_q and vid_q:
         rows = conn.execute(
             "SELECT * FROM planificacion WHERE fecha=? AND vendedor_id=? ORDER BY updated_at DESC",
@@ -1196,27 +1436,45 @@ def planificacion_patch(plan_id):
         conn.close()
         return jsonify({"ok": False, "error": f"Plan {plan_id} no encontrado"}), 404
 
-    vid_row = (dict(row).get("vendedor_id") or "").upper()
+    row_d = dict(row)
+    vid_row = (row_d.get("vendedor_id") or "").upper()
     fields, vals = [], []
+    # row_merge: estado del plan tras aplicar el patch (payload para Google Sheets).
+    row_merge = dict(row_d)
 
     for f in ["zona","dia_visita","venta_esperada","ccc_tradicional",
               "ccc_onpremise","once_t","marcas","clientes_clave","acciones"]:
         if f in d:
-            fields.append(f"{f}=?"); vals.append(d[f])
+            fields.append(f"{f}=?"); vals.append(d[f]); row_merge[f] = d[f]
 
     if "ccc_autoservicio" in d:
         val_as = 0 if vid_row == "V3" else int(d.get("ccc_autoservicio") or 0)
-        fields.append("ccc_autoservicio=?"); vals.append(val_as)
+        fields.append("ccc_autoservicio=?"); vals.append(val_as); row_merge["ccc_autoservicio"] = val_as
 
     if estado:
-        fields.append("estado=?"); vals.append(estado)
+        fields.append("estado=?"); vals.append(estado); row_merge["estado"] = estado
     if "editado_por" in d:
-        fields.append("editado_por=?"); vals.append(d["editado_por"])
+        fields.append("editado_por=?"); vals.append(d["editado_por"]); row_merge["editado_por"] = d["editado_por"]
     if "comentario_gerencia" in d:
-        fields.append("comentario_gerencia=?"); vals.append(d["comentario_gerencia"])
+        fields.append("comentario_gerencia=?"); vals.append(d["comentario_gerencia"]); row_merge["comentario_gerencia"] = d["comentario_gerencia"]
 
+    new_ts = _now_ar()
     fields.append("updated_at=?")
-    vals.append(_now_ar())
+    vals.append(new_ts)
+    row_merge["updated_at"] = new_ts
+
+    # FAIL-CLOSED: escribir y verificar en Google Sheets antes de tocar SQLite (cache).
+    pid = _plan_id(row_merge.get("fecha"), row_merge.get("vendedor_id"))
+    ok_w, gerr = gsheets_upsert_plan(row_merge)
+    if not ok_w:
+        conn.close()
+        return jsonify({"ok": False,
+                        "error": f"No se pudo guardar en Google Sheets: {gerr}"}), 503
+    if not gsheets_verify_plan(pid, {"updated_at": new_ts}):
+        conn.close()
+        return jsonify({"ok": False,
+                        "error": "Cambio no verificado en Google Sheets"}), 503
+
     conn.execute(f"UPDATE planificacion SET {', '.join(fields)} WHERE id=?", vals + [plan_id])
     conn.commit()
     updated = dict(conn.execute("SELECT * FROM planificacion WHERE id=?", (plan_id,)).fetchone())
