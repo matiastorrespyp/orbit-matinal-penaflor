@@ -570,7 +570,21 @@ def diagnostico():
             acum = float(vv["acumulado_mes"].sum()) if not vv.empty else 0
             vendedores_detectados.append({"codigo": cod, "nombre": str(v["nombre_vendedor"]), "objetivo": obj, "acumulado": acum})
 
-    dias = contar_dias_habiles(fecha_corte=datetime.now(_ARG_TZ).replace(tzinfo=None))
+    # fecha_corte desde ventas.csv — misma lógica que /api/dashboard
+    _fecha_corte_datos = None
+    try:
+        _sv = INPUTS / "ventas.csv"
+        if _sv.exists():
+            _dv2 = _preparar_df_ventas(_sv)
+            if not _dv2.empty and "FechaComprobante" in _dv2.columns:
+                _ult = pd.to_datetime(_dv2["FechaComprobante"], dayfirst=True, errors="coerce").max()
+                if pd.notna(_ult):
+                    _fecha_corte_datos = _ult.to_pydatetime()
+    except Exception:
+        pass
+    if _fecha_corte_datos is None:
+        _fecha_corte_datos = datetime.now(_ARG_TZ).replace(tzinfo=None) - timedelta(days=1)
+    dias = contar_dias_habiles(fecha_corte=_fecha_corte_datos)
     total_acum = sum(v["acumulado"] for v in vendedores_detectados)
 
     # Segmentos: denominadores desde cartera real (clientes.xlsx); cubiertos desde mod_ccc_segmento (ayer)
@@ -656,7 +670,7 @@ def diagnostico():
     _now_diag = datetime.now(_ARG_TZ)
     dia_op       = _DIAS_AR[_now_diag.weekday()]
     fecha_corte_rt = _now_diag.strftime("%Y-%m-%d")
-    _sig_matinal   = _siguiente_dia_operativo(_now_diag.date())
+    _sig_matinal   = _siguiente_dia_operativo(_fecha_corte_datos.date())
     dia_op_matinal = _DIAS_AR[_sig_matinal.weekday()]
 
     # fecha_datos = cuándo fue generado el último dataset (para transparencia)
