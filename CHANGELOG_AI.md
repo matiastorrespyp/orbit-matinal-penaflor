@@ -1,5 +1,27 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-02 — fix(pav): persistencia planificación — orbit.db dejó de commitearse
+
+**Problema:**
+Las planificaciones que los vendedores cargaban en Render desaparecían al volver al portal. Siempre aparecía solo el plan V4 del 18/5 (seedeado desde el repo).
+
+**Diagnóstico:**
+- `orbit.db` estaba trackeado en git.
+- `CIERRE_DIA_ORBIT.bat` tenía `git add "orbit.db"`, lo que commiteaba la DB local (sin los planes de los vendedores) en cada cierre de día.
+- Cada push → nuevo deploy en Render → `init_db()` al arrancar podía re-seedear `/var/data/orbit.db` desde el `orbit.db` del repo, pisando los planes guardados por los vendedores.
+- Confirmado por diagnóstico API: la DB de Render tenía solo 2 registros (`id=2` V4 18/5 y `id=9` test de diagnóstico); los ids 3–8 habían existido y desaparecido.
+
+**Corrección:**
+- `CIERRE_DIA_ORBIT.bat`: eliminada la línea `git add "orbit.db"`.
+- `.gitignore`: agregada regla `orbit.db` con comentario explicativo.
+- `git rm --cached orbit.db`: sacado del tracking sin borrar el archivo físico local.
+
+**Resultado:**
+Render conserva sus planificaciones en `/var/data/orbit.db`. Los deploys ya no pisan la DB persistente. El seed inicial de `init_db()` solo corre si el archivo no existe — desde que existe, nunca se re-seedea.
+
+**Commit:** `7b08c88`
+**Archivos tocados:** `CIERRE_DIA_ORBIT.bat`, `.gitignore`
+
 ## 2026-06-02 — fix(pav): corregir sell out cierre mensual (ventas_mes.csv en Render)
 
 **Problema:**
