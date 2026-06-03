@@ -1,5 +1,34 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-03 — QA Render producción (post-commit 5a9b7a0)
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ QA Render producción ejecutado — solo lectura, sin modificaciones.
+- ✅ Portal HTTP 200 en producción.
+- ✅ Login gerencia PASS, login V8 PASS, login inválido → 401 PASS.
+- ✅ Dashboard gerencial visible con datos reales (Acumulado $16.0M, Tendencia 58.7%, 7 vendedores).
+- ✅ `/api/diagnostico`, `/api/dashboard`, `/api/gerencia/cierre_mes` → PASS.
+- ✅ `/api/gerencia/cierres_historicos` → estado OK, 2026-05/version_001, top3 V8·V10·V9, sin warn.
+- ✅ Sin errores JS ni errores de red 4xx/5xx.
+- ✅ CantBase y botellas no visibles en pantalla.
+- ✅ NaN/undefined = 0.
+- ✅ Sidebar "Cierre de Mes" presente bajo REPORTES.
+- ✅ Validaciones QA PASS.
+- ✅ No se modificaron archivos, no commit, no push, no deploy.
+
+### ESTADO ACTUAL EN PRODUCCIÓN
+- Commits en producción: `606d1e0` (feat cierre) + `5a9b7a0` (fix path separadores).
+- Portal operativo sin regresiones.
+- Endpoint `/api/gerencia/cierres_historicos` funcional en Render con rutas Linux.
+
+### PRÓXIMOS PASOS (requieren aprobación antes de implementar)
+1. **Tarjeta visual portal gerencial** — consumir `/api/gerencia/cierres_historicos` desde `portal.html` para mostrar selector de período, versión y ranking del cierre. Requiere aprobación.
+2. **Ranking 11T por porcentaje** — evaluar cambiar conteo absoluto por `pct_cobertura_11t` para comparación equitativa entre carteras de distinto tamaño. Requiere decisión comercial.
+3. **Workflow mensual junio** — cuando cierre junio, correr `python tools/generar_cierre_mensual.py` → detectará `version_001` de junio y creará nueva carpeta sin tocar mayo.
+4. **Reglas acciones junio** — cambiar `reglas_acciones_mayo_2026_orbit.csv` → `reglas_acciones_junio_2026_orbit.csv` antes del próximo pipeline.
+
+---
+
 ## Sesión 2026-06-03 — Endpoint /api/gerencia/cierres_historicos
 
 ### HECHO EN ESTA SESIÓN ✅

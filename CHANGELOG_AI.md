@@ -1,5 +1,40 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-03 — qa(render): validación producción post-commit 5a9b7a0
+
+**QA Render producción — solo lectura, sin modificaciones.**
+
+Commit verificado: `5a9b7a0` (fix path separadores Windows→Linux).
+
+**Endpoints validados:**
+
+| Endpoint | Estado |
+|---|---|
+| Home / portal HTML | PASS — HTTP 200 |
+| POST /api/login gerencia | PASS — ok:true, rol:gerencia |
+| POST /api/login vendedor V8 | PASS — ok:true, nombre correcto |
+| POST /api/login inválido | PASS — HTTP 401, ok:false |
+| GET /api/diagnostico | PASS — fecha_corte 2026-06-02, corridos 2/24 |
+| GET /api/dashboard | PASS — 7 vendedores con datos reales |
+| GET /api/gerencia/cierre_mes | PASS — mes 2026-05, 7 vendedores, avance 4.9% |
+| GET /api/gerencia/cierres_historicos | PASS — estado OK, 2026-05/version_001, top3 V8·V10·V9, sin warn |
+
+**Portal gerencial (Playwright headless):**
+- Dashboard `appG` visible con datos reales: Acumulado $16.0M, Tendencia 58.7%, 7 vendedores con KPIs.
+- Sidebar completo: Dashboard, Vendedores, Clientes Críticos, Planificación, Plan vs Real, Alertas, Dormidos, Innovaciones, Planes AS, Acciones Comerciales, Cierre de Mes.
+- Sección "Cierre de Mes" presente bajo REPORTES — carga endpoint `/api/gerencia/cierre_mes`.
+- Sin errores JS en consola.
+- Sin errores de red 4xx/5xx.
+- CantBase no visible en pantalla: confirmado.
+- Botellas no visible en pantalla: confirmado.
+- NaN: 0 / undefined: 0.
+
+**Validaciones QA PASS.**
+
+**QA solo lectura:** no se modificaron archivos, no commit, no push, no deploy.
+
+---
+
 ## 2026-06-03 — feat(cierre): endpoint read-only /api/gerencia/cierres_historicos
 
 **Qué se hizo:**
