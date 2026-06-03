@@ -78,7 +78,6 @@ git add "01_INPUTS/ventas.csv"
 git add "01_INPUTS/ventas_acumulada.csv"
 git add "02_HISTORY/historial_ventas_cliente.csv"
 git add "04_DATASETS_ORBIT/"
-git add "orbit.db"
 
 git diff --cached --quiet
 set GIT_DIFF_RESULT=%ERRORLEVEL%

@@ -8,6 +8,9 @@ __pycache__/
 01_INPUTS/RAW_PRODUCTOS/
 02_HISTORY/_BACKUP_ANTES_MODULO_VDA_2026-05-12/
 
+# ORBIT - base de datos persistente (Render usa /var/data/orbit.db — no commitear local)
+orbit.db
+
 # ORBIT - archivos locales / temporales
 .claude/settings.local.json
 diff_*.txt
