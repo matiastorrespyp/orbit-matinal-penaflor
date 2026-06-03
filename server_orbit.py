@@ -570,7 +570,7 @@ def diagnostico():
             acum = float(vv["acumulado_mes"].sum()) if not vv.empty else 0
             vendedores_detectados.append({"codigo": cod, "nombre": str(v["nombre_vendedor"]), "objetivo": obj, "acumulado": acum})
 
-    dias = contar_dias_habiles()
+    dias = contar_dias_habiles(fecha_corte=datetime.now(_ARG_TZ).replace(tzinfo=None))
     total_acum = sum(v["acumulado"] for v in vendedores_detectados)
 
     # Segmentos: denominadores desde cartera real (clientes.xlsx); cubiertos desde mod_ccc_segmento (ayer)
@@ -651,11 +651,13 @@ def diagnostico():
     except Exception:
         botellas_mes = None
 
-    # dia_operativo y fecha_corte siempre en tiempo real (no del dataset estático)
+    # dia_operativo = próxima matinal (siguiente día operativo desde hoy AR)
     _DIAS_AR = {0:'LU', 1:'MA', 2:'MI', 3:'JU', 4:'VI', 5:'SA', 6:'DO'}
     _now_diag = datetime.now(_ARG_TZ)
     dia_op       = _DIAS_AR[_now_diag.weekday()]
     fecha_corte_rt = _now_diag.strftime("%Y-%m-%d")
+    _sig_matinal   = _siguiente_dia_operativo(_now_diag.date())
+    dia_op_matinal = _DIAS_AR[_sig_matinal.weekday()]
 
     # fecha_datos = cuándo fue generado el último dataset (para transparencia)
     fecha_datos = fecha_corte_rt  # fallback: hoy
@@ -690,9 +692,9 @@ def diagnostico():
         "fecha_datos": fecha_datos,          # cuándo se regeneraron los datasets (puede ser de ayer)
         "fecha_corte": fecha_corte_rt,       # hoy real-time (siempre actualizado)
         "fecha_objetivo": fecha_obj_str,
-        "fecha_matinal": fecha_corte_rt,     # hoy real-time
+        "fecha_matinal": _sig_matinal.isoformat(),  # próxima matinal = siguiente día operativo
         "fecha_planificacion_default": _fecha_planificacion_default(_now_diag),
-        "dia_operativo": dia_op,             # día actual real-time (LU/MA/MI/JU/VI/SA)
+        "dia_operativo": dia_op_matinal,     # día de la próxima matinal (siguiente día operativo)
         "modo_fecha": modo_fecha,
     })
 
