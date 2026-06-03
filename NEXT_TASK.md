@@ -1,5 +1,28 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-03 — Google Sheets fuente de verdad de planificaciones (commit 93e72a0)
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ Commit `93e72a0` desplegado en Render — estado **Live**.
+- ✅ **Google Sheets configurado como fuente de verdad** de planificaciones; SQLite queda solo como caché.
+- ✅ Variables en Render (`sync:false`, sin secretos en Git): `GSHEETS_CREDENTIALS_JSON`, `GSHEETS_SPREADSHEET_ID`, `GSHEETS_SHEET_NAME=planificaciones`.
+- ✅ `POST /api/planificacion` **fail-closed** validado: guarda+verifica en Sheets o `ok:false` HTTP 503 sin tocar SQLite.
+- ✅ `PATCH /api/planificacion/<id>` **fail-closed** implementado: Sheets primero, verifica fila, después SQLite.
+- ✅ `GET /api/planificacion`: si SQLite vacío → hidrata desde Sheets → reconsulta SQLite → devuelve id numérico.
+- ✅ `restore_planificacion_if_empty()`: CSV → si no hay CSV o está vacío → restaura desde Sheets.
+- ✅ Google Sheet `ORBIT_PLANIFICACIONES_PENAFLOR` recibió fila de prueba `id = 2099-01-01_V8` (confirmada visualmente).
+- ✅ GET devolvió la fila con id numérico SQLite (`id:1`).
+- ✅ Manual Deploy/restart realizado → GET post-redeploy devolvió la fila **hidratada desde Google Sheets**.
+- ✅ **Conclusión: las planificaciones ya no se pierden por redeploy/restart de Render Free.**
+- ✅ `py_compile server_orbit.py` PASS. `portal.html`, inputs, datasets, cierres y datos maestros no tocados.
+
+### PENDIENTES 🔲
+1. **Limpieza fila de prueba** — borrar `2099-01-01_V8` ("TEST PLANIFICACION GOOGLE SHEETS - BORRAR") del Google Sheet. **No borrar sin aprobación del usuario.**
+2. **Script backup local** — crear `tools/descargar_planificaciones_sheets.py` (destino `07_PLANIFICACIONES/planificaciones_render.csv`, sin duplicaciones). Etapa separada.
+3. **PATCH en producción** — validar un PATCH fail-closed real desde gerencia (aprobar/modificar) confirmando que actualiza la fila en Sheets.
+
+---
+
 ## Sesión 2026-06-03 — fix horario Argentina (commit daf443b)
 
 ### HECHO EN ESTA SESIÓN ✅
