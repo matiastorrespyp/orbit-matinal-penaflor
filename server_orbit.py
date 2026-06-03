@@ -90,7 +90,7 @@ def backup_orbit_db():
         return
     try:
         PLAN_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
-        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        ts = _now_ar().replace("-","").replace(":","").replace(" ","_")
         dest = PLAN_BACKUP_DIR / f"orbit_{ts}.db"
         shutil.copy2(str(DB_PATH), str(dest))
         print(f"[ORBIT] Backup orbit.db -> {dest.name}")
@@ -698,7 +698,7 @@ def diagnostico():
 
     return jsonify({
         "modo_datos": "REAL",
-        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "calendario": dias,
         "fuentes": fuentes,
         "vendedores_detectados": vendedores_detectados,
@@ -875,7 +875,7 @@ def dashboard():
             "vendedor_id": cod,
             "vendedor_nombre": nombre,
             "sin_maestro": sin_maestro,
-            "last_sync": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "last_sync": _now_ar(),
             "kpis": {
                 "objetivo": obj, "acumulado": acum, "avance_pct": av, "tendencia_pct": tendencia_pct,
                 "venta_hoy_total": venta_ayer, "venta_mes_actual": acum,
@@ -1096,7 +1096,7 @@ def vendedor_detalle(vid):
         "once_t_total":      once_t_total,
         "titulares11":       titulares11,
         "modo_datos":        "REAL",
-        "generado_en":       datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
     })
 
 @app.route("/api/planificacion", methods=["GET","POST"])
@@ -1110,7 +1110,7 @@ def planificacion():
     if request.method == "POST":
         d = request.get_json() or {}
         _ip = request.remote_addr or "?"
-        _ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        _ts = _now_ar()
         _log_line = f"{_ts} | IP={_ip} | payload={d}\n"
         try:
             with open(str(BASE / "99_LOGS_ORBIT" / "planificacion_post.log"), "a", encoding="utf-8") as _lf:
@@ -1215,7 +1215,8 @@ def planificacion_patch(plan_id):
     if "comentario_gerencia" in d:
         fields.append("comentario_gerencia=?"); vals.append(d["comentario_gerencia"])
 
-    fields.append("updated_at=CURRENT_TIMESTAMP")
+    fields.append("updated_at=?")
+    vals.append(_now_ar())
     conn.execute(f"UPDATE planificacion SET {', '.join(fields)} WHERE id=?", vals + [plan_id])
     conn.commit()
     updated = dict(conn.execute("SELECT * FROM planificacion WHERE id=?", (plan_id,)).fetchone())
@@ -1229,7 +1230,7 @@ def mensajes():
     conn = sqlite3.connect(str(DB_PATH)); conn.row_factory = sqlite3.Row
     if request.method == "POST":
         d = request.get_json()
-        conn.execute("INSERT INTO mensajes(vendedor_id,mensaje) VALUES(?,?)", (d.get("vendedor_id"), d.get("mensaje")))
+        conn.execute("INSERT INTO mensajes(vendedor_id,mensaje,created_at) VALUES(?,?,?)", (d.get("vendedor_id"), d.get("mensaje"), _now_ar()))
         conn.commit(); conn.close()
         return jsonify({"ok":True})
     if vid:
@@ -1321,7 +1322,7 @@ def gastos_accion():
 
     return jsonify({
         "modo_datos":    "REAL",
-        "generado_en":   datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "resumen":       resumen,
         "top_acciones":  top_acciones,
         "top_vendedores":top_vendedores,
@@ -1492,7 +1493,7 @@ def gerencia_ccc_empresa():
             tot_op   += ccc["onpremise"]
 
     return jsonify({
-        "generado_en":   datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "empresa": {
             "tradicional":  tot_trad,
             "autoservicio": tot_as,
@@ -1624,7 +1625,7 @@ def gerencia_once_titulares():
         marcas.append({"marca": marca_obj, "ccc": ccc, "objetivo_ccc": obj, "pct_objetivo": pct})
 
     return jsonify({
-        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "fuente": fuente,
         "total_marcas": len(marcas),
         "marcas": marcas,
@@ -1751,7 +1752,7 @@ def gerencia_once_titulares_zona():
     marcas = [{"marca": m, "ccc": ccc_map.get(m, 0)} for m in marcas_orden]
 
     return jsonify({
-        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "dia": dia_raw.upper() if dia_raw else "TODOS",
         "total_clientes_zona": cli_total,
         "fuente": "ventas_acumulada.csv",
@@ -1793,7 +1794,7 @@ def gerencia_ranking_rechazos():
 
     resultado.sort(key=lambda x: x["rechazo_pct"], reverse=True)
     return jsonify({
-        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "fuente":      "resultado.xlsx · hoja Rechazos",
         "vendedores":  resultado,
     })
@@ -1847,7 +1848,7 @@ def gerencia_11t_empresa():
 
     result.sort(key=lambda x: x["pct"], reverse=True)
     return jsonify({
-        "generado_en":    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "fuente":         "mod_11_titulares.csv",
         "total_marcas":   len(result),
         "vendedores":     [f"V{int(v)}" for v in vendedores_activos],
@@ -1896,7 +1897,7 @@ def gerencia_11t_vendedor():
 
     result.sort(key=lambda x: x["pct"], reverse=True)
     return jsonify({
-        "generado_en":      datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "fuente":           "mod_11_titulares.csv",
         "vendedor":         f"V{cod}",
         "vendedor_nombre":  nombre,
@@ -1913,7 +1914,7 @@ def gerencia_cobertura_segmento():
     Excluye V2, V5, V20. V3 sin AUTOSERVICIO."""
     df = read_csv(DATASETS / "clientes_dia.csv")
     if df.empty:
-        return jsonify({"generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "vendedores": []})
+        return jsonify({"generado_en": _now_ar(), "vendedores": []})
 
     df.columns = [c.lstrip("﻿") for c in df.columns]
     for col in ["vendedor_codigo", "cobertura_mes_flag"]:
@@ -1946,7 +1947,7 @@ def gerencia_cobertura_segmento():
 
     resultado.sort(key=lambda x: (x["vendedor_id"], x["segmento"]))
     return jsonify({
-        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "cobertura": resultado,
     })
 
@@ -2005,7 +2006,7 @@ def gerencia_real_ayer_segmento():
             })
 
     return jsonify({
-        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "vendedores":  resultado,
     })
 
@@ -2060,7 +2061,7 @@ def gerencia_innovaciones_segmento():
     df = read_csv(DATASETS / "mod_innovaciones_segmento.csv")
     if df.empty:
         return jsonify({
-            "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "generado_en": _now_ar(),
             "fuente": "mod_innovaciones_segmento.csv",
             "advertencia": "Dato no disponible",
             "resumen_empresa": [], "por_vendedor": [],
@@ -2105,7 +2106,7 @@ def gerencia_innovaciones_segmento():
         por_vendedor.append({"vendedor_id": f"V{cod_int}", "vendedor_nombre": nombre, "productos": productos})
     por_vendedor.sort(key=lambda x: x["vendedor_id"])
     return jsonify({
-        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "fuente": "mod_innovaciones_segmento.csv",
         "fecha_ejecucion": fecha_ej,
         "resumen_empresa": resumen_empresa,
@@ -2134,7 +2135,7 @@ def vendedor_innovaciones_segmento(vid):
     df = read_csv(DATASETS / "mod_innovaciones_segmento.csv")
     if df.empty:
         return jsonify({
-            "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "generado_en": _now_ar(),
             "vendedor_id": vid_norm, "vendedor_nombre": nombre,
             "fuente": "mod_innovaciones_segmento.csv",
             "advertencia": "Dato no disponible", "productos": [],
@@ -2161,7 +2162,7 @@ def vendedor_innovaciones_segmento(vid):
         })
     productos.sort(key=lambda x: (x["segmento"], x["producto_codigo"]))
     return jsonify({
-        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "vendedor_id": vid_norm, "vendedor_nombre": nombre,
         "fuente": "mod_innovaciones_segmento.csv",
         "fecha_ejecucion": fecha_ej, "productos": productos,
@@ -2209,7 +2210,7 @@ def vendedor_plan_innovaciones(vid):
     df = read_csv(DATASETS / "mod_innovaciones_segmento.csv")
     if df.empty:
         return jsonify({
-            "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "generado_en": _now_ar(),
             "vendedor_id": vid_norm, "vendedor_nombre": nombre,
             "advertencia": "Dato no disponible", "productos": [],
         })
@@ -2222,7 +2223,7 @@ def vendedor_plan_innovaciones(vid):
         dv = dv[dv["segmento"].astype(str).str.upper() != "AUTOSERVICIO"]
     if dv.empty:
         return jsonify({
-            "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "generado_en": _now_ar(),
             "vendedor_id": vid_norm, "vendedor_nombre": nombre,
             "advertencia": "Sin datos de innovaciones para este vendedor", "productos": [],
         })
@@ -2306,7 +2307,7 @@ def vendedor_plan_innovaciones(vid):
         })
     productos.sort(key=lambda x: (x["segmento"], x["producto_codigo"]))
     return jsonify({
-        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "vendedor_id": vid_norm, "vendedor_nombre": nombre,
         "fuente": "mod_innovaciones_segmento.csv + clientes_dia.csv + clientes_master.csv",
         "productos": productos,
@@ -2339,7 +2340,7 @@ def gerencia_cobertura_acum():
             "pct_cobertura": round(float(row["pct_cobertura"]), 4),
         })
     return jsonify({
-        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "fecha_calculo": fecha,
         "fuente": "mod_cobertura_acum.csv",
         "por_vendedor": list(por_vendedor.values()),
@@ -2370,7 +2371,7 @@ def gerencia_11t_acum():
     por_vend["vendedor_id"] = "V" + por_vend["vendedor_codigo"].astype(int).astype(str)
     fecha = str(df["fecha_calculo"].iloc[0]) if "fecha_calculo" in df.columns else ""
     return jsonify({
-        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "fecha_calculo": fecha,
         "fuente": "mod_11t_acum.csv",
         "por_marca": por_marca[["marca_objetivo", "cartera", "cubiertos", "pct"]].to_dict("records"),
@@ -2443,7 +2444,7 @@ def gerencia_innovaciones_total():
     por_v["vendedor_id"] = "V" + por_v["vendedor_codigo"].astype(int).astype(str)
     fecha = str(df["fecha_ejecucion"].iloc[0]) if "fecha_ejecucion" in df.columns else ""
     return jsonify({
-        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "fecha_ejecucion": fecha,
         "fuente": "mod_innovaciones_segmento.csv",
         "dia": dia_param or None,
@@ -2526,7 +2527,7 @@ def gerencia_planes_as():
         })
     fecha = str(df["fecha_calculo"].iloc[0]) if "fecha_calculo" in df.columns else ""
     return jsonify({
-        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "fecha_calculo": fecha,
         "fuente": "mod_planes_as.csv",
         "total_clientes": len(registros),
@@ -2661,7 +2662,7 @@ def vendedor_planes_as(vid):
             "sc_pend_smf_flavours":_i(row, "sc_pend_smf_flavours"),
         })
     return jsonify({
-        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "vendedor_id": vid_norm,
         "fuente": "mod_planes_as.csv",
         "total_clientes": len(registros),
@@ -2704,7 +2705,7 @@ def gerencia_sellout_categoria():
         }
     categorias = sorted(por_cat.values(), key=lambda x: x["litros_total"], reverse=True)
     return jsonify({
-        "generado_en":   datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "fuente":        "mod_sellout_categoria.csv",
         "fecha_calculo": fecha,
         "por_categoria": categorias,
@@ -2988,7 +2989,7 @@ def gerencia_sellout_litros():
         return jsonify({"error": "No se pudo leer ventas.csv"}), 500
     resultado = _sellout_desde_ventas(df)
     return jsonify({
-        "generado_en": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "fuente":      "ventas.csv + maestro_04D_productos.csv",
         "categorias":  resultado,
     })
@@ -3075,7 +3076,7 @@ def gerencia_acciones_ranking():
         })
     acciones.sort(key=lambda x: x["inversion_pesos"], reverse=True)
     return jsonify({
-        "generado_en":   datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generado_en": _now_ar(),
         "fuente":        "mod_acciones_ranking.csv + mod_acciones_analisis.csv",
         "fecha_calculo": fecha,
         "acciones":      acciones,
