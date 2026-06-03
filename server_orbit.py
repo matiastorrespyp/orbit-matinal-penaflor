@@ -3588,7 +3588,7 @@ def gerencia_cierres_historicos():
     for entrada in indice:
         periodo  = entrada.get("periodo", "")
         version  = entrada.get("version", "")
-        carpeta  = cierres_dir.parent / entrada.get("carpeta", "")
+        carpeta  = cierres_dir.parent / Path(entrada.get("carpeta", "").replace("\\", "/"))
         ts_ar    = entrada.get("timestamp_argentina", "")
         estado   = entrada.get("estado", "")
 
