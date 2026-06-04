@@ -3155,6 +3155,11 @@ def _alertas_descuento_mes():
         maxpct = 100.0 if ("BONIFIC" in tipo or "SIN_CARGO" in tipo) else (max(tramos) if tramos else 0.0)
         parsed.append((str(r.get("id_accion", "")).strip(), codes, seg, pred, maxpct))
 
+    # Clientes Plan AS: tienen 10% de descuento en factura SIEMPRE → piso permitido = 10%.
+    pas = read_csv(DATASETS / "mod_planes_as.csv")
+    pas_ids = (set(pd.to_numeric(pas["cliente_id"], errors="coerce").dropna().astype(int))
+               if not pas.empty and "cliente_id" in pas.columns else set())
+
     alerts = []
     for _, row in cur.iterrows():
         desc = float(row["_desc"])
@@ -3167,13 +3172,18 @@ def _alertas_descuento_mes():
             if (vend in codes) and (seg_v in seg) and pred(row["_cat"], row["_linea"], row["_art"], row["_marca"]):
                 if maxpct > allowed:
                     allowed, fuente_id = maxpct, rid
+        try: cli_int = int(row["_cli"])
+        except Exception: cli_int = None
+        # Piso 10% para clientes Plan AS (descuento de factura)
+        if cli_int is not None and cli_int in pas_ids and allowed < 10.0:
+            allowed = 10.0
+            if not fuente_id:
+                fuente_id = "Plan AS (10% factura)"
         exceso = round(apl - allowed, 1)
-        if exceso <= 0.5:
+        if exceso <= 0:   # sin tolerancia: cualquier descuento que supere el permitido alerta
             continue
         try: cod_int = int(vend)
         except Exception: cod_int = 0
-        try: cli_int = int(row["_cli"])
-        except Exception: cli_int = None
         fr = fuente_id or "sin acción aplicable"
         alerts.append({
             "vendedor_codigo": cod_int, "vendedor_nombre": str(row["_vnom"]),
