@@ -468,7 +468,9 @@ def _cargar_ventas_mes_actual() -> pd.DataFrame:
     df = pd.DataFrame()
     for enc in ("latin1", "utf-8-sig", "utf-8"):
         try:
-            df = pd.read_csv(path, sep=";", encoding=enc)
+            # dtype=str: parseo determinístico en Render (la inferencia de coma decimal
+            # difiere entre versiones de pandas). El importe se convierte con _parse_num_ar.
+            df = pd.read_csv(path, sep=";", encoding=enc, dtype=str, low_memory=False)
             break
         except Exception:
             continue
@@ -513,7 +515,9 @@ def _cargar_ventas_dia(fecha_str: str = None):
     df = pd.DataFrame()
     for enc in ("latin1", "utf-8-sig", "utf-8"):
         try:
-            df = pd.read_csv(path, sep=";", encoding=enc)
+            # dtype=str: parseo determinístico en Render (la inferencia de coma decimal
+            # difiere entre versiones de pandas). El importe se convierte con _parse_num_ar.
+            df = pd.read_csv(path, sep=";", encoding=enc, dtype=str, low_memory=False)
             break
         except Exception:
             continue
