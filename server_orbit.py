@@ -956,6 +956,20 @@ def dashboard():
     t11_df  = read_csv(DATASETS / "mod_11_titulares.csv")
     cdia_df = read_csv(DATASETS / "clientes_dia.csv")        # para oportunidades (día base)
 
+    # 11T cumplidos por vendedor: desde mod_11t_acum.csv (cobertura acumulada con mínimo).
+    # mod_11_titulares.csv (objetivo del día) llega del motor con tiene_flag/botellas en 0,
+    # por eso el KPI "11T ✓" daba 0 para todos. mod_11t_acum sí está poblado.
+    t11_acum_map = {}
+    try:
+        _t11a = read_csv(DATASETS / "mod_11t_acum.csv")
+        if not _t11a.empty and {"vendedor_codigo", "tiene_flag"}.issubset(_t11a.columns):
+            _t11a["_tf"] = pd.to_numeric(_t11a["tiene_flag"], errors="coerce").fillna(0)
+            _t11a["_cn"] = _t11a["vendedor_codigo"].astype(str).apply(clean_code)
+            for _cnk, _g in _t11a.groupby("_cn"):
+                t11_acum_map[_cnk] = {"cumplidos": int(_g["_tf"].sum()), "total": int(len(_g))}
+    except Exception:
+        pass
+
     # CCC Compradores Mes — desde ventas.csv del mes actual (no clientes_dia)
     ventas_mes = _cargar_ventas_mes_actual()
     ccc_mes_map = _ccc_mes_por_vendedor(ventas_mes)
@@ -1065,8 +1079,14 @@ def dashboard():
         ccc_dia_as   = _ccc_dia_seg(cv, "AUTOSERVICIO")
         ccc_dia_op   = _ccc_dia_seg(cv, "ON_PREMISE|VTK")
 
-        t11_cumplidos = int(tv["tiene_flag"].sum()) if not tv.empty and "tiene_flag" in tv.columns else 0
-        t11_total = len(tv)
+        # 11T cumplidos desde mod_11t_acum (cobertura real); fallback a mod_11_titulares.
+        _t11v = t11_acum_map.get(cn)
+        if _t11v is not None:
+            t11_cumplidos = _t11v["cumplidos"]
+            t11_total = _t11v["total"]
+        else:
+            t11_cumplidos = int(tv["tiene_flag"].sum()) if not tv.empty and "tiene_flag" in tv.columns else 0
+            t11_total = len(tv)
 
         # V3 no trabaja autoservicio (ccc_mes_as ya es 0; refuerzo ccc_dia)
         if cod.upper() == "V3":
