@@ -1,5 +1,17 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — fix(planes_as): escala desde escala_junio.xlsx + vendedor desde maestro
+
+**`generar_datasets_acum.py`** (regenera `mod_planes_as.csv`). Server sin cambios (lee `mod_planes_as.csv`). Validado en local.
+
+Auditoría de Planes AS (gerencia + vendedor). Flujo correcto: clientes/facturación/cajas ganadas ← `Reconocimiento Plan As.xlsx` (BBDD); sin cargo enviado ← `ventas.csv`; escalas ← `escala_junio.xlsx`. Se corrigieron 2 cosas:
+
+- **Escala desde `escala_junio.xlsx` (no de la hoja interna).** Antes la escala se calculaba con la hoja "ESCALA" embebida en `Reconocimiento Plan As.xlsx` (umbrales viejos: Gold esc.1 = 155.073). Ahora `_cargar_escala_df()` **autodetecta `escala_*.xlsx`** (el mes que viene `escala_julio.xlsx`) y mapea columnas por nombre de encabezado; fallback a la hoja ESCALA. Umbral nuevo Gold esc.1 = 159.493 → 1 cliente recalculó escala (CEBALLOS: 4→3, correcto).
+- **Vendedor del cliente AS desde el maestro `clientes.xlsx` (cartera real), fallback a `ventas.csv`.** Antes el vendedor se deducía solo de quién le vendió en el mes; los clientes AS que aún no compraron en junio quedaban **sin vendedor (11/31)** y no aparecían en la pestaña de su vendedor. Ahora **0 sin vendedor** (V8=16, V10=7, V9=7, V4=1).
+- **Actualización automática:** al pegar `ventas.csv`, `escala_junio.xlsx` o `Reconocimiento Plan As.xlsx` y correr `CIERRE_DIA_ORBIT.bat`, REGENERAR recalcula `mod_planes_as.csv` y el BAT lo commitea (`git add 04_DATASETS_ORBIT/`) → Render actualiza. Los `.xlsx` crudos NO necesitan subirse a Render (el server lee `mod_planes_as.csv`).
+
+---
+
 ## 2026-06-04 — fix(alertas): fuente = ventas.csv (mes vivo) + fecha de pedido
 
 **`server_orbit.py`** + `portal.html`. Validado en local.

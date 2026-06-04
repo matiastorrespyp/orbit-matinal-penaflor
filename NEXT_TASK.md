@@ -1,5 +1,22 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-04 — Auditoría Planes AS (escala + vendedor)
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ **Escala del Plan AS ahora sale de `escala_junio.xlsx`** (autodetecta `escala_*.xlsx` del mes; fallback hoja ESCALA). Antes usaba umbrales viejos embebidos en Reconocimiento.
+- ✅ **Vendedor del cliente AS desde maestro `clientes.xlsx`** (fallback ventas.csv). Antes 11/31 clientes quedaban sin vendedor → ahora 0.
+- ✅ Confirmado: sin cargo enviado ← `ventas.csv`; clientes/facturación/ganado ← `Reconocimiento Plan As.xlsx`.
+- ✅ Flujo de actualización OK: pegar archivos + `CIERRE_DIA_ORBIT.bat` → REGENERAR recalcula `mod_planes_as.csv` → BAT lo commitea → Render.
+- ✅ Validado local. **Pendiente confirmar en Render tras push.**
+
+### A OBSERVAR
+1. **Escala por LC simplificada:** `_calc_escala` toma el máximo `escala_num` global cuyo umbral (Gold/Silver/Inicial según plan) ≤ `total_facturado`, sin separar por Línea Comercial. Si se necesita escala exacta por LC, es un paso extra (la hoja tiene LC/SEGMENTO).
+2. **`total_facturado`** sale del Reconocimiento (BBDD), no se recalcula de ventas.csv. Es la facturación oficial del plan; confirmar si debe seguir así.
+3. Nombres con mojibake (ej. "YBAÑEZ"→"YBAÃ‘EZ") vienen del Reconocimiento; si molesta, usar el nombre del maestro clientes.xlsx.
+4. Los `.xlsx` crudos de PLANES_AS están sin trackear en git (no hace falta para Render; opcional commitearlos como backup).
+
+---
+
 ## Sesión 2026-06-04 — Alertas desde ventas.csv + fecha de pedido
 
 ### HECHO EN ESTA SESIÓN ✅

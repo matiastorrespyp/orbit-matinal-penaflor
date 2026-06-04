@@ -187,6 +187,51 @@ def cargar_clientes():
     return df
 
 
+def _cargar_escala_df():
+    """Escala del Plan AS. Prioriza 01_INPUTS/PLANES_AS/escala_*.xlsx (mensual, autodetecta
+    el más reciente → escala_julio.xlsx el mes que viene). Cae a la hoja 'ESCALA' de
+    Reconocimiento Plan As.xlsx. Mapea columnas por NOMBRE de encabezado (robusto a la posición).
+    Devuelve DataFrame con: escala_num, thresh_gold, thresh_silver, thresh_inicial."""
+    pdir = BASE / "01_INPUTS" / "PLANES_AS"
+    candidatos = sorted(pdir.glob("escala_*.xlsx"), key=lambda f: f.stat().st_mtime, reverse=True)
+    fuentes = [(c, 0) for c in candidatos] + [(pdir / "Reconocimiento Plan As.xlsx", "ESCALA")]
+    for path, sheet in fuentes:
+        if not path.exists():
+            continue
+        try:
+            raw = pd.read_excel(path, sheet_name=sheet, header=None)
+            hdr_idx = None
+            for i in range(min(8, len(raw))):
+                vals = [str(x).strip().upper() for x in raw.iloc[i].tolist()]
+                if "ESCALA" in vals and any("GOLD" in v for v in vals):
+                    hdr_idx = i
+                    break
+            if hdr_idx is None:
+                continue
+            hdr = [str(x).strip().upper() for x in raw.iloc[hdr_idx].tolist()]
+            def _find(name):
+                return next((j for j, h in enumerate(hdr) if h == name), None)
+            c_esc, c_gold, c_silver, c_inic = _find("ESCALA"), _find("GOLD"), _find("SILVER"), _find("INICIAL")
+            if None in (c_esc, c_gold, c_silver, c_inic):
+                continue
+            data = raw.iloc[hdr_idx + 1:]
+            out = pd.DataFrame({
+                "escala_num":     pd.to_numeric(data[c_esc], errors="coerce"),
+                "thresh_gold":    pd.to_numeric(data[c_gold], errors="coerce"),
+                "thresh_silver":  pd.to_numeric(data[c_silver], errors="coerce"),
+                "thresh_inicial": pd.to_numeric(data[c_inic], errors="coerce"),
+            }).dropna(subset=["escala_num"])
+            if not out.empty:
+                etiqueta = path.name + (f" [{sheet}]" if isinstance(sheet, str) else "")
+                print(f"  Escala Plan AS desde: {etiqueta}")
+                return out
+        except Exception as e:
+            print(f"  [AVISO] escala {path.name}: {e}")
+            continue
+    print("  [AVISO] No se pudo leer ninguna escala (escala_*.xlsx ni hoja ESCALA).")
+    return pd.DataFrame(columns=["escala_num", "thresh_gold", "thresh_silver", "thresh_inicial"])
+
+
 def cargar_planes_as_bbdd():
     p = BASE / "01_INPUTS" / "PLANES_AS" / "Reconocimiento Plan As.xlsx"
     raw = pd.read_excel(p, sheet_name="BBDD", header=None)
@@ -220,17 +265,11 @@ def cargar_planes_as_bbdd():
     df["cliente_nombre"] = df["cliente_nombre"].astype(str).str.strip()
     df["plan_as"] = df["plan_as"].astype(str).str.strip()
 
-    # Calcular escala_actual desde hoja ESCALA
+    # Calcular escala_actual desde escala_junio.xlsx (autodetecta el mes; fallback hoja ESCALA)
     try:
-        esc = pd.read_excel(p, sheet_name="ESCALA", header=None)
-        # Fila 0: encabezado "ESCALA / LC / SEGMENTO / PRECIO / 0.1(Gold) / 0.08(Silver) / 0.06(Inicial) / Reconocimiento"
-        esc_data = esc.iloc[1:].copy()
-        esc_data.columns = range(esc_data.shape[1])
-        esc_col_map = {1: "escala_num", 5: "thresh_gold", 6: "thresh_silver", 7: "thresh_inicial"}
-        esc_df = esc_data[list(esc_col_map.keys())].rename(columns=esc_col_map)
-        for c in ["escala_num", "thresh_gold", "thresh_silver", "thresh_inicial"]:
-            esc_df[c] = pd.to_numeric(esc_df[c], errors="coerce")
-        esc_df = esc_df.dropna(subset=["escala_num"])
+        esc_df = _cargar_escala_df()
+        if esc_df.empty:
+            raise ValueError("escala vacía")
 
         def _calc_escala(row):
             plan = str(row["plan_as"]).strip().lower()
@@ -356,15 +395,29 @@ def generar_11t_acum(ventas, clientes):
 # MOD PLANES AS
 # ─────────────────────────────────────────────
 
-def generar_planes_as(ventas, bbdd):
-    # Vendedor principal por cliente AS (por frecuencia de ventas validas)
+def generar_planes_as(ventas, bbdd, clientes):
+    # Vendedor por cliente AS: maestro clientes.xlsx (cartera real, autoritativo).
+    # Fallback a ventas.csv (vendedor que más le vendió) solo si el cliente no está en el maestro.
+    # Antes se deducía SOLO de ventas.csv → los clientes AS que aún no compraron en el mes
+    # quedaban sin vendedor y no aparecían en la pestaña de su vendedor.
+    vmaster = clientes[["Codigo", "codven", "Vendedor"]].copy()
+    vmaster["cliente_id"] = pd.to_numeric(vmaster["Codigo"], errors="coerce")
+    vmaster["vendedor_codigo"] = pd.to_numeric(vmaster["codven"], errors="coerce")
+    vmaster = (vmaster.dropna(subset=["cliente_id", "vendedor_codigo"])
+               .drop_duplicates(subset=["cliente_id"])
+               .rename(columns={"Vendedor": "vendedor_nombre"})
+               [["cliente_id", "vendedor_codigo", "vendedor_nombre"]])
+
     v_norm = ventas[ventas["ImporteNetoItem"] > 0].copy()
-    vend_cli = (v_norm.groupby(["Cliente", "CodVendedor", "Vendedor"])
-                .size().reset_index(name="n")
-                .sort_values("n", ascending=False)
-                .drop_duplicates(subset=["Cliente"])
-                .rename(columns={"Cliente": "cliente_id", "CodVendedor": "vendedor_codigo",
-                                 "Vendedor": "vendedor_nombre"})[["cliente_id", "vendedor_codigo", "vendedor_nombre"]])
+    vventas = (v_norm.groupby(["Cliente", "CodVendedor", "Vendedor"])
+               .size().reset_index(name="n")
+               .sort_values("n", ascending=False)
+               .drop_duplicates(subset=["Cliente"])
+               .rename(columns={"Cliente": "cliente_id", "CodVendedor": "vendedor_codigo",
+                                "Vendedor": "vendedor_nombre"})[["cliente_id", "vendedor_codigo", "vendedor_nombre"]])
+
+    faltan = vventas[~vventas["cliente_id"].isin(vmaster["cliente_id"])]
+    vend_cli = pd.concat([vmaster, faltan], ignore_index=True)
 
     # Sin cargo: filas con 100% descuento
     sc = ventas[ventas["Descuento_pct"] >= 99.9].copy()
@@ -929,7 +982,7 @@ def main():
     # REGLA: sin cargos enviados se calculan SOLO desde ventas.csv (período mensual activo).
     # El archivo Reconocimiento Plan As.xlsx se renueva cada mes → define lo adeudado este mes.
     # ventas_acumulada NO aplica: pertenece a un período comercial anterior.
-    pas = generar_planes_as(ventas, bbdd)
+    pas = generar_planes_as(ventas, bbdd, clientes)
     pas.to_csv(OUT / "mod_planes_as.csv", index=False, encoding="utf-8-sig")
     print(f"  OK: {len(pas)} clientes AS")
     cols_show = ["cliente_id", "cliente_nombre", "plan_as", "total_facturado",
