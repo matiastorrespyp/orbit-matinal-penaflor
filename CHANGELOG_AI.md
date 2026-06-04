@@ -1,5 +1,14 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — fix(alertas): sin tolerancia + piso 10% Plan AS
+
+**Commit:** `5110fec`. `server_orbit.py`. Validado en Render (38 alertas, exceso mínimo 1).
+
+- **Sin tolerancia:** cualquier descuento que **supere** el permitido alerta (umbral de exceso `> 0`; antes `> 0.5`). Ej. 6% sobre acción de 5% → alerta.
+- **Clientes Plan AS:** tienen **10% de descuento en factura siempre** → piso permitido = 10%. Solo alertan si superan el 10% (se carga `mod_planes_as.csv` para identificarlos). Validado: clientes Plan AS solo alertan a 25%; los de ≤10% ya no.
+
+---
+
 ## 2026-06-04 — fix(acciones/alertas): descuento real = valorDescuento (no IVA)
 
 **Commit:** `9fcf258`. `server_orbit.py`. Validado en Render. Corrige volumen/criterio de alertas y la inversión de acciones.
