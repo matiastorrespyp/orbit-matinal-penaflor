@@ -3189,7 +3189,10 @@ def _preparar_df_ventas(src_path) -> pd.DataFrame:
     df = None
     for enc in ("utf-8-sig", "latin-1", "windows-1252"):
         try:
-            df = pd.read_csv(src_path, sep=";", encoding=enc, low_memory=False)
+            # dtype=str: no dejar que pandas infiera. En Render la inferencia de columnas
+            # con coma decimal ("15800,82") difiere y casi todo quedaba en 0 (mismo patrón
+            # que _leer_ventas_mes_csv, que sí funciona en Render).
+            df = pd.read_csv(src_path, sep=";", encoding=enc, dtype=str, low_memory=False)
             break
         except (UnicodeDecodeError, ValueError):
             continue
@@ -3199,10 +3202,13 @@ def _preparar_df_ventas(src_path) -> pd.DataFrame:
     for col in ("PesoKg", "CantBase", "ImporteNetoItem", "CodVendedor"):
         if col not in df.columns:
             df[col] = 0.0
-        elif df[col].dtype == object:
-            df[col] = df[col].astype(str).str.replace(",", ".", regex=False).pipe(pd.to_numeric, errors="coerce").fillna(0)
         else:
-            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+            df[col] = (df[col].astype(str)
+                              .str.strip()
+                              .str.strip('"')
+                              .str.replace(",", ".", regex=False)
+                              .pipe(pd.to_numeric, errors="coerce")
+                              .fillna(0))
     df = df[~df["CodVendedor"].isin({2, 5, 20}) & (df["ImporteNetoItem"] > 0)].copy()
     return df
 
@@ -3253,7 +3259,7 @@ def gerencia_sellout_litros():
         "fuente":      "ventas.csv + maestro_04D_productos.csv",
         "categorias":  resultado,
         "_diag": {
-            "version": "sep-fix-2",
+            "version": "dtype-str-fix-3",
             "filas_parseadas": int(len(df)),
             "columnas": int(len(df.columns)),
             "tiene_codigo": "Codigo" in df.columns,
