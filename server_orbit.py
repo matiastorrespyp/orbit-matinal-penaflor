@@ -2887,6 +2887,266 @@ def acciones_vigentes():
     return jsonify([grupos[g] for g in orden])
 
 
+# ====== ACCIONES COMERCIALES DEL MES (catálogo mensual × ventas) ======
+# Fuente oficial: 01_INPUTS/ACCIONES COMERCIALES/<YYYY-MM>/acciones_comerciales_<mes>_<año>_penaflor.csv
+# Calcula por acción: inversión real (ImporteItem-ImporteNetoItem en líneas con descuento),
+# litros, clientes alcanzados, clientes nuevos (no compraron esas marcas el mes anterior).
+# Display desde el catálogo: segmento, tipo (descuento/sin cargo), escala, marcas, topes.
+_ACC_CAT_CANON = [
+    (("VINOS DEL AÑO", "VINOS DEL ANO", "VDA"), "VDA"),
+    (("VINOS DE GUARDA", "VDG"), "VDG"),
+    (("VINOS DE MESA", "VDM"), "VDM"),
+    (("ESPUMANTE",), "ESPUMANTES"),
+    (("SIDRA",), "SIDRA"),
+    (("SPIRIT",), "SPIRITS"),
+    (("RTD",), "RTD"),
+    (("CERVEZA",), "CERVEZA"),
+]
+_ACC_LINEA_TOK = {"VDA": "VDA", "VDG": "VDG", "VDM": "VDM",
+                  "ESPUMANTE": "ESPUMANTES", "ESPUMANTES": "ESPUMANTES",
+                  "SIDRA": "SIDRA", "SPIRIT": "SPIRITS", "SPIRITS": "SPIRITS"}
+_ACC_PROD_GENERICOS = {"", "SEGUN MAESTRO PRODUCTOS ACTIVOS", "RESTO SKU", "RESTO",
+                       "TODOS", "TODOS_ACTIVOS", "LISTA CERRADA DE INNOVACIONES JUNIO 2026"}
+
+
+def _acc_canon_cat(c):
+    u = str(c or "").strip().upper()
+    for kws, canon in _ACC_CAT_CANON:
+        if any(k in u for k in kws):
+            return canon
+    return u or None
+
+
+def _acc_catalogo_mes():
+    """Auto-detecta el catálogo del mes más reciente. Devuelve (mes, fuente, lista_reglas)."""
+    import csv as _csvm
+    base = INPUTS / "ACCIONES COMERCIALES"
+    if not base.exists():
+        return None, None, []
+    cands = []
+    for sub in base.iterdir():
+        if sub.is_dir() and _re.match(r"^\d{4}-\d{2}$", sub.name):
+            for c in sorted(sub.glob("*.csv")):
+                if "salida" in str(c).lower() or "_backup" in str(c).lower():
+                    continue
+                cands.append((sub.name, c)); break
+    if not cands:
+        return None, None, []
+    cands.sort(key=lambda x: x[0])
+    mes, fuente = cands[-1]
+    try:
+        with open(fuente, encoding="utf-8-sig", newline="") as f:
+            reglas = list(_csvm.DictReader(f, delimiter=";"))
+    except Exception:
+        return mes, fuente.name, []
+    return mes, fuente.name, reglas
+
+
+def _acc_seg_canon(seg_text, canal_text):
+    t = (str(seg_text or "") + " | " + str(canal_text or "")).upper()
+    out = set()
+    if "TRADICIONAL" in t or "TRAD" in t or "KIOSCO" in t:
+        out.add("TRADICIONAL")
+    if "AUTOSERVICIO" in t or _re.search(r"\bAS\b", t):
+        out.add("AUTOSERVICIO")
+    if "ON PREMISE" in t or "ON_PREMISE" in t or "VTK" in t or "TDB" in t or "VINOTECA" in t:
+        out.add("ON_PREMISE_VTK")
+    if "MAYORISTA" in t:
+        out.add("AUTOSERVICIO")
+    if not out:
+        out = {"TRADICIONAL", "AUTOSERVICIO", "ON_PREMISE_VTK", "OTROS"}
+    return out
+
+
+def _acc_lineas_de_marca(token, all_lineas):
+    base = token.replace(" VINO", "").strip()
+    wine_only = token.endswith(" VINO") or token == "VINO"
+    out = set()
+    if not base:
+        return out
+    for ln in all_lineas:
+        if ln == base or ln == token or ln.startswith(base + " "):
+            if wine_only and ("SIDRA" in ln or "CHAMPA" in ln or "ESPUMA" in ln):
+                continue
+            out.add(ln)
+    return out
+
+
+def _acc_product_pred(rule, all_lineas):
+    """Devuelve función(cat_canon, linea, articulo, marca)->bool para esta regla."""
+    raw = (str(rule.get("productos_marcas", "")) + ";" + str(rule.get("lineas_comerciales", ""))).upper()
+    toks = [t.strip() for t in raw.replace(",", ";").split(";") if t.strip()]
+    line_cats, brand_lineas = set(), set()
+    brand_toks = []
+    has_resto = any("RESTO" in t for t in toks)
+    for t in toks:
+        if (t in _ACC_PROD_GENERICOS or "MAESTRO" in t or "LISTA CERRADA" in t
+                or "RESTO" in t or t in ("TODOS", "TODOS_ACTIVOS")):
+            continue
+        mapped = _ACC_LINEA_TOK.get(t)   # match exacto de token de línea (no substring)
+        if mapped:
+            line_cats.add(mapped)
+        else:
+            brand_toks.append(t.replace(" VINO", "").strip())
+            brand_lineas |= _acc_lineas_de_marca(t, all_lineas)
+
+    def pred(cat_canon, linea, articulo, marca):
+        if has_resto and not brand_toks and not line_cats:
+            return True
+        if brand_lineas or brand_toks:
+            if linea and brand_lineas and linea in brand_lineas:
+                return True
+            am = (str(articulo or "") + " " + str(marca or "")).upper()
+            return any(bt and bt in am for bt in brand_toks)
+        if line_cats:
+            return cat_canon in line_cats
+        return False
+    return pred
+
+
+def _acc_preparar_ventas():
+    """ventas_acumulada.csv preparada para acciones. Columnas calc: _cli,_vend,_cat,_linea,
+    _seg,_litros,_desc,_imp_neto,_mes (Period). Solo Empresa=Peñaflor si la columna existe."""
+    p = INPUTS / "ventas_acumulada.csv"
+    if not p.exists():
+        return pd.DataFrame()
+    df = None
+    for enc in ("latin1", "utf-8-sig", "windows-1252"):
+        try:
+            df = pd.read_csv(p, sep=";", encoding=enc, dtype=str, low_memory=False)
+            break
+        except (UnicodeDecodeError, ValueError):
+            continue
+    if df is None or df.empty:
+        return pd.DataFrame()
+    df.columns = [c.strip() for c in df.columns]
+    if "Empresa" in df.columns:
+        df = df[df["Empresa"].astype(str).str.strip() == "Empresa"]
+    cod2cat, cod2seg, cod2lxu, cod2linea = _cargar_maestro_04D()
+    def _n(s):
+        return pd.to_numeric(s.astype(str).str.replace(".", "", regex=False).str.replace(",", ".", regex=False),
+                             errors="coerce").fillna(0)
+    out = pd.DataFrame()
+    out["_cli"]  = pd.to_numeric(df.get("Cliente"), errors="coerce")
+    out["_vend"] = pd.to_numeric(df.get("CodVendedor"), errors="coerce")
+    out["_cod"]  = df.get("Codigo", "").astype(str).str.strip().str.replace(r"\.0$", "", regex=True)
+    out["_imp_neto"] = _n(df.get("ImporteNetoItem", pd.Series(["0"] * len(df))))
+    out["_imp_item"] = _n(df.get("ImporteItem", pd.Series(["0"] * len(df))))
+    out["_desc"] = (out["_imp_item"] - out["_imp_neto"]).clip(lower=0)
+    out["_cant"] = _n(df.get("CantBase", pd.Series(["0"] * len(df))))
+    out["_lxu"]  = out["_cod"].map(cod2lxu).fillna(0)
+    out["_litros"] = out["_cant"] * out["_lxu"]
+    out["_cat"]  = out["_cod"].map(cod2cat).map(_acc_canon_cat)
+    out["_linea"] = out["_cod"].map(cod2linea).astype(str).str.upper().str.strip()
+    out["_art"]  = df.get("Articulo", "").astype(str).str.upper()
+    out["_marca"] = df.get("Marca", "").astype(str).str.upper()
+    out["_seg"]  = [
+        _clasificar_segmento(str(r), str(s))
+        for r, s in zip(df.get("Ramo", pd.Series([""] * len(df))), df.get("Subramo", pd.Series([""] * len(df))))
+    ]
+    out["_mes"]  = pd.to_datetime(df.get("FechaComprobante"), dayfirst=True, errors="coerce").dt.to_period("M")
+    out = out[(out["_imp_neto"] > 0) & (~out["_vend"].isin(_VENDEDORES_EXCLUIDOS))]
+    return out
+
+
+def _acciones_mes_payload(vid_filtro=None):
+    mes, fuente, reglas = _acc_catalogo_mes()
+    if not reglas:
+        return {"mes": mes, "fuente": fuente, "acciones": [], "nota": "Sin catálogo de acciones del mes."}
+    v = _acc_preparar_ventas()
+    if v.empty:
+        return {"mes": mes, "fuente": fuente, "acciones": [], "nota": "Sin ventas para calcular."}
+
+    # mes objetivo = el del catálogo; mes anterior = el previo
+    try:
+        per_actual = pd.Period(mes, freq="M")
+    except Exception:
+        per_actual = v["_mes"].max()
+    per_ant = per_actual - 1
+    v_act = v[v["_mes"] == per_actual]
+    v_ant = v[v["_mes"] == per_ant]
+    all_lineas = set(l for l in v["_linea"].dropna().unique() if l and l != "NAN")
+
+    acciones = []
+    for r in reglas:
+        vends_raw = str(r.get("vendedores_aplica", "")).upper()
+        if "TODOS" in vends_raw:
+            vend_set = set(_VENDEDORES_ACTIVOS_PLAN)
+        else:
+            vend_set = set(_re.findall(r"V\s*\d+", vends_raw))
+            vend_set = {"V" + _re.sub(r"\D", "", x) for x in vend_set}
+        vend_codes = {int(x[1:]) for x in vend_set if x[1:].isdigit()} & {3, 4, 6, 7, 8, 9, 10}
+
+        seg_set = _acc_seg_canon(r.get("segmento_cliente_aplica"), r.get("canal_aplica"))
+        pred = _acc_product_pred(r, all_lineas)
+
+        # filtro por vendedor (vista vendedor) + regla V3 sin autoservicio
+        codes = vend_codes
+        seg_use = set(seg_set)
+        if vid_filtro is not None:
+            vnum = int(_re.sub(r"\D", "", vid_filtro) or 0)
+            if vnum not in vend_codes:
+                continue  # esta acción no aplica a este vendedor
+            codes = {vnum}
+            if vnum == 3:
+                seg_use.discard("AUTOSERVICIO")
+
+        def _match(df):
+            if df.empty:
+                return df
+            m = df["_vend"].isin(codes) & df["_seg"].isin(seg_use)
+            if not m.any():
+                return df.iloc[0:0]
+            sub = df[m]
+            keep = sub.apply(lambda x: pred(x["_cat"], x["_linea"], x["_art"], x["_marca"]), axis=1)
+            return sub[keep]
+
+        cur = _match(v_act)
+        cur_desc = cur[cur["_desc"] > 0]
+        clientes_act = set(cur["_cli"].dropna().astype(int))
+        prev = _match(v_ant)
+        clientes_ant = set(prev["_cli"].dropna().astype(int))
+        nuevos = clientes_act - clientes_ant
+
+        tipo_raw = str(r.get("tipo_regla", "")).upper()
+        tipo = "Sin cargo" if ("SIN_CARGO" in tipo_raw or "BONIFIC" in tipo_raw) else "Descuento"
+
+        acciones.append({
+            "id_accion":     str(r.get("id_accion", "")).strip(),
+            "tipo":          tipo,
+            "tipo_regla":    str(r.get("tipo_regla", "")).strip(),
+            "segmento":      str(r.get("segmento_cliente_aplica", "")).strip(),
+            "canal":         str(r.get("canal_aplica", "")).strip(),
+            "vendedores":    sorted(vend_set),
+            "marcas":        str(r.get("productos_marcas", "")).strip(),
+            "escala":        str(r.get("condicion_compra", "")).strip(),
+            "descuento_pct": str(r.get("descuento_pct", "")).strip(),
+            "tope":          str(r.get("tope", "")).strip(),
+            "observaciones": str(r.get("observaciones", "")).strip(),
+            # computado
+            "inversion_pesos":   round(float(cur_desc["_desc"].sum()), 0),
+            "litros":            round(float(cur["_litros"].sum()), 1),
+            "clientes_alcanzados": int(len(clientes_act)),
+            "clientes_nuevos":   int(len(nuevos)),
+        })
+
+    return {"mes": mes, "fuente": fuente, "periodo": str(per_actual),
+            "generado_en": _now_ar(), "acciones": acciones}
+
+
+@app.route("/api/gerencia/acciones_mes")
+def gerencia_acciones_mes():
+    return jsonify(_acciones_mes_payload(None))
+
+
+@app.route("/api/vendedor/<vid>/acciones_mes")
+def vendedor_acciones_mes(vid):
+    vid_norm = normalizar_vendedor_codigo(vid)
+    if vid_norm in ("V2", "V5", "V20"):
+        return jsonify({"error": "Vendedor no autorizado"}), 403
+    return jsonify(_acciones_mes_payload(vid_norm))
+
+
 # ====== PLANES AS — VENDEDOR ======
 @app.route("/api/vendedor/<vid>/planes_as")
 def vendedor_planes_as(vid):

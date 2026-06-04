@@ -1112,14 +1112,14 @@ async function loadAll(){
       safe('/api/vendedor/'+userData.vendedor_id+'/innovaciones_segmento'),
       safe('/api/vendedor/'+userData.vendedor_id+'/plan_innovaciones'),
       safe('/api/vendedor/'+userData.vendedor_id+'/planes_as'),
-      safe('/api/acciones_vigentes')
+      safe('/api/vendedor/'+userData.vendedor_id+'/acciones_mes')
     ]);
     if(det)      D.det=det;
     if(msgs)     D.msgs=Array.isArray(msgs)?msgs:[];
     if(inov)     D.inov=inov;
     if(planInov) D.plan_inov=planInov;
     if(plasASV)  D.planes_as_v=plasASV;
-    if(accV)     D.acc_vigentes=Array.isArray(accV)?accV:[];
+    if(accV)     D.acc_mes_v=accV;
   }
   if(userData?.rol==='gerencia'){
     const [cccEmp,onceTit,onceTitDia,inov,cobAcum,t11Acum,inovTot,plasAS,sellLitros,accRank,dormidos]=await Promise.all([
@@ -1132,7 +1132,7 @@ async function loadAll(){
       safe('/api/gerencia/innovaciones_total?dia='+(currentDay||'')),
       safe('/api/gerencia/planes_as'),
       safe('/api/gerencia/sellout_litros'),
-      safe('/api/gerencia/acciones_ranking'),
+      safe('/api/gerencia/acciones_mes'),
       safe('/api/gerencia/alertas_caida')
     ]);
     if(cccEmp)      D.cccEmpresa=cccEmp;
@@ -1144,7 +1144,7 @@ async function loadAll(){
     if(inovTot)     D.inov_total=inovTot;
     if(plasAS)      D.planes_as_g=plasAS;
     if(sellLitros)  D.sellout_litros=sellLitros;
-    if(accRank)     D.acc_rank=accRank;
+    if(accRank)     D.acc_mes=accRank;
     if(dormidos)    D.dormidos=dormidos;
   }
 }
@@ -2191,62 +2191,37 @@ function vAlertas(){
 
   let h=`<div class="vsh">Alertas del día</div>`;
 
-  // ── BLOQUE 1: Acciones Comerciales Vigentes ──────────────
-  const accs=(D.acc_vigentes||[]).filter(a=>{
-    if(esV3 && (a.canal||'').toUpperCase()==='AUTOSERVICIOS') return false;
-    return true;
-  });
+  // ── BLOQUE 1: Acciones Comerciales del Mes (filtradas por vendedor) ──────────────
+  const _accP=D.acc_mes_v||{};
+  const accs=_accP.acciones||[];
+  const _MNa={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
+  const _accMes=_accP.mes?((_MNa[String(_accP.mes).slice(5,7)]||_accP.mes)+' '+String(_accP.mes).slice(0,4)):'';
+  const _fmtARSa=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
 
   if(accs.length){
     h+=`<div class="card" style="margin-bottom:14px;">
       <div class="card-hd">
-        <span class="card-title">💰 Acciones Comerciales Vigentes</span>
+        <span class="card-title">💰 Acciones Comerciales de ${_accMes||'Junio'}</span>
         <span class="chip mg">${accs.length} acciones</span>
       </div>`;
     accs.forEach((a,i)=>{
       const isLast=i===accs.length-1;
-      const canal=canalCorto(a.canal||'');
-      const marcas=marcasLabel(a);
-      const tramos=a.tramos||[];
-      const tipo=a.tipo_accion||'';
-
+      const tcl=a.tipo==='Sin cargo'?'wn':'ok';
       h+=`<div style="padding:12px 15px;${isLast?'':'border-bottom:1px solid var(--b);'}">
-        <!-- nombre + canal chip -->
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:5px;">
-          <span style="font-size:13px;font-weight:700;line-height:1.35;flex:1;">${a.accion_nombre}</span>
-          <span class="chip" style="font-size:9px;flex-shrink:0;white-space:nowrap;">${canal}</span>
+          <span style="font-size:13px;font-weight:700;line-height:1.35;flex:1;">${a.id_accion} · ${a.segmento||''}</span>
+          <span class="chip ${tcl}" style="font-size:10px;flex-shrink:0;white-space:nowrap;">${a.tipo}${a.descuento_pct?(' '+a.descuento_pct+'%'):''}</span>
         </div>
-        <!-- marcas/productos -->
-        ${marcas?`<div style="font-size:11px;color:var(--text3);margin-bottom:7px;">🏷 ${marcas}</div>`:''}
-        <!-- tramos de descuento -->
-        <div style="display:flex;flex-direction:column;gap:4px;">`;
-
-      if(tramos.length===0){
-        h+=`<div style="font-size:11px;color:var(--text2);">Ver condiciones en la planilla de acciones</div>`;
-      } else if(tramos.length===1){
-        // Un solo tramo: mostrar como línea directa
-        const t=tramos[0];
-        const dtoLabel=t.bonif_cajas!=null
-          ? `${t.bonif_cajas} caja${t.bonif_cajas!==1?'s':''} bonificada${t.bonif_cajas!==1?'s':''}`
-          : t.descuento_pct!=null?`${t.descuento_pct}% dto`:'';
-        h+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-          <span style="font-size:11px;color:var(--text2);">${t.condicion}</span>
-          ${dtoLabel?`<span class="chip ok" style="font-size:11px;font-weight:800;flex-shrink:0;">${dtoLabel}</span>`:''}
-        </div>`;
-      } else {
-        // Múltiples tramos: lista con bullets
-        tramos.forEach(t=>{
-          const dtoLabel=t.bonif_cajas!=null
-            ? `${t.bonif_cajas} caj. bonif.`
-            : t.descuento_pct!=null?`${t.descuento_pct}%`:'';
-          h+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-            <span style="font-size:11px;color:var(--text2);">· ${t.condicion}</span>
-            ${dtoLabel?`<span class="chip ok" style="font-size:11px;font-weight:800;flex-shrink:0;">${dtoLabel}</span>`:''}
-          </div>`;
-        });
-      }
-
-      h+=`</div></div>`;
+        ${a.marcas?`<div style="font-size:11px;color:var(--text3);margin-bottom:5px;">🏷 ${a.marcas}</div>`:''}
+        ${a.escala?`<div style="font-size:11px;color:var(--text2);margin-bottom:4px;">📊 ${a.escala}</div>`:''}
+        ${(a.tope&&a.tope.toLowerCase()!=='nan')?`<div style="font-size:10px;color:var(--text3);margin-bottom:5px;">Tope: ${a.tope}</div>`:''}
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--text2);">
+          <span class="chip ok" style="font-size:10px;font-weight:800;">$${_fmtARSa(a.inversion_pesos)} inv.</span>
+          <span>📦 ${_fmtARSa(a.litros)} L</span>
+          <span>👥 ${a.clientes_alcanzados} cli.</span>
+          <span style="color:var(--ok)">🆕 ${a.clientes_nuevos} nuevos</span>
+        </div>
+      </div>`;
     });
     h+=`</div>`;
   }
@@ -2674,16 +2649,60 @@ function gPlanesAS(p){
 
 /* ════ ACCIONES COMERCIALES GERENCIA ════ */
 function gAccionesComerciales(p){
-  const dat=D.acc_rank;
+  const dat=D.acc_mes||{};
+  const acc=dat.acciones||[];
   const fmtARS=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
-  const fmtL=n=>Number(n||0).toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:0});
-  const fmtPct=n=>(n==null?'–':(n>0?'+':'')+Number(n).toFixed(1)+'%');
-
+  const fmtL=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
+  const _MN={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
+  const mesNom=dat.mes?((_MN[String(dat.mes).slice(5,7)]||dat.mes)+' '+String(dat.mes).slice(0,4)):'—';
   let html=`<div class="gph">
-    <div><div class="gph-title">💰 Acciones Comerciales</div>
-    <div class="gph-sub">${dat?.fecha_calculo||'Sin datos'} · ${dat?.acciones?.length||0} acciones activas · vs ${dat?.acciones?.[0]?.mes_anterior||'mes anterior'}</div></div>
+    <div><div class="gph-title">💰 Acciones Comerciales de ${mesNom}</div>
+    <div class="gph-sub">Fuente: ${dat.fuente||'–'} · ${acc.length} acciones</div></div>
   </div>`;
-  if(!dat||!dat.acciones?.length){
+  if(!acc.length){
+    html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">💰</div><p>Sin acciones para ${mesNom}.</p></div></div></div>`;
+    p.innerHTML=html; return;
+  }
+  const totInv=acc.reduce((s,a)=>s+(a.inversion_pesos||0),0);
+  const totL=acc.reduce((s,a)=>s+(a.litros||0),0);
+  const totCli=acc.reduce((s,a)=>s+(a.clientes_alcanzados||0),0);
+  const totNue=acc.reduce((s,a)=>s+(a.clientes_nuevos||0),0);
+  html+=`<div class="krow" style="margin-bottom:16px;">
+    <div class="kcard info"><div class="kl">Inversión total</div><div class="kv" style="font-size:18px;">$${fmtARS(totInv)}</div></div>
+    <div class="kcard ok"><div class="kl">Litros bajo acciones</div><div class="kv" style="font-size:18px;">${fmtL(totL)} L</div></div>
+    <div class="kcard info"><div class="kl">Clientes alcanzados</div><div class="kv" style="font-size:18px;">${fmtARS(totCli)}</div></div>
+    <div class="kcard ok"><div class="kl">Clientes nuevos</div><div class="kv" style="font-size:18px;">${totNue}</div></div>
+  </div>`;
+  const grid=acc.map(a=>{
+    const tcl=a.tipo==='Sin cargo'?'wn':'ok';
+    return `<div class="card">
+      <div class="card-hd">
+        <span class="card-title" style="font-size:13px;">${a.id_accion}</span>
+        <span class="chip ${tcl}" style="font-size:10px;">${a.tipo}${a.descuento_pct?(' '+a.descuento_pct+'%'):''}</span>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">
+          <span class="chip" style="font-size:9px;">${a.segmento||'–'}</span>
+          ${(a.vendedores||[]).map(vv=>`<span class="chip" style="font-size:9px;">${vv}</span>`).join('')}
+        </div>
+        ${a.marcas?`<div style="font-size:11px;color:var(--text3);margin-bottom:6px;">🏷 ${a.marcas}</div>`:''}
+        ${a.escala?`<div style="font-size:11px;color:var(--text2);margin-bottom:4px;">📊 ${a.escala}</div>`:''}
+        ${(a.tope&&a.tope.toLowerCase()!=='nan')?`<div style="font-size:10px;color:var(--text3);margin-bottom:8px;">Tope: ${a.tope}</div>`:''}
+        <div class="krow" style="gap:6px;">
+          <div class="kcard info"><div class="kl">Inversión</div><div class="kv" style="font-size:15px;">$${fmtARS(a.inversion_pesos)}</div></div>
+          <div class="kcard ok"><div class="kl">Litros</div><div class="kv" style="font-size:15px;">${fmtL(a.litros)}</div></div>
+        </div>
+        <div style="display:flex;gap:14px;margin-top:8px;font-size:11px;color:var(--text2);">
+          <span>👥 ${a.clientes_alcanzados} clientes</span>
+          <span style="color:var(--ok)">🆕 ${a.clientes_nuevos} nuevos</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  html+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:13px;">${grid}</div>`;
+  p.innerHTML=html;
+  return;
+  /* ===== versión anterior (mayo) deshabilitada — reemplazada por acciones del mes =====
     html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">💰</div><p>Sin datos de Acciones Comerciales.</p></div></div></div>`;
     p.innerHTML=html; return;
   }
@@ -2795,6 +2814,7 @@ function gAccionesComerciales(p){
     html+=`</div></div>`;
   }
   p.innerHTML=html;
+  ===== fin versión anterior ===== */
 }
 
 
