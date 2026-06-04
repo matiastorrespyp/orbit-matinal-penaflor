@@ -1,0 +1,77 @@
+{
+  "empresa": {
+    "ccc_total": 2656,
+    "marcas_sobre_objetivo": 2,
+    "objetivo_total": 3552,
+    "pct": 74.8,
+    "total_marcas": 11
+  },
+  "marcas": [
+    {
+      "ccc": 476,
+      "marca": "ALMA MORA",
+      "objetivo": 639,
+      "pct": 74.5
+    },
+    {
+      "ccc": 383,
+      "marca": "SMIRNOFF FLAVOURS",
+      "objetivo": 317,
+      "pct": 120.8
+    },
+    {
+      "ccc": 363,
+      "marca": "SMIRNOFF ICE",
+      "objetivo": 400,
+      "pct": 90.8
+    },
+    {
+      "ccc": 361,
+      "marca": "DADA",
+      "objetivo": 467,
+      "pct": 77.3
+    },
+    {
+      "ccc": 313,
+      "marca": "FINCA LAS MORAS",
+      "objetivo": 384,
+      "pct": 81.5
+    },
+    {
+      "ccc": 291,
+      "marca": "ALARIS",
+      "objetivo": 440,
+      "pct": 66.1
+    },
+    {
+      "ccc": 226,
+      "marca": "LOS ARBOLES",
+      "objetivo": 396,
+      "pct": 57.1
+    },
+    {
+      "ccc": 82,
+      "marca": "TRAPICHE RESERVA",
+      "objetivo": 137,
+      "pct": 59.9
+    },
+    {
+      "ccc": 66,
+      "marca": "GORDON'S FLAVOURS",
+      "objetivo": 122,
+      "pct": 54.1
+    },
+    {
+      "ccc": 61,
+      "marca": "DON DAVID",
+      "objetivo": 60,
+      "pct": 101.7
+    },
+    {
+      "ccc": 34,
+      "marca": "ANTARES",
+      "objetivo": 190,
+      "pct": 17.9
+    }
+  ]
+}

@@ -2987,6 +2987,13 @@ function gCierreMes(p){
         const e=c.empresa||{};
         const g=c.ganadores||{};
         const rank=c.ranking||[];
+        const oa=c.objetivos_avance||{}; const oaEmp=oa.empresa||{}; const oaVends=oa.vendedores||[];
+        const t11=(c.once_titulares||{}).marcas||[]; const t11e=(c.once_titulares||{}).empresa||{};
+        const innov=c.innovaciones||{}; const innovR=innov.resumen||{};
+        const so=(c.sellout||{}).categorias||[];
+        const pas=c.planes_as||{}; const pasR=pas.resumen||{}; const pasPlan=pas.por_plan||[];
+        const acc=c.acciones_comerciales||{}; const accR=acc.resumen||{}; const accDet=acc.detalle||[];
+        const avc=p=>(p>=100?'ok':p>=80?'wn':'bd');
         const estOk=(c.estado||'').toUpperCase()==='PASS';
         const det=m.vendedores_detectados||[];
         const exc=m.vendedores_excluidos_csv||[];
@@ -3027,6 +3034,143 @@ function gCierreMes(p){
             </div>
             <div style="font-size:10px;color:var(--text3);margin-top:8px;">Filas ventas mes: ${fmtNum(e.filas_ventas_mes)} · Vendedores: ${(e.vendedores_incluidos||[]).join(', ')}</div>
           </div></div>`;
+        // ── Resumen compañía (objetivos / avance, congelado) ──
+        if(oaEmp.objetivo!=null){
+          const av=oaEmp.avance_pct||0;
+          h+=`<div class="card" style="margin-top:14px;">
+            <div class="card-hd"><span class="card-title">🏢 Resumen compañía</span><span class="chip ${avc(av)}">${av.toFixed ? av.toFixed(1) : av}% avance</span></div>
+            <div class="card-body">
+              <div class="krow" style="margin-bottom:10px;">
+                <div class="kcard ok"><div class="kl">Acumulado compañía</div><div class="kv">${fmtM(oaEmp.acumulado)}</div><div class="kh">Objetivo: ${fmtM(oaEmp.objetivo)}</div></div>
+                <div class="kcard ${avc(av)}"><div class="kl">Avance final</div><div class="kv">${(av||0).toFixed ? av.toFixed(1):av}<span class="ku">%</span></div><div class="kh">Faltante: ${fmtM(oaEmp.faltante)}</div></div>
+                <div class="kcard info"><div class="kl">Días hábiles</div><div class="kv">${oa.dias_habiles!=null?oa.dias_habiles:'–'}</div><div class="kh">${c.periodo||''}</div></div>
+                <div class="kcard info"><div class="kl">CCC total</div><div class="kv">${fmtNum(oaEmp.ccc_total)}</div>
+                  <div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;">
+                    <span class="chip" style="font-size:9px;">TRAD ${fmtNum(oaEmp.ccc_tradicional)}</span>
+                    <span class="chip" style="font-size:9px;">AS ${fmtNum(oaEmp.ccc_autoservicio)}</span>
+                    <span class="chip" style="font-size:9px;">OP ${fmtNum(oaEmp.ccc_onpremise)}</span>
+                  </div>
+                </div>
+              </div>
+              <div style="font-size:10px;color:var(--text3);">Objetivos: ${oa.fuente_objetivos||'resultado.xlsx'} · CCC: ${oa.fuente_ccc||'ventas_acumulada.csv'} (congelado en el cierre)</div>
+            </div></div>`;
+        }
+        // ── Cierre por vendedor (objetivos / avance / CCC, congelado) ──
+        if(oaVends.length){
+          h+=`<div class="card" style="margin-top:14px;">
+            <div class="card-hd"><span class="card-title">🏁 Cierre por vendedor</span><span class="chip">${oaVends.length} vendedores</span></div>
+            <div class="card-body nop">
+              <table class="tbl" style="font-size:12px;">
+                <thead><tr><th>Vendedor</th><th style="text-align:right">Acumulado</th><th style="text-align:right">Objetivo</th><th style="text-align:right">Avance</th><th style="text-align:right">Faltante</th><th style="text-align:right">CCC</th><th style="text-align:right">T/A/O</th></tr></thead>
+                <tbody>${oaVends.map(v=>{const a=v.avance_pct||0;return `<tr>
+                  <td style="font-weight:600">${vcode(v.codigo)} · ${v.nombre||''}</td>
+                  <td style="text-align:right">${fmtM(v.acumulado)}</td>
+                  <td style="text-align:right;color:var(--text3)">${fmtM(v.objetivo)}</td>
+                  <td style="text-align:right"><span class="chip ${avc(a)}" style="font-size:10px;">${(a.toFixed?a.toFixed(1):a)}%</span></td>
+                  <td style="text-align:right;color:var(--text3)">${fmtM(v.faltante)}</td>
+                  <td style="text-align:right;font-weight:600">${fmtNum(v.ccc_total)}</td>
+                  <td style="text-align:right;color:var(--text3);font-size:10px;">${fmtNum(v.ccc_tradicional)}/${fmtNum(v.ccc_autoservicio)}/${fmtNum(v.ccc_onpremise)}</td>
+                </tr>`;}).join('')}</tbody>
+              </table>
+            </div></div>`;
+        }
+        // ── 11 Titulares: CCC vs Objetivo (congelado) ──
+        if(t11.length){
+          const sob=t11e.marcas_sobre_objetivo||0, totM=t11e.total_marcas||t11.length;
+          h+=`<div class="card" style="margin-top:14px;">
+            <div class="card-hd"><span class="card-title">🏅 11 Titulares · CCC vs Objetivo</span><span class="chip ${avc(sob>=totM?100:sob/totM*100)}">${sob}/${totM} marcas ≥ 100%</span></div>
+            <div class="card-body nop">
+              <table class="tbl" style="font-size:12px;">
+                <thead><tr><th>Marca</th><th style="text-align:right">Clientes cubiertos</th><th style="text-align:right">Objetivo</th><th style="text-align:right">Avance</th></tr></thead>
+                <tbody>${t11.map(mm=>{const p=mm.pct||0;return `<tr>
+                  <td style="font-weight:600">${mm.marca}</td>
+                  <td style="text-align:right">${fmtNum(mm.ccc)}</td>
+                  <td style="text-align:right;color:var(--text3)">${fmtNum(mm.objetivo)}</td>
+                  <td style="text-align:right"><span class="chip ${avc(p)}" style="font-size:10px;">${p}%</span></td>
+                </tr>`;}).join('')}</tbody>
+              </table>
+            </div></div>`;
+        }
+        // ── Innovaciones (congelado) ──
+        if(innovR.productos){
+          h+=`<div class="card" style="margin-top:14px;">
+            <div class="card-hd"><span class="card-title">🚀 Innovaciones</span><span class="chip">${innovR.productos} productos</span></div>
+            <div class="card-body nop">
+              <div style="display:flex;gap:16px;padding:10px 14px 6px;border-bottom:1px solid var(--b);flex-wrap:wrap;">
+                <div><div style="font-size:10px;color:var(--text3)">Productos</div><b style="font-size:18px">${innovR.productos}</b></div>
+                <div><div style="font-size:10px;color:var(--text3)">Cartera/base (CCC mes)</div><b style="font-size:18px">${fmtNum(innovR.ccc_mes)}</b></div>
+                <div><div style="font-size:10px;color:var(--text3)">Penet. prom.</div><b style="font-size:18px">${innovR.pct_promedio||0}%</b></div>
+                <div style="font-size:10px;color:var(--text3);align-self:flex-end;padding-bottom:4px;">penetración % = compraron / cartera</div>
+              </div>
+              <table class="tbl" style="font-size:11px;">
+                <thead><tr><th>Producto</th><th style="text-align:right">Compraron</th><th style="text-align:right">Cartera</th><th style="text-align:right">Penetración</th></tr></thead>
+                <tbody>${(innov.por_producto||[]).map(pp=>{const pc=pp.pct||0;return `<tr>
+                  <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${pp.producto_nombre}</td>
+                  <td style="text-align:right">${fmtNum(pp.compraron)}</td>
+                  <td style="text-align:right;color:var(--text3)">${fmtNum(innovR.ccc_mes)}</td>
+                  <td style="text-align:right"><span class="chip ${avc(pc>=30?100:pc>=10?85:0)}" style="font-size:9px;">${pc}%</span></td>
+                </tr>`;}).join('')}</tbody>
+              </table>
+            </div></div>`;
+        }
+        // ── Sell Out (congelado) ──
+        if(so.length){
+          h+=`<div class="card" style="margin-top:14px;">
+            <div class="card-hd"><span class="card-title">📦 Sell Out · Litros vs Objetivo</span><span class="chip">${so.length} categorías</span></div>
+            <div class="card-body nop">
+              <table class="tbl" style="font-size:11px;">
+                <thead><tr><th>Categoría</th><th style="text-align:right">Litros</th><th style="text-align:right">Objetivo</th><th style="text-align:right">Avance</th><th style="text-align:right">Clientes</th></tr></thead>
+                <tbody>${so.map(ct=>{const al=ct.alcance_pct;return `<tr>
+                  <td style="font-weight:600">${ct.categoria}</td>
+                  <td style="text-align:right">${fmtNum(ct.litros)} L</td>
+                  <td style="text-align:right;color:var(--text3)">${ct.objetivo?fmtNum(ct.objetivo)+' L':'–'}</td>
+                  <td style="text-align:right">${al!=null?`<span class="chip ${avc(al)}" style="font-size:9px;">${al}%</span>`:'<span style="color:var(--text3)">–</span>'}</td>
+                  <td style="text-align:right;color:var(--text3)">${fmtNum(ct.clientes)}</td>
+                </tr>`;}).join('')}</tbody>
+              </table>
+            </div></div>`;
+        }
+        // ── Planes AS (congelado) ──
+        if(pasR.clientes){
+          h+=`<div class="card" style="margin-top:14px;">
+            <div class="card-hd"><span class="card-title">🏆 Planes AS</span><span class="chip">${pasR.clientes} clientes</span></div>
+            <div class="card-body">
+              <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
+                <div><div style="font-size:10px;color:var(--text3)">Facturado</div><b style="font-size:16px">${fmtM(pasR.facturado)}</b></div>
+                <div><div style="font-size:10px;color:var(--text3)">SC Ganado</div><b style="font-size:16px;color:var(--ok)">${fmtNum(pasR.sc_ganado)}</b></div>
+                <div><div style="font-size:10px;color:var(--text3)">SC Enviado</div><b style="font-size:16px;color:var(--ok)">${fmtNum(pasR.sc_enviado)}</b></div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                ${pasPlan.map(pp=>`<div style="background:var(--surf2);border-radius:8px;padding:8px 14px;min-width:100px;">
+                  <div style="font-size:10px;color:var(--text3);">Plan ${pp.plan_as}</div>
+                  <div style="font-size:15px;font-weight:700;">${fmtNum(pp.clientes)} clientes</div>
+                  <div style="font-size:10px;color:var(--text2);">${fmtM(pp.facturado)}</div>
+                </div>`).join('')}
+              </div>
+            </div></div>`;
+        }
+        // ── Acciones Comerciales (congelado) ──
+        if(accR.total_acciones){
+          h+=`<div class="card" style="margin-top:14px;">
+            <div class="card-hd"><span class="card-title">💰 Acciones Comerciales</span><span class="chip">${accR.total_acciones} acciones</span></div>
+            <div class="card-body nop">
+              <div style="display:flex;gap:16px;flex-wrap:wrap;padding:10px 14px 8px;border-bottom:1px solid var(--b);">
+                <div><div style="font-size:10px;color:var(--text3)">Inversión</div><b>${fmtM(accR.inversion_total)}</b></div>
+                <div><div style="font-size:10px;color:var(--text3)">Importe neto</div><b>${fmtM(accR.importe_neto)}</b></div>
+                <div><div style="font-size:10px;color:var(--text3)">Clientes afectados</div><b>${fmtNum(accR.clientes_afectados)}</b></div>
+              </div>
+              <table class="tbl" style="font-size:11px;">
+                <thead><tr><th>Acción</th><th>Canal</th><th style="text-align:right">Inversión</th><th style="text-align:right">Importe neto</th><th style="text-align:right">Clientes</th></tr></thead>
+                <tbody>${accDet.map(a=>`<tr>
+                  <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${a.nombre||''}">${a.nombre||a.tipo||'–'}</td>
+                  <td><span class="chip" style="font-size:9px;">${a.canal||'–'}</span></td>
+                  <td style="text-align:right">${fmtM(a.inversion)}</td>
+                  <td style="text-align:right;color:var(--text3)">${fmtM(a.importe_neto)}</td>
+                  <td style="text-align:right">${fmtNum(a.clientes)}</td>
+                </tr>`).join('')}</tbody>
+              </table>
+            </div></div>`;
+        }
         // ── Ranking completo por vendedor ──
         h+=`<div class="card" style="margin-top:14px;">
           <div class="card-hd"><span class="card-title">📊 Ranking completo del mes</span><span class="chip">${rank.length} vendedores</span></div>

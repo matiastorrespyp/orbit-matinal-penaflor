@@ -1,0 +1,22 @@
+{
+  "por_plan": [
+    {
+      "clientes": 26,
+      "facturado": 60937962.2182,
+      "plan_as": "Inicial",
+      "sc_ganado": 118
+    },
+    {
+      "clientes": 5,
+      "facturado": 16991955.7896,
+      "plan_as": "Silver",
+      "sc_ganado": 45
+    }
+  ],
+  "resumen": {
+    "clientes": 31,
+    "facturado": 77929918.0,
+    "sc_enviado": 6,
+    "sc_ganado": 163
+  }
+}

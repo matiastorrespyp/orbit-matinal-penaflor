@@ -1,0 +1,510 @@
+{
+  "categorias": [
+    {
+      "alcance_pct": 78.5,
+      "categoria": "VINOS DEL AÑO",
+      "clientes": 918,
+      "litros": 14923.5,
+      "marcas": [
+        {
+          "litros": 4239.8,
+          "marca": "Alma Mora"
+        },
+        {
+          "litros": 1872.0,
+          "marca": "Dada"
+        },
+        {
+          "litros": 1738.5,
+          "marca": "ELEMENTOS"
+        },
+        {
+          "litros": 1318.5,
+          "marca": "Finca Las Moras"
+        },
+        {
+          "litros": 1188.0,
+          "marca": "Alaris"
+        },
+        {
+          "litros": 1143.0,
+          "marca": "Los Arboles"
+        },
+        {
+          "litros": 607.5,
+          "marca": "Fond de Cave"
+        },
+        {
+          "litros": 559.5,
+          "marca": "El Cazador"
+        },
+        {
+          "litros": 549.0,
+          "marca": "Don David"
+        },
+        {
+          "litros": 344.2,
+          "marca": "Trapiche Reserva"
+        },
+        {
+          "litros": 306.0,
+          "marca": "San Telmo"
+        },
+        {
+          "litros": 227.2,
+          "marca": "Varietales Suter"
+        },
+        {
+          "litros": 207.0,
+          "marca": "Alma Mora Rva"
+        },
+        {
+          "litros": 119.2,
+          "marca": "El Bautismo"
+        },
+        {
+          "litros": 112.5,
+          "marca": "Medio Alto"
+        },
+        {
+          "litros": 96.8,
+          "marca": "Medio"
+        },
+        {
+          "litros": 83.2,
+          "marca": "Coleccion Privada"
+        },
+        {
+          "litros": 78.8,
+          "marca": "Origen By Trapiche"
+        },
+        {
+          "litros": 78.0,
+          "marca": "Termidor Brik"
+        },
+        {
+          "litros": 38.2,
+          "marca": "FINCA LAS MORAS FFL"
+        },
+        {
+          "litros": 12.0,
+          "marca": "Vinos de Mesa"
+        },
+        {
+          "litros": 4.5,
+          "marca": "Alto"
+        }
+      ],
+      "objetivo": 19015,
+      "subcategorias": [
+        {
+          "alcance_pct": 72.3,
+          "clientes": 816,
+          "litros": 8526.8,
+          "marcas": [
+            {
+              "litros": 4239.8,
+              "marca": "Alma Mora"
+            },
+            {
+              "litros": 1872.0,
+              "marca": "Dada"
+            },
+            {
+              "litros": 1738.5,
+              "marca": "ELEMENTOS"
+            },
+            {
+              "litros": 559.5,
+              "marca": "El Cazador"
+            },
+            {
+              "litros": 78.8,
+              "marca": "Origen By Trapiche"
+            },
+            {
+              "litros": 38.2,
+              "marca": "FINCA LAS MORAS FFL"
+            }
+          ],
+          "nombre": "Alto",
+          "objetivo": 11792
+        },
+        {
+          "alcance_pct": 81.0,
+          "clientes": 525,
+          "litros": 3768.8,
+          "marcas": [
+            {
+              "litros": 1318.5,
+              "marca": "Finca Las Moras"
+            },
+            {
+              "litros": 1188.0,
+              "marca": "Alaris"
+            },
+            {
+              "litros": 1143.0,
+              "marca": "Los Arboles"
+            },
+            {
+              "litros": 119.2,
+              "marca": "El Bautismo"
+            }
+          ],
+          "nombre": "Medio Alto",
+          "objetivo": 4651
+        },
+        {
+          "alcance_pct": 82.5,
+          "clientes": 177,
+          "litros": 1791.0,
+          "marcas": [
+            {
+              "litros": 607.5,
+              "marca": "Fond de Cave"
+            },
+            {
+              "litros": 549.0,
+              "marca": "Don David"
+            },
+            {
+              "litros": 344.2,
+              "marca": "Trapiche Reserva"
+            },
+            {
+              "litros": 207.0,
+              "marca": "Alma Mora Rva"
+            },
+            {
+              "litros": 83.2,
+              "marca": "Coleccion Privada"
+            }
+          ],
+          "nombre": "Superior",
+          "objetivo": 2171
+        },
+        {
+          "alcance_pct": 152.4,
+          "clientes": 48,
+          "litros": 611.2,
+          "marcas": [
+            {
+              "litros": 306.0,
+              "marca": "San Telmo"
+            },
+            {
+              "litros": 227.2,
+              "marca": "Varietales Suter"
+            },
+            {
+              "litros": 78.0,
+              "marca": "Termidor Brik"
+            }
+          ],
+          "nombre": "Medio",
+          "objetivo": 401
+        }
+      ]
+    },
+    {
+      "alcance_pct": 59.5,
+      "categoria": "VINOS DE GUARDA",
+      "clientes": 45,
+      "litros": 403.5,
+      "marcas": [
+        {
+          "litros": 150.8,
+          "marca": "Los Intocables"
+        },
+        {
+          "litros": 93.0,
+          "marca": "Fond de Cave Reserva"
+        },
+        {
+          "litros": 51.8,
+          "marca": "La Mascota"
+        },
+        {
+          "litros": 45.0,
+          "marca": "Don David Rva"
+        },
+        {
+          "litros": 27.0,
+          "marca": "Paz de Finca las Moras"
+        },
+        {
+          "litros": 13.5,
+          "marca": "Gran Mascota"
+        },
+        {
+          "litros": 13.5,
+          "marca": "Puro-Impuro"
+        },
+        {
+          "litros": 4.5,
+          "marca": "El Esteco"
+        },
+        {
+          "litros": 4.5,
+          "marca": "Fond de Cave Gran Reserva"
+        }
+      ],
+      "objetivo": 678,
+      "subcategorias": []
+    },
+    {
+      "alcance_pct": 104.7,
+      "categoria": "SPIRITS",
+      "clientes": 487,
+      "litros": 18585.9,
+      "marcas": [
+        {
+          "litros": 16804.9,
+          "marca": "Smirnoff"
+        },
+        {
+          "litros": 905.2,
+          "marca": "White Horse"
+        },
+        {
+          "litros": 219.1,
+          "marca": "Gordon's Flavors"
+        },
+        {
+          "litros": 184.8,
+          "marca": "Smirnoff Flavors"
+        },
+        {
+          "litros": 148.2,
+          "marca": "JW"
+        },
+        {
+          "litros": 75.6,
+          "marca": "Gordon´s"
+        },
+        {
+          "litros": 70.8,
+          "marca": "Standard (S)"
+        },
+        {
+          "litros": 56.2,
+          "marca": "Baileys"
+        },
+        {
+          "litros": 33.0,
+          "marca": "Sheridan¨s"
+        },
+        {
+          "litros": 29.2,
+          "marca": "J&B Rare"
+        },
+        {
+          "litros": 25.2,
+          "marca": "Singleton"
+        },
+        {
+          "litros": 12.8,
+          "marca": "Buchanan's"
+        },
+        {
+          "litros": 9.8,
+          "marca": "Baileys Flavours"
+        },
+        {
+          "litros": 7.5,
+          "marca": "Zacapa Centenario 23"
+        },
+        {
+          "litros": 2.8,
+          "marca": "Tanqueray"
+        },
+        {
+          "litros": 0.8,
+          "marca": "Old Parr"
+        }
+      ],
+      "objetivo": 17752,
+      "subcategorias": [
+        {
+          "alcance_pct": 107.3,
+          "clientes": 469,
+          "litros": 18289.7,
+          "marcas": [
+            {
+              "litros": 16804.9,
+              "marca": "Smirnoff"
+            },
+            {
+              "litros": 905.2,
+              "marca": "White Horse"
+            },
+            {
+              "litros": 219.1,
+              "marca": "Gordon's Flavors"
+            },
+            {
+              "litros": 184.8,
+              "marca": "Smirnoff Flavors"
+            },
+            {
+              "litros": 75.6,
+              "marca": "Gordon´s"
+            },
+            {
+              "litros": 70.8,
+              "marca": "Standard (S)"
+            },
+            {
+              "litros": 29.2,
+              "marca": "J&B Rare"
+            }
+          ],
+          "nombre": "Nacionales",
+          "objetivo": 17045
+        },
+        {
+          "alcance_pct": 41.9,
+          "clientes": 63,
+          "litros": 296.2,
+          "marcas": [
+            {
+              "litros": 148.2,
+              "marca": "JW"
+            },
+            {
+              "litros": 56.2,
+              "marca": "Baileys"
+            },
+            {
+              "litros": 33.0,
+              "marca": "Sheridan¨s"
+            },
+            {
+              "litros": 25.2,
+              "marca": "Singleton"
+            },
+            {
+              "litros": 12.8,
+              "marca": "Buchanan's"
+            },
+            {
+              "litros": 9.8,
+              "marca": "Baileys Flavours"
+            },
+            {
+              "litros": 7.5,
+              "marca": "Zacapa Centenario 23"
+            },
+            {
+              "litros": 2.8,
+              "marca": "Tanqueray"
+            },
+            {
+              "litros": 0.8,
+              "marca": "Old Parr"
+            }
+          ],
+          "nombre": "Importados",
+          "objetivo": 707
+        }
+      ]
+    },
+    {
+      "alcance_pct": 127.9,
+      "categoria": "RTD",
+      "clientes": 407,
+      "litros": 12792.8,
+      "marcas": [
+        {
+          "litros": 9155.4,
+          "marca": "Smirnoff Ice Flavours"
+        },
+        {
+          "litros": 2556.3,
+          "marca": "Frizze"
+        },
+        {
+          "litros": 598.8,
+          "marca": "Smirnoff Ice"
+        },
+        {
+          "litros": 405.7,
+          "marca": "RTD (S)"
+        },
+        {
+          "litros": 48.2,
+          "marca": "Gordon´s"
+        },
+        {
+          "litros": 28.4,
+          "marca": "Smirnoff Bitter Citric RTD"
+        }
+      ],
+      "objetivo": 9999,
+      "subcategorias": []
+    },
+    {
+      "alcance_pct": 86.9,
+      "categoria": "CHAMPAÑA",
+      "clientes": 31,
+      "litros": 595.8,
+      "marcas": [
+        {
+          "litros": 542.2,
+          "marca": "Champaña Dada"
+        },
+        {
+          "litros": 27.0,
+          "marca": "Champaña San Telmo"
+        },
+        {
+          "litros": 13.0,
+          "marca": "NC Espumantes"
+        },
+        {
+          "litros": 6.8,
+          "marca": "DADA Sidra"
+        },
+        {
+          "litros": 4.5,
+          "marca": "Espumante Mascota Vineyards"
+        },
+        {
+          "litros": 2.2,
+          "marca": "Champaña suter"
+        }
+      ],
+      "objetivo": 686,
+      "subcategorias": []
+    },
+    {
+      "alcance_pct": 65.2,
+      "categoria": "CERVEZA ARTESANAL",
+      "clientes": 50,
+      "litros": 263.9,
+      "marcas": [
+        {
+          "litros": 120.6,
+          "marca": "Antares Especiales"
+        },
+        {
+          "litros": 63.9,
+          "marca": "Cerveza Lager"
+        },
+        {
+          "litros": 48.2,
+          "marca": "Antares Clasicas"
+        },
+        {
+          "litros": 31.2,
+          "marca": "CERVEZA ARTESANAL"
+        }
+      ],
+      "objetivo": 405,
+      "subcategorias": []
+    }
+  ],
+  "filas_ventas_mes": 5067,
+  "fuente": "ventas_mes.csv"
+}

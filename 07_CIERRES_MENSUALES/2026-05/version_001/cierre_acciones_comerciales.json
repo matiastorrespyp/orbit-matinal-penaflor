@@ -1,0 +1,76 @@
+{
+  "detalle": [
+    {
+      "canal": "TRAD+KIOSCO+ON PREMISE",
+      "categoria": "VDA/VDG/ESPUMANTES/SIDRA",
+      "clientes": 17,
+      "descuento": "6-20%",
+      "importe_neto": 1450001.0,
+      "inversion": 304500.0,
+      "litros": 2065.5,
+      "nombre": "Drop Vinos — Tradicional",
+      "tipo": "DROP"
+    },
+    {
+      "canal": "AUTOSERVICIOS",
+      "categoria": "VDA/VDG/ESPUMANTES/SIDRA",
+      "clientes": 9,
+      "descuento": "6-20%",
+      "importe_neto": 1117451.0,
+      "inversion": 234665.0,
+      "litros": 1498.5,
+      "nombre": "Drop Vinos — Autoservicios",
+      "tipo": "DROP"
+    },
+    {
+      "canal": "VTK/TDB",
+      "categoria": "VDA/VDG/ESPUMANTES/SIDRA",
+      "clientes": 2,
+      "descuento": "10%",
+      "importe_neto": 730192.0,
+      "inversion": 153340.0,
+      "litros": 972.0,
+      "nombre": "Drop Vinos — Vinotecas/TDB",
+      "tipo": "DROP"
+    },
+    {
+      "canal": "TODOS",
+      "categoria": "INNOVACIONES",
+      "clientes": 16,
+      "descuento": "5-20%",
+      "importe_neto": 539080.0,
+      "inversion": 113207.0,
+      "litros": 805.5,
+      "nombre": "Especial Innovaciones",
+      "tipo": "ESPECIAL"
+    },
+    {
+      "canal": "TODOS",
+      "categoria": "RTD ICE",
+      "clientes": 4,
+      "descuento": "5-25%",
+      "importe_neto": 61329.0,
+      "inversion": 12879.0,
+      "litros": 408.7,
+      "nombre": "Smirnoff ICE 25%",
+      "tipo": "DROP"
+    },
+    {
+      "canal": "TRAD+KIOSCO+ON PREMISE",
+      "categoria": "RTD",
+      "clientes": 2,
+      "descuento": "5%",
+      "importe_neto": 45925.0,
+      "inversion": 9644.0,
+      "litros": 144.0,
+      "nombre": "Drop Frizze — Tradicional",
+      "tipo": "DROP"
+    }
+  ],
+  "resumen": {
+    "clientes_afectados": 50,
+    "importe_neto": 3943978.0,
+    "inversion_total": 828235.0,
+    "total_acciones": 6
+  }
+}

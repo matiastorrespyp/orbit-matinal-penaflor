@@ -3861,6 +3861,13 @@ def gerencia_cierres_historicos():
             "ranking_top3":        [],
             "ranking":             [],
             "ganadores":           {},
+            "objetivos_avance":    None,
+            "ccc_segmentos":       None,
+            "once_titulares":      None,
+            "innovaciones":        None,
+            "sellout":             None,
+            "planes_as":           None,
+            "acciones_comerciales": None,
             "warn":                [],
         }
 
@@ -3962,6 +3969,49 @@ def gerencia_cierres_historicos():
                 cierre["warn"].append("cierre_mensual_resumen.json no legible: " + str(e))
         else:
             cierre["warn"].append("cierre_mensual_resumen.json no encontrado")
+
+        # ── Bloques de detalle congelados (artefactos versionados del cierre) ──
+        # Solo lectura de JSON ya generados en la carpeta del cierre. No recalcula.
+        def _load_art(nombre):
+            ruta = carpeta / nombre
+            if not ruta.exists():
+                return None
+            try:
+                with open(ruta, encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                cierre["warn"].append(f"{nombre} no legible: {e}")
+                return None
+
+        oa = _load_art("cierre_objetivos_avance.json")
+        if oa is not None:
+            cierre["objetivos_avance"] = oa
+            # ccc_segmentos derivado del mismo artefacto (empresa + por vendedor), sin duplicar archivo
+            emp_oa = oa.get("empresa", {}) or {}
+            cierre["ccc_segmentos"] = {
+                "empresa": {
+                    "ccc_total":        emp_oa.get("ccc_total"),
+                    "ccc_tradicional":  emp_oa.get("ccc_tradicional"),
+                    "ccc_autoservicio": emp_oa.get("ccc_autoservicio"),
+                    "ccc_onpremise":    emp_oa.get("ccc_onpremise"),
+                },
+                "vendedores": [
+                    {
+                        "codigo":           v.get("codigo"),
+                        "nombre":           v.get("nombre"),
+                        "ccc_total":        v.get("ccc_total"),
+                        "ccc_tradicional":  v.get("ccc_tradicional"),
+                        "ccc_autoservicio": v.get("ccc_autoservicio"),
+                        "ccc_onpremise":    v.get("ccc_onpremise"),
+                    }
+                    for v in (oa.get("vendedores", []) or [])
+                ],
+            }
+        cierre["once_titulares"]       = _load_art("cierre_11_titulares_detalle.json")
+        cierre["innovaciones"]         = _load_art("cierre_innovaciones_detalle.json")
+        cierre["sellout"]              = _load_art("cierre_sellout.json")
+        cierre["planes_as"]            = _load_art("cierre_planes_as.json")
+        cierre["acciones_comerciales"] = _load_art("cierre_acciones_comerciales.json")
 
         if not cierre["warn"]:
             cierre.pop("warn")

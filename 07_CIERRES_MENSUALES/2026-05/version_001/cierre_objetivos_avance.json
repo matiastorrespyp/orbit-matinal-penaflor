@@ -1,0 +1,115 @@
+{
+  "dias_habiles": 24,
+  "calendario": {
+    "corridos": 24,
+    "dias_comerciales_corridos": 24,
+    "fecha_corte": "2026-05-31",
+    "fecha_corte_calendario": "2026-05-31",
+    "feriados_detectados_del_mes": [
+      "2026-05-01",
+      "2026-05-25"
+    ],
+    "restantes": 0,
+    "total": 24,
+    "total_dias_comerciales_mes": 24
+  },
+  "empresa": {
+    "acumulado": 15998525.08,
+    "avance_pct": 4.9,
+    "ccc_autoservicio": 134,
+    "ccc_onpremise": 57,
+    "ccc_total": 827,
+    "ccc_tradicional": 635,
+    "objetivo": 326800000.0,
+    "faltante": 310801475.0
+  },
+  "vendedores": [
+    {
+      "acumulado": 95470.23,
+      "avance_pct": 1.17,
+      "ccc_autoservicio": 0,
+      "ccc_onpremise": 1,
+      "ccc_total": 225,
+      "ccc_tradicional": 224,
+      "codigo": "3",
+      "nombre": "Gambino Nadia",
+      "objetivo": 8184000.0,
+      "faltante": 8088530.0
+    },
+    {
+      "acumulado": 354591.74,
+      "avance_pct": 0.87,
+      "ccc_autoservicio": 37,
+      "ccc_onpremise": 7,
+      "ccc_total": 223,
+      "ccc_tradicional": 179,
+      "codigo": "4",
+      "nombre": "Gribaudo Angel",
+      "objetivo": 40920000.0,
+      "faltante": 40565408.0
+    },
+    {
+      "acumulado": 5330653.67,
+      "avance_pct": 13.03,
+      "ccc_autoservicio": 26,
+      "ccc_onpremise": 9,
+      "ccc_total": 148,
+      "ccc_tradicional": 113,
+      "codigo": "6",
+      "nombre": "Peyronel Andrea",
+      "objetivo": 40920000.0,
+      "faltante": 35589346.0
+    },
+    {
+      "acumulado": 63992.98,
+      "avance_pct": 0.57,
+      "ccc_autoservicio": 10,
+      "ccc_onpremise": 1,
+      "ccc_total": 12,
+      "ccc_tradicional": 1,
+      "codigo": "7",
+      "nombre": "Jofre Guillermo Agustin",
+      "objetivo": 11232000.0,
+      "faltante": 11168007.0
+    },
+    {
+      "acumulado": 5981157.3,
+      "avance_pct": 5.77,
+      "ccc_autoservicio": 26,
+      "ccc_onpremise": 25,
+      "ccc_total": 97,
+      "ccc_tradicional": 46,
+      "codigo": "8",
+      "nombre": "Alvarez Vanesa  Kaff",
+      "objetivo": 103664000.0,
+      "faltante": 97682843.0
+    },
+    {
+      "acumulado": 998005.26,
+      "avance_pct": 2.33,
+      "ccc_autoservicio": 15,
+      "ccc_onpremise": 8,
+      "ccc_total": 60,
+      "ccc_tradicional": 36,
+      "codigo": "9",
+      "nombre": "Sanchez Fernando Javier",
+      "objetivo": 42768000.0,
+      "faltante": 41769995.0
+    },
+    {
+      "acumulado": 3174653.9,
+      "avance_pct": 4.01,
+      "ccc_autoservicio": 20,
+      "ccc_onpremise": 6,
+      "ccc_total": 62,
+      "ccc_tradicional": 36,
+      "codigo": "10",
+      "nombre": "Ortega Milagros Desiree",
+      "objetivo": 79112000.0,
+      "faltante": 75937346.0
+    }
+  ],
+  "fuente_objetivos": "resultado.xlsx",
+  "fuente_ccc": "ventas_acumulada.csv",
+  "congelado_desde": "/api/gerencia/cierre_mes?mes=2026-05"
+}
