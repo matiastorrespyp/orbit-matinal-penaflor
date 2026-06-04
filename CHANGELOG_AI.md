@@ -1,5 +1,16 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — fix(11T): mod_11t_acum.csv desde ventas_acumulada.csv (regla 11T)
+
+**`generar_datasets_acum.py`** (regenera `mod_11t_acum.csv`).
+
+- **Problema:** `generar_11t_acum` se llamaba con `ventas` (= `ventas.csv`, mes vivo), pero la **regla del proyecto es 11T = `ventas_acumulada.csv`** (período comercial completo, sin filtro de fecha). El dataset subestimaba la cobertura (tiene_flag=52, 34 clientes).
+- **Fix:** ahora se genera con `ventas_acum_full` (`ventas_acumulada.csv`). Validado: tiene_flag 52 → **803**, clientes con marca 34 → **516**.
+- Afecta: panel gerencia `11t_acum` y la tarjeta 11T del vendedor (ambos leen `mod_11t_acum.csv`). Coherente con `/api/gerencia/once_titulares` y `once_titulares_zona`, que ya usaban `ventas_acumulada.csv` directo.
+- **`mod_11_titulares.csv`** tiene `tiene_flag` en 0 (motor legacy), pero en gerencia solo es *fallback* de `once_titulares` (no se activa) y sus endpoints `11t_empresa`/`11t_vendedor` no los consume el portal. No requiere fix.
+
+---
+
 ## 2026-06-04 — feat(11T vendedor): tarjeta KPIs muestra clientes vendidos (día zona | total)
 
 **`server_orbit.py`** (`/api/vendedor/<vid>`) y **`portal.html`** (tarjeta 11 Titulares en KPIs vendedor).

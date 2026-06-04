@@ -349,6 +349,7 @@ def generar_cobertura_acum(ventas, clientes):
 # ─────────────────────────────────────────────
 
 def generar_11t_acum(ventas, clientes):
+    # Recibe ventas_acumulada.csv (período completo). 11T = CCC acumulado, no mes vivo.
     cart = clientes[["Codigo", "codven", "Vendedor", "_seg"]].rename(
         columns={"Codigo": "cliente_id", "codven": "vendedor_codigo",
                  "Vendedor": "vendedor_nombre", "_seg": "segmento_11t"}
@@ -975,8 +976,10 @@ def main():
     print(cob[["vendedor_codigo", "segmento", "cartera", "cubiertos", "pct_cobertura"]].to_string(index=False))
 
     # ── 11 Titulares ──
+    # REGLA 11T: se mide con ventas_acumulada.csv (período comercial completo, sin filtro de fecha).
+    # NO usar ventas.csv (mes vivo): el 11T es CCC acumulado, no del mes en curso.
     print("\n[2/3] Generando mod_11t_acum.csv ...")
-    t11 = generar_11t_acum(ventas, clientes)
+    t11 = generar_11t_acum(ventas_acum_full, clientes)
     t11.to_csv(OUT / "mod_11t_acum.csv", index=False, encoding="utf-8-sig")
     tiene = int(t11["tiene_flag"].sum())
     total = len(t11)

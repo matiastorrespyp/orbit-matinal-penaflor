@@ -1,5 +1,15 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-04 — 11T: mod_11t_acum desde ventas_acumulada
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ `mod_11t_acum.csv` ahora se genera desde **`ventas_acumulada.csv`** (regla 11T), no de ventas.csv. tiene_flag 52 → **803**, clientes con marca 34 → **516**.
+- ✅ Revisado flag de `mod_11_titulares.csv` (en 0): en gerencia es solo fallback de `once_titulares` (no se activa, la primaria usa ventas_acumulada) y `11t_empresa`/`11t_vendedor` no los consume el portal. No requiere fix.
+- ✅ Tarjeta 11T vendedor (clientes día|total) ahora con datos acumulados correctos (V8: 56/157). Muestra 18 marcas = titulares por segmento (correcto; V3 muestra 10, sin Autoservicio).
+- ✅ Validado local. **Pendiente confirmar en Render.**
+
+---
+
 ## Sesión 2026-06-04 — Tarjeta 11T vendedor: clientes vendidos (día | total)
 
 ### HECHO EN ESTA SESIÓN ✅
