@@ -49,3 +49,13 @@ ESTADO_ARCHIVOS_GENERADOS_PENDIENTES.txt
 
 # ORBIT - reportes locales de auditoria
 ESTADO_*.txt
+
+# ORBIT - datasets regenerados NO consumidos por el backend (server_orbit.py)
+# Outputs de pipeline/copiloto; se regeneran en cada corrida. NO los lee Render.
+06_COPILOTO_VENDEDOR_PROACTIVO/top_50_caida_vinos_alta_gama.csv
+04_DATASETS_ORBIT/mod_clientes_11t_10.csv
+04_DATASETS_ORBIT/mod_eficiencia_desc.csv
+04_DATASETS_ORBIT/mod_innovaciones_plan_as.csv
+04_DATASETS_ORBIT/mod_inversion_desc.csv
+04_DATASETS_ORBIT/mod_reintegros_ctrl.csv
+04_DATASETS_ORBIT/resumen_alertas_vend.csv
