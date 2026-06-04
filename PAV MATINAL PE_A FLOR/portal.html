@@ -1896,7 +1896,7 @@ function gAlertas(p){
         ${items.slice(0,30).map(a=>`<div class="arow">
           <div class="adot ${a.prioridad||'baja'}"></div>
           <div class="abody">
-            <div class="atitle">${a.cliente_nombre||a.titulo||'Sin nombre'} <span style="font-size:10px;color:var(--text3);font-family:var(--f-mono);">[${a.cliente_id||'–'}]</span> <span class="chip" style="font-size:9px;color:${CV[a.vendedor_id]||'var(--text2)'};">${a.vendedor_id||''}</span>${a.fecha_pedido?` <span style="font-size:9px;color:var(--text3);font-family:var(--f-mono);">📅 ${a.fecha_pedido}</span>`:''}</div>
+            <div class="atitle">${a.cliente_nombre||a.titulo||'Sin nombre'} <span style="font-size:10px;color:var(--text3);font-family:var(--f-mono);">[${a.cliente_id||'–'}]</span> <span class="chip" style="font-size:9px;color:${CV[a.vendedor_id]||'var(--text2)'};">${a.vendedor_id||''}</span>${a.fecha_carga?` <span style="font-size:9px;color:var(--text3);font-family:var(--f-mono);">📅 ${a.fecha_carga}</span>`:''}</div>
             <div class="adetail">${(a.detalle||a.accion||'').substring(0,200)}</div>
           </div>
           <span class="chip ${cls}" style="flex-shrink:0;font-size:9px;">${(a.prioridad||'info').toUpperCase()}</span>
@@ -2245,7 +2245,7 @@ function vAlertas(){
             <b style="font-size:13px;">${a.cliente_nombre||a.titulo||'Alerta'}</b>
             <span class="chip ${cls}">${(a.prioridad||'info').toUpperCase()}</span>
           </div>
-          ${a.fecha_pedido?`<div class="xs" style="color:var(--text3);font-family:var(--f-mono);margin-bottom:2px;">📅 Pedido ${a.fecha_pedido}</div>`:''}
+          ${a.fecha_carga?`<div class="xs" style="color:var(--text3);font-family:var(--f-mono);margin-bottom:2px;">📅 Carga ${a.fecha_carga}</div>`:''}
           <div class="xs m3" style="line-height:1.45;">${(a.detalle||a.accion||'').substring(0,220)}</div>
         </div>
       </div>`;}).join('');
