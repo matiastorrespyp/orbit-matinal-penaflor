@@ -1,5 +1,20 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-04 — Auditoría pantalla Vendedores + fix KPI 11T (commit a2b86ca)
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ Revisada la pantalla Vendedores tarjeta por tarjeta. OK: chip avance (tendencia/proyección), Acum/Obj, CCC Mes, Plan.día/SC Día (contexto matinal).
+- ✅ Fix "11T ✓" (daba 0 en todos): repuntado a `mod_11t_acum.csv` (cobertura real por vendedor). Validado en Render: V8=31, V10=9, V9=6, V4=3, V6=3, V3/V7=0.
+
+### PENDIENTE — CAUSA RAÍZ (pipeline/motor, NO dashboard) 🔲
+1. **`mod_11_titulares.csv` viene con `tiene_flag`/`botellas_mes`/`importe_mes` en 0** (3740 filas). El motor legacy que genera ese dataset (vía `REGENERAR_DATOS_ORBIT.bat`) no está cargando las ventas del mes. El dashboard ya no depende de él para el 11T, pero conviene arreglar el motor para que `mod_11_titulares.csv` (objetivo del día) quede consistente. Toca `LEGACY/` → tarea separada, con aprobación.
+
+### PRÓXIMOS PASOS
+1. Seguir revisando otras pantallas tarjeta por tarjeta cuando el usuario indique.
+2. (Pendiente previo) motor de aplicación de acciones comerciales (loader junio ya deja catálogo + colisiones).
+
+---
+
 ## Sesión 2026-06-04 — Push diario robusto en CIERRE_DIA_ORBIT.bat (commit c8b6156)
 
 ### HECHO EN ESTA SESIÓN ✅

@@ -1,5 +1,23 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — fix(vendedores): KPI "11T ✓" daba 0 en todos los vendedores
+
+**Commit:** `a2b86ca`. Solo `server_orbit.py` (endpoint `/api/dashboard`); revisión tarjeta por tarjeta de la pantalla Vendedores.
+
+**Auditoría de la pantalla Vendedores** (una tarjeta por vendedor, fuente `/api/dashboard`):
+- Chip avance % (`tendencia_pct`) = proyección a fin de mes (acum/corridos×total/obj) → **OK** (correcto por regla del proyecto; no es el avance crudo).
+- Acum/Obj (resultado.xlsx), CCC Mes (`ventas.csv` mes) → **OK**.
+- Plan.día / SC Día iguales → **OK** (contexto matinal: planificación del próximo día, nadie compró aún).
+- **11T ✓ (`once_titulares_cumplidos`) = 0 en los 7 vendedores → MAL.**
+
+**Causa raíz:** el dataset `04_DATASETS_ORBIT/mod_11_titulares.csv` (objetivo del día, lo genera el motor legacy) llega con `tiene_flag`, `botellas_mes` e `importe_mes` en **0 en las 3740 filas** (`falta_flag=1` en todo). El motor no carga las ventas del mes a ese dataset → ningún titular "cumplido". Es un **bug del pipeline/motor**, no del dashboard.
+
+**Fix (dashboard):** el KPI "11T ✓" ahora cuenta cobertura desde `mod_11t_acum.csv` (que sí está poblado y es la misma familia que usa la tarjeta 11T del gerencial), sumando `tiene_flag` por vendedor; fallback a `mod_11_titulares.csv` si no existe. Resultado validado en Render: V8=31, V10=9, V9=6, V4=3, V6=3, V3/V7=0 (suma 52).
+
+**Pendiente (causa raíz, no resuelto):** el motor que genera `mod_11_titulares.csv` debe volver a cargar `botellas_mes`/`importe_mes` (tarea aparte en `LEGACY/`, fuera del alcance del dashboard).
+
+---
+
 ## 2026-06-04 — fix(cierre-bat): push diario robusto en CIERRE_DIA_ORBIT.bat
 
 **Commit:** `c8b6156`. Solo `CIERRE_DIA_ORBIT.bat` (herramienta del operador); no toca dashboard, datos ni backend.
