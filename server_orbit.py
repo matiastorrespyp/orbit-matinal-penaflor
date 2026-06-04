@@ -3857,7 +3857,10 @@ def gerencia_cierres_historicos():
             "timestamp_argentina": ts_ar,
             "estado":              estado,
             "manifest":            None,
+            "empresa":             None,
             "ranking_top3":        [],
+            "ranking":             [],
+            "ganadores":           {},
             "warn":                [],
         }
 
@@ -3900,10 +3903,65 @@ def gerencia_cierres_historicos():
                     }
                     for r in top3
                 ]
+                # Ranking completo (todos los vendedores del cierre), ordenado por ranking_general.
+                # Solo campos del cierre versionado; sin CantBase ni botellas.
+                cierre["ranking"] = [
+                    {
+                        "vendedor_codigo":        r.get("vendedor_codigo"),
+                        "vendedor_nombre":        r.get("vendedor_nombre"),
+                        "dinero_vendido":         r.get("dinero_vendido"),
+                        "litros_vendidos":        r.get("litros_vendidos"),
+                        "clientes_11_titulares":  r.get("clientes_11_titulares"),
+                        "clientes_innovaciones":  r.get("clientes_innovaciones"),
+                        "score_total":            r.get("score_total"),
+                        "ranking_general":        r.get("ranking_general"),
+                        "ranking_volumen_dinero": r.get("ranking_volumen_dinero"),
+                        "ranking_11_titulares":   r.get("ranking_11_titulares"),
+                        "ranking_innovaciones":   r.get("ranking_innovaciones"),
+                        "etiqueta_destacada":     r.get("etiqueta_destacada", ""),
+                    }
+                    for r in sorted(rank, key=lambda r: r.get("ranking_general", 99))
+                ]
+                # Ganadores por categoria = vendedor con ranking_X == 1 en cada eje.
+                def _ganador(campo, metrica):
+                    for r in rank:
+                        if r.get(campo) == 1:
+                            return {
+                                "vendedor_codigo": r.get("vendedor_codigo"),
+                                "vendedor_nombre": r.get("vendedor_nombre"),
+                                "score_total":     r.get("score_total"),
+                                "metrica":         r.get(metrica),
+                            }
+                    return None
+                cierre["ganadores"] = {
+                    "general":        _ganador("ranking_general",        "score_total"),
+                    "volumen_dinero": _ganador("ranking_volumen_dinero", "dinero_vendido"),
+                    "once_titulares": _ganador("ranking_11_titulares",   "clientes_11_titulares"),
+                    "innovaciones":   _ganador("ranking_innovaciones",   "clientes_innovaciones"),
+                }
             except Exception as e:
                 cierre["warn"].append("ranking_vendedores_mes.json no legible: " + str(e))
         else:
             cierre["warn"].append("ranking_vendedores_mes.json no encontrado")
+
+        # Resumen empresa del cierre (solo lectura de cierre_mensual_resumen.json).
+        resumen_path = carpeta / "cierre_mensual_resumen.json"
+        if resumen_path.exists():
+            try:
+                with open(resumen_path, encoding="utf-8") as f:
+                    res = json.load(f)
+                emp = res.get("empresa", {}) or {}
+                cierre["empresa"] = {
+                    "importe_neto_total":   emp.get("importe_neto_total"),
+                    "litros_total":         emp.get("litros_total"),
+                    "ccc_total":            emp.get("ccc_total"),
+                    "filas_ventas_mes":     emp.get("filas_ventas_mes"),
+                    "vendedores_incluidos": emp.get("vendedores_incluidos", []),
+                }
+            except Exception as e:
+                cierre["warn"].append("cierre_mensual_resumen.json no legible: " + str(e))
+        else:
+            cierre["warn"].append("cierre_mensual_resumen.json no encontrado")
 
         if not cierre["warn"]:
             cierre.pop("warn")

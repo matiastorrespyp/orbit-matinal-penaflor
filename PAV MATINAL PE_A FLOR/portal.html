@@ -2963,21 +2963,17 @@ function vPlanesAS(){
 /* ════ CIERRE DE MES ════ */
 function gCierreMes(p){
   p.innerHTML=`<div class="gph">
-    <div><div class="gph-title">Cierre de Mes</div>
-    <div class="gph-sub">Cierre mensual histórico versionado + vista dinámica del período</div></div>
+    <div><div class="gph-title">Cierre de Mes — Histórico Versionado</div>
+    <div class="gph-sub">Fuente: 01_INPUTS/ventas_mes.csv · cierre mensual congelado y versionado</div></div>
   </div>
-  <div id="cierre-historico"><div class="card"><div class="card-body"><div class="empty"><div class="eico" style="font-size:28px">⏳</div><p>Cargando cierre mensual histórico…</p></div></div></div></div>
-  <div class="gph" style="margin-top:20px;border-top:1px solid var(--b);padding-top:14px;">
-    <div><div class="gph-title" style="font-size:16px;">Vista dinámica (no histórica)</div>
-    <div class="gph-sub" id="cierre-sub">Cargando…</div></div>
-    <div class="gph-chips" id="cierre-chips"></div>
-  </div>
-  <div id="cierre-body"><div class="card"><div class="card-body"><div class="empty"><div class="eico" style="font-size:28px">⏳</div><p>Cargando datos del cierre…</p></div></div></div></div>`;
+  <div id="cierre-historico"><div class="card"><div class="card-body"><div class="empty"><div class="eico" style="font-size:28px">⏳</div><p>Cargando cierre mensual histórico…</p></div></div></div></div>`;
 
-  /* ── Cierre Mensual Histórico (solo lectura, fuente /api/gerencia/cierres_historicos) ── */
+  /* ── Cierre de Mes — Histórico Versionado (única fuente: /api/gerencia/cierres_historicos) ── */
   async function _renderCierreHistorico(){
     const cont=document.getElementById('cierre-historico');
     if(!cont) return;
+    const fmtNum=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
+    const vcode=v=>'V'+String(v||'').replace(/^V/i,'');
     try{
       const r=await fetch('/api/gerencia/cierres_historicos');
       if(!r.ok){ cont.innerHTML=`<div class="card"><div class="card-body"><p style="color:var(--bd);padding:16px">Cierre histórico: HTTP ${r.status}</p></div></div>`; return; }
@@ -2988,17 +2984,19 @@ function gCierreMes(p){
       function _render(){
         const c=cs[sel]||cs[0];
         const m=c.manifest||{};
-        const top3=c.ranking_top3||[];
-        const ganador=top3.find(x=>x.ranking_general===1)||top3[0]||null;
+        const e=c.empresa||{};
+        const g=c.ganadores||{};
+        const rank=c.ranking||[];
         const estOk=(c.estado||'').toUpperCase()==='PASS';
         const det=m.vendedores_detectados||[];
         const exc=m.vendedores_excluidos_csv||[];
         const warns=c.warn||[];
-        const vcode=v=>'V'+String(v||'').replace(/^V/i,'');
+        const fuente=m.fuente_ventas||'01_INPUTS/ventas_mes.csv';
         const selHtml = cs.length>1 ? `<select onchange="window._cierreHistSel(this.value)" style="background:var(--surf2);color:var(--text);border:1px solid var(--b);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;">${cs.map((x,i)=>`<option value="${i}" ${i===sel?'selected':''}>${x.periodo} · ${x.version}</option>`).join('')}</select>` : '';
+        // ── Metadatos del cierre ──
         let h=`<div class="card" style="border:1px solid var(--mg);">
           <div class="card-hd">
-            <span class="card-title">🗄️ Cierre Mensual Histórico</span>
+            <span class="card-title">🗄️ Cierre ${c.periodo||'–'} / ${c.version||'–'}</span>
             <span style="display:flex;gap:6px;align-items:center;">${selHtml}<span class="chip ${estOk?'ok':'bd'}">${c.estado||'–'}</span></span>
           </div>
           <div class="card-body">
@@ -3009,36 +3007,64 @@ function gCierreMes(p){
               <span class="chip ok" style="font-size:10px;">versionado · no pisa cierres anteriores</span>
             </div>
             <div class="krow" style="margin-bottom:12px;">
-              <div class="kcard info"><div class="kl">Fuente de ventas</div><div class="kv" style="font-size:14px;">${m.fuente_ventas||'–'}</div><div class="kh">Cierre congelado del mes</div></div>
-              <div class="kcard info"><div class="kl">Filas leídas</div><div class="kv">${(m.filas_leidas||0).toLocaleString('es-AR')}</div><div class="kh">${m.fecha_min||'–'} → ${m.fecha_max||'–'}</div></div>
+              <div class="kcard info"><div class="kl">Fuente de ventas</div><div class="kv" style="font-size:14px;">${fuente}</div><div class="kh">Cierre congelado del mes</div></div>
+              <div class="kcard info"><div class="kl">Filas leídas</div><div class="kv">${fmtNum(m.filas_leidas||e.filas_ventas_mes)}</div><div class="kh">${m.fecha_min||'–'} → ${m.fecha_max||'–'}</div></div>
               <div class="kcard ${estOk?'ok':'bd'}"><div class="kl">Estado</div><div class="kv" style="font-size:18px;">${m.estado||c.estado||'–'}</div><div class="kh">V3 solo tradicional: ${m.v3_solo_tradicional_pass?'sí':'no'}</div></div>
             </div>
-            <div style="display:flex;flex-wrap:wrap;gap:18px;margin-bottom:12px;">
+            <div style="display:flex;flex-wrap:wrap;gap:18px;">
               <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Vendedores detectados (${det.length})</div><div style="display:flex;gap:4px;flex-wrap:wrap;">${det.map(v=>`<span class="chip" style="font-size:10px;">${v}</span>`).join('')||'<span style="color:var(--text3)">–</span>'}</div></div>
               <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Vendedores excluidos</div><div style="display:flex;gap:4px;flex-wrap:wrap;">${exc.map(v=>`<span class="chip bd" style="font-size:10px;">${v}</span>`).join('')||'<span style="color:var(--text3)">–</span>'}</div></div>
-            </div>`;
-        if(ganador){
-          const etqs=(ganador.etiqueta_destacada||'').split('|').filter(Boolean);
-          h+=`<div style="background:var(--surf2);border-radius:10px;padding:12px 14px;margin-bottom:12px;">
-            <div style="font-size:10px;color:var(--text3);">🏆 Ganador general</div>
-            <div style="font-size:16px;font-weight:700;">${vcode(ganador.vendedor_codigo)} · ${ganador.vendedor_nombre||''}</div>
-            <div style="font-size:12px;color:var(--text2);margin-top:2px;">Score total <b style="color:var(--text)">${ganador.score_total}</b></div>
-            ${etqs.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;">${etqs.map(e=>`<span class="chip ok" style="font-size:9px;">${e.replace(/_/g,' ')}</span>`).join('')}</div>`:''}
+            </div>
+          </div></div>`;
+        // ── Resumen empresa del cierre ──
+        h+=`<div class="card" style="margin-top:14px;">
+          <div class="card-hd"><span class="card-title">🏢 Resumen empresa del cierre</span><span class="chip">${(e.vendedores_incluidos||[]).length} vendedores</span></div>
+          <div class="card-body">
+            <div class="krow">
+              <div class="kcard ok"><div class="kl">Importe neto total</div><div class="kv">${fmtM(e.importe_neto_total)}</div></div>
+              <div class="kcard info"><div class="kl">Litros total</div><div class="kv">${fmtNum(e.litros_total)}<span class="ku"> L</span></div></div>
+              <div class="kcard info"><div class="kl">CCC total</div><div class="kv">${fmtNum(e.ccc_total)}</div></div>
+            </div>
+            <div style="font-size:10px;color:var(--text3);margin-top:8px;">Filas ventas mes: ${fmtNum(e.filas_ventas_mes)} · Vendedores: ${(e.vendedores_incluidos||[]).join(', ')}</div>
+          </div></div>`;
+        // ── Ranking completo por vendedor ──
+        h+=`<div class="card" style="margin-top:14px;">
+          <div class="card-hd"><span class="card-title">📊 Ranking completo del mes</span><span class="chip">${rank.length} vendedores</span></div>
+          <div class="card-body nop">
+            <table class="tbl" style="font-size:12px;">
+              <thead><tr><th>#Gral</th><th>Vendedor</th><th style="text-align:right">Score</th><th style="text-align:right">#11T</th><th style="text-align:right">#Innov</th></tr></thead>
+              <tbody>${rank.map(rw=>`<tr>
+                <td><span class="chip ${rw.ranking_general===1?'ok':''}" style="font-size:10px;">#${rw.ranking_general}</span></td>
+                <td style="font-weight:600">${vcode(rw.vendedor_codigo)} · ${rw.vendedor_nombre||''}</td>
+                <td style="text-align:right;font-weight:700">${rw.score_total}</td>
+                <td style="text-align:right;color:var(--text3)">#${rw.ranking_11_titulares}</td>
+                <td style="text-align:right;color:var(--text3)">#${rw.ranking_innovaciones}</td>
+              </tr>`).join('')}</tbody>
+            </table>
+          </div></div>`;
+        // ── Bloque final: Cierre del Mes (ganadores) ──
+        const gcard=(titulo,emoji,obj,extra)=>{
+          if(!obj) return '';
+          return `<div style="background:var(--surf2);border-radius:10px;padding:12px 14px;flex:1;min-width:200px;">
+            <div style="font-size:10px;color:var(--text3);">${emoji} ${titulo}</div>
+            <div style="font-size:15px;font-weight:700;">${vcode(obj.vendedor_codigo)} · ${obj.vendedor_nombre||''}</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px;">${extra(obj)}</div>
           </div>`;
-        }
-        h+=`<div class="card-hd" style="padding:0 0 6px;"><span class="card-title" style="font-size:13px;">Ranking Top 3</span></div>
-          <table class="tbl" style="font-size:12px;">
-            <thead><tr><th>#</th><th>Vendedor</th><th style="text-align:right">Score</th><th style="text-align:right">11T</th><th style="text-align:right">Innov.</th></tr></thead>
-            <tbody>${top3.map(rw=>`<tr>
-              <td><span class="chip ${rw.ranking_general===1?'ok':''}" style="font-size:10px;">#${rw.ranking_general}</span></td>
-              <td style="font-weight:600">${vcode(rw.vendedor_codigo)} · ${rw.vendedor_nombre||''}</td>
-              <td style="text-align:right;font-weight:700">${rw.score_total}</td>
-              <td style="text-align:right;color:var(--text3)">${(rw.clientes_11_titulares||0).toLocaleString('es-AR')}</td>
-              <td style="text-align:right;color:var(--text3)">${(rw.clientes_innovaciones||0).toLocaleString('es-AR')}</td>
-            </tr>`).join('')}</tbody>
-          </table>`;
+        };
+        h+=`<div class="card" style="margin-top:14px;border:1px solid var(--mg);">
+          <div class="card-hd"><span class="card-title">🏁 Cierre del Mes — Ganadores ${c.periodo||''}</span></div>
+          <div class="card-body">
+            <div style="display:flex;flex-wrap:wrap;gap:10px;">
+              ${gcard('General','🏆',g.general,o=>'Score total <b style="color:var(--text)">'+o.score_total+'</b>')}
+              ${gcard('Volumen / Dinero','💰',g.volumen_dinero,o=>fmtM(o.metrica))}
+              ${gcard('11 Titulares','🏅',g.once_titulares,o=>fmtNum(o.metrica)+' clientes 11T')}
+              ${gcard('Innovaciones','🚀',g.innovaciones,o=>fmtNum(o.metrica)+' clientes innov.')}
+            </div>
+            <div style="font-size:11px;color:var(--text2);margin-top:12px;padding-top:10px;border-top:1px solid var(--b);">
+              Cierre oficial del período <b>${c.periodo||''}</b> (${c.version||''}), estado <b>${c.estado||''}</b>, calculado desde <b>${fuente}</b>. Datos cerrados; no se recalculan con ventas vivas.
+            </div>`;
         if(warns.length){
-          h+=`<div style="margin-top:12px;background:rgba(226,20,122,.08);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;">
+          h+=`<div style="margin-top:10px;background:rgba(226,20,122,.08);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;">
             <div style="font-size:11px;font-weight:600;color:var(--bd);margin-bottom:4px;">⚠️ Advertencias</div>
             ${warns.map(w=>`<div style="font-size:11px;color:var(--text2);">• ${w}</div>`).join('')}
           </div>`;
@@ -3054,302 +3080,6 @@ function gCierreMes(p){
   }
   _renderCierreHistorico();
 
-  (async()=>{
-    const bodyEl=document.getElementById('cierre-body');
-    const subEl =document.getElementById('cierre-sub');
-    const chipsEl=document.getElementById('cierre-chips');
-
-    // Selector de mes
-    const now=new Date();
-    const meses=[];
-    // Últimos 3 meses completos
-    for(let i=1;i<=3;i++){
-      let d=new Date(now.getFullYear(), now.getMonth()-i, 1);
-      meses.push({val:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`, label:d.toLocaleDateString('es-AR',{month:'long',year:'numeric'})});
-    }
-    let selMes=meses[0].val;
-
-    function mesSelector(){
-      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
-        <span style="font-size:12px;color:var(--text2);">Mes:</span>
-        <select id="cierre-mes-sel" onchange="cierre_cambiarMes(this.value)" style="background:var(--surf2);color:var(--text);border:1px solid var(--b);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">
-          ${meses.map(m=>`<option value="${m.val}" ${m.val===selMes?'selected':''}>${m.label.charAt(0).toUpperCase()+m.label.slice(1)}</option>`).join('')}
-        </select>
-      </div>`;
-    }
-
-    async function cargarCierre(mes){
-      try{
-        const r=await fetch(`/api/gerencia/cierre_mes?mes=${mes}`);
-        if(!r.ok){ bodyEl.innerHTML=`<div class="card"><div class="card-body"><p style="color:var(--bd);padding:16px">Error HTTP ${r.status}</p></div></div>`; return; }
-        const d=await r.json();
-
-        const emp=d.empresa||{}, vends=d.vendedores||[], cal=d.calendario||{};
-        const av=emp.avance_pct||0, cl=av>=100?'ok':av>=80?'wn':'bd';
-
-        if(subEl) subEl.textContent=`${d.nombre_mes} · ${cal.total||'–'} días hábiles`;
-        if(chipsEl) chipsEl.innerHTML=`<span class="chip ${cl}">${av.toFixed(1)}% avance</span><span class="chip">${cal.total||'–'} días hábiles</span>`;
-
-        let html=mesSelector();
-
-        // Tarjeta empresa
-        html+=`<div class="krow" style="margin-bottom:16px;">
-          <div class="kcard ok">
-            <div class="kl">Acumulado compañía</div>
-            <div class="kv">${fmtM(emp.acumulado)}</div>
-            <div class="kh">Objetivo: ${fmtM(emp.objetivo)}</div>
-          </div>
-          <div class="kcard ${cl}">
-            <div class="kl">Avance final</div>
-            <div class="kv">${av.toFixed(1)}<span class="ku">%</span></div>
-            <div class="kh">${cal.total||'–'} días hábiles del mes</div>
-          </div>
-          <div class="kcard info">
-            <div class="kl">CCC Compradores</div>
-            <div class="kv">${emp.ccc_total}</div>
-            <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
-              <span class="chip" style="font-size:9px;">TRAD ${emp.ccc_tradicional}</span>
-              <span class="chip" style="font-size:9px;">AS ${emp.ccc_autoservicio}</span>
-              <span class="chip" style="font-size:9px;">OP ${emp.ccc_onpremise}</span>
-            </div>
-          </div>
-        </div>`;
-
-        // Tabla vendedores
-        html+=`<div class="card">
-          <div class="card-hd"><span class="card-title">🏁 Cierre por Vendedor</span><span class="chip">${vends.length} vendedores</span></div>
-          <div class="card-body nop">`;
-
-        vends.forEach(v=>{
-          const vav=v.avance_pct||0, vcl=vav>=100?'ok':vav>=80?'wn':'bd';
-          const barW=Math.min(Math.max(vav,0),100);
-          const falta=vav<100?` · falta ${fmtM(v.objetivo-v.acumulado)}`:'';
-          html+=`<div class="rrow" style="align-items:flex-start;padding:12px 14px;">
-            <div class="rdot" style="background:var(--mg);flex-shrink:0;margin-top:2px;">${v.nombre.charAt(0)}</div>
-            <div class="rinfo" style="flex:1;min-width:0;">
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <b style="font-size:13px;">V${v.codigo} · ${v.nombre}</b>
-                <span class="chip ${vcl}" style="font-size:11px;font-weight:700;">${vav.toFixed(1)}%</span>
-              </div>
-              <div class="rsub" style="margin:3px 0 6px;">${fmtM(v.acumulado)} acumulado / ${fmtM(v.objetivo)} objetivo${falta}</div>
-              <div class="bar" style="height:6px;border-radius:3px;">
-                <div class="bar-f ${vcl}" style="width:${barW}%;border-radius:3px;"></div>
-              </div>
-              <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-                <span style="font-size:11px;color:var(--text2);">CCC: <b style="color:var(--text)">${v.ccc_total}</b></span>
-                <span class="chip" style="font-size:10px;">TRAD ${v.ccc_tradicional}</span>
-                ${v.ccc_autoservicio>0?`<span class="chip" style="font-size:10px;">AS ${v.ccc_autoservicio}</span>`:''}
-                ${v.ccc_onpremise>0?`<span class="chip" style="font-size:10px;">OP ${v.ccc_onpremise}</span>`:''}
-              </div>
-            </div>
-          </div>`;
-        });
-
-        html+=`</div></div>`;
-
-        // ── 11 Titulares: CCC vs Objetivo ──
-        const t11=d.once_titulares||{};
-        const t11e=t11.empresa||{};
-        const t11marcas=t11.marcas||[];
-        if(t11marcas.length){
-          const sobObj=t11e.marcas_sobre_objetivo||0, totM=t11e.total_marcas||t11marcas.length;
-          const t11cl=sobObj>=totM?'ok':sobObj>=totM*0.6?'wn':'bd';
-          html+=`<div class="card" style="margin-top:14px;">
-            <div class="card-hd">
-              <span class="card-title">🏅 11 Titulares · CCC vs Objetivo</span>
-              <span class="chip ${t11cl}">${sobObj}/${totM} marcas ≥ 100%</span>
-            </div>
-            <div class="card-body nop">
-              <table class="tbl" style="font-size:12px;">
-                <thead><tr>
-                  <th>Marca</th>
-                  <th style="text-align:right">CCC</th>
-                  <th style="text-align:right">Objetivo</th>
-                  <th style="min-width:80px"></th>
-                  <th style="text-align:right">Avance</th>
-                </tr></thead>
-                <tbody>${t11marcas.map(m=>{
-                  const p=m.pct||0, cl=p>=100?'ok':p>=75?'wn':'bd';
-                  const bw=Math.min(p,100);
-                  return `<tr>
-                    <td style="font-weight:600">${m.marca}</td>
-                    <td style="text-align:right">${(m.ccc||0).toLocaleString('es-AR')}</td>
-                    <td style="text-align:right;color:var(--text3)">${(m.objetivo||0).toLocaleString('es-AR')}</td>
-                    <td><div class="bar" style="height:5px;"><div class="bar-f ${cl}" style="width:${bw}%"></div></div></td>
-                    <td style="text-align:right"><span class="chip ${cl}" style="font-size:10px;">${p}%</span></td>
-                  </tr>`;}).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>`;
-        }
-
-        // ── Innovaciones ──
-        const innov=d.innovaciones||{};
-        const innovR=innov.resumen||{};
-        if(innovR.productos){
-          html+=`<div class="card" style="margin-top:14px;">
-            <div class="card-hd"><span class="card-title">🚀 Innovaciones</span><span class="chip">${innovR.productos} productos</span></div>
-            <div class="card-body nop">
-              <div style="display:flex;gap:16px;padding:10px 14px 6px;border-bottom:1px solid var(--b);flex-wrap:wrap;">
-                <div><div style="font-size:10px;color:var(--text3)">Productos</div><b style="font-size:18px">${innovR.productos}</b></div>
-                <div><div style="font-size:10px;color:var(--text3)">Base CCC Mes</div><b style="font-size:18px">${(innovR.ccc_mes||0).toLocaleString('es-AR')}</b></div>
-                <div><div style="font-size:10px;color:var(--text3)">Penet. Prom.</div><b style="font-size:18px">${innovR.pct_promedio||0}%</b></div>
-                <div style="font-size:10px;color:var(--text3);align-self:flex-end;padding-bottom:4px;">% = compraron / CCC Mes</div>
-              </div>
-              <table class="tbl" style="font-size:11px;">
-                <thead><tr><th>Producto</th><th style="text-align:right">Compraron</th><th style="text-align:right">Cartera</th><th style="min-width:60px"></th><th style="text-align:right">%</th></tr></thead>
-                <tbody>${(innov.por_producto||[]).map(p=>{const pc=p.pct||0,cl=pc>=30?'ok':pc>=10?'wn':'bd';
-                  return `<tr>
-                    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.producto_nombre}</td>
-                    <td style="text-align:right">${p.compraron}</td>
-                    <td style="text-align:right;color:var(--text3)">${p.cartera}</td>
-                    <td><div class="bar" style="height:3px;"><div class="bar-f ${cl}" style="width:${Math.min(pc,100)}%"></div></div></td>
-                    <td style="text-align:right"><span class="chip ${cl}" style="font-size:9px;">${pc}%</span></td>
-                  </tr>`;}).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>`;
-        }
-
-        // ── Sell Out ──
-        const so=d.sellout||{};
-        const soC=so.categorias||[];
-        if(soC.length){
-          html+=`<div id="so-cierre-cont" style="margin-top:14px;"></div>`;
-        }
-
-        // ── Planes AS ──
-        const pa=d.planes_as||{};
-        const paR=pa.resumen||{};
-        if(paR.clientes){
-          const ppPlans=pa.por_plan||[];
-          html+=`<div class="card" style="margin-top:14px;">
-            <div class="card-hd"><span class="card-title">🏆 Planes AS</span><span class="chip">${paR.clientes} clientes</span></div>
-            <div class="card-body">
-              <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
-                <div><div style="font-size:10px;color:var(--text3)">Facturado</div><b style="font-size:16px">${fmtM(paR.facturado)}</b></div>
-                <div><div style="font-size:10px;color:var(--text3)">SC Ganado</div><b style="font-size:16px;color:var(--ok)">${paR.sc_ganado}</b></div>
-                <div><div style="font-size:10px;color:var(--text3)">SC Enviado</div><b style="font-size:16px;color:var(--ok)">${paR.sc_enviado}</b></div>
-              </div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                ${ppPlans.map(p=>`<div style="background:var(--surf2);border-radius:8px;padding:8px 14px;min-width:100px;">
-                  <div style="font-size:10px;color:var(--text3);">Plan ${p.plan_as}</div>
-                  <div style="font-size:15px;font-weight:700;">${p.clientes} clientes</div>
-                  <div style="font-size:10px;color:var(--text2);">${fmtM(p.facturado)}</div>
-                </div>`).join('')}
-              </div>
-            </div>
-          </div>`;
-        }
-
-        // ── Acciones Comerciales ──
-        const ac=d.acciones||{};
-        const acR=ac.resumen||{};
-        if(acR.total_acciones){
-          html+=`<div class="card" style="margin-top:14px;">
-            <div class="card-hd"><span class="card-title">💰 Acciones Comerciales</span><span class="chip">${acR.total_acciones} acciones</span></div>
-            <div class="card-body nop">
-              <div style="display:flex;gap:16px;flex-wrap:wrap;padding:10px 14px 8px;border-bottom:1px solid var(--b);">
-                <div><div style="font-size:10px;color:var(--text3)">Inversión</div><b>${fmtM(acR.inversion_total)}</b></div>
-                <div><div style="font-size:10px;color:var(--text3)">Importe Neto</div><b>${fmtM(acR.importe_neto)}</b></div>
-                <div><div style="font-size:10px;color:var(--text3)">Clientes</div><b>${(acR.clientes_afectados||0).toLocaleString('es-AR')}</b></div>
-              </div>
-              <table class="tbl" style="font-size:11px;">
-                <thead><tr><th>Acción</th><th>Canal</th><th style="text-align:right">Inversión</th><th style="text-align:right">Litros</th><th style="text-align:right">Clientes</th></tr></thead>
-                <tbody>${(ac.detalle||[]).map(a=>`<tr>
-                  <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${a.nombre}">${a.nombre}</td>
-                  <td><span class="chip" style="font-size:9px;">${a.canal}</span></td>
-                  <td style="text-align:right">${fmtM(a.inversion)}</td>
-                  <td style="text-align:right">${Number(a.litros).toLocaleString('es-AR',{maximumFractionDigits:0})} L</td>
-                  <td style="text-align:right">${a.clientes}</td>
-                </tr>`).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>`;
-        }
-
-        // Fuente
-        html+=`<div style="font-size:10px;color:var(--text3);padding:6px 2px 20px;">
-          Fuente $: ${d.fuente_objetivos} · CCC: ${d.fuente_ccc} · 11T/Innov/SO/PlAS/Acc: datasets ORBIT
-        </div>`;
-
-        bodyEl.innerHTML=html;
-
-        // ── Sell Out cierre — expandible por clic ──
-        const soCierreCont=bodyEl.querySelector('#so-cierre-cont');
-        if(soCierreCont&&soC.length){
-          const fmtLC=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
-          const alcC=pct=>pct!=null?(pct>=100?'ok':pct>=75?'wn':'bd'):'info';
-          const soExpC=new Set();
-          function _renderSoCierre(){
-            let sH=`<div class="card"><div class="card-hd">
-              <span class="card-title">📦 Sell Out cierre · Litros vs Objetivo</span>
-              <span class="chip">${soC.length} categorías</span>
-            </div><div class="card-body nop"><table class="tbl" style="font-size:11px;">
-              <thead><tr>
-                <th>Categoría</th><th style="text-align:right">Litros</th>
-                <th style="text-align:right">Objetivo</th><th style="min-width:60px"></th>
-                <th style="text-align:right">Cierre</th><th style="text-align:right">Clientes</th>
-              </tr></thead><tbody>`;
-            soC.forEach((c,ci)=>{
-              const alc=c.alcance_pct,cl=alcC(alc);
-              const barW=alc!=null?Math.min(alc,100):0;
-              const exp=soExpC.has(ci);
-              const hasSubs=(c.subcategorias||[]).length>0;
-              const hasMarcas=(c.marcas||[]).length>0;
-              const canExp=hasSubs||hasMarcas;
-              sH+=`<tr style="cursor:${canExp?'pointer':'default'}" onclick="window._soTogCierre(${ci})">
-                <td style="font-weight:600">${canExp?`<span style="font-size:9px;opacity:.45;margin-right:4px">${exp?'▼':'▶'}</span>`:''}${c.categoria}</td>
-                <td style="text-align:right">${fmtLC(c.litros)} L</td>
-                <td style="text-align:right;color:var(--text3)">${c.objetivo?fmtLC(c.objetivo)+' L':'–'}</td>
-                <td><div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${barW}%"></div></div></td>
-                <td style="text-align:right">${alc!=null?`<span class="chip ${cl}" style="font-size:9px;">${alc}%</span>`:'<span style="color:var(--text3);font-size:10px;">–</span>'}</td>
-                <td style="text-align:right;color:var(--text3)">${c.clientes}</td>
-              </tr>`;
-              if(exp){
-                if(hasSubs){
-                  (c.subcategorias||[]).forEach(s=>{
-                    const sa=s.alcance_pct,scl=alcC(sa);
-                    sH+=`<tr style="background:var(--surf2)">
-                      <td style="padding-left:22px;font-size:10px;color:var(--text2);">↳ ${s.nombre}</td>
-                      <td style="text-align:right;font-size:10px">${fmtLC(s.litros)} L</td>
-                      <td style="text-align:right;font-size:10px;color:var(--text3)">${s.objetivo?fmtLC(s.objetivo)+' L':'–'}</td>
-                      <td><div class="bar" style="height:3px;"><div class="bar-f ${scl}" style="width:${Math.min(sa||0,100)}%"></div></div></td>
-                      <td style="text-align:right">${sa!=null?`<span class="chip ${scl}" style="font-size:9px;">${sa}%</span>`:''}</td>
-                      <td style="text-align:right;font-size:10px;color:var(--text3)">${s.clientes}</td>
-                    </tr>`;
-                    if((s.marcas||[]).length){
-                      sH+=`<tr style="background:var(--bg)"><td colspan="6" style="padding:4px 14px 8px 32px;">
-                        <div style="display:flex;flex-wrap:wrap;gap:4px;">
-                          ${s.marcas.map(m=>`<span style="font-size:9px;background:var(--surf2);border-radius:4px;padding:2px 7px;color:var(--text2);">${m.marca} <b style="color:var(--text)">${fmtLC(m.litros)}L</b></span>`).join('')}
-                        </div></td></tr>`;
-                    }
-                  });
-                } else if(hasMarcas){
-                  sH+=`<tr style="background:var(--bg)"><td colspan="6" style="padding:4px 14px 8px 22px;">
-                    <div style="display:flex;flex-wrap:wrap;gap:4px;">
-                      ${c.marcas.map(m=>`<span style="font-size:9px;background:var(--surf2);border-radius:4px;padding:2px 7px;color:var(--text2);">${m.marca} <b style="color:var(--text)">${fmtLC(m.litros)}L</b></span>`).join('')}
-                    </div></td></tr>`;
-                }
-              }
-            });
-            sH+=`</tbody></table></div></div>`;
-            soCierreCont.innerHTML=sH;
-          }
-          window._soTogCierre=function(ci){soExpC.has(ci)?soExpC.delete(ci):soExpC.add(ci);_renderSoCierre();};
-          _renderSoCierre();
-        }
-      }catch(e){
-        bodyEl.innerHTML=`<div class="card"><div class="card-body"><p style="color:var(--bd);padding:16px">Error: ${e.message}</p></div></div>`;
-      }
-    }
-
-    window.cierre_cambiarMes=function(mes){ selMes=mes; cargarCierre(mes); };
-    cargarCierre(selMes);
-  })();
 }
 
 /* ── mensajes ── */
