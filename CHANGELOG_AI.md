@@ -1,5 +1,23 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-03 — fix(cierre): acumulado distribuidora y por vendedor desde resultado_mes.xlsx
+
+**Problema:** la tarjeta "Resumen compañía" (ventas acumuladas distribuidora) y "Cierre por vendedor" mostraban el acumulado de `ventas_mes.csv` ($285.579.795 / 87.39%). Ese valor era *importe neto facturado*, no el acumulado oficial del mes cerrado. El acumulado correcto vive en `01_INPUTS/resultado_mes.xlsx` (acumulado congelado del ERP, `Acumulado == Tendencia`): **$323.898.602,72 / 99.11%**.
+
+**Causa raíz:** en el fix previo (`3b4dd72`) se cayó a `ventas_mes.csv` porque `resultado.xlsx` (archivo vivo) tenía el acumulado *stale* del mes en curso. Ahora existe `resultado_mes.xlsx` (snapshot del mes cerrado), que es la fuente correcta.
+
+**Cambios aplicados:**
+- `server_orbit.py` → `/api/gerencia/cierre_mes`: fuente primaria de objetivo/acumulado pasa a `resultado_mes.xlsx`, con fallback a `resultado.xlsx` si no existe. `fuente_objetivos` refleja la fuente real usada.
+- `07_CIERRES_MENSUALES/2026-05/version_001/cierre_objetivos_avance.json` (artefacto congelado que consume el portal vía `/api/gerencia/cierres_historicos`): `objetivo/acumulado/avance_pct/faltante` de empresa y de cada vendedor reescritos desde `resultado_mes.xlsx`. **CCC, días hábiles y nombres preservados.** `fuente_acumulado`/`fuente_objetivos` = `resultado_mes.xlsx`. Backup en `99_BACKUPS_ORBIT/`.
+
+**Validación (local):** `/api/gerencia/cierres_historicos` → acumulado compañía $323.898.602,72 / 99.11%; por vendedor V3 144.93%, V8 114.99%, V6 106.6%, V9 100.38%, V10 91.84%, V4 74.61%, V7 27.57%; CCC empresa 827 (preservado).
+
+**Atención — diferencia intencional entre tarjetas:** "Resumen empresa del cierre" sigue mostrando **importe neto facturado** $285.579.795 (`ventas_mes.csv`), mientras "Resumen compañía" muestra **acumulado oficial** $323.898.602 (`resultado_mes.xlsx`). Son métricas distintas (gap ≈ $38,3M). Esto revierte parcialmente la unificación de `3b4dd72`. Definir si "Resumen empresa del cierre" también debe reconciliarse.
+
+**No tocado:** `ventas_mes.csv`, CCC (`ventas_acumulada.csv`), 11T, sell out, innovaciones, planes, acciones, dashboard diario. `resultado_mes.xlsx` no se commitea (regla 01_INPUTS); el portal no depende de él en runtime porque lee el artefacto congelado.
+
+---
+
 ## 2026-06-03 — fix(cierre): panel histórico completo + acumulado unificado
 
 **Commits en producción:** `f8af3c9` (panel completo) → **`3b4dd72`** (acumulado unificado). Desplegado en Render, **Live** y validado end-to-end.

@@ -3491,12 +3491,17 @@ def gerencia_cierre_mes():
     # Calendario del mes cerrado
     cal = contar_dias_habiles(fecha_corte=fecha_cierre)
 
-    # Objetivos y acumulado desde resultado.xlsx (fuente primaria)
+    # Objetivos y acumulado del MES CERRADO desde resultado_mes.xlsx (fuente primaria).
+    # resultado_mes.xlsx = acumulado congelado del mes cerrado (Acumulado == Tendencia).
+    # resultado.xlsx (vivo, mes en curso) solo se usa como fallback si no existe el cierre.
     obj_por_vend = {}
-    resultado_path = INPUTS / "resultado.xlsx"
-    if resultado_path.exists():
+    fuente_objetivos = None
+    resultado_mes_path = INPUTS / "resultado_mes.xlsx"
+    resultado_path     = INPUTS / "resultado.xlsx"
+    fuente_path = resultado_mes_path if resultado_mes_path.exists() else resultado_path
+    if fuente_path.exists():
         try:
-            avance_df = pd.read_excel(resultado_path, sheet_name="Avance")
+            avance_df = pd.read_excel(fuente_path, sheet_name="Avance")
             for _, r in avance_df.iterrows():
                 cn = clean_code(str(r.get("VendedorCodigo", "")))
                 if not cn or int(cn) in _VENDEDORES_EXCLUIDOS:
@@ -3506,6 +3511,7 @@ def gerencia_cierre_mes():
                     "objetivo": float(r.get("ValorObjetivo", 0) or 0),
                     "acumulado": float(r.get("Acumulado", 0) or 0),
                 }
+            fuente_objetivos = fuente_path.name
         except Exception:
             pass
 
@@ -3818,7 +3824,7 @@ def gerencia_cierre_mes():
         "sellout":          sellout,
         "planes_as":        planes_as,
         "acciones":         acciones,
-        "fuente_objetivos": "resultado.xlsx",
+        "fuente_objetivos": fuente_objetivos or "resultado.xlsx",
         "fuente_ccc":       "ventas_acumulada.csv",
     })
 

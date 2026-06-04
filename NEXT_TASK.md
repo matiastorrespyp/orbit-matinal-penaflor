@@ -1,5 +1,19 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-03 — Acumulado distribuidora/vendedor desde resultado_mes.xlsx
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ Tarjeta "Resumen compañía" y "Cierre por vendedor" ahora usan el acumulado oficial del mes cerrado desde `resultado_mes.xlsx`: compañía $323.898.602,72 / 99.11% (antes $285.579.795 / 87.39% de `ventas_mes.csv`).
+- ✅ `server_orbit.py` `/api/gerencia/cierre_mes`: fuente primaria `resultado_mes.xlsx`, fallback `resultado.xlsx`.
+- ✅ Artefacto congelado `cierre_objetivos_avance.json` reescrito (CCC preservado); backup en `99_BACKUPS_ORBIT/`.
+
+### PRÓXIMOS PASOS (requieren aprobación)
+1. **Diferencia entre tarjetas de compañía** — "Resumen empresa del cierre" = importe neto facturado $285,6M (`ventas_mes.csv`) vs "Resumen compañía" = acumulado oficial $323,9M (`resultado_mes.xlsx`). Gap ≈ $38,3M. Decidir si la primera también se reconcilia o se aclara la etiqueta para que no confunda.
+2. **Generador mensual** — `tools/generar_cierre_mensual.py` no incorpora `resultado_mes.xlsx`; para junio en adelante, definir cómo se congela el acumulado oficial por mes (hoy fue parche manual del artefacto).
+3. **Deploy Render** — `resultado_mes.xlsx` vive en `01_INPUTS` (no commiteado). El portal lee el artefacto congelado, así que no depende de él en runtime; verificar igualmente tras deploy.
+
+---
+
 ## Sesión 2026-06-03 — Panel histórico completo + acumulado unificado (commits f8af3c9, 3b4dd72)
 
 ### HECHO EN ESTA SESIÓN ✅
