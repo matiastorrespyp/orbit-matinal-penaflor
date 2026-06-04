@@ -3258,14 +3258,6 @@ def gerencia_sellout_litros():
         "generado_en": _now_ar(),
         "fuente":      "ventas.csv + maestro_04D_productos.csv",
         "categorias":  resultado,
-        "_diag": {
-            "version": "dtype-str-fix-3",
-            "filas_parseadas": int(len(df)),
-            "columnas": int(len(df.columns)),
-            "tiene_codigo": "Codigo" in df.columns,
-            "tiene_cantbase": "CantBase" in df.columns,
-            "importe_pos": int((df["ImporteNetoItem"] > 0).sum()) if "ImporteNetoItem" in df.columns else -1,
-        },
     })
 
 
