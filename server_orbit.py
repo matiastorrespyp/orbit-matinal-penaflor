@@ -3010,8 +3010,12 @@ def _acc_preparar_ventas():
     out["_cod"]  = df.get("Codigo", "").astype(str).str.strip().str.replace(r"\.0$", "", regex=True)
     out["_imp_neto"] = _n(df.get("ImporteNetoItem", pd.Series(["0"] * len(df))))
     out["_imp_item"] = _n(df.get("ImporteItem", pd.Series(["0"] * len(df))))
-    out["_desc"] = (out["_imp_item"] - out["_imp_neto"]).clip(lower=0)
     out["_cant"] = _n(df.get("CantBase", pd.Series(["0"] * len(df))))
+    # Descuento REAL = valorDescuento (por unidad) × CantBase.
+    # NO usar ImporteItem-ImporteNetoItem: esa diferencia es IVA (~17.4% en TODAS las líneas), no descuento.
+    out["_vd"] = _n(df.get("valorDescuento", pd.Series(["0"] * len(df))))
+    out["_desc"] = (out["_vd"] * out["_cant"]).clip(lower=0)
+    out["_pct"] = (out["_desc"] / (out["_imp_neto"] + out["_desc"]).replace(0, pd.NA) * 100).fillna(0).round(1)
     out["_lxu"]  = out["_cod"].map(cod2lxu).fillna(0)
     out["_litros"] = out["_cant"] * out["_lxu"]
     out["_cat"]  = out["_cod"].map(cod2cat).map(_acc_canon_cat)
@@ -3083,10 +3087,13 @@ def _acciones_mes_payload(vid_filtro=None):
             keep = sub.apply(lambda x: pred(x["_cat"], x["_linea"], x["_art"], x["_marca"]), axis=1)
             return sub[keep]
 
-        cur = _match(v_act)
-        cur_desc = cur[cur["_desc"] > 0]
+        # Footprint de la acción = ventas con descuento real (valorDescuento>0) que matchean.
+        cur_desc = _match(v_act)
+        cur_desc = cur_desc[cur_desc["_desc"] > 0]
+        cur = cur_desc
         clientes_act = set(cur["_cli"].dropna().astype(int))
         prev = _match(v_ant)
+        prev = prev[prev["_desc"] > 0]
         clientes_ant = set(prev["_cli"].dropna().astype(int))
         nuevos = clientes_act - clientes_ant
 
@@ -3128,7 +3135,7 @@ def _alertas_descuento_mes():
         per = pd.Period(mes, freq="M")
     except Exception:
         per = v["_mes"].max()
-    cur = v[(v["_mes"] == per) & (v["_desc"] > 0) & (v["_imp_item"] > 0)].copy()
+    cur = v[(v["_mes"] == per) & (v["_desc"] > 0)].copy()
     if cur.empty:
         return []
     all_lineas = set(l for l in v["_linea"].dropna().unique() if l and l != "NAN")
@@ -3150,8 +3157,8 @@ def _alertas_descuento_mes():
 
     alerts = []
     for _, row in cur.iterrows():
-        imp_item = float(row["_imp_item"]); desc = float(row["_desc"])
-        apl = round(desc / imp_item * 100, 1) if imp_item else 0.0
+        desc = float(row["_desc"])
+        apl = round(float(row["_pct"]), 1)   # % descuento real (valorDescuento), no IVA
         if apl <= 0:
             continue
         vend = row["_vend"]; seg_v = row["_seg"]
