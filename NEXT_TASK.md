@@ -1,5 +1,19 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-04 — Matcheo por código + SMF BC / Smirnoff Ice 35103
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ `_acc_product_pred` matchea por **código de SKU** cuando `productos_marcas` trae un número (acción dirigida a un código, no a toda la línea).
+- ✅ Catálogo junio: **ACJ26-027** = Smirnoff Ice Clásica **35103 al 25%**, cualquier canal, V3/V4/V6/V8, sin tope → deja de alertar para esos vendedores y aparece en Acciones.
+- ✅ **ACJ26-006 SMF BC**: token `SMIR BC` → `Smirnoff Bitter Citric; Smirnoff BC; SMF BC` → ahora aplica el 15% real (segmento ya incluía Autoservicio). Venta al 25% queda como exceso (máx 15%).
+- ✅ Validado en local: 27 reglas, 34 alertas. **Pendiente confirmar en Render tras push.**
+
+### A OBSERVAR
+1. Para apuntar una acción a un SKU puntual, cargar el **código numérico** en `productos_marcas` y dejar `lineas_comerciales` vacío (si no, arrastra toda la línea).
+2. Algunos SKU de SMF BC (ej. 35108) **no están en el maestro 04D** → no tienen línea; por eso el match usa también el nombre de artículo. Si se quiere prolijidad, sumar esos códigos al maestro 04D.
+
+---
+
 ## Sesión 2026-06-04 — Fix descuento real = valorDescuento (commit 9fcf258)
 
 ### HECHO EN ESTA SESIÓN ✅

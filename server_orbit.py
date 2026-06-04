@@ -2949,13 +2949,17 @@ def _acc_lineas_de_marca(token, all_lineas):
 
 
 def _acc_product_pred(rule, all_lineas):
-    """Devuelve función(cat_canon, linea, articulo, marca)->bool para esta regla."""
+    """Devuelve función(cat_canon, linea, articulo, marca, cod=None)->bool para esta regla."""
     raw = (str(rule.get("productos_marcas", "")) + ";" + str(rule.get("lineas_comerciales", ""))).upper()
     toks = [t.strip() for t in raw.replace(",", ";").split(";") if t.strip()]
     line_cats, brand_lineas = set(), set()
     brand_toks = []
+    code_set = set()   # códigos de producto exactos (ej. "35103"): acción dirigida a un SKU
     has_resto = any("RESTO" in t for t in toks)
     for t in toks:
+        if t.isdigit():   # token numérico = código de producto exacto
+            code_set.add(t)
+            continue
         if (t in _ACC_PROD_GENERICOS or "MAESTRO" in t or "LISTA CERRADA" in t
                 or "RESTO" in t or t in ("TODOS", "TODOS_ACTIVOS")):
             continue
@@ -2968,8 +2972,10 @@ def _acc_product_pred(rule, all_lineas):
 
     brand_norm = [b for b in (_acc_norm(x) for x in brand_toks) if b]
 
-    def pred(cat_canon, linea, articulo, marca):
-        if has_resto and not brand_toks and not line_cats:
+    def pred(cat_canon, linea, articulo, marca, cod=None):
+        if code_set and cod is not None and str(cod).strip() in code_set:
+            return True
+        if has_resto and not brand_toks and not line_cats and not code_set:
             return True
         if brand_lineas or brand_norm:
             if linea and brand_lineas and _acc_norm(linea) in brand_lineas:
@@ -3084,7 +3090,7 @@ def _acciones_mes_payload(vid_filtro=None):
             if not m.any():
                 return df.iloc[0:0]
             sub = df[m]
-            keep = sub.apply(lambda x: pred(x["_cat"], x["_linea"], x["_art"], x["_marca"]), axis=1)
+            keep = sub.apply(lambda x: pred(x["_cat"], x["_linea"], x["_art"], x["_marca"], x["_cod"]), axis=1)
             return sub[keep]
 
         # Footprint de la acción = ventas con descuento real (valorDescuento>0) que matchean.
@@ -3169,7 +3175,7 @@ def _alertas_descuento_mes():
         vend = row["_vend"]; seg_v = row["_seg"]
         allowed, fuente_id = 0.0, None
         for rid, codes, seg, pred, maxpct in parsed:
-            if (vend in codes) and (seg_v in seg) and pred(row["_cat"], row["_linea"], row["_art"], row["_marca"]):
+            if (vend in codes) and (seg_v in seg) and pred(row["_cat"], row["_linea"], row["_art"], row["_marca"], row["_cod"]):
                 if maxpct > allowed:
                     allowed, fuente_id = maxpct, rid
         try: cli_int = int(row["_cli"])

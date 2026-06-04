@@ -1,5 +1,15 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — feat(acciones): matcheo por código de SKU + fixes SMF BC / Smirnoff Ice 35103
+
+**`server_orbit.py`** + catálogo `acciones_comerciales_junio_2026_penaflor.csv`. Validado en local (27 reglas, 34 alertas).
+
+- **Matcheo por código de producto** (`_acc_product_pred`): si `productos_marcas` contiene un token numérico (ej. `35103`), la acción aplica **solo a ese SKU** (no a toda la línea). `pred(...)` ahora recibe el código (`_cod`); se pasa en `_acciones_mes_payload` y `_alertas_descuento_mes`.
+- **Smirnoff Ice Clásica 35103 → 25%** (acción nueva `ACJ26-027`): cualquier canal, vendedores V3/V4/V6/V8, sin tope. Antes salía como exceso (catálogo solo tenía Smirnoff 5/10/15%). Ahora no alerta para esos vendedores y aparece en la pantalla de Acciones (inv $15.091, 4 clientes, 3 nuevos).
+- **SMF BC 15% (ACJ26-006):** el token estaba como `SMIR BC` y no matcheaba los SKU reales (línea *Smirnoff Bitter Citric RTD* / artículo *SMF BC...*, algunos sin maestro 04D). Se cambió a `Smirnoff Bitter Citric; Smirnoff BC; SMF BC` → ahora toma 15% (cubre línea y nombre de artículo). El segmento ya incluía Autoservicio (*Todos los segmentos*). Una venta de SMF BC al 25% queda correctamente como exceso (máx 15%).
+
+---
+
 ## 2026-06-04 — fix(alertas): sin tolerancia + piso 10% Plan AS
 
 **Commit:** `5110fec`. `server_orbit.py`. Validado en Render (38 alertas, exceso mínimo 1).
