@@ -1,5 +1,15 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — fix(alertas): fuente = ventas.csv (mes vivo) + fecha de pedido
+
+**`server_orbit.py`** + `portal.html`. Validado en local.
+
+- **Alertas desde `ventas.csv` (mes vivo), no `ventas_acumulada.csv`.** `ventas_acumulada.csv` arrastra **mayo + junio** (5.461 filas mayo / 380 junio); como las acciones de mayo eran distintas a las de junio, comparar el catálogo de junio contra ventas de mayo inflaba las alertas. `ventas.csv` = 321 filas, todas de junio. Resultado: **alertas 34 → 22**. `_acc_preparar_ventas(nombre)` quedó parametrizada (default `ventas.csv`); `_alertas_descuento_mes` usa `ventas.csv`.
+- **Acciones:** mes vivo desde `ventas.csv`; `ventas_acumulada.csv` se usa **solo** para el comparativo de "clientes nuevos" del mes anterior (mayo). ACJ26-027 sigue OK (inv $15.091, 4 clientes, 3 nuevos).
+- **Fecha de pedido en cada alerta:** se agregó `fecha_pedido` (FechaComprobante, la que define el período) y `fecha_carga` (FechaCarga) al registro de `/api/alertas`. Se muestra 📅 en la pantalla de Alertas (gerencia) y en el bloque de alertas del vendedor. Ayuda a identificar errores de período/carga.
+
+---
+
 ## 2026-06-04 — feat(acciones): matcheo por código de SKU + fixes SMF BC / Smirnoff Ice 35103
 
 **`server_orbit.py`** + catálogo `acciones_comerciales_junio_2026_penaflor.csv`. Validado en local (27 reglas, 34 alertas).

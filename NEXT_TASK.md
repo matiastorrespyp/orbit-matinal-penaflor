@@ -1,5 +1,19 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-04 — Alertas desde ventas.csv + fecha de pedido
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ **Alertas ahora salen de `ventas.csv` (mes vivo)**, no de `ventas_acumulada.csv` (que trae mayo+junio y generaba alertas falsas por acciones de mayo). Alertas 34 → **22**.
+- ✅ `_acc_preparar_ventas(nombre)` parametrizada. Acciones: mes vivo de `ventas.csv`; `ventas_acumulada.csv` solo para "clientes nuevos" del mes anterior.
+- ✅ Cada alerta muestra 📅 **fecha de pedido** (FechaComprobante) + `fecha_carga` en el dato. Visible en pantalla gerencial y bloque del vendedor.
+- ✅ Validado local. **Pendiente confirmar en Render tras push.**
+
+### A OBSERVAR
+1. `ventas.csv` (321 filas jun) vs porción junio de `ventas_acumulada.csv` (380 filas): hay diferencia de snapshot. Se priorizó `ventas.csv` por ser el mes vivo/fresco (regla del proyecto).
+2. La fecha mostrada es **FechaComprobante**. Si se prefiere FechaCarga (literal "creación de pedido"), ya está en el dato (`fecha_carga`); cambiar el display es 1 línea.
+
+---
+
 ## Sesión 2026-06-04 — Matcheo por código + SMF BC / Smirnoff Ice 35103
 
 ### HECHO EN ESTA SESIÓN ✅

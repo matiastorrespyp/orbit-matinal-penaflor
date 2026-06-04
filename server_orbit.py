@@ -2988,10 +2988,12 @@ def _acc_product_pred(rule, all_lineas):
     return pred
 
 
-def _acc_preparar_ventas():
-    """ventas_acumulada.csv preparada para acciones. Columnas calc: _cli,_vend,_cat,_linea,
-    _seg,_litros,_desc,_imp_neto,_mes (Period). Solo Empresa=Peñaflor si la columna existe."""
-    p = INPUTS / "ventas_acumulada.csv"
+def _acc_preparar_ventas(nombre="ventas.csv"):
+    """Ventas preparadas para acciones/alertas. Columnas calc: _cli,_vend,_cat,_linea,
+    _seg,_litros,_desc,_imp_neto,_mes (Period), _fcomp, _fcarga.
+    Por defecto lee ventas.csv (MES VIVO). ventas_acumulada.csv (mayo+junio) solo para
+    el comparativo de 'clientes nuevos' del mes anterior; NO usar para alertas."""
+    p = INPUTS / nombre
     if not p.exists():
         return pd.DataFrame()
     df = None
@@ -3036,7 +3038,11 @@ def _acc_preparar_ventas():
         _clasificar_segmento(str(r), str(s))
         for r, s in zip(df.get("Ramo", pd.Series([""] * len(df))), df.get("Subramo", pd.Series([""] * len(df))))
     ]
-    out["_mes"]  = pd.to_datetime(df.get("FechaComprobante"), dayfirst=True, errors="coerce").dt.to_period("M")
+    _fc = pd.to_datetime(df.get("FechaComprobante"), dayfirst=True, errors="coerce")
+    out["_mes"]  = _fc.dt.to_period("M")
+    out["_fcomp"] = _fc.dt.strftime("%d/%m/%Y").fillna("")
+    out["_fcarga"] = (pd.to_datetime(df.get("FechaCarga"), dayfirst=True, errors="coerce")
+                      .dt.strftime("%d/%m/%Y").fillna(""))
     out = out[(out["_imp_neto"] > 0) & (~out["_vend"].isin(_VENDEDORES_EXCLUIDOS))]
     return out
 
@@ -3045,19 +3051,24 @@ def _acciones_mes_payload(vid_filtro=None):
     mes, fuente, reglas = _acc_catalogo_mes()
     if not reglas:
         return {"mes": mes, "fuente": fuente, "acciones": [], "nota": "Sin catálogo de acciones del mes."}
-    v = _acc_preparar_ventas()
-    if v.empty:
+    v_cur = _acc_preparar_ventas("ventas.csv")   # MES VIVO
+    if v_cur.empty:
         return {"mes": mes, "fuente": fuente, "acciones": [], "nota": "Sin ventas para calcular."}
+    # ventas_acumulada solo aporta el mes ANTERIOR para el comparativo de clientes nuevos
+    v_acum = _acc_preparar_ventas("ventas_acumulada.csv")
 
     # mes objetivo = el del catálogo; mes anterior = el previo
     try:
         per_actual = pd.Period(mes, freq="M")
     except Exception:
-        per_actual = v["_mes"].max()
+        per_actual = v_cur["_mes"].max()
     per_ant = per_actual - 1
-    v_act = v[v["_mes"] == per_actual]
-    v_ant = v[v["_mes"] == per_ant]
-    all_lineas = set(l for l in v["_linea"].dropna().unique() if l and l != "NAN")
+    v_act = v_cur[v_cur["_mes"] == per_actual]
+    if v_act.empty:
+        v_act = v_cur   # ventas.csv ya es el mes vivo
+    v_ant = v_acum[v_acum["_mes"] == per_ant] if not v_acum.empty else v_cur.iloc[0:0]
+    _lin = [v_cur["_linea"]] + ([v_acum["_linea"]] if not v_acum.empty else [])
+    all_lineas = set(l for l in pd.concat(_lin).dropna().unique() if l and l != "NAN")
 
     acciones = []
     for r in reglas:
@@ -3134,7 +3145,7 @@ def _alertas_descuento_mes():
     Línea con descuento = alerta si el % aplicado supera el tramo MÁS ALTO de la acción
     del catálogo que aplica (vendedor+segmento+marca). Sin acción aplicable → máximo 0."""
     mes, fuente, reglas = _acc_catalogo_mes()
-    v = _acc_preparar_ventas()
+    v = _acc_preparar_ventas("ventas.csv")   # MES VIVO: evita arrastrar mayo de ventas_acumulada
     if v.empty or not reglas:
         return []
     try:
@@ -3195,6 +3206,7 @@ def _alertas_descuento_mes():
             "vendedor_codigo": cod_int, "vendedor_nombre": str(row["_vnom"]),
             "vendedor_id": "V" + str(cod_int), "cliente_id": cli_int,
             "cliente_nombre": str(row["_clinom"]), "articulo": str(row["_art"]), "marca": str(row["_marca"]),
+            "fecha_pedido": str(row.get("_fcomp", "")), "fecha_carga": str(row.get("_fcarga", "")),
             "cant_base": round(float(row["_cant"]), 1), "cajas_eq": round(float(row["_cant"]), 1),
             "descuento_aplicado_pct": apl, "descuento_maximo_pct": allowed, "exceso_pct": exceso,
             "fuente_regla": fr, "importe_neto": round(float(row["_imp_neto"]), 0),
