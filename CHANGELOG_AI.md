@@ -1,5 +1,16 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — feat(11T vendedor): tarjeta KPIs muestra clientes vendidos (día zona | total)
+
+**`server_orbit.py`** (`/api/vendedor/<vid>`) y **`portal.html`** (tarjeta 11 Titulares en KPIs vendedor).
+
+- **Antes:** la tarjeta mostraba `% (cubiertos/objetivo)` calculado desde `mod_11_titulares.csv`, cuyo `tiene_flag` viene **TODO en 0** → mostraba 0% en todas las marcas (rota).
+- **Ahora:** por cada marca titular muestra **cantidad de clientes a los que logró vender**: los de la **zona del día** y, al lado, el **total de todas las zonas** (`6 | 7`). Sin porcentaje.
+- Fuente correcta: **`mod_11t_acum.csv`** (tiene_flag poblado por cliente). `cubiertos_dia` = clientes con la marca cuya `DiasVisita` = día de hoy (zona del día, vía `_clientes_por_dia`); `cubiertos` = total. El endpoint acepta `?dia=`; sin él usa el día AR de hoy.
+- Validado: V8 día MA = 23 clientes zona / 31 total; por marca ALMA MORA 6|7, CAZADOR 5|7.
+
+---
+
 ## 2026-06-04 — fix(innovaciones): cobertura del mes vivo desde ventas.csv (no acumulada)
 
 **`generar_datasets_acum.py`** (regenera `mod_innovaciones_segmento.csv`) y **`server_orbit.py`** (overlay `?dia`). Afecta pantalla Innovaciones (gerencia) y tarjeta Innovaciones de KPIs (vendedor); ambas leen `mod_innovaciones_segmento.csv`.

@@ -1248,22 +1248,35 @@ def vendedor_detalle(vid):
     if vid_norm == "V3":
         ccc_dia_as = 0
 
-    # 11 Titulares por vendedor — agrupados por marca
-    t11_df = read_csv(DATASETS / "mod_11_titulares.csv")
-    tv = t11_df[t11_df["vendedor_codigo"].astype(str).apply(clean_code) == cn] if not t11_df.empty else pd.DataFrame()
+    # 11 Titulares por vendedor — cantidad de clientes a los que logró vender cada marca:
+    # cubiertos_dia = clientes de la ZONA DEL DÍA; cubiertos = total de todas las zonas.
+    # Fuente: mod_11t_acum.csv (tiene_flag poblado por cliente). mod_11_titulares.csv viene en 0.
+    dia_req = request.args.get("dia", "").strip()
+    if not dia_req:
+        _DIAS_AR = {0: "LU", 1: "MA", 2: "MI", 3: "JU", 4: "VI", 5: "SA", 6: "DO"}
+        dia_req = _DIAS_AR[datetime.now(_ARG_TZ).weekday()]
+    dia_ids = set()
+    try:
+        cd = _clientes_por_dia(dia_req)
+        if not cd.empty and "cliente_id" in cd.columns:
+            dia_ids = set(pd.to_numeric(cd["cliente_id"], errors="coerce").dropna().astype(int))
+    except Exception:
+        pass
+
     titulares11 = []
-    if not tv.empty and "marca_objetivo" in tv.columns and "tiene_flag" in tv.columns:
-        tv = tv.copy()
-        tv["tiene_flag"] = pd.to_numeric(tv["tiene_flag"], errors="coerce").fillna(0)
-        agg = (tv.groupby("marca_objetivo", dropna=False)
-                 .agg(objetivo=("tiene_flag", "count"), cubiertos=("tiene_flag", "sum"))
-                 .reset_index())
-        agg["cubiertos"] = agg["cubiertos"].astype(int)
-        for _, row in agg.iterrows():
-            titulares11.append({"marca": row["marca_objetivo"],
-                                 "objetivo": int(row["objetivo"]),
-                                 "cubiertos": row["cubiertos"]})
-        titulares11.sort(key=lambda x: -x["cubiertos"])
+    t11a = read_csv(DATASETS / "mod_11t_acum.csv")
+    if not t11a.empty and "marca_objetivo" in t11a.columns and "tiene_flag" in t11a.columns:
+        tv = t11a[t11a["vendedor_codigo"].astype(str).apply(clean_code) == cn].copy()
+        if not tv.empty:
+            tv["tiene_flag"] = pd.to_numeric(tv["tiene_flag"], errors="coerce").fillna(0)
+            tv["cliente_id"] = pd.to_numeric(tv["cliente_id"], errors="coerce")
+            for marca, grp in tv.groupby("marca_objetivo", dropna=False):
+                cli_si = set(grp[grp["tiene_flag"] == 1]["cliente_id"].dropna().astype(int))
+                titulares11.append({"marca": marca,
+                                    "cubiertos_dia": len(cli_si & dia_ids),
+                                    "cubiertos": len(cli_si),
+                                    "dia_zona": dia_req})
+            titulares11.sort(key=lambda x: -x["cubiertos"])
 
     once_t_cumplidos = sum(1 for t in titulares11 if t["cubiertos"] > 0)
     once_t_total     = len(titulares11)

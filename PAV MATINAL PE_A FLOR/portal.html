@@ -2055,14 +2055,15 @@ function vKpis(){
       </div>
     </div>`;
   if(tits.length){
+    const diaLbl=tits[0]?.dia_zona||'';
     h+=`<div class="card">
-      <div class="card-hd"><span class="card-title">🍷 11 Titulares</span><span class="chip">${tits.filter(t=>(t.cubiertos||0)>0).length}/${tits.length}</span></div>
+      <div class="card-hd"><span class="card-title">🍷 11 Titulares · clientes vendidos</span><span class="chip">día ${diaLbl} · total</span></div>
       <div class="card-body nop" style="padding:6px 15px;">
-        ${tits.map(t=>{const pct=t.objetivo?(t.cubiertos/t.objetivo*100):0,cl=pct>=100?'ok':pct>=50?'wn':'bd';
+        ${tits.map(t=>{const dia=t.cubiertos_dia||0,tot=t.cubiertos||0,cl=tot>0?'ok':'bd';
           return `<div class="vtrow">
             <div class="vtdot" style="background:var(--${cl})"></div>
             <div class="vtname">${t.marca||t.nombre||t.id||'–'}</div>
-            <div class="vtpct" style="color:var(--${cl})">${Math.round(pct)}%</div>
+            <div class="vtpct" style="font-family:var(--f-dis);"><b style="color:var(--${dia>0?'ok':'text3'})">${dia}</b> <span style="color:var(--text3);">| ${tot}</span></div>
           </div>`;}).join('')}
       </div>
     </div>`;

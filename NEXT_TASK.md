@@ -1,5 +1,19 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-04 — Tarjeta 11T vendedor: clientes vendidos (día | total)
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ Tarjeta 11 Titulares en KPIs del vendedor: **reemplazado % por cantidad de clientes vendidos por marca** → `clientes zona del día | total de zonas`. Sin porcentaje.
+- ✅ Fuente cambiada a `mod_11t_acum.csv` (la buena; `mod_11_titulares.csv` tiene `tiene_flag` en 0 → el % anterior daba 0 siempre).
+- ✅ Día de la zona vía `_clientes_por_dia` (DiasVisita). Endpoint `/api/vendedor/<vid>` acepta `?dia=`; sin él, día AR de hoy.
+- ✅ Validado local (V8 MA: 23/31). **Pendiente confirmar en Render.**
+
+### A OBSERVAR
+1. `mod_11_titulares.csv` tiene `tiene_flag`/botellas en 0 (lo genera el motor legacy). Otras vistas que dependan de ese flag pueden estar en 0; revisar si se usa en gerencia.
+2. "Día de la zona" = día AR de hoy. Si se prefiere el próximo día operativo (matinal), se ajusta.
+
+---
+
 ## Sesión 2026-06-04 — Innovaciones del mes vivo (ventas.csv)
 
 ### HECHO EN ESTA SESIÓN ✅
