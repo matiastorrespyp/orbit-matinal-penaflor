@@ -1,5 +1,18 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-04 — Fix descuento real = valorDescuento (commit 9fcf258)
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ Revisado volumen/criterio de alertas con datos reales. Detectado que `ImporteItem−ImporteNetoItem` = IVA (17.4%), no descuento.
+- ✅ Descuento real ahora = `valorDescuento × CantBase`; % = `desc/(neto+desc)`. Afecta alertas y la inversión de acciones.
+- ✅ Validado en Render: alertas 112→**44**; Gordon's (acción 5%) alerta a 6% y 10%; inversión acciones $3.1M→**$1.215.257**.
+
+### A OBSERVAR
+1. Alertas con exceso de 1pp (ej. 6% vs 5%) se cuentan como alerta. Si querés tolerancia mayor (ej. solo exceso ≥2pp), se ajusta el umbral (hoy >0.5).
+2. Escala por cantidad sigue sin aplicarse (tope = tramo más alto).
+
+---
+
 ## Sesión 2026-06-04 — Alertas de descuento desde catálogo del mes (commit 9ebc42d)
 
 ### HECHO EN ESTA SESIÓN ✅

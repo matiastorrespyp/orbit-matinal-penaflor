@@ -1,5 +1,20 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — fix(acciones/alertas): descuento real = valorDescuento (no IVA)
+
+**Commit:** `9fcf258`. `server_orbit.py`. Validado en Render. Corrige volumen/criterio de alertas y la inversión de acciones.
+
+**Problema (detectado revisando datos reales):** el motor usaba `ImporteItem − ImporteNetoItem` como "descuento". Pero esa diferencia es **IVA** (21/1,21 ≈ **17,4%** en TODAS las líneas), no descuento comercial → 112 alertas falsas y la "inversión" de acciones inflada (~$3.1M de IVA).
+
+**Fix:** el descuento real sale de **`valorDescuento`** (por unidad) × `CantBase`:
+- **% descuento aplicado** = `valorDesc×Cant / (ImporteNetoItem + valorDesc×Cant)` → da la escala real **5/6/8/10/15/20/25/30%** (coincide con mayo).
+- **inversión real** = `valorDescuento × CantBase` (no IVA).
+- Acciones: inversión/litros/clientes/nuevos se miden sobre líneas con descuento real (`valorDescuento>0`).
+
+**Resultado en Render:** alertas **112 → 44** (descuentos reales 6/10/13/15/25%); ejemplo confirmado por el usuario: **Gordon's acción 5% → ventas a 6% y 10% alertan (máx 5%)**. Inversión acciones **$3.1M → $1.215.257** (real).
+
+---
+
 ## 2026-06-04 — feat(alertas): alertas de descuento desde el catálogo del mes (no mayo)
 
 **Commit:** `9ebc42d`. Solo `server_orbit.py` (mismo formato de salida → portal sin cambios). Desplegado y validado en Render.
