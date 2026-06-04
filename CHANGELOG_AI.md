@@ -1,5 +1,16 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — fix(vendedor): pantalla Ruta correcta (clientes.xlsx + ventas.csv, 11 titulares)
+
+**`server_orbit.py`** (`/api/vendedor/<vid>/ruta`) y **`portal.html`** (vRuta).
+
+- **Bugs:** `/api/clientes` sin `dia` traía `faltan_11t = 11` **hardcodeado** para todos; con `?dia=` (`_clientes_por_dia`) ni siquiera calculaba 11T → 0. La ruta mostraba datos incorrectos.
+- **Fix:** nuevo endpoint `/api/vendedor/<vid>/ruta` que arma la ruta del día desde **`clientes.xlsx`** (DiasVisita = día, codven = vendedor) y calcula **compra/sin compra** y **11 Titulares faltantes** desde **`ventas.csv`** (mes vivo), considerando **solo los 11 titulares**.
+- Por cliente: `once_t_comprados/11` + chips de las marcas titulares faltantes. `vRuta` usa `D.ruta` (antes `D.cli`). Reemplaza los chips de innovaciones por los de 11 titulares (la ruta es solo titulares).
+- Validado: V8 día MA = 55 clientes (13 con compra), AMANTINI 3/11 faltan Trapiche Reserva/Alaris/Don David.
+
+---
+
 ## 2026-06-04 — feat(vendedor): Oportunidad del día de Innovaciones
 
 **`server_orbit.py`** (`/api/vendedor/<vid>/oportunidades_innovacion`) y **`portal.html`** (inicio vendedor).

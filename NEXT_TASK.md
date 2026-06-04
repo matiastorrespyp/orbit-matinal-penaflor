@@ -1,5 +1,19 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-04 — Ruta del vendedor (clientes.xlsx + ventas.csv, 11 titulares)
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ Nuevo endpoint `/api/vendedor/<vid>/ruta`: cartera del día desde `clientes.xlsx` + compra/sin compra y **11 Titulares faltantes** desde `ventas.csv` (mes vivo). Solo los 11 titulares.
+- ✅ `vRuta` usa `D.ruta`; muestra `once_t_comprados/11` + chips de marcas titulares faltantes (reemplaza chips de innovaciones).
+- ✅ Corrige `faltan_11t = 11` hardcodeado en `/api/clientes` (ese endpoint no se tocó; la ruta ahora usa el endpoint nuevo, aislado de gerencia).
+- ✅ Validado local + preview visual. **Pendiente confirmar en Render.**
+
+### A OBSERVAR
+1. "Comprado un titular" = cualquier compra de esa marca este mes (sin umbral de botellas). Si se quiere aplicar el umbral de cobertura (Trad 3 / AS 6), es un ajuste.
+2. `/api/clientes` (gerencia Clientes Críticos) sigue con `faltan_11t=11` hardcodeado, pero esa pantalla no usa ese campo. Revisar si en el futuro lo necesita.
+
+---
+
 ## Sesión 2026-06-04 — Oportunidad del día de Innovaciones (vendedor)
 
 ### HECHO EN ESTA SESIÓN ✅

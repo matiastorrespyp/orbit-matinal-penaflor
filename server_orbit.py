@@ -3883,6 +3883,116 @@ def gerencia_alertas_caida():
         return jsonify({"error": str(e)}), 500
 
 
+# ====== RUTA DEL DÍA (vendedor) ======
+# 11 Titulares (marcas) — fuente ventas.csv (mes vivo). Mismos para Trad y Autoservicio.
+_RUTA_ONCE = ["ALMA MORA", "TRAPICHE RESERVA", "FINCA LAS MORAS", "ALARIS", "DON DAVID",
+              "DADA", "SMIRNOFF FLAVOURS", "LOS ARBOLES", "ANTARES", "SMIRNOFF ICE", "GORDON'S FLAVOURS"]
+_RUTA_MARCA = {
+    "ALMA MORA": "ALMA MORA", "ALARIS": "ALARIS", "TRAPICHE ALARIS": "ALARIS",
+    "DON DAVID": "DON DAVID", "DADA": "DADA", "LOS ARBOLES": "LOS ARBOLES",
+    "FINCA LAS MORAS": "FINCA LAS MORAS", "F LAS MORAS": "FINCA LAS MORAS",
+    "TRAPICHE RESERVA": "TRAPICHE RESERVA", "ANTARES": "ANTARES",
+    "GORDON'S FLAVOURS": "GORDON'S FLAVOURS", "GORDONS FLAVOURS": "GORDON'S FLAVOURS",
+    "GORDON'S": "GORDON'S FLAVOURS", "GORDONS": "GORDON'S FLAVOURS",
+    "SMIRNOFF": "SMIRNOFF FLAVOURS", "SMIRNOFF FLAVOURS": "SMIRNOFF FLAVOURS",
+    "SMIRNOFF ICE FLAVOURS": "SMIRNOFF ICE", "SMIRNOFF ICE": "SMIRNOFF ICE",
+}
+_RUTA_ART = [
+    ("SMIRNOFF ICE", "SMIRNOFF ICE"), ("SMF ICE", "SMIRNOFF ICE"),
+    ("SMIRNOFF", "SMIRNOFF FLAVOURS"), ("GORDON", "GORDON'S FLAVOURS"),
+    ("ANTARES", "ANTARES"), ("ALMA MORA", "ALMA MORA"), ("LOS ARBOLES", "LOS ARBOLES"),
+    ("DADA", "DADA"), ("FINCA LAS MORAS", "FINCA LAS MORAS"), ("F.LAS MORAS", "FINCA LAS MORAS"),
+    ("DON DAVID", "DON DAVID"), ("ALARIS", "ALARIS"), ("TRAPICHE RESERVA", "TRAPICHE RESERVA"),
+]
+
+
+def _ruta_titular(marca, articulo):
+    m = str(marca).upper().strip()
+    if m in _RUTA_MARCA:
+        return _RUTA_MARCA[m]
+    a = str(articulo).upper()
+    for kw, t in _RUTA_ART:
+        if kw in a:
+            return t
+    return None
+
+
+@app.route("/api/vendedor/<vid>/ruta")
+def vendedor_ruta(vid):
+    """Ruta del día del vendedor. Cartera de clientes.xlsx (DiasVisita = día), con compra/sin
+    compra y 11 Titulares faltantes calculados desde ventas.csv (mes vivo). Solo los 11 titulares."""
+    vid_norm = normalizar_vendedor_codigo(vid)
+    cn = clean_code(vid_norm)
+    out = {"vendedor_id": vid_norm, "dia": "", "clientes": [], "total": 0,
+           "con_compra": 0, "sin_compra": 0}
+    cli_path = INPUTS / "clientes.xlsx"
+    if not cli_path.exists():
+        return jsonify(out), 200
+    dia_req = request.args.get("dia", "").strip()
+    if not dia_req:
+        _DIAS_AR = {0: "LU", 1: "MA", 2: "MI", 3: "JU", 4: "VI", 5: "SA", 6: "DO"}
+        dia_req = _DIAS_AR[datetime.now(_ARG_TZ).weekday()]
+    out["dia"] = dia_req
+    try:
+        cli = pd.read_excel(cli_path)
+    except Exception:
+        return jsonify(out), 200
+    cli.columns = [str(c).strip() for c in cli.columns]
+    if not {"DiasVisita", "Codigo", "codven"}.issubset(cli.columns):
+        return jsonify(out), 200
+    cli = cli[cli["DiasVisita"].astype(str).str.strip().str.upper() == dia_req.upper()]
+    cli = cli[cli["codven"].astype(str).apply(clean_code) == cn]
+    if cli.empty:
+        return jsonify(out), 200
+
+    # ventas.csv (mes vivo): clientes con compra + titulares comprados por cliente
+    bought_clients, tit_cli = set(), {}
+    vpath = INPUTS / "ventas.csv"
+    if vpath.exists():
+        try:
+            v = pd.read_csv(vpath, sep=";", encoding="latin1", engine="python")
+            v["imp"] = pd.to_numeric(v["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
+            v = v[(v["imp"] > 0) & (~v["CodVendedor"].isin([2, 5, 20]))]
+            v["cli"] = pd.to_numeric(v["Cliente"], errors="coerce")
+            bought_clients = set(v["cli"].dropna().astype(int))
+            v["_tit"] = [_ruta_titular(m, a) for m, a in zip(v.get("Marca", ""), v.get("Articulo", ""))]
+            for cid, grp in v[v["_tit"].notna()].dropna(subset=["cli"]).groupby("cli"):
+                tit_cli[int(cid)] = set(grp["_tit"])
+        except Exception:
+            pass
+
+    sub_col = next((c for c in cli.columns if "subseg" in c.lower() or "subramo" in c.lower()), None)
+    nombre_col = next((c for c in cli.columns if c.lower().replace("_", "") in ("razonsocial", "nombre")), None)
+    once_set = set(_RUTA_ONCE)
+    clientes = []
+    for _, r in cli.iterrows():
+        if pd.isna(r.get("Codigo")):
+            continue
+        cid = int(r["Codigo"])
+        seg = _clasificar_segmento(str(r.get("Ramo", "")), str(r.get(sub_col, "") if sub_col else ""))
+        comp = cid in bought_clients
+        tb = tit_cli.get(cid, set()) & once_set
+        faltan = [t for t in _RUTA_ONCE if t not in tb]
+        clientes.append({
+            "cliente_id": cid,
+            "cliente_nombre": str(r.get(nombre_col, "") or cid) if nombre_col else str(cid),
+            "vendedor_id": vid_norm,
+            "dia_visita": dia_req,
+            "segmento": seg,
+            "estado": "COBERTURA_OK" if comp else "SIN_COMPRA_MES",
+            "compra_mes_flag": 1 if comp else 0,
+            "once_t_comprados": len(tb),
+            "faltan_11t": len(faltan),
+            "titulares_faltantes": faltan,
+        })
+    clientes.sort(key=lambda c: (c["compra_mes_flag"], c["cliente_nombre"]))
+    out["clientes"] = clientes
+    out["total"] = len(clientes)
+    out["con_compra"] = sum(1 for c in clientes if c["compra_mes_flag"])
+    out["sin_compra"] = sum(1 for c in clientes if not c["compra_mes_flag"])
+    return jsonify(out), 200
+
+
 # ====== OPORTUNIDADES DEL DÍA: innovaciones ======
 @app.route("/api/vendedor/<vid>/oportunidades_innovacion")
 def vendedor_oportunidades_innovacion(vid):

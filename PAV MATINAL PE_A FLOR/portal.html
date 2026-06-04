@@ -1003,7 +1003,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 
 /* ── estado ── */
 let userData = null, currentDay = null, gFiltro = "", gScreen = "dashboard", gPlanFechaSel = null;
-let D = { diag:{}, dash:[], cli:[], al:[], plan:[], pvr:{}, det:{}, msgs:[], cccEmpresa:{}, onceTit:{}, onceTitDia:{}, inov:null, plan_inov:null, cob_acum:null, t11_acum:null, inov_total:null, planes_as_g:null, planes_as_v:null, acc_vigentes:[], oportInov:null };
+let D = { diag:{}, dash:[], cli:[], al:[], plan:[], pvr:{}, det:{}, msgs:[], cccEmpresa:{}, onceTit:{}, onceTitDia:{}, inov:null, plan_inov:null, cob_acum:null, t11_acum:null, inov_total:null, planes_as_g:null, planes_as_v:null, acc_vigentes:[], oportInov:null, ruta:null };
 
 const CV = { V3:'#5BDED4', V4:'#F2B544', V6:'#5BC23A', V7:'#9B7BFF', V8:'#4DA3FF', V9:'#FF9D5C', V10:'#FF5D8B' };
 const DAYS = ['LU','MA','MI','JU','VI','SA'];
@@ -1106,14 +1106,15 @@ async function loadAll(){
   if(plan) D.plan=Array.isArray(plan)?plan:[];
   if(pvr)  D.pvr =pvr;
   if(userData?.rol==='vendedor'){
-    const [det,msgs,inov,planInov,plasASV,accV,oportInov]=await Promise.all([
+    const [det,msgs,inov,planInov,plasASV,accV,oportInov,ruta]=await Promise.all([
       safe('/api/vendedor/'+userData.vendedor_id),
       safe('/api/mensajes?vendedor_id='+userData.vendedor_id),
       safe('/api/vendedor/'+userData.vendedor_id+'/innovaciones_segmento'),
       safe('/api/vendedor/'+userData.vendedor_id+'/plan_innovaciones'),
       safe('/api/vendedor/'+userData.vendedor_id+'/planes_as'),
       safe('/api/vendedor/'+userData.vendedor_id+'/acciones_mes'),
-      safe('/api/vendedor/'+userData.vendedor_id+'/oportunidades_innovacion?dia='+(currentDay||''))
+      safe('/api/vendedor/'+userData.vendedor_id+'/oportunidades_innovacion?dia='+(currentDay||'')),
+      safe('/api/vendedor/'+userData.vendedor_id+'/ruta?dia='+(currentDay||''))
     ]);
     if(det)      D.det=det;
     if(msgs)     D.msgs=Array.isArray(msgs)?msgs:[];
@@ -1121,6 +1122,7 @@ async function loadAll(){
     if(planInov) D.plan_inov=planInov;
     if(plasASV)  D.planes_as_v=plasASV;
     if(oportInov) D.oportInov=oportInov;
+    if(ruta)     D.ruta=ruta;
     if(accV)     D.acc_mes_v=accV;
   }
   if(userData?.rol==='gerencia'){
@@ -1982,58 +1984,38 @@ function vInicio(){
 /* — Ruta — */
 function vRuta(){
   const diag=D.diag||{};
-  const mis=(D.cli||[]).filter(c=>(c.vendedor_id||'').toUpperCase()===(userData.vendedor_id||'').toUpperCase());
-  const sc=mis.filter(c=>(c.estado||'').toLowerCase().includes('sin'));
-  const cc=mis.filter(c=>!(c.estado||'').toLowerCase().includes('sin'));
-  const total=mis.length;
+  const r=D.ruta||{};
+  const mis=(r.clientes||[]);
+  const total=r.total!=null?r.total:mis.length;
+  const ccN=r.con_compra!=null?r.con_compra:mis.filter(c=>c.compra_mes_flag).length;
+  const scN=r.sin_compra!=null?r.sin_compra:(total-ccN);
   let h=`<div class="vsh">Ruta del día</div>
     <div class="vkw" style="background:var(--surf2);">
       <div class="row-b">
-        <div><div class="vkl">Zona operativa</div><div class="vkv" style="font-size:22px;">${currentDay||diag.dia_operativo||'–'}</div></div>
+        <div><div class="vkl">Zona operativa</div><div class="vkv" style="font-size:22px;">${r.dia||currentDay||diag.dia_operativo||'–'}</div></div>
         <div style="text-align:right;"><div class="xs m3">Total</div><div style="font-family:var(--f-dis);font-size:28px;font-weight:700;">${total}</div></div>
       </div>
-      <div style="margin-top:10px;"><div class="bar" style="height:6px;"><div class="bar-f ok" style="width:${total?clamp(cc.length/total*100,0,100):0}%"></div></div>
-      <div class="row-b xs m3 mt4"><span>${cc.length} con compra</span><span>${sc.length} sin compra</span></div></div>
+      <div style="margin-top:10px;"><div class="bar" style="height:6px;"><div class="bar-f ok" style="width:${total?clamp(ccN/total*100,0,100):0}%"></div></div>
+      <div class="row-b xs m3 mt4"><span>${ccN} con compra</span><span>${scN} sin compra</span></div></div>
     </div>`;
-  const todos=[...sc,...cc].slice(0,60);
+  const todos=mis.slice(0,80);
   if(todos.length){
-    h+=`<div class="sm bold" style="margin:4px 0 9px;">Clientes (${todos.length})</div>`;
-    // Mapa: producto_nombre → Set de IDs faltantes
-    const inovProds = (D.inov?.productos || []);
-    const faltMap = {};
-    inovProds.forEach(p => {
-      const falt = new Set((p.clientes_faltantes||[]).map(Number));
-      faltMap[p.producto_nombre] = { falt, seg: (p.segmento||'').toUpperCase() };
-    });
-    const SEG_INOV = seg => {
-      const s=(seg||'').toUpperCase();
-      if(s.includes('AUTOSERV')) return 'AUTOSERVICIO';
-      if(s.includes('TRAD')||s.includes('ALMAZEN')||s.includes('KIOSK')) return 'TRADICIONAL';
-      return null;
-    };
+    h+=`<div class="sm bold" style="margin:4px 0 9px;">Clientes (${todos.length}) · 11 Titulares faltantes</div>`;
     h+=todos.map(c=>{
-      const isSC=(c.estado||'').toLowerCase().includes('sin');
-      const cid=Number(c.cliente_id);
-      const cSeg=SEG_INOV(c.segmento||'');
-      // Innovaciones relevantes para este cliente
-      const inovRel=Object.entries(faltMap).filter(([,v])=>v.seg===cSeg);
-      let inovHtml='';
-      if(inovRel.length){
-        inovHtml=`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;">
-          ${inovRel.map(([nom,v])=>{
-            const compro=!v.falt.has(cid);
-            return `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 6px;border-radius:20px;background:${compro?'rgba(91,194,58,0.15)':'rgba(255,74,74,0.13)'};color:${compro?'var(--ok)':'var(--bad)'};">
-              <span style="font-size:8px;">${compro?'●':'●'}</span>${nom}
-            </span>`;
-          }).join('')}
-        </div>`;
-      }
+      const isSC=!c.compra_mes_flag;
+      const comp=c.once_t_comprados||0;
+      const falt=c.titulares_faltantes||[];
+      const cap=falt.slice(0,6);
+      const faltHtml=falt.length?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;">
+        ${cap.map(t=>`<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(255,74,74,.13);color:var(--bad);">${t}</span>`).join('')}
+        ${falt.length>cap.length?`<span style="font-size:10px;padding:2px 6px;color:var(--text3);">+${falt.length-cap.length}</span>`:''}
+      </div>`:`<div style="margin-top:6px;font-size:10px;color:var(--ok);">✓ Tiene los 11 titulares</div>`;
       return `<div class="vcli">
         <div class="vcli-dot ${isSC?'bd':'ok'}"></div>
         <div class="vcli-info" style="flex:1;">
-          <div class="vcli-name">${c.cliente_nombre||c.cliente_id}</div>
-          <div class="vcli-meta">${c.segmento||'–'} · 11T faltantes: ${c.faltan_11t||0}</div>
-          ${inovHtml}
+          <div class="vcli-name">${c.cliente_nombre||c.cliente_id} <span style="font-size:10px;color:var(--text3)">[${c.cliente_id}]</span></div>
+          <div class="vcli-meta">${c.segmento||'–'} · 11 Titulares: <b>${comp}/11</b></div>
+          ${faltHtml}
         </div>
         <span class="chip ${isSC?'bd':'ok'}" style="flex-shrink:0;">${isSC?'Sin compra':'Con compra'}</span>
       </div>`;}).join('');
