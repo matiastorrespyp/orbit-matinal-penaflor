@@ -1,5 +1,18 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-04 — Innovaciones del mes vivo (ventas.csv)
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ **Cobertura de innovaciones ahora sale de `ventas.csv` (mes vivo)**, no de `ventas_acumulada.csv` (que arrastraba mayo). Total clientes "compraron": 256 → **38** (junio real). Afecta pantalla Innovaciones gerencia + tarjeta Innovaciones KPIs vendedor.
+- ✅ Overlay `?dia` de `innovaciones_total` también pasó a `ventas.csv`.
+- ✅ Validado local (gerencia total=38; V8=19). **Pendiente confirmar en Render.**
+
+### A OBSERVAR
+1. `mod_innovaciones_plan_as.csv` (innovaciones dentro de la vista Plan AS) sigue con acumulada. Si se quiere mes vivo, cambiar `generar_innovaciones_plan_as(ventas_acum_full,...)` → `ventas`.
+2. La cartera de innovaciones es grande (1609 trad / 192 AS) y la cobertura de junio es baja (esperable a principio de mes; sube con el avance del mes).
+
+---
+
 ## Sesión 2026-06-04 — Auditoría Planes AS (escala + vendedor)
 
 ### HECHO EN ESTA SESIÓN ✅

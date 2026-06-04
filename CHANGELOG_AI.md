@@ -1,5 +1,16 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — fix(innovaciones): cobertura del mes vivo desde ventas.csv (no acumulada)
+
+**`generar_datasets_acum.py`** (regenera `mod_innovaciones_segmento.csv`) y **`server_orbit.py`** (overlay `?dia`). Afecta pantalla Innovaciones (gerencia) y tarjeta Innovaciones de KPIs (vendedor); ambas leen `mod_innovaciones_segmento.csv`.
+
+- **Problema:** `generar_innovaciones_segmento` usaba `ventas_acumulada.csv` (mayo+junio: 341 filas innov, 293 de mayo) → la cobertura contaba compras de **mayo**. Total clientes "compraron" inflado: **256** (la mayoría mayo) vs **38** reales de junio.
+- **Fix:** ahora usa `ventas.csv` (MES VIVO). Cobertura de innovaciones = compras de **este mes**. Validado: total compraron 256 → **38**.
+- **Overlay `?dia`** de `/api/gerencia/innovaciones_total` también leía `ventas_acumulada.csv` sin filtrar fecha → ahora lee `ventas.csv`.
+- `mod_innovaciones_plan_as.csv` (vista innovaciones dentro de Plan AS) sigue usando acumulada (no es ninguna de las dos pantallas pedidas); revisar aparte si se quiere también mes vivo.
+
+---
+
 ## 2026-06-04 — feat(planes_as): nombre del maestro + dirección + N° cliente en tarjetas
 
 **`generar_datasets_acum.py`** (escribe `cliente_nombre` del maestro y `direccion` en `mod_planes_as.csv`), **`server_orbit.py`** (expone `direccion` en gerencia y vendedor) y **`portal.html`**.

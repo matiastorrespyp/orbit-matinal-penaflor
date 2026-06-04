@@ -531,7 +531,7 @@ def generar_planes_as(ventas, bbdd, clientes):
 def generar_innovaciones_segmento(ventas, clientes):
     """
     CCC de 17 productos innovación por vendedor × segmento (TRADICIONAL + AUTOSERVICIO).
-    Fuente: ventas_acumulada.csv (periodo completo). V3 no AUTOSERVICIO.
+    Fuente: ventas.csv (MES VIVO). V3 no AUTOSERVICIO.
     """
     SEGMENTOS = ["TRADICIONAL", "AUTOSERVICIO"]
 
@@ -1001,7 +1001,9 @@ def main():
 
     # ── Innovaciones Segmento ──
     print("\n[4/5] Generando mod_innovaciones_segmento.csv ...")
-    inov_seg = generar_innovaciones_segmento(ventas_acum_full, clientes)  # usa ventas acumuladas completas
+    # MES VIVO: cobertura de innovaciones de ESTE mes desde ventas.csv.
+    # NO usar ventas_acumulada (arrastra el mes anterior → cobertura inflada con compras viejas).
+    inov_seg = generar_innovaciones_segmento(ventas, clientes)
     inov_seg.to_csv(OUT / "mod_innovaciones_segmento.csv", index=False, encoding="utf-8-sig")
     print(f"  OK: {len(inov_seg)} filas ({inov_seg['producto_nombre'].nunique()} productos x {inov_seg['vendedor_codigo'].nunique()} vendedores x segmentos)")
     resumen_inov = (inov_seg.groupby("producto_nombre")

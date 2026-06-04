@@ -2646,11 +2646,11 @@ def gerencia_innovaciones_total():
                 compraron_total=("clientes_compraron", "sum"))
            .reset_index())
     tot["pct_cobertura"] = (tot["compraron_total"] / tot["cartera_total"].replace(0, 1) * 100).round(1)
-    # compraron_dia: clientes del día que compraron el producto (ventas_acumulada × clientes del día)
+    # compraron_dia: clientes del día que compraron el producto (ventas.csv MES VIVO × clientes del día)
     compraron_dia_map = {}   # producto_codigo → count
     if dia_param:
         try:
-            acum_path = INPUTS / "ventas_acumulada.csv"
+            acum_path = INPUTS / "ventas.csv"
             if acum_path.exists():
                 acum = pd.read_csv(acum_path, encoding="latin1", sep=";", engine="python")
                 acum["Codigo"]         = pd.to_numeric(acum["Codigo"], errors="coerce")
