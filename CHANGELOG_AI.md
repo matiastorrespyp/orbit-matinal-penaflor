@@ -1,5 +1,35 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — fix(dashboard): Sell Out en cero en Render + blindaje parseo ventas + validación integral
+
+**Commits:** `4864d22` (fix Sell Out) · `41ec473` (limpieza) · `ffc0c1e` (blindaje). Desplegados y validados en Render.
+
+### Síntoma
+La tarjeta **Sell Out** del dashboard mostraba categorías en cero en Render (VINOS DEL AÑO 0/0), pese a haber datos. Localmente (Windows) se veía bien → no se reproducía.
+
+### Causa raíz
+`_preparar_df_ventas` (alimenta `/api/gerencia/sellout_litros`) leía `ventas.csv` **sin `dtype=str`** y dejaba a pandas inferir tipos. En Render (otra versión de pandas) la columna `ImporteNetoItem` (coma decimal "15800,82") se infería distinto → casi todas las filas quedaban con importe 0 → el filtro `ImporteNetoItem>0` descartaba 308/310 filas → categorías en cero. **No era el separador** (un intento con `sep=";"` dio solo `filas=2`, lo que reorientó el diagnóstico vía un marcador `_diag` temporal).
+
+### Fix
+- `_preparar_df_ventas`: leer con `dtype=str` + parseo numérico manual (`strip`+`strip('"')`+coma→punto+`to_numeric`), idéntico al patrón de `_leer_ventas_mes_csv` que ya funcionaba en Render. Reproducido en Render: `filas=310`, VINOS DEL AÑO 903.8L/54, SPIRITS 510/29, RTD 397.2/32, VDG 49.5/10, CHAMPAÑA 4.5/1, CERVEZA 22.7/5.
+- **Blindaje (`ffc0c1e`)**: mismo `dtype=str` en `_cargar_ventas_mes_actual` y `_cargar_ventas_dia` (lectores de `ventas.csv` que usan `_parse_num_ar`), para que el parseo sea determinístico ante futuras versiones de pandas. Los lectores de `ventas_acumulada.csv` (11T) ya usaban el patrón robusto `.astype(str).str.replace` y filtran `CodVendedor` como int → se dejaron sin tocar.
+
+### Validación integral del dashboard (Render, 15 endpoints PASS)
+Cada tarjeta lee su archivo correcto y responde con datos:
+- `ventas.csv` (`;`): diagnóstico (fecha), `/api/dashboard` (acum/venta/CCC vía `_parse_num_ar`), Sell Out (dtype=str). 
+- `ventas_acumulada.csv` (`;`): 11T empresa/zona (`.str.replace`).
+- `resultado.xlsx`: objetivos/avance.
+- `04_DATASETS_ORBIT/*` (coma estándar): CCC, innovaciones, cobertura, 11t_acum, planes AS, acciones, alertas, clientes_dia.
+Verificado: diagnóstico corte=2026-06-03/Matinal JU, dashboard V3 acum=391.694/venta_hoy=244.813, 11T ccc=2657, Sell Out VDA=903.8.
+
+### ⚠️ Recordatorio operativo — PUSH DIARIO (no es código)
+Render lee los archivos **committeados**, no el working tree local. El refresh diario llega a las tarjetas SOLO si se despliega. **Rutina diaria obligatoria:**
+1. Actualizar inputs (`ventas.csv`, `ventas_acumulada.csv`, `resultado.xlsx`) + correr el pipeline (regenera `04_DATASETS_ORBIT/` + `02_HISTORY/`).
+2. `git add` (inputs + datasets) → `git commit` → **`git push`** → Render auto-deploya (~1-3 min) y todas las tarjetas se actualizan solas.
+Sin el push, el dashboard queda con datos del día anterior (fue la causa del "Matinal miércoles" del 2026-06-04).
+
+---
+
 ## 2026-06-04 — feat(acciones): loader mensual de acciones comerciales + reporte de colisiones
 
 **Commit:** `c2c6b55` (pusheado). Solo herramienta + datos de acciones; no afecta runtime del backend ni el cierre.

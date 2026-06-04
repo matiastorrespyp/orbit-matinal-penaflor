@@ -1,5 +1,32 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-04 — Fix Sell Out + dashboard validado integral (commits 4864d22, ffc0c1e)
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ Fix Sell Out en cero (Render): `_preparar_df_ventas` ahora lee `ventas.csv` con `dtype=str` (la inferencia de coma decimal fallaba en Render). VINOS DEL AÑO 903.8L/54, etc.
+- ✅ Blindaje: `dtype=str` también en `_cargar_ventas_mes_actual` y `_cargar_ventas_dia`. Lectores de `ventas_acumulada.csv` (11T) sin tocar (ya robustos).
+- ✅ **Dashboard validado integral en Render** (15 endpoints PASS): cada tarjeta lee su archivo correcto y devuelve datos no-cero coherentes.
+- ✅ Fix previo de fecha: refresh de datos al 2026-06-03 desplegado → Matinal JU 2026-06-04.
+
+### ⚠️ PROCEDIMIENTO DIARIO (fijo — no es bug, es operación)
+Render lee archivos **committeados**, no el working tree. Para que el refresh diario llegue a las tarjetas:
+1. Actualizar `01_INPUTS/` (ventas.csv, ventas_acumulada.csv, resultado.xlsx) + correr pipeline (regenera `04_DATASETS_ORBIT/` + `02_HISTORY/`).
+2. **`git add` inputs+datasets → `git commit` → `git push`** → Render auto-deploya y las tarjetas se actualizan solas (~1-3 min).
+- Si el dashboard muestra el día anterior, casi siempre es **falta de push**, no un bug de código.
+
+### ESTADO DEL DASHBOARD
+- **Validado y fijo.** No requiere más cambios de código para el flujo diario. Cada tarjeta ↔ fuente:
+  - `ventas.csv` → diagnóstico (fecha), KPIs por vendedor, Sell Out.
+  - `ventas_acumulada.csv` → 11 Titulares (empresa/zona).
+  - `resultado.xlsx` → objetivos/avance.
+  - `04_DATASETS_ORBIT/*` → CCC, innovaciones, cobertura, 11t_acum, planes AS, acciones, alertas, clientes del día.
+
+### PRÓXIMOS PASOS (opcionales, requieren aprobación)
+1. **Automatizar el push diario** — un `.bat`/script que tras el pipeline haga add+commit+push de inputs+datasets, para evitar el olvido del deploy.
+2. Motor de aplicación de acciones comerciales (loader junio ya deja catálogo + colisiones).
+
+---
+
 ## Sesión 2026-06-04 — Loader de acciones comerciales mensual (commit c2c6b55)
 
 ### HECHO EN ESTA SESIÓN ✅
