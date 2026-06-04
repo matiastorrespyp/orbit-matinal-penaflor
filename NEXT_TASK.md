@@ -1,5 +1,20 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-04 — Acciones Comerciales del Mes (catálogo × ventas) (commit 69bb95c)
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ Motor "acciones del mes": lee el catálogo mensual oficial `01_INPUTS/ACCIONES COMERCIALES/<YYYY-MM>/acciones_comerciales_<mes>_<año>_penaflor.csv` (autodetecta el mes) y cruza con ventas.
+- ✅ Calcula por acción: inversión real (ERP), litros, clientes alcanzados, clientes nuevos (vs mes anterior). Display: segmento, tipo (descuento/sin cargo), escala, marcas, topes.
+- ✅ Endpoints `/api/gerencia/acciones_mes` y `/api/vendedor/<vid>/acciones_mes` (filtrado por vendedores_aplica + V3-sin-AS).
+- ✅ Portal: gerencia + vendedor (tab Alertas) muestran tarjeta por acción "Acciones Comerciales de Junio". Validado en Render (V8 sin ACJ26-017, V3 con).
+
+### PRÓXIMOS PASOS / PENDIENTES
+1. **Reglas finas no computadas como filtro** (sí mostradas como condición): escala por tramos, surtido, 11T-quiebre mín/máx. Evaluar si se necesita aplicarlas al cálculo de inversión/clientes.
+2. **Julio**: cuando llegue, dejar el CSV en `01_INPUTS/ACCIONES COMERCIALES/2026-07/` (mismo patrón) — el motor lo toma solo. Recordar commit+push (CIERRE_DIA no incluye esa carpeta; ver punto 3).
+3. **Deploy de la carpeta de acciones**: `01_INPUTS/ACCIONES COMERCIALES/<mes>/` no está en el `git add` de `CIERRE_DIA_ORBIT.bat`; al cargar un mes nuevo hay que commitearlo manualmente o agregarlo al bat.
+
+---
+
 ## Sesión 2026-06-04 — Auditoría pantalla Vendedores + fix KPI 11T (commit a2b86ca)
 
 ### HECHO EN ESTA SESIÓN ✅

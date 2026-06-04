@@ -1,5 +1,28 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — feat(acciones): "Acciones Comerciales del Mes" (catálogo mensual × ventas) gerencia + vendedor
+
+**Commit:** `69bb95c`. `server_orbit.py` + `portal.html`. Desplegado y validado en Render.
+
+**Fuente oficial (mensual, autodetectada):** `01_INPUTS/ACCIONES COMERCIALES/<YYYY-MM>/acciones_comerciales_<mes>_<año>_penaflor.csv`. El backend toma el mes más reciente disponible (en julio tomará julio solo, mismo patrón de nombre).
+
+**Motor nuevo (`server_orbit.py`):** por cada acción del catálogo cruza el catálogo × ventas (`ventas_acumulada.csv` + maestro 04D) y calcula, con la fórmula probada de mayo:
+- **Inversión real** = `ImporteItem − ImporteNetoItem` (descuento real del ERP, líneas con descuento > 0; "sin cargo" = 100% bonificado).
+- **Litros** = CantBase × Lts/unidad (04D). **Clientes alcanzados** = únicos. **Clientes nuevos** = compraron esas marcas este mes y no el anterior.
+- Matcheo regla→venta: **vendedor** (`vendedores_aplica`) + **segmento** del cliente + **marca/categoría** (vía maestro 04D marca→línea/categoría, con desambiguación "DADA VINO" ≠ Sidra/Champaña).
+- Display desde catálogo: segmento, tipo (descuento/sin cargo), escala (condición), marcas, topes.
+- Endpoints: `GET /api/gerencia/acciones_mes` (todas) y `GET /api/vendedor/<vid>/acciones_mes` (filtrado por `vendedores_aplica` + V3-sin-AS).
+
+**Portal (`portal.html`):**
+- Gerencia "Acciones Comerciales" → tarjeta por acción "Acciones Comerciales de Junio" (KPIs + inversión/litros/clientes/nuevos + segmento/tipo/escala/marcas/topes). (Versión anterior mayo/ranking quedó comentada.)
+- Vendedor tab Alertas → bloque "Acciones Comerciales de Junio" con tarjeta por acción, **solo las que aplican a ese vendedor**.
+
+**Validación Render (PASS):** gerencia 26 acciones (19 con inversión, total ~$3.1M; ACJ26-002 Trad VDA $360.462/23 cli/12 nuevos; "Sin cargo" detectado). Vendedor V8 = 25 acciones (sin ACJ26-017); V3 = 26 (con ACJ26-017, que es V3/V4/V6). `node --check` del portal OK; `py_compile` OK.
+
+**Alcance/limitación:** inversión/litros/clientes se computan sobre el universo que matchea vendedor+segmento+marca con descuento real. Detalles finos de reglas (escala por tramos, surtido, 11T-quiebre mín/máx) se muestran como **condición/escala** (display), no como filtro adicional de líneas.
+
+---
+
 ## 2026-06-04 — fix(vendedores): KPI "11T ✓" daba 0 en todos los vendedores
 
 **Commit:** `a2b86ca`. Solo `server_orbit.py` (endpoint `/api/dashboard`); revisión tarjeta por tarjeta de la pantalla Vendedores.
