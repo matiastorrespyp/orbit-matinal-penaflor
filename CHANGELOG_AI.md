@@ -1,5 +1,28 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-03 — feat(cierre): consolidar panel gerencial "Cierre de Mes" como cierre mensual oficial histórico
+
+**Commits en producción:** `2a237a1` (panel histórico inicial) → `93e72a0`/`e488bef` (sheets) → **`b097300`** (consolidación final). Desplegado en Render, estado **Live** y validado.
+
+**Problema corregido:** la pantalla gerencial "Cierre de Mes" mezclaba el cierre histórico versionado con una **vista dinámica** que recalculaba al vuelo desde `resultado.xlsx` + `ventas_acumulada.csv` (fuentes vivas/cambiantes). Además, el panel histórico solo mostraba el `ranking_top3`, por lo que el **ganador de 11 Titulares (V3 NADIA GAMBINO)** quedaba invisible (V3 es 5° en el ranking general).
+
+**Regla de negocio formalizada:** para cierres oficiales, el portal debe consumir **únicamente artefactos congelados/versionados** (`07_CIERRES_MENSUALES/…` generados desde `01_INPUTS/ventas_mes.csv`) y **no recalcular** con fuentes cambiantes. Los datos dinámicos siguen siendo válidos para el dashboard diario, no para el cierre.
+
+**Cambios aplicados:**
+
+| Archivo | Cambio |
+|---|---|
+| `server_orbit.py` | Extensión **aditiva y solo-lectura** de `/api/gerencia/cierres_historicos`: agrega `empresa` (de `cierre_mensual_resumen.json`), `ranking` completo (7 vendedores, de `ranking_vendedores_mes.json`) y `ganadores` por categoría (`general`, `volumen_dinero`, `once_titulares`, `innovaciones`). No recalcula; no lee `ventas.csv`/`ventas_acumulada.csv`/`resultado.xlsx`; no toca generación de cierres ni inputs. |
+| `PAV MATINAL PE_A FLOR/portal.html` | Pantalla "Cierre de Mes" 100% histórica: encabezado "Cierre de Mes — Histórico Versionado" + fuente `01_INPUTS/ventas_mes.csv`; metadatos del cierre; resumen empresa; ranking completo; bloque final "🏁 Cierre del Mes" con los 4 ganadores. **Eliminada** la "Vista dinámica (no histórica)" y todo consumo de `/api/gerencia/cierre_mes` en esta pantalla (el endpoint dinámico sigue intacto en backend, solo deja de usarse aquí). |
+
+**Ganadores reauditados (Mayo 2026, desde `ranking_vendedores_mes.json`):** General **V8 ALVAREZ VANESA** (84.81) · Volumen/Dinero **V8** ($117.046.215) · 11 Titulares **V3 NADIA GAMBINO** (231 clientes) · Innovaciones **V8** (44 clientes). Resumen empresa: importe neto $285.579.795, 45.506,29 L, CCC 1.026, 7 vendedores.
+
+**Validación PASS (Render producción, commit `b097300`):** `py_compile` OK; endpoint extendido devuelve `empresa` + `ranking`(7) + `ganadores`; Playwright login gerencia → Cierre de Mes confirma encabezado histórico, fuente `ventas_mes.csv`, `2026-05/version_001`, ganador 11T V3, ranking 7 vendedores, sin "Vista dinámica", sin CantBase ni botellas, sin errores JS ni de red.
+
+**No tocado:** `07_CIERRES_MENSUALES/`, inputs, datasets, planificaciones, Google Sheets, datos maestros. Los CSV `clientes_master.csv` y `top_50_caida_vinos_alta_gama.csv` (modificados previamente) quedaron fuera de los commits.
+
+---
+
 ## 2026-06-03 — feat(planificacion): Google Sheets como fuente de verdad (fail-closed)
 
 **Commit en producción:** `93e72a0` — desplegado en Render, estado **Live**.

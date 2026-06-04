@@ -1,5 +1,23 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-03 — Consolidación panel "Cierre de Mes" histórico (commit b097300)
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ `/api/gerencia/cierres_historicos` extendido (aditivo, solo-lectura): `empresa` + `ranking` completo (7) + `ganadores` por categoría.
+- ✅ Pantalla gerencial "Cierre de Mes" 100% histórica: metadatos + resumen empresa + ranking completo + bloque final ganadores. Eliminada la "Vista dinámica" y el consumo de `/api/gerencia/cierre_mes`.
+- ✅ Ganadores Mayo 2026 reauditados desde el cierre versionado: General V8 · Volumen/Dinero V8 · 11T V3 NADIA GAMBINO · Innovaciones V8.
+- ✅ Validado en Render (commit `b097300`): sin Vista dinámica, sin CantBase/botellas, sin errores JS/red.
+- ✅ No se tocó `07_CIERRES_MENSUALES/`, inputs, datasets, planificaciones, Google Sheets ni datos maestros.
+
+### PRÓXIMOS PASOS (requieren aprobación antes de implementar)
+1. **Workflow mensual junio** — cuando cierre junio, correr `python tools/generar_cierre_mensual.py` (detecta `version_001` de junio sin pisar mayo); el panel histórico lo mostrará automáticamente vía el selector de período (`cs.length>1`).
+2. **Selector de período visible** — hoy hay un solo cierre (`2026-05`); cuando exista más de uno, validar que el `<select>` de períodos del panel histórico funcione end-to-end.
+3. **Endpoint dinámico `/api/gerencia/cierre_mes`** — quedó en el backend sin consumidor en la pantalla Cierre de Mes. Decidir si se conserva para otra vista (mes en curso) o se deprecia formalmente.
+4. **Reglas acciones junio** — cambiar `reglas_acciones_mayo_2026_orbit.csv` → `reglas_acciones_junio_2026_orbit.csv` antes del próximo pipeline.
+5. **Ranking 11T por porcentaje** — evaluar normalizar 11T por cobertura % (no conteo absoluto) para comparación equitativa entre carteras. Requiere decisión comercial.
+
+---
+
 ## Sesión 2026-06-03 — Google Sheets fuente de verdad de planificaciones (commit 93e72a0)
 
 ### HECHO EN ESTA SESIÓN ✅

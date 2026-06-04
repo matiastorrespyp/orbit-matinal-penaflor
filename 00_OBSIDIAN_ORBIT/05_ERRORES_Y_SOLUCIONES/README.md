@@ -73,3 +73,14 @@ Registro de errores ya diagnosticados, con causa raíz y solución aplicada o pe
 **Causa raíz:** Start-Process en Windows puede generar múltiples procesos Python. Las instancias anteriores no mueren correctamente.  
 **Solución:** Antes de iniciar el servidor, usar `Get-CimInstance Win32_Process -Filter "CommandLine LIKE '%server_orbit%'"` para detectar todas las instancias y matarlas por PID antes de arrancar una nueva.  
 **Estado:** ✅ Documentado. Procedimiento estándar de arranque.
+
+---
+
+## ERR-008 — Panel "Cierre de Mes" mezclaba cierre histórico con vista dinámica
+
+**Detectado:** 2026-06-03  
+**Síntoma:** La pantalla gerencial "Cierre de Mes" mostraba datos del cierre histórico mezclados con una "Vista dinámica" que recalculaba al vuelo; además el ganador de 11 Titulares (V3 NADIA GAMBINO) no era visible.  
+**Causa raíz:** El panel consumía `/api/gerencia/cierre_mes` (recalcula desde `resultado.xlsx` + `ventas_acumulada.csv`, fuentes vivas/cambiantes) en lugar del cierre congelado. El endpoint histórico solo exponía `ranking_top3` (general), y V3 es 5° general → su victoria en 11T quedaba oculta.  
+**Solución aplicada:** (1) `/api/gerencia/cierres_historicos` extendido de forma aditiva/solo-lectura con `empresa`, `ranking` completo y `ganadores` por categoría (lee `cierre_mensual_resumen.json` y `ranking_vendedores_mes.json`). (2) `portal.html`: pantalla "Cierre de Mes" 100% histórica, eliminada la vista dinámica y todo consumo de `/api/gerencia/cierre_mes`.  
+**Commit:** b097300  
+**Estado:** ✅ Resuelto y validado en Render. Regla: cierres oficiales = solo artefactos versionados, sin recalcular (ver `08_ARQUITECTURA/README.md`).
