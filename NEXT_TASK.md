@@ -1,5 +1,22 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-03 — Panel histórico completo + acumulado unificado (commits f8af3c9, 3b4dd72)
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ Panel "Cierre de Mes" completo: recuperadas todas las secciones (Resumen compañía, Cierre por vendedor, 11 Titulares, Innovaciones, Sell Out, Planes AS, Acciones Comerciales) desde artefactos versionados congelados.
+- ✅ 6 artefactos nuevos congelados en `07_CIERRES_MENSUALES/2026-05/version_001/` (snapshot de `cierre_mes`, solo lectura).
+- ✅ Endpoint `cierres_historicos` extendido con bloques `objetivos_avance`, `ccc_segmentos`, `once_titulares`, `innovaciones`, `sellout`, `planes_as`, `acciones_comerciales`.
+- ✅ Acumulado unificado: ambas tarjetas usan `ventas_mes.csv` ($285.579.795); avance compañía real 87.39% (antes 4.9% irreal). Objetivo sigue de `resultado.xlsx`.
+- ✅ Validado en Render: sin CantBase/botellas, sin errores JS/red, ganador 11T V3 NADIA GAMBINO.
+
+### PRÓXIMOS PASOS (requieren aprobación)
+1. **Generador mensual** — `tools/generar_cierre_mensual.py` NO produce hoy los 6 artefactos de detalle (objetivos_avance, 11T, innovaciones, sellout, planes_as, acciones); para junio en adelante se generan recién por el snapshot manual. Evaluar incorporar su generación al cierre mensual para que cada `version_xxx` quede completa sin paso manual.
+2. **CCC: criterio entre tarjetas** — "Resumen empresa del cierre" muestra CCC 1.026 (`ventas_mes.csv`) y "Resumen compañía" 827 (`ventas_acumulada.csv`). Se unificó el acumulado (dinero), no el conteo CCC. Evaluar unificar también el CCC a una sola fuente.
+3. **Higiene Git CSV regenerados** — pendiente decisión sobre `top_50_caida…` (seguro de destrackear) y `clientes_master.csv` (lo lee `server_orbit.py` en runtime → no destrackear sin regeneración en deploy). Ver auditoría previa.
+4. **Inputs modificados sin commitear** — `resultado.xlsx`, `ventas.csv`, `ventas_acumulada.csv` figuran como `M` en el working tree; revisar si son actualizaciones reales a conservar o descartar (no commiteados en esta sesión).
+
+---
+
 ## Sesión 2026-06-03 — Consolidación panel "Cierre de Mes" histórico (commit b097300)
 
 ### HECHO EN ESTA SESIÓN ✅

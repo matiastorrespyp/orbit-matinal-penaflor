@@ -1,5 +1,32 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-03 — fix(cierre): panel histórico completo + acumulado unificado
+
+**Commits en producción:** `f8af3c9` (panel completo) → **`3b4dd72`** (acumulado unificado). Desplegado en Render, **Live** y validado end-to-end.
+
+### Parte 1 — Panel histórico completo (`f8af3c9`)
+El panel "Cierre de Mes" había quedado reducido a ranking + ganadores. Se recuperaron **todas** las secciones gerenciales, ahora alimentadas por **artefactos versionados congelados** (no por fuentes vivas).
+
+- **Artefactos nuevos congelados** en `07_CIERRES_MENSUALES/2026-05/version_001/` (snapshot de `/api/gerencia/cierre_mes?mes=2026-05`, solo lectura):
+  `cierre_objetivos_avance.json`, `cierre_11_titulares_detalle.json`, `cierre_innovaciones_detalle.json`, `cierre_sellout.json`, `cierre_planes_as.json`, `cierre_acciones_comerciales.json`.
+- **Endpoint** `/api/gerencia/cierres_historicos` extendido (aditivo, solo lectura) con bloques: `objetivos_avance`, `ccc_segmentos`, `once_titulares`, `innovaciones`, `sellout`, `planes_as`, `acciones_comerciales`.
+- **Portal**: secciones restauradas — Resumen compañía, Cierre por vendedor (V3–V10), 11 Titulares (CCC vs objetivo), Innovaciones (penetración), Sell Out, Planes AS, Acciones Comerciales, además de Ranking y Ganadores. Sin CantBase, sin botellas.
+
+### Parte 2 — Acumulado unificado (`3b4dd72`)
+Las dos tarjetas de compañía mostraban acumulados de fuentes distintas: "Resumen empresa del cierre" $285.6M (`ventas_mes.csv`) vs "Resumen compañía" $16.0M con avance irreal 4.9% (`resultado.xlsx`, valor stale).
+
+- **Criterio unificado**: acumulado oficial = **`ventas_mes.csv`** (fuente del cierre); objetivo = `resultado.xlsx`.
+  - Empresa: acumulado = `importe_neto_total` = **$285.579.795** (idéntico en ambas tarjetas).
+  - Por vendedor: acumulado = `dinero_vendido` (suma exacta = total compañía).
+  - Avance recalculado real: **compañía 87.39%** (antes 4.9% irreal); por vendedor V3 119.9%, V8 112.9%, V6 87.2%, V9 83.6%, V10 75.2%, V4 61.5%, V7 23.5%. Faltante compañía $41.2M.
+- `cierre_objetivos_avance.json` regenerado; `portal.html` muestra la fuente del acumulado (`Acumulado: ventas_mes.csv`).
+
+**Validación (Render):** endpoint confirma `acumulado_compañía == importe_neto_cierre == $285.579.795`; Playwright login gerencia → Cierre de Mes: todas las secciones presentes, avance 87.4%, ganador 11T V3 NADIA GAMBINO, sin CantBase ni botellas, sin errores JS ni de red.
+
+**No tocado:** inputs, datasets, planificaciones, Google Sheets, datos maestros. Solo `server_orbit.py`, `portal.html` y los artefactos del cierre 2026-05/version_001.
+
+---
+
 ## 2026-06-03 — feat(cierre): consolidar panel gerencial "Cierre de Mes" como cierre mensual oficial histórico
 
 **Commits en producción:** `2a237a1` (panel histórico inicial) → `93e72a0`/`e488bef` (sheets) → **`b097300`** (consolidación final). Desplegado en Render, estado **Live** y validado.
