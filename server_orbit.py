@@ -3883,6 +3883,92 @@ def gerencia_alertas_caida():
         return jsonify({"error": str(e)}), 500
 
 
+# ====== OPORTUNIDADES DEL DÍA: innovaciones ======
+@app.route("/api/vendedor/<vid>/oportunidades_innovacion")
+def vendedor_oportunidades_innovacion(vid):
+    """3 clientes de la ZONA DE HOY que compraron el mes pasado y este mes, pero NUNCA
+    innovaciones (ni el mes anterior ni el actual). Fuente: ventas_acumulada.csv (mayo+junio)."""
+    import random as _random
+    vid_norm = normalizar_vendedor_codigo(vid)
+    cn = clean_code(vid_norm)
+    vacio = {"vendedor_nombre": vid_norm, "clientes": [], "innovaciones": [], "texto": ""}
+    if vid_norm in ("V2", "V5", "V20"):
+        return jsonify(vacio), 200
+
+    # nombre del vendedor
+    vendedor_nombre = vid_norm
+    vend = read_csv(CONFIG / "vendedores_activos.csv")
+    if not vend.empty and "codigo_vendedor" in vend.columns:
+        fila = vend[vend["codigo_vendedor"].astype(str).apply(clean_code) == cn]
+        if not fila.empty:
+            col_n = next((c for c in ("nombre", "nombre_vendedor", "vendedor") if c in fila.columns), None)
+            if col_n:
+                vendedor_nombre = str(fila.iloc[0][col_n])
+    vacio["vendedor_nombre"] = vendedor_nombre
+
+    inv = read_csv(DATASETS / "mod_innovaciones_segmento.csv")
+    vac_path = INPUTS / "ventas_acumulada.csv"
+    if inv.empty or not vac_path.exists():
+        return jsonify(vacio), 200
+    innov_codes = set(pd.to_numeric(inv["producto_codigo"], errors="coerce").dropna().astype(int))
+    innov_names = sorted(set(str(x) for x in inv["producto_nombre"].dropna() if str(x).strip()))
+
+    try:
+        vac = pd.read_csv(vac_path, sep=";", encoding="latin1", low_memory=False)
+    except Exception:
+        return jsonify(vacio), 200
+    vac["imp"] = pd.to_numeric(vac["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
+    vac = vac[(vac["imp"] > 0) & (vac["CodVendedor"].astype(str).apply(clean_code) == cn)]
+    if vac.empty:
+        return jsonify(vacio), 200
+    vac["cod"] = pd.to_numeric(vac["Codigo"], errors="coerce")
+    vac["cli"] = pd.to_numeric(vac["Cliente"], errors="coerce")
+    vac["mes"] = pd.to_datetime(vac["FechaComprobante"], dayfirst=True, errors="coerce").dt.to_period("M")
+    per_act = vac["mes"].max()
+    per_ant = per_act - 1
+    cur, prev = vac[vac["mes"] == per_act], vac[vac["mes"] == per_ant]
+    prev_any = set(prev["cli"].dropna().astype(int))
+    prev_inov = set(prev[prev["cod"].isin(innov_codes)]["cli"].dropna().astype(int))
+    cur_any = set(cur["cli"].dropna().astype(int))
+    cur_inov = set(cur[cur["cod"].isin(innov_codes)]["cli"].dropna().astype(int))
+    # compró ambos meses, pero sin innovaciones en ninguno
+    cand = (prev_any - prev_inov) & (cur_any - cur_inov)
+
+    # clientes de la zona de HOY
+    dia_req = request.args.get("dia", "").strip()
+    if not dia_req:
+        _DIAS_AR = {0: "LU", 1: "MA", 2: "MI", 3: "JU", 4: "VI", 5: "SA", 6: "DO"}
+        dia_req = _DIAS_AR[datetime.now(_ARG_TZ).weekday()]
+    try:
+        cd = _clientes_por_dia(dia_req)
+        if not cd.empty and "cliente_id" in cd.columns:
+            dia_ids = set(pd.to_numeric(cd["cliente_id"], errors="coerce").dropna().astype(int))
+            cand = cand & dia_ids
+    except Exception:
+        pass
+
+    innov3 = _random.sample(innov_names, min(3, len(innov_names))) if innov_names else []
+    if not cand:
+        return jsonify({"vendedor_nombre": vendedor_nombre, "dia": dia_req,
+                        "clientes": [], "innovaciones": innov3, "texto": ""}), 200
+
+    # top 3 por volumen ($ acumulado mayo+junio)
+    vol = vac[vac["cli"].isin(cand)].groupby("cli")["imp"].sum().sort_values(ascending=False)
+    nm = vac[vac["cli"].isin(cand)].dropna(subset=["cli"]).drop_duplicates("cli")
+    nombres = dict(zip(nm["cli"].astype(int), nm["RazonSocial"].astype(str))) if "RazonSocial" in vac.columns else {}
+    top3 = [int(c) for c in vol.index[:3]]
+    clientes = [{"cliente_id": cid, "cliente_nombre": nombres.get(cid, str(cid)),
+                 "importe": round(float(vol.get(cid, 0)), 0)} for cid in top3]
+
+    nombres_cli = ", ".join(c["cliente_nombre"] for c in clientes)
+    marcas_txt = ", ".join(innov3)
+    texto = (f"Hoy {vendedor_nombre}, andá a venderles innovaciones a estos {len(clientes)} clientes: "
+             f"{nombres_cli}. El mes pasado hicieron compra, al igual que este mes, pero todavía "
+             f"no compraron estas marcas: {marcas_txt}.")
+    return jsonify({"vendedor_nombre": vendedor_nombre, "dia": dia_req,
+                    "clientes": clientes, "innovaciones": innov3, "texto": texto}), 200
+
+
 # ====== CIERRE DE MES ======
 @app.route("/api/gerencia/cierre_mes")
 def gerencia_cierre_mes():

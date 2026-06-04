@@ -1003,7 +1003,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 
 /* ── estado ── */
 let userData = null, currentDay = null, gFiltro = "", gScreen = "dashboard", gPlanFechaSel = null;
-let D = { diag:{}, dash:[], cli:[], al:[], plan:[], pvr:{}, det:{}, msgs:[], cccEmpresa:{}, onceTit:{}, onceTitDia:{}, inov:null, plan_inov:null, cob_acum:null, t11_acum:null, inov_total:null, planes_as_g:null, planes_as_v:null, acc_vigentes:[] };
+let D = { diag:{}, dash:[], cli:[], al:[], plan:[], pvr:{}, det:{}, msgs:[], cccEmpresa:{}, onceTit:{}, onceTitDia:{}, inov:null, plan_inov:null, cob_acum:null, t11_acum:null, inov_total:null, planes_as_g:null, planes_as_v:null, acc_vigentes:[], oportInov:null };
 
 const CV = { V3:'#5BDED4', V4:'#F2B544', V6:'#5BC23A', V7:'#9B7BFF', V8:'#4DA3FF', V9:'#FF9D5C', V10:'#FF5D8B' };
 const DAYS = ['LU','MA','MI','JU','VI','SA'];
@@ -1106,19 +1106,21 @@ async function loadAll(){
   if(plan) D.plan=Array.isArray(plan)?plan:[];
   if(pvr)  D.pvr =pvr;
   if(userData?.rol==='vendedor'){
-    const [det,msgs,inov,planInov,plasASV,accV]=await Promise.all([
+    const [det,msgs,inov,planInov,plasASV,accV,oportInov]=await Promise.all([
       safe('/api/vendedor/'+userData.vendedor_id),
       safe('/api/mensajes?vendedor_id='+userData.vendedor_id),
       safe('/api/vendedor/'+userData.vendedor_id+'/innovaciones_segmento'),
       safe('/api/vendedor/'+userData.vendedor_id+'/plan_innovaciones'),
       safe('/api/vendedor/'+userData.vendedor_id+'/planes_as'),
-      safe('/api/vendedor/'+userData.vendedor_id+'/acciones_mes')
+      safe('/api/vendedor/'+userData.vendedor_id+'/acciones_mes'),
+      safe('/api/vendedor/'+userData.vendedor_id+'/oportunidades_innovacion?dia='+(currentDay||''))
     ]);
     if(det)      D.det=det;
     if(msgs)     D.msgs=Array.isArray(msgs)?msgs:[];
     if(inov)     D.inov=inov;
     if(planInov) D.plan_inov=planInov;
     if(plasASV)  D.planes_as_v=plasASV;
+    if(oportInov) D.oportInov=oportInov;
     if(accV)     D.acc_mes_v=accV;
   }
   if(userData?.rol==='gerencia'){
@@ -1950,7 +1952,22 @@ function vInicio(){
     <div class="vkcard wn"><div class="vkl">Sin compra</div><div class="vkv">${vk.clientes_pendientes||0}</div><div class="vkh">Sin compra del mes</div></div>
     <div class="vkcard mg"><div class="vkl">Clientes Vi</div><div class="vkv">${vk.clientes_total||0}</div><div class="vkh">Zona ${currentDay||'–'}</div></div>
   </div>`;
-  if(opors.length){
+  const oi=D.oportInov;
+  if(oi && oi.clientes && oi.clientes.length){
+    const nombre=userData.nombre||oi.vendedor_nombre||'';
+    const cliChips=oi.clientes.map(c=>`<span style="display:inline-block;background:rgba(255,255,255,.2);border-radius:9px;padding:4px 10px;margin:3px 4px 0 0;font-weight:700;font-size:12.5px;">👤 ${c.cliente_nombre}</span>`).join('');
+    const inovChips=oi.innovaciones.map(m=>`<span style="display:inline-block;background:#fff;color:#9c1458;border-radius:9px;padding:4px 10px;margin:3px 4px 0 0;font-weight:800;font-size:11.5px;">🍷 ${m}</span>`).join('');
+    h+=`<div style="margin:6px 0 14px;border-radius:18px;padding:17px;background:linear-gradient(135deg,#E2147A 0%,#B0125F 55%,#6d0f3e 100%);box-shadow:0 8px 22px rgba(226,20,122,.4);color:#fff;position:relative;overflow:hidden;">
+      <div style="position:absolute;right:-18px;top:-20px;font-size:96px;opacity:.12;pointer-events:none;">🚀</div>
+      <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:.92;">🚀 Oportunidad del día · Innovaciones</div>
+      <div style="font-size:14.5px;line-height:1.5;margin:9px 0 11px;font-weight:600;position:relative;">
+        Hoy <b style="text-decoration:underline;">${nombre}</b>, andá a venderles innovaciones a estos <b>${oi.clientes.length}</b> clientes que el mes pasado compraron —igual que este mes— ¡pero todavía no se llevaron estas marcas! 👇
+      </div>
+      <div style="margin-bottom:11px;position:relative;">${cliChips}</div>
+      <div style="font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;opacity:.85;margin-bottom:3px;position:relative;">Marcas para ofrecer</div>
+      <div style="position:relative;">${inovChips}</div>
+    </div>`;
+  } else if(opors.length){
     h+=`<div class="sm bold" style="margin:2px 0 9px;">🎯 Oportunidades del día</div>`;
     h+=opors.map(c=>`<div class="vopor">
       <div class="vopor-lbl">Recuperar cliente</div>

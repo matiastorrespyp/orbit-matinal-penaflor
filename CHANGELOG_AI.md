@@ -1,5 +1,15 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — feat(vendedor): Oportunidad del día de Innovaciones
+
+**`server_orbit.py`** (`/api/vendedor/<vid>/oportunidades_innovacion`) y **`portal.html`** (inicio vendedor).
+
+- Nueva tarjeta llamativa en "Oportunidades del día": 3 clientes de la **zona de hoy** que **compraron el mes pasado y este mes** pero **nunca innovaciones** (ni mayo ni junio). Texto alentador: "Hoy <vendedor>, andá a venderles innovaciones a estos clientes... pero todavía no compraron estas marcas: <3 innovaciones al azar>".
+- Fuente: **`ventas_acumulada.csv`** (mayo+junio); innovaciones desde `mod_innovaciones_segmento.csv` (17 productos). Candidatos = `(compró mes ant. − inov mes ant.) ∩ (compró mes act. − inov mes act.) ∩ clientes del día`. Top 3 por volumen ($). 3 marcas random.
+- Fallback: si no hay candidatos del día, se muestra el bloque anterior de "Recuperar cliente".
+
+---
+
 ## 2026-06-04 — feat(historial): retención de 90 días (ventana móvil)
 
 **`LEGACY/orbit_matinal_v42.py`** (`actualizar_historial_ventas`).

@@ -1,5 +1,18 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-04 — Oportunidad del día de Innovaciones (vendedor)
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ Nueva tarjeta "Oportunidad del día · Innovaciones" en el inicio del vendedor: 3 clientes de la zona de hoy que compraron mayo y junio pero nunca innovaciones, con texto alentador + 3 innovaciones al azar.
+- ✅ Endpoint `/api/vendedor/<vid>/oportunidades_innovacion` (fuente `ventas_acumulada.csv`). Top 3 por volumen $. Filtra por día (`?dia=`, default hoy AR).
+- ✅ Tarjeta con gradiente magenta, validada visualmente. **Pendiente confirmar en Render.**
+
+### A OBSERVAR
+1. Las 3 innovaciones son random por carga (cambian al refrescar). Si se quiere fijarlas por día, sembrar el random con fecha+vendedor.
+2. Si la zona del día no tiene candidatos, cae al bloque viejo "Recuperar cliente".
+
+---
+
 ## Sesión 2026-06-04 — Dormidos: criterio +60 días + riesgo $/litros
 
 ### HECHO EN ESTA SESIÓN ✅
