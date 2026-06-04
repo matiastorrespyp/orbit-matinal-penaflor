@@ -1187,45 +1187,10 @@ def clientes():
 
 @app.route("/api/alertas")
 def alertas():
-    df = read_csv(DATASETS / "mod_alertas_descuentos.csv")
-    if df.empty: return jsonify([])
-    df.columns = [c.lstrip("﻿") for c in df.columns]
-    for col in ["vendedor_codigo", "cliente_id", "cant_base", "cajas_eq",
-                "descuento_aplicado_pct", "descuento_maximo_pct", "exceso_pct",
-                "importe_neto", "valor_descuento"]:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-
-    # Excluir alertas de Plan AS: su descuento base es 10%; solo alerta si supera ese umbral
-    pas = read_csv(DATASETS / "mod_planes_as.csv")
-    if not pas.empty:
-        pas_ids = set(pd.to_numeric(pas["cliente_id"], errors="coerce").dropna().astype(int))
-        is_plan_as = df["cliente_id"].isin(pas_ids)
-        descuento_ok = df["descuento_aplicado_pct"] <= 10
-        df = df[~(is_plan_as & descuento_ok)]
-
-    # Excluir alertas de 11 Titulares con ≤10%: hay una acción comercial de 10% dto en las 11T
-    _11T_MARCAS = {
-        "ALMA MORA", "DADA", "LOS ARBOLES", "TRAPICHE RESERVA", "ALARIS",
-        "FINCA LAS MORAS", "DON DAVID", "GORDON'S FLAVOURS", "SMIRNOFF FLAVOURS",
-        "ANTARES", "SMIRNOFF ICE", "FOND DE CAVE", "CAZADOR", "JW BLACK", "JW RED",
-        "MASCOTA", "NC ESPUMANTES", "TRAPICHE MEDALLA",
-    }
-    if "marca" in df.columns:
-        is_11t = df["marca"].astype(str).str.upper().str.strip().isin(_11T_MARCAS)
-        descuento_11t_ok = df["descuento_aplicado_pct"] <= 10
-        df = df[~(is_11t & descuento_11t_ok)]
-
-    df["vendedor_id"] = "V" + df["vendedor_codigo"].astype("Int64").astype(str)
-    df["prioridad"] = "alta"
-    df["tipo"] = "descuento"
-    df["titulo"] = df["cliente_nombre"]
-    df["detalle"] = (df["articulo"].fillna("") + " — descuento aplicado: " +
-                     df["descuento_aplicado_pct"].fillna(0).astype(str) + "% / máximo: " +
-                     df["descuento_maximo_pct"].fillna(0).astype(str) + "%")
-    df["accion"] = "Revisar descuento con " + df["fuente_regla"].fillna("regla fallback")
-    df["impacto_alertas_ars"] = (df["valor_descuento"].fillna(0) * df["cant_base"].fillna(0))
-    return jsonify(df.where(pd.notnull(df), None).to_dict(orient="records"))
+    # Alertas de descuento del mes en curso, calculadas en vivo desde el catálogo
+    # de acciones del mes (acciones_comerciales_<mes>_penaflor.csv). Ya no depende de
+    # mod_alertas_descuentos.csv (reglas de mayo). El catálogo contempla Plan AS / 11T.
+    return jsonify(_alertas_descuento_mes())
 
 # ====== DETALLE VENDEDOR ======
 @app.route("/api/vendedor/<vid>")
@@ -2958,17 +2923,28 @@ def _acc_seg_canon(seg_text, canal_text):
     return out
 
 
+def _acc_norm(s):
+    """Normaliza para matchear marcas: mayúsculas, sin acentos, sin puntuación (apóstrofes/´)."""
+    import unicodedata
+    s = str(s or "").upper()
+    s = "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
+    s = _re.sub(r"[^A-Z0-9 ]", " ", s)
+    return _re.sub(r"\s+", " ", s).strip()
+
+
 def _acc_lineas_de_marca(token, all_lineas):
-    base = token.replace(" VINO", "").strip()
-    wine_only = token.endswith(" VINO") or token == "VINO"
+    """Devuelve set de líneas comerciales (NORMALIZADAS) que corresponden a la marca del token."""
+    base = _acc_norm(token.replace(" VINO", ""))
+    wine_only = token.upper().endswith(" VINO") or token.upper().strip() == "VINO"
     out = set()
     if not base:
         return out
     for ln in all_lineas:
-        if ln == base or ln == token or ln.startswith(base + " "):
-            if wine_only and ("SIDRA" in ln or "CHAMPA" in ln or "ESPUMA" in ln):
+        lnn = _acc_norm(ln)
+        if lnn == base or lnn.startswith(base + " "):
+            if wine_only and ("SIDRA" in lnn or "CHAMPA" in lnn or "ESPUMA" in lnn):
                 continue
-            out.add(ln)
+            out.add(lnn)
     return out
 
 
@@ -2990,14 +2966,16 @@ def _acc_product_pred(rule, all_lineas):
             brand_toks.append(t.replace(" VINO", "").strip())
             brand_lineas |= _acc_lineas_de_marca(t, all_lineas)
 
+    brand_norm = [b for b in (_acc_norm(x) for x in brand_toks) if b]
+
     def pred(cat_canon, linea, articulo, marca):
         if has_resto and not brand_toks and not line_cats:
             return True
-        if brand_lineas or brand_toks:
-            if linea and brand_lineas and linea in brand_lineas:
+        if brand_lineas or brand_norm:
+            if linea and brand_lineas and _acc_norm(linea) in brand_lineas:
                 return True
-            am = (str(articulo or "") + " " + str(marca or "")).upper()
-            return any(bt and bt in am for bt in brand_toks)
+            am = _acc_norm(str(articulo or "") + " " + str(marca or ""))
+            return any(bt in am for bt in brand_norm)
         if line_cats:
             return cat_canon in line_cats
         return False
@@ -3040,6 +3018,10 @@ def _acc_preparar_ventas():
     out["_linea"] = out["_cod"].map(cod2linea).astype(str).str.upper().str.strip()
     out["_art"]  = df.get("Articulo", "").astype(str).str.upper()
     out["_marca"] = df.get("Marca", "").astype(str).str.upper()
+    out["_clinom"] = (df["RazonSocial"].astype(str) if "RazonSocial" in df.columns
+                      else df.get("Cliente", pd.Series([""] * len(df))).astype(str))
+    out["_vnom"] = (df["Vendedor"].astype(str) if "Vendedor" in df.columns
+                    else pd.Series([""] * len(df), index=df.index))
     out["_seg"]  = [
         _clasificar_segmento(str(r), str(s))
         for r, s in zip(df.get("Ramo", pd.Series([""] * len(df))), df.get("Subramo", pd.Series([""] * len(df))))
@@ -3132,6 +3114,75 @@ def _acciones_mes_payload(vid_filtro=None):
 
     return {"mes": mes, "fuente": fuente, "periodo": str(per_actual),
             "generado_en": _now_ar(), "acciones": acciones}
+
+
+def _alertas_descuento_mes():
+    """Alertas de descuento del MES EN CURSO desde el catálogo de acciones (no mayo).
+    Línea con descuento = alerta si el % aplicado supera el tramo MÁS ALTO de la acción
+    del catálogo que aplica (vendedor+segmento+marca). Sin acción aplicable → máximo 0."""
+    mes, fuente, reglas = _acc_catalogo_mes()
+    v = _acc_preparar_ventas()
+    if v.empty or not reglas:
+        return []
+    try:
+        per = pd.Period(mes, freq="M")
+    except Exception:
+        per = v["_mes"].max()
+    cur = v[(v["_mes"] == per) & (v["_desc"] > 0) & (v["_imp_item"] > 0)].copy()
+    if cur.empty:
+        return []
+    all_lineas = set(l for l in v["_linea"].dropna().unique() if l and l != "NAN")
+
+    parsed = []
+    for r in reglas:
+        vends_raw = str(r.get("vendedores_aplica", "")).upper()
+        if "TODOS" in vends_raw:
+            codes = {3, 4, 6, 7, 8, 9, 10}
+        else:
+            codes = {int(_re.sub(r"\D", "", x)) for x in _re.findall(r"V\s*\d+", vends_raw)} & {3, 4, 6, 7, 8, 9, 10}
+        seg = _acc_seg_canon(r.get("segmento_cliente_aplica"), r.get("canal_aplica"))
+        pred = _acc_product_pred(r, all_lineas)
+        tipo = str(r.get("tipo_regla", "")).upper()
+        tramos = [float(x) for x in str(r.get("descuento_pct", "")).replace(",", ".").split("|")
+                  if x.strip().replace(".", "").isdigit()]
+        maxpct = 100.0 if ("BONIFIC" in tipo or "SIN_CARGO" in tipo) else (max(tramos) if tramos else 0.0)
+        parsed.append((str(r.get("id_accion", "")).strip(), codes, seg, pred, maxpct))
+
+    alerts = []
+    for _, row in cur.iterrows():
+        imp_item = float(row["_imp_item"]); desc = float(row["_desc"])
+        apl = round(desc / imp_item * 100, 1) if imp_item else 0.0
+        if apl <= 0:
+            continue
+        vend = row["_vend"]; seg_v = row["_seg"]
+        allowed, fuente_id = 0.0, None
+        for rid, codes, seg, pred, maxpct in parsed:
+            if (vend in codes) and (seg_v in seg) and pred(row["_cat"], row["_linea"], row["_art"], row["_marca"]):
+                if maxpct > allowed:
+                    allowed, fuente_id = maxpct, rid
+        exceso = round(apl - allowed, 1)
+        if exceso <= 0.5:
+            continue
+        try: cod_int = int(vend)
+        except Exception: cod_int = 0
+        try: cli_int = int(row["_cli"])
+        except Exception: cli_int = None
+        fr = fuente_id or "sin acción aplicable"
+        alerts.append({
+            "vendedor_codigo": cod_int, "vendedor_nombre": str(row["_vnom"]),
+            "vendedor_id": "V" + str(cod_int), "cliente_id": cli_int,
+            "cliente_nombre": str(row["_clinom"]), "articulo": str(row["_art"]), "marca": str(row["_marca"]),
+            "cant_base": round(float(row["_cant"]), 1), "cajas_eq": round(float(row["_cant"]), 1),
+            "descuento_aplicado_pct": apl, "descuento_maximo_pct": allowed, "exceso_pct": exceso,
+            "fuente_regla": fr, "importe_neto": round(float(row["_imp_neto"]), 0),
+            "valor_descuento": round(desc, 0),
+            "prioridad": "alta", "tipo": "descuento", "titulo": str(row["_clinom"]),
+            "detalle": f"{row['_art']} — descuento aplicado: {apl}% / máximo: {allowed}%",
+            "accion": f"Revisar descuento ({fr})",
+            "impacto_alertas_ars": round(desc, 0),
+        })
+    alerts.sort(key=lambda a: a["exceso_pct"], reverse=True)
+    return alerts
 
 
 @app.route("/api/gerencia/acciones_mes")
