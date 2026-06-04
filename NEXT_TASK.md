@@ -9,7 +9,7 @@
 - ✅ Validado local: 7 dormidos (63-65 días), $300.754 / 50.2 L. **Pendiente confirmar en Render.**
 
 ### A OBSERVAR
-1. **Historial retiene ~70 días** → hoy solo se detectan dormidos de 61-70 días. Para captar >70 días hay que aumentar la retención de `historial_ventas_cliente.csv` (lo genera el motor legacy en el cierre).
+1. **Retención del historial ampliada a 90 días** (ventana móvil en `actualizar_historial_ventas`, LEGACY/orbit_matinal_v42.py). Hoy el historial tiene 69 días (no poda nada); a medida que acumule, la detección de dormidos llega a la banda 60-90 días. Aplica desde el próximo cierre.
 2. Litros se derivan del nombre del artículo (`cant_base` × ml/unidad). Default 0.75 L si no parsea. `cant_base` confirmado = unidades/botellas (validado con White Horse 12X750 = 720 botellas).
 3. Top 3 se ordena por **$**; si se prefiere por litros, cambiar el sort.
 

@@ -1,5 +1,14 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — feat(historial): retención de 90 días (ventana móvil)
+
+**`LEGACY/orbit_matinal_v42.py`** (`actualizar_historial_ventas`).
+
+- Antes el historial **no tenía tope** (acumulaba indefinidamente; hoy ~69 días por la antigüedad del sistema). Se agregó **ventana móvil de 90 días**: en cada cierre mantiene solo `fecha >= max_fecha − 90 días`.
+- Beneficio para Dormidos (+60 días): la banda de detección se amplía de los ~60-69 días actuales hacia **60-90 días** a medida que el historial acumula. Aplica en el próximo cierre (no modifica el historial actual: 69 días < 90, poda 0).
+
+---
+
 ## 2026-06-04 — feat(dormidos): criterio +60 días sin compra + riesgo $/litros
 
 **`server_orbit.py`** (`/api/gerencia/alertas_caida`) y **`portal.html`** (pantalla Dormidos gerencia).

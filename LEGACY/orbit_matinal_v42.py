@@ -982,6 +982,16 @@ def actualizar_historial_ventas(ventas_validas: pd.DataFrame) -> pd.DataFrame:
         "cant_base", "importe_neto", "descuento_pct"
     ]
     combinado = combinado.drop_duplicates(subset=dedup_cols, keep="last").copy()
+
+    # Retención: mantener solo los últimos 90 días (ventana móvil).
+    # Antes no había tope → el historial crecía sin límite. 90 días alcanza para
+    # el criterio de clientes dormidos (+60 días) con margen.
+    RETENCION_DIAS = 90
+    _f = pd.to_datetime(combinado["fecha_comprobante"], errors="coerce")
+    if _f.notna().any():
+        corte = _f.max() - pd.Timedelta(days=RETENCION_DIAS)
+        combinado = combinado[_f >= corte].copy()
+
     combinado.to_csv(HISTORY_FILE, index=False, encoding="utf-8-sig")
     return combinado
 
