@@ -80,29 +80,49 @@ git add "02_HISTORY/historial_ventas_cliente.csv"
 git add "04_DATASETS_ORBIT/"
 
 git diff --cached --quiet
-set GIT_DIFF_RESULT=%ERRORLEVEL%
-
-if %GIT_DIFF_RESULT% equ 0 (
+if not errorlevel 1 (
     echo No hay cambios nuevos para publicar.
     echo Render ya tiene los datos mas recientes.
-) else (
-    git commit -m "data: cierre dia %FECHA_COMMIT% — datasets + inputs actualizados"
-    set COMMIT_OK=%ERRORLEVEL%
-    if %COMMIT_OK% neq 0 (
-        echo ERROR: Fallo el commit. Verificar estado de git.
-    ) else (
-        git push origin master
-        set PUSH_OK=%ERRORLEVEL%
-        if %PUSH_OK% neq 0 (
-            echo ERROR: Fallo el push. Verificar conexion a internet.
-        ) else (
-            echo OK: Datos publicados en GitHub.
-            echo Render va a actualizar automaticamente en 2-3 minutos.
-            echo.
-            start "" "https://orbit-matinal-penaflor.onrender.com"
-        )
-    )
+    goto fin_publicar
 )
+
+git commit -m "data: cierre dia %FECHA_COMMIT% — datasets + inputs actualizados"
+if errorlevel 1 (
+    echo.
+    echo ERROR: Fallo el commit. Verificar estado de git. NO se publico.
+    goto fin_publicar
+)
+
+echo.
+echo Sincronizando con el remoto antes de publicar (git pull --rebase)...
+git pull --rebase origin master
+if errorlevel 1 (
+    echo.
+    echo ============================================================
+    echo ERROR: No se pudo sincronizar con el remoto.
+    echo Cancelando el rebase para no dejar el repositorio a medias...
+    git rebase --abort
+    echo Los datos NO se publicaron. Avise a soporte tecnico.
+    echo ============================================================
+    goto fin_publicar
+)
+
+git push origin master
+if errorlevel 1 (
+    echo.
+    echo ============================================================
+    echo ERROR: Fallo el PUSH a GitHub. Los datos NO llegaron a Render.
+    echo Revisar conexion a internet y volver a ejecutar el cierre.
+    echo ============================================================
+    goto fin_publicar
+)
+
+echo.
+echo OK: Datos publicados en GitHub.
+echo Render va a actualizar automaticamente en 2-3 minutos.
+start "" "https://orbit-matinal-penaflor.onrender.com"
+
+:fin_publicar
 
 echo.
 echo ============================================================
