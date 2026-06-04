@@ -1,5 +1,22 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-04 — Loader de acciones comerciales mensual (commit c2c6b55)
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ `tools/loader_acciones_comerciales.py` — loader idempotente, versionado por mes, sin libs externas. No toca cierre, `resultado.xlsx`, históricos, datasets ni `server_orbit.py`.
+- ✅ Capa semántica marca→categoría desde `producto activos.xlsx` (mapea Alma Mora/Dada vino/Alaris/Finca Las Moras → VDA; desambigua Dada vino de Sidra/Champaña).
+- ✅ Diagnóstico Junio 2026: 26 reglas, todas `aplica_cierre_mes=NO`, sin V2/V5/V20. ACJ26-017 correctamente acotada (V3/V4/V6 + Tradicional + 30% + marcas permitidas).
+- ✅ Reporte de colisiones: 40 (20 directas + 20 semánticas), `PENDIENTE_VALIDACION`. ACJ26-017 solapa solo con ACJ26-002 (VDA Tradicional) vía capa semántica.
+- ✅ Commiteado y pusheado (`c2c6b55`): loader + input junio + salidas (sin `_backups`).
+- ✅ Validado en Render que el panel "Cierre de Mes" sigue OK tras deploy `0b2152c` (acumulado $323.9M / 99.11%, todas las secciones, sin CantBase/botellas, sin errores JS/red).
+
+### PRÓXIMOS PASOS (requieren aprobación)
+1. **Motor de aplicación de acciones** — el loader hoy solo produce catálogo + colisiones; falta el motor que aplique descuentos/escala y resuelva las 40 colisiones (no acumular). Definir alcance.
+2. **Mapeo línea↔marca para Spirits/RTD** — validar manualmente las 20 colisiones semánticas (varias por VDA/SIDRA/RTD en Autoservicio) antes de liquidar.
+3. **Integrar loader al pipeline mensual** — para que cada mes nuevo de `01_INPUTS/ACCIONES COMERCIALES/<mes>/` se procese sin paso manual.
+
+---
+
 ## Sesión 2026-06-03 — Acumulado distribuidora/vendedor desde resultado_mes.xlsx
 
 ### HECHO EN ESTA SESIÓN ✅

@@ -1,5 +1,27 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — feat(acciones): loader mensual de acciones comerciales + reporte de colisiones
+
+**Commit:** `c2c6b55` (pusheado). Solo herramienta + datos de acciones; no afecta runtime del backend ni el cierre.
+
+**Qué se hizo:** loader idempotente y versionado por mes para el catálogo de acciones comerciales, con validación, normalización y detección de colisiones. Tratado como **input mensual** (`aplica_cierre_mes = NO`); **no toca** cierre de mes, `resultado.xlsx`, históricos, datasets ni `server_orbit.py`.
+
+**`tools/loader_acciones_comerciales.py`** (sin libs externas nuevas):
+- Lee `01_INPUTS/ACCIONES COMERCIALES/<mes>/*.csv` (`;`, UTF-8-BOM). Uso: `python tools/loader_acciones_comerciales.py 2026-06`.
+- Normaliza: expande `TODOS_ACTIVOS` → {V3,V4,V6,V7,V8,V9,V10}, **excluye V2/V5/V20**, valida `aplica_cierre_mes`.
+- **Capa semántica marca→categoría**: lee el maestro `producto activos.xlsx` (solo lectura) y mapea marca → línea comercial → categoría (VDA/VDG/Espumantes/Sidra/Spirits…), desambiguando "DADA VINO" (solo VINOS DEL AÑO; excluye Sidra/Champaña). Degrada con gracia si el maestro no está.
+- Idempotente: regenera la salida y respalda la previa en `salida/_backups/` con timestamp.
+
+**Salida (en `01_INPUTS/ACCIONES COMERCIALES/2026-06/salida/`):**
+- `catalogo_acciones_2026-06.json` — 26 reglas normalizadas (con `_cats` por regla) + validación.
+- `reporte_colisiones_2026-06.json` / `.csv` — campo `tipo` (DIRECTA / SEMANTICA_LINEA_MARCA), estado `PENDIENTE_VALIDACION`.
+
+**Diagnóstico Junio 2026:** 26 reglas, todas `aplica_cierre_mes=NO`, sin V2/V5/V20. **40 colisiones** (20 directas + 20 semánticas). ACJ26-017 (30% Alma Mora/Dada vino/Alaris/Finca Las Moras, V3/V4/V6, Tradicional) correctamente acotada; su único solape es **semántico con ACJ26-002** (escala VDA Tradicional, mismos vendedores), capturado vía mapeo marca→categoría (VDA).
+
+**Pendiente:** el loader propone catálogo + colisiones; el motor de aplicación de descuentos y la resolución de colisiones quedan para etapa futura (no se acumulan automáticamente).
+
+---
+
 ## 2026-06-03 — fix(cierre): acumulado distribuidora y por vendedor desde resultado_mes.xlsx
 
 **Problema:** la tarjeta "Resumen compañía" (ventas acumuladas distribuidora) y "Cierre por vendedor" mostraban el acumulado de `ventas_mes.csv` ($285.579.795 / 87.39%). Ese valor era *importe neto facturado*, no el acumulado oficial del mes cerrado. El acumulado correcto vive en `01_INPUTS/resultado_mes.xlsx` (acumulado congelado del ERP, `Acumulado == Tendencia`): **$323.898.602,72 / 99.11%**.
