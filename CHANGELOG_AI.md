@@ -1,5 +1,15 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — fix(11T): los 11 titulares son los mismos en Tradicional y Autoservicio
+
+**`generar_datasets_acum.py`** (`MAP_11T`). Validado por usuario.
+
+- **Problema:** `MAP_11T["TRADICIONAL"]` tenía marcas equivocadas (Fond de Cave, Cazador, JW Black/Red, Mascota, NC Espumantes, Trapiche Medalla). Por eso vendedores como V3 daban 0 en 11T (no venden esas marcas).
+- **Fix:** los **11 Titulares son los mismos** para ambos segmentos: Alma Mora, Trapiche Reserva, Finca Las Moras, Alaris, Don David, Dada (vino), Smirnoff Flavours, Los Árboles, Antares, Smirnoff Ice, Gordon's Flavours. `MAP_11T` ahora usa la misma lista (`_ONCE_TITULARES`) en Autoservicio y Tradicional.
+- Validado: mod_11t_acum.csv → 11 marcas en cada segmento. V3 ahora refleja cobertura real (total 702) en vez de 0.
+
+---
+
 ## 2026-06-04 — fix(11T): mod_11t_acum.csv desde ventas_acumulada.csv (regla 11T)
 
 **`generar_datasets_acum.py`** (regenera `mod_11t_acum.csv`).
