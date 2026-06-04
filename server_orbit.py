@@ -2730,6 +2730,7 @@ def gerencia_planes_as():
                 _cli_info[int(r["Codigo"])] = {
                     "localidad":   str(r.get("Localidad", "") or "").strip(),
                     "dia_visita":  str(r.get("DiasVisita", "") or "").strip(),
+                    "direccion":   str(r.get("Direccion", "") or "").strip(),
                 }
     except Exception as e:
         print(f"[WARN] planes_as join clientes: {e}")
@@ -2742,6 +2743,7 @@ def gerencia_planes_as():
         registros.append({
             "cliente_id":      cid,
             "cliente_nombre":  str(row.get("cliente_nombre", "")),
+            "direccion":       str(row.get("direccion", "") or ci.get("direccion", "")),
             "localidad":       ci.get("localidad", ""),
             "dia_visita":      ci.get("dia_visita", ""),
             "vendedor_id":     f"V{int(row['vendedor_codigo'])}" if pd.notna(row.get("vendedor_codigo")) else None,
@@ -3262,6 +3264,7 @@ def vendedor_planes_as(vid):
         registros.append({
             "cliente_id":      int(row["cliente_id"]) if pd.notna(row["cliente_id"]) else None,
             "cliente_nombre":  str(row.get("cliente_nombre", "")),
+            "direccion":       str(row.get("direccion", "")),
             "plan_as":         str(row.get("plan_as", "")),
             "total_facturado": round(float(row["total_facturado"]), 2),
             "dcto_plan":       round(float(row["dcto_plan"]), 2),

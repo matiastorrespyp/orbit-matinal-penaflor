@@ -1,5 +1,15 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — feat(planes_as): nombre del maestro + dirección + N° cliente en tarjetas
+
+**`generar_datasets_acum.py`** (escribe `cliente_nombre` del maestro y `direccion` en `mod_planes_as.csv`), **`server_orbit.py`** (expone `direccion` en gerencia y vendedor) y **`portal.html`**.
+
+- **Nombre desde `clientes.xlsx` (Razon_Social)** en vez del nombre de la BBDD del Reconocimiento (que tenía mojibake, ej. "YBAÃ‘EZ" → ahora "YBAÑEZ"). Fallback al nombre BBDD si el cliente no está en el maestro.
+- **Dirección (`Direccion` del maestro)** agregada a `mod_planes_as.csv` y a ambos endpoints; se muestra en la tarjeta de gerencia (meta: `#id · dirección · localidad · día`) y del vendedor (bajo el nombre: `#id · dirección`).
+- N° de cliente ya se mostraba; queda explícito con `#`.
+
+---
+
 ## 2026-06-04 — fix(planes_as): escala desde escala_junio.xlsx + vendedor desde maestro
 
 **`generar_datasets_acum.py`** (regenera `mod_planes_as.csv`). Server sin cambios (lee `mod_planes_as.csv`). Validado en local.

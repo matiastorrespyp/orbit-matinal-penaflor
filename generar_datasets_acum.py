@@ -499,10 +499,20 @@ def generar_planes_as(ventas, bbdd, clientes):
     df["sc_pend_smf_flavours"] = (df["sc_smf_flavours"] - df.get("sc_env_smf_flavours", 0)).clip(lower=0)
     df["sc_pendiente"] = (df["sc_pend_alaris"] + df["sc_pend_alma_mora"] + df["sc_pend_frizze"]
                           + df["sc_pend_antares_ipa"] + df["sc_pend_smf_flavours"])
+
+    # Nombre y dirección desde el maestro clientes.xlsx (el nombre de la BBDD tiene mojibake).
+    # Fallback al nombre de la BBDD si el cliente no está en el maestro.
+    cli_idx = clientes.copy()
+    cli_idx["cliente_id"] = pd.to_numeric(cli_idx["Codigo"], errors="coerce")
+    nombre_master = dict(zip(cli_idx["cliente_id"], cli_idx.get("Razon_Social")))
+    direccion_master = dict(zip(cli_idx["cliente_id"], cli_idx.get("Direccion")))
+    df["cliente_nombre"] = df["cliente_id"].map(nombre_master).fillna(df["cliente_nombre"])
+    df["direccion"] = df["cliente_id"].map(direccion_master).fillna("")
+
     df["fecha_calculo"] = datetime.now().strftime("%Y-%m-%d")
 
     cols_out = [
-        "fecha_calculo", "cliente_id", "cliente_nombre", "vendedor_codigo", "vendedor_nombre",
+        "fecha_calculo", "cliente_id", "cliente_nombre", "direccion", "vendedor_codigo", "vendedor_nombre",
         "plan_as", "escala_actual", "escala_max", "total_facturado", "dcto_plan",
         "cant_cajas", "tope", "cant_cajas_tope",
         "sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa", "sc_smf_flavours",
