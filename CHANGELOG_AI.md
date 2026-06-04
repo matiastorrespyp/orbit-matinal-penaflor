@@ -1,5 +1,23 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — feat(alertas): alertas de descuento desde el catálogo del mes (no mayo)
+
+**Commit:** `9ebc42d`. Solo `server_orbit.py` (mismo formato de salida → portal sin cambios). Desplegado y validado en Render.
+
+**Problema:** las alertas de descuento (`/api/alertas` → pantalla gerencial **Alertas** + bloque "Alertas de clientes" del vendedor) salían de `mod_alertas_descuentos.csv`, que el motor legacy genera contra `reglas_acciones_mayo_2026_orbit.csv` (**mes pasado**). No se actualizaba solo cada mes.
+
+**Fix:** `/api/alertas` ahora se computa **en vivo desde el catálogo del mes** (`acciones_comerciales_<mes>_penaflor.csv`, autodetectado) × `ventas_acumulada.csv`. Se actualiza solo al cambiar de mes. Ya no depende del motor legacy ni de `mod_alertas_descuentos.csv`.
+- Línea con descuento (`descuento aplicado = (ImporteItem−ImporteNetoItem)/ImporteItem`) es **alerta** si supera el **tramo más alto** de la acción del catálogo que aplica (vendedor + segmento + marca).
+- **Sin acción que habilite** ese producto/segmento/vendedor → máximo 0 → alerta (`fuente_regla = "sin acción aplicable"`). (Definiciones confirmadas por el usuario.)
+- Plan AS / 11T ya no necesitan exclusión hardcodeada: el catálogo define sus % permitidos.
+- **Normalización de marca** (`_acc_norm`: sin acentos/puntuación) → corrige falsos positivos tipo `GORDON´S` vs `Gordon's`.
+
+**Validación Render:** 112 alertas; Gordon's → ACJ26-007 (ya no "sin acción"); 6 "sin acción aplicable" (Tanqueray/JW/Alaris sin acción que los habilite para ese vendedor). Pantalla gerencial y vendedor V8 renderizan OK, sin errores JS.
+
+**Nota:** el matcheo regla→venta reusa la misma capa de Acciones del Mes (vendedor+segmento+marca vía maestro 04D). Detalles finos de escala por cantidad no se aplican: el tope es el tramo más alto (criterio conservador, menos falsos positivos).
+
+---
+
 ## 2026-06-04 — feat(acciones): "Acciones Comerciales del Mes" (catálogo mensual × ventas) gerencia + vendedor
 
 **Commit:** `69bb95c`. `server_orbit.py` + `portal.html`. Desplegado y validado en Render.

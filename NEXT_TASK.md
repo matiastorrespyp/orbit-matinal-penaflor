@@ -1,5 +1,19 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-04 — Alertas de descuento desde catálogo del mes (commit 9ebc42d)
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ `/api/alertas` (pantalla Alertas gerencia + bloque alertas vendedor) ahora se calcula en vivo desde el catálogo del mes (autodetectado), no desde `reglas_acciones_mayo` ni `mod_alertas_descuentos.csv`. Se actualiza solo cada mes.
+- ✅ Criterio: alerta si descuento aplicado > tramo más alto de la acción aplicable (vendedor+segmento+marca); sin acción → máximo 0 → alerta.
+- ✅ Normalización de marca (`_acc_norm`) corrige falsos positivos por acentos/apóstrofes (Gordon's). Validado en Render (112 alertas; Gordon's→ACJ26-007).
+
+### PENDIENTES / A OBSERVAR
+1. **Volumen de alertas**: 112 total (V8=81) por criterio estricto ("sin acción → alerta"). Si en uso real resulta ruidoso, evaluar umbral o excluir marcas sin acción.
+2. **Escala por cantidad**: el tope de alerta usa el tramo más alto (no el tramo exacto por cajas). Si se quiere precisión por cantidad, es un paso extra.
+3. `mod_alertas_descuentos.csv` (motor legacy, mayo) quedó sin consumidor en el portal; se puede deprecar.
+
+---
+
 ## Sesión 2026-06-04 — Acciones Comerciales del Mes (catálogo × ventas) (commit 69bb95c)
 
 ### HECHO EN ESTA SESIÓN ✅
