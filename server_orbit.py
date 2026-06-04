@@ -3183,13 +3183,15 @@ def _marcas_de_grupo(sg: pd.DataFrame) -> list:
 
 
 def _preparar_df_ventas(src_path) -> pd.DataFrame:
-    """Lee ventas.csv, parsea columnas numéricas, excluye V2/V5/V20, filtra importe > 0."""
+    """Lee ventas.csv, parsea columnas numéricas, excluye V2/V5/V20, filtra importe > 0.
+    sep=";" explícito: sep=None/engine=python sniffea mal el separador en Linux (Render)
+    → columnas desalineadas, ImporteNetoItem=0, se pierden filas (mismo patrón que diagnóstico)."""
     df = None
     for enc in ("utf-8-sig", "latin-1", "windows-1252"):
         try:
-            df = pd.read_csv(src_path, sep=None, engine="python", encoding=enc)
+            df = pd.read_csv(src_path, sep=";", encoding=enc, low_memory=False)
             break
-        except UnicodeDecodeError:
+        except (UnicodeDecodeError, ValueError):
             continue
     if df is None:
         return pd.DataFrame()
