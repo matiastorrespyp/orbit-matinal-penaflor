@@ -1,5 +1,23 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-04 — Push diario robusto en CIERRE_DIA_ORBIT.bat (commit c8b6156)
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ `CIERRE_DIA_ORBIT.bat` Paso 3/3: agregado `git pull --rebase origin master` (tras commit, antes del push) → evita el rechazo non-fast-forward que dejaba el push sin subir.
+- ✅ Errores visibles: si falla rebase (`git rebase --abort` + aviso) o push (mensaje claro), el operador se entera; ya no falla en silencio.
+- ✅ Chequeos con `if errorlevel 1` (más confiable que `%ERRORLEVEL%` anidado).
+
+### PROCEDIMIENTO DIARIO (confirmado)
+- **No hay archivo aparte de push.** El push ya es el Paso 3/3 de `CIERRE_DIA_ORBIT.bat`.
+- Rutina: pegar `ventas.csv` nuevo en `01_INPUTS/` → ejecutar **`CIERRE_DIA_ORBIT.bat` completo** (un doble-clic). Hace: validar → regenerar datasets → sincronizar planes → commit+pull --rebase+push → abrir portal.
+- ⚠️ NO usar solo `REGENERAR_DATOS_ORBIT.bat` (regenera pero NO publica → Render queda con datos viejos).
+
+### PRÓXIMOS PASOS (opcionales)
+1. Programar `CIERRE_DIA_ORBIT.bat` con el Programador de tareas de Windows si se quiere 100% automático a una hora fija (hoy es manual de un clic).
+2. Motor de aplicación de acciones comerciales (loader junio ya deja catálogo + colisiones).
+
+---
+
 ## Sesión 2026-06-04 — Fix Sell Out + dashboard validado integral (commits 4864d22, ffc0c1e)
 
 ### HECHO EN ESTA SESIÓN ✅

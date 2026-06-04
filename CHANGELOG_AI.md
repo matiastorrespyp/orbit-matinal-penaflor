@@ -1,5 +1,23 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — fix(cierre-bat): push diario robusto en CIERRE_DIA_ORBIT.bat
+
+**Commit:** `c8b6156`. Solo `CIERRE_DIA_ORBIT.bat` (herramienta del operador); no toca dashboard, datos ni backend.
+
+**Contexto:** el push del refresh diario lo hace el **Paso 3/3 de `CIERRE_DIA_ORBIT.bat`** (no hay archivo aparte). El operador ejecuta ese único `.bat` y hace todo en cadena: valida `ventas.csv` → regenera datasets (`REGENERAR_DATOS_ORBIT.bat`) → sincroniza planes (`sync_planes_render.py`) → `git add`+`commit`+`push` → abre el portal. No es programado: se dispara a mano, pero corre todo de una.
+
+**Problema:** el push fallaba en silencio cuando el repo local estaba detrás del remoto (rechazo non-fast-forward) — fue lo que dejó el dashboard en "Matinal miércoles" el 2026-06-04 (datos regenerados pero no publicados).
+
+**Mejora aplicada al Paso 3/3:**
+- Se agregó **`git pull --rebase origin master`** *después* del `commit` (árbol limpio) y *antes* del `push`, para sincronizar con el remoto y evitar el rechazo.
+- Si el rebase falla → `git rebase --abort` + mensaje claro ("NO se publicaron los datos, avise a soporte"); deja el repo sano.
+- Si el `push` falla → error grande y visible ("los datos NO llegaron a Render"); ya no pasa desapercibido.
+- Chequeos migrados al idiom `if errorlevel 1` (lee el error real de cada comando), más confiable que el `%ERRORLEVEL%` anidado previo.
+
+**Recordatorio operativo:** correr **`CIERRE_DIA_ORBIT.bat` completo** en cada cierre (no solo `REGENERAR_DATOS_ORBIT.bat`, que regenera pero NO publica). Render lee lo committeado, no el working tree local.
+
+---
+
 ## 2026-06-04 — fix(dashboard): Sell Out en cero en Render + blindaje parseo ventas + validación integral
 
 **Commits:** `4864d22` (fix Sell Out) · `41ec473` (limpieza) · `ffc0c1e` (blindaje). Desplegados y validados en Render.
