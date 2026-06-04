@@ -2826,7 +2826,7 @@ function gDormidos(p){
   const fmtARS=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
   let html=`<div class="gph">
     <div><div class="gph-title">Clientes Dormidos</div>
-    <div class="gph-sub">Compraron en el período anterior · sin compra en el período actual</div></div>
+    <div class="gph-sub">Sin compra hace más de 60 días · riesgo $ y litros</div></div>
   </div>`;
   if(!dat||!dat.resumen){
     html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">💤</div><p>Sin datos disponibles.</p></div></div></div>`;
@@ -2839,21 +2839,21 @@ function gDormidos(p){
   if(badge){ badge.textContent=res.total_dormidos; badge.style.display=res.total_dormidos>0?'inline-flex':'none'; }
 
   // KPI cards
-  const maxRiesgo=Math.max(...pv.map(v=>v.importe_en_riesgo),1);
   html+=`<div class="krow" style="margin-bottom:16px;">
     <div class="kcard wn">
       <div class="kl">Clientes dormidos</div>
       <div class="kv" style="font-size:22px;">${res.total_dormidos}</div>
-      <div class="ks" style="font-size:10px;margin-top:3px;">sin compra desde ${res.inicio_periodo_actual}</div>
+      <div class="ks" style="font-size:10px;margin-top:3px;">sin compra hace +${res.criterio_dias||60} días</div>
     </div>
     <div class="kcard bd">
-      <div class="kl">Importe en riesgo (acum. período anterior)</div>
+      <div class="kl">Riesgo en $</div>
       <div class="kv" style="font-size:22px;">$${fmtARS(res.importe_en_riesgo)}</div>
-      <div class="ks" style="font-size:10px;margin-top:3px;">suma compras período ant. de estos clientes</div>
+      <div class="ks" style="font-size:10px;margin-top:3px;">volumen $ acumulado de estos clientes</div>
     </div>
     <div class="kcard info">
-      <div class="kl">Período actual</div>
-      <div class="kv" style="font-size:14px;">${res.inicio_periodo_actual} → ${res.fin_periodo_actual}</div>
+      <div class="kl">Riesgo en litros</div>
+      <div class="kv" style="font-size:22px;">${fmtARS(res.litros_en_riesgo)} L</div>
+      <div class="ks" style="font-size:10px;margin-top:3px;">volumen acumulado de estos clientes</div>
     </div>
   </div>`;
 
@@ -2864,18 +2864,15 @@ function gDormidos(p){
       <table class="tbl"><thead><tr>
         <th>Vendedor</th>
         <th style="text-align:right">Dormidos</th>
-        <th>Riesgo $</th>
-        <th style="min-width:130px">Peso relativo</th>
-        <th>Top 3 clientes</th>
+        <th style="text-align:right">Riesgo $ / Litros</th>
+        <th>Top 3 clientes (mayor volumen)</th>
       </tr></thead>
       <tbody>${pv.map(v=>{
-        const pct=Math.round(v.importe_en_riesgo/maxRiesgo*100);
-        const top3=v.top_clientes.slice(0,3).map(c=>`<div style="font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">${c.cliente_nombre} <span style="color:var(--text3)">${c.dias_sin_compra}d · $${fmtARS(c.importe_anterior)}</span></div>`).join('');
+        const top3=v.top_clientes.slice(0,3).map(c=>`<div style="font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px;">${c.cliente_nombre} <span style="color:var(--text3)">${c.dias_sin_compra}d · $${fmtARS(c.importe_anterior)} · ${fmtARS(c.litros_anterior)}L</span></div>`).join('');
         return `<tr>
           <td><b>${v.vendedor_codigo}</b> <span style="font-size:11px;color:var(--text3)">${v.vendedor_nombre}</span></td>
           <td style="text-align:right"><span class="chip wn">${v.dormidos}</span></td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums"><b>$${fmtARS(v.importe_en_riesgo)}</b></td>
-          <td><div class="bar"><div class="bar-f wn" style="width:${pct}%"></div></div></td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums"><b>$${fmtARS(v.importe_en_riesgo)}</b><br><span style="font-size:11px;color:var(--text3)">${fmtARS(v.litros_en_riesgo)} L</span></td>
           <td>${top3}</td>
         </tr>`;
       }).join('')}</tbody></table>

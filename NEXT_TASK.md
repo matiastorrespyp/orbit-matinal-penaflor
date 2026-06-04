@@ -1,5 +1,20 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-04 — Dormidos: criterio +60 días + riesgo $/litros
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ Criterio dormido = **sin compra hace +60 días** (antes "no compró este período"). Última compra = max(historial + ventas.csv).
+- ✅ Riesgo en **$ y litros** (litros parseados del nombre del artículo). 3 tarjetas KPI: dormidos · riesgo $ · riesgo litros.
+- ✅ Dormidos por vendedor: top **3** por mayor volumen ($), con $ y litros. Detalle clientes sin cambios de estructura.
+- ✅ Validado local: 7 dormidos (63-65 días), $300.754 / 50.2 L. **Pendiente confirmar en Render.**
+
+### A OBSERVAR
+1. **Historial retiene ~70 días** → hoy solo se detectan dormidos de 61-70 días. Para captar >70 días hay que aumentar la retención de `historial_ventas_cliente.csv` (lo genera el motor legacy en el cierre).
+2. Litros se derivan del nombre del artículo (`cant_base` × ml/unidad). Default 0.75 L si no parsea. `cant_base` confirmado = unidades/botellas (validado con White Horse 12X750 = 720 botellas).
+3. Top 3 se ordena por **$**; si se prefiere por litros, cambiar el sort.
+
+---
+
 ## Sesión 2026-06-04 — 11T: mod_11t_acum desde ventas_acumulada
 
 ### HECHO EN ESTA SESIÓN ✅

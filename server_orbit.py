@@ -3736,83 +3736,116 @@ def gerencia_acciones_ranking():
 
 
 # ====== ALERTAS CAÍDA: clientes dormidos ======
+def _litros_por_unidad(articulo):
+    """Litros por unidad base a partir del nombre del artículo (ej. '6X750'->0.75, '12X1LT'->1,
+    '4X6X473'->0.473). Default 0.75 L si no se puede parsear."""
+    s = str(articulo).upper()
+    matches = _re.findall(r"X\s*(\d+(?:[.,]\d+)?)\s*(LT|L|ML|CC)?", s)
+    if not matches:
+        return 0.75
+    num, unit = matches[-1]
+    try:
+        val = float(num.replace(",", "."))
+    except ValueError:
+        return 0.75
+    if unit in ("LT", "L"):
+        return val
+    return val / 1000.0   # ml/cc o sin unidad
+
+
 @app.route("/api/gerencia/alertas_caida")
 def gerencia_alertas_caida():
-    """Clientes que compraron en período anterior pero NO en el período actual.
-    Período anterior: fechas en historial_ventas_cliente.csv antes del inicio de ventas.csv.
-    Período actual: ventas.csv (ImporteNetoItem > 0).
-    Excluye V2, V5, V20.
+    """Clientes DORMIDOS: sin compra hace MÁS de 60 días (criterio por días).
+    Última compra por cliente = max fecha en historial_ventas_cliente.csv + ventas.csv.
+    Riesgo = importe_neto y litros acumulados del cliente. Excluye V2, V5, V20.
     """
     EXCLUIR = [2, 5, 20]
+    DIAS_DORMIDO = 60
     HIST_PATH = BASE / "02_HISTORY" / "historial_ventas_cliente.csv"
     VTAS_PATH = INPUTS / "ventas.csv"
 
-    if not HIST_PATH.exists() or not VTAS_PATH.exists():
+    if not HIST_PATH.exists():
         return jsonify({"error": "Fuente no disponible"}), 404
 
+    def _vacio():
+        return jsonify({"resumen": {"total_dormidos": 0, "importe_en_riesgo": 0,
+                                    "litros_en_riesgo": 0, "criterio_dias": DIAS_DORMIDO},
+                        "por_vendedor": [], "detalle": []})
     try:
+        # ── Historial ──
         hc = pd.read_csv(HIST_PATH, encoding="utf-8-sig", sep=None, engine="python")
         hc["fecha"] = pd.to_datetime(hc["fecha_comprobante"], errors="coerce")
-        hc = hc[~hc["vendedor_codigo"].isin(EXCLUIR) & hc["importe_neto"].notna()].copy()
-        hc = hc[hc["importe_neto"] > 0]
+        hc["importe"] = pd.to_numeric(hc["importe_neto"], errors="coerce")
+        hc["cant"] = pd.to_numeric(hc.get("cant_base", 0), errors="coerce").fillna(0)
+        hc = hc[~hc["vendedor_codigo"].isin(EXCLUIR) & hc["importe"].notna() & (hc["importe"] > 0)].copy()
+        hc["litros"] = hc["cant"] * hc["articulo"].map(_litros_por_unidad)
+        partes = [hc[["cliente_id", "cliente_nombre", "vendedor_codigo", "vendedor_nombre",
+                      "fecha", "importe", "litros"]]]
 
-        v = pd.read_csv(VTAS_PATH, encoding="latin1", sep=";", engine="python")
-        v["fecha"] = pd.to_datetime(v["FechaComprobante"], dayfirst=True, errors="coerce")
-        v["importe"] = pd.to_numeric(
-            v["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce"
-        )
-        v = v[~v["CodVendedor"].isin(EXCLUIR) & (v["importe"] > 0)]
+        # ── ventas.csv (mes vivo: evita marcar dormido a quien compró ahora) ──
+        if VTAS_PATH.exists():
+            v = pd.read_csv(VTAS_PATH, encoding="latin1", sep=";", engine="python")
+            v["fecha"] = pd.to_datetime(v["FechaComprobante"], dayfirst=True, errors="coerce")
+            v["importe"] = pd.to_numeric(v["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
+            v["cant"] = pd.to_numeric(v.get("CantBase", pd.Series(["0"] * len(v))).astype(str).str.replace(",", ".", regex=False), errors="coerce").fillna(0)
+            v = v[~v["CodVendedor"].isin(EXCLUIR) & v["importe"].notna() & (v["importe"] > 0)].copy()
+            if not v.empty:
+                v["litros"] = v["cant"] * v["Articulo"].map(_litros_por_unidad)
+                partes.append(pd.DataFrame({
+                    "cliente_id": pd.to_numeric(v["Cliente"], errors="coerce"),
+                    "cliente_nombre": v["RazonSocial"].astype(str) if "RazonSocial" in v.columns else "",
+                    "vendedor_codigo": pd.to_numeric(v["CodVendedor"], errors="coerce"),
+                    "vendedor_nombre": v["Vendedor"].astype(str) if "Vendedor" in v.columns else "",
+                    "fecha": v["fecha"], "importe": v["importe"], "litros": v["litros"],
+                }))
 
-        inicio_actual = v["fecha"].min()
-        if pd.isna(inicio_actual):
-            return jsonify({"error": "ventas.csv sin fechas válidas"}), 500
-
-        # Período anterior: historial antes del inicio del período actual
-        hc_prev = hc[hc["fecha"] < inicio_actual].copy()
-        clientes_actuales = set(v["Cliente"].unique())
-
-        dormidos_df = hc_prev[~hc_prev["cliente_id"].isin(clientes_actuales)]
-        if dormidos_df.empty:
-            return jsonify({
-                "resumen": {"total_dormidos": 0, "importe_en_riesgo": 0},
-                "por_vendedor": [], "detalle": []
-            })
+        allp = pd.concat(partes, ignore_index=True).dropna(subset=["cliente_id", "fecha"])
+        if allp.empty:
+            return _vacio()
+        allp["cliente_id"] = allp["cliente_id"].astype(int)
 
         hoy = pd.Timestamp.today().normalize()
+        allp = allp.sort_values("fecha")
+        last = allp.groupby("cliente_id").tail(1).set_index("cliente_id")   # último comprobante (vendedor/nombre)
+        agg = (allp.groupby("cliente_id")
+               .agg(ultima_compra=("fecha", "max"),
+                    importe_anterior=("importe", "sum"),
+                    litros_anterior=("litros", "sum"))
+               .reset_index())
+        agg["dias_sin_compra"] = (hoy - agg["ultima_compra"]).dt.days
+        dorm = agg[agg["dias_sin_compra"] > DIAS_DORMIDO].copy()
+        if dorm.empty:
+            return _vacio()
 
-        resumen_cli = (
-            dormidos_df
-            .groupby(["cliente_id", "cliente_nombre", "vendedor_codigo", "vendedor_nombre"])
-            .agg(ultima_compra=("fecha", "max"), importe_anterior=("importe_neto", "sum"))
-            .reset_index()
-        )
-        resumen_cli["dias_sin_compra"] = (hoy - resumen_cli["ultima_compra"]).dt.days
-        resumen_cli["vendedor_codigo_str"] = "V" + resumen_cli["vendedor_codigo"].astype(str)
-        resumen_cli = resumen_cli.sort_values("importe_anterior", ascending=False)
+        dorm["cliente_nombre"]  = dorm["cliente_id"].map(last["cliente_nombre"])
+        dorm["vendedor_codigo"] = pd.to_numeric(dorm["cliente_id"].map(last["vendedor_codigo"]), errors="coerce").fillna(0).astype(int)
+        dorm["vendedor_nombre"] = dorm["cliente_id"].map(last["vendedor_nombre"])
+        dorm["vendedor_codigo_str"] = "V" + dorm["vendedor_codigo"].astype(str)
+        dorm = dorm.sort_values("importe_anterior", ascending=False)
 
-        # Resumen por vendedor
-        por_vend = (
-            resumen_cli.groupby(["vendedor_codigo_str", "vendedor_nombre"])
-            .agg(dormidos=("cliente_id", "count"), importe_en_riesgo=("importe_anterior", "sum"))
-            .reset_index()
-            .rename(columns={"vendedor_codigo_str": "vendedor_codigo"})
-            .sort_values("importe_en_riesgo", ascending=False)
-        )
+        por_vend = (dorm.groupby(["vendedor_codigo_str", "vendedor_nombre"])
+                    .agg(dormidos=("cliente_id", "count"),
+                         importe_en_riesgo=("importe_anterior", "sum"),
+                         litros_en_riesgo=("litros_anterior", "sum"))
+                    .reset_index().rename(columns={"vendedor_codigo_str": "vendedor_codigo"})
+                    .sort_values("importe_en_riesgo", ascending=False))
         top_por_vend = []
         for _, row in por_vend.iterrows():
             vc = row["vendedor_codigo"]
-            top = resumen_cli[resumen_cli["vendedor_codigo_str"] == vc].head(5)
+            top = dorm[dorm["vendedor_codigo_str"] == vc].head(3)   # top 3 por mayor volumen ($)
             top_por_vend.append({
                 "vendedor_codigo": vc,
                 "vendedor_nombre": row["vendedor_nombre"],
                 "dormidos": int(row["dormidos"]),
                 "importe_en_riesgo": round(float(row["importe_en_riesgo"]), 0),
+                "litros_en_riesgo": round(float(row["litros_en_riesgo"]), 1),
                 "top_clientes": [
                     {
                         "cliente_id": int(r["cliente_id"]),
                         "cliente_nombre": r["cliente_nombre"],
                         "ultima_compra": r["ultima_compra"].strftime("%Y-%m-%d"),
                         "importe_anterior": round(float(r["importe_anterior"]), 0),
+                        "litros_anterior": round(float(r["litros_anterior"]), 1),
                         "dias_sin_compra": int(r["dias_sin_compra"]),
                     }
                     for _, r in top.iterrows()
@@ -3827,18 +3860,19 @@ def gerencia_alertas_caida():
                 "vendedor_nombre": r["vendedor_nombre"],
                 "ultima_compra": r["ultima_compra"].strftime("%Y-%m-%d"),
                 "importe_anterior": round(float(r["importe_anterior"]), 0),
+                "litros_anterior": round(float(r["litros_anterior"]), 1),
                 "dias_sin_compra": int(r["dias_sin_compra"]),
             }
-            for _, r in resumen_cli.iterrows()
+            for _, r in dorm.iterrows()
         ]
 
-        total_riesgo = float(resumen_cli["importe_anterior"].sum())
         return jsonify({
             "resumen": {
-                "total_dormidos": len(resumen_cli),
-                "importe_en_riesgo": round(total_riesgo, 0),
-                "inicio_periodo_actual": inicio_actual.strftime("%Y-%m-%d"),
-                "fin_periodo_actual": v["fecha"].max().strftime("%Y-%m-%d"),
+                "total_dormidos": len(dorm),
+                "importe_en_riesgo": round(float(dorm["importe_anterior"].sum()), 0),
+                "litros_en_riesgo": round(float(dorm["litros_anterior"].sum()), 1),
+                "criterio_dias": DIAS_DORMIDO,
+                "fecha_corte": hoy.strftime("%Y-%m-%d"),
                 "fuente_historial": "historial_ventas_cliente.csv",
                 "fuente_actual": "ventas.csv",
             },

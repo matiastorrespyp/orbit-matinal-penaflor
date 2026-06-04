@@ -1,5 +1,17 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — feat(dormidos): criterio +60 días sin compra + riesgo $/litros
+
+**`server_orbit.py`** (`/api/gerencia/alertas_caida`) y **`portal.html`** (pantalla Dormidos gerencia).
+
+- **Nuevo criterio:** dormido = **sin compra hace más de 60 días**. Antes era "compró en período anterior y no en el actual". Última compra por cliente = max fecha en `historial_ventas_cliente.csv` + `ventas.csv`; `dias_sin_compra > 60`.
+- **Riesgo en $ y litros:** se agregó volumen en litros (parseado del nombre del artículo: `6X750`→0.75L, `4X6X473`→0.473L; `cant_base` = unidades base). Las **3 tarjetas KPI** ahora son: Clientes dormidos · Riesgo $ · Riesgo litros.
+- **Dormidos por Vendedor:** top **3** clientes (antes 5), por **mayor volumen ($)**; columnas Vendedor · Dormidos · Riesgo $/Litros · Top 3.
+- **Detalle clientes:** sin cambios de estructura (solo refleja el nuevo criterio). Validado: 7 dormidos (63-65 días), $300.754 / 50.2 L.
+- **Limitación:** `historial_ventas_cliente.csv` retiene ~70 días, así que hoy se detecta la franja 61-70 días. Para dormidos de >70 días haría falta más retención del historial.
+
+---
+
 ## 2026-06-04 — fix(11T): los 11 titulares son los mismos en Tradicional y Autoservicio
 
 **`generar_datasets_acum.py`** (`MAP_11T`). Validado por usuario.
