@@ -273,6 +273,24 @@ def _cargar_escala_df():
     return pd.DataFrame(columns=["escala_num", "thresh_gold", "thresh_silver", "thresh_inicial"])
 
 
+def _calc_escala_actual(plan_as, fact, esc_df):
+    """Escala alcanzada = mayor escala cuyo umbral (según plan Gold/Silver/Inicial) es <= facturado."""
+    if esc_df is None or esc_df.empty:
+        return 0
+    plan = str(plan_as).strip().lower()
+    fact = float(fact or 0)
+    if "gold" in plan:
+        col = "thresh_gold"
+    elif "silver" in plan:
+        col = "thresh_silver"
+    else:
+        col = "thresh_inicial"
+    validas = esc_df[esc_df[col].notna() & (esc_df[col] <= fact)]
+    if validas.empty:
+        return 0
+    return int(validas["escala_num"].max())
+
+
 def cargar_planes_as_bbdd():
     p = BASE / "01_INPUTS" / "PLANES_AS" / "Reconocimiento Plan As.xlsx"
     raw = pd.read_excel(p, sheet_name="BBDD", header=None)
@@ -312,21 +330,10 @@ def cargar_planes_as_bbdd():
         if esc_df.empty:
             raise ValueError("escala vacía")
 
-        def _calc_escala(row):
-            plan = str(row["plan_as"]).strip().lower()
-            fact = float(row["total_facturado"])
-            if "gold" in plan:
-                col = "thresh_gold"
-            elif "silver" in plan:
-                col = "thresh_silver"
-            else:
-                col = "thresh_inicial"
-            validas = esc_df[esc_df[col].notna() & (esc_df[col] <= fact)]
-            if validas.empty:
-                return 0
-            return int(validas["escala_num"].max())
-
-        df["escala_actual"] = df.apply(_calc_escala, axis=1)
+        # escala_actual provisoria con el facturado del Excel; generar_planes_as la recalcula
+        # con la venta real de ventas.csv (regla 3.10: la venta sale de ventas.csv).
+        df["escala_actual"] = df.apply(
+            lambda r: _calc_escala_actual(r["plan_as"], r["total_facturado"], esc_df), axis=1)
         df["escala_max"] = df["plan_as"].str.lower().apply(
             lambda p: int(esc_df[esc_df["thresh_gold"].notna()]["escala_num"].max()) if "gold" in p
             else int(esc_df[esc_df["thresh_silver"].notna()]["escala_num"].max()) if "silver" in p
@@ -550,6 +557,17 @@ def generar_planes_as(ventas, bbdd, clientes):
     direccion_master = dict(zip(cli_idx["cliente_id"], cli_idx.get("Direccion")))
     df["cliente_nombre"] = df["cliente_id"].map(nombre_master).fillna(df["cliente_nombre"])
     df["direccion"] = df["cliente_id"].map(direccion_master).fillna("")
+
+    # REGLA 3.10 — la "venta" del Plan AS sale de ventas.csv (venta neta válida del cliente,
+    # ImporteNetoItem > 0), NO de la columna del Excel de Reconocimiento. La escala alcanzada
+    # se recalcula con esa venta real contra escala_*.xlsx.
+    fact_ventas = (ventas[ventas["ImporteNetoItem"] > 0]
+                   .groupby("Cliente")["ImporteNetoItem"].sum())
+    df["total_facturado"] = pd.to_numeric(
+        df["cliente_id"].map(fact_ventas), errors="coerce").fillna(0.0)
+    esc_df = _cargar_escala_df()
+    df["escala_actual"] = df.apply(
+        lambda r: _calc_escala_actual(r["plan_as"], r["total_facturado"], esc_df), axis=1)
 
     df["fecha_calculo"] = datetime.now().strftime("%Y-%m-%d")
 

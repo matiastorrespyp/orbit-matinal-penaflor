@@ -1,5 +1,19 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-05 (c) — Facturado Plan AS desde ventas.csv
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ `total_facturado` del Plan AS (gerencia + perfil vendedor) ahora sale de **ventas.csv** (suma neta válida por cliente), no del Excel de Reconocimiento. Regla 3.10 cumplida.
+- ✅ Escala alcanzada se recalcula con la venta real (`escala_junio.xlsx`); helper `_calc_escala_actual()`.
+- ✅ `mod_planes_as.csv` regenerado (con backup en `99_BACKUPS_ORBIT/`). Validado en endpoints en vivo.
+
+### A OBSERVAR / PENDIENTE
+1. **Escalas reflejan mes vivo:** con ventas.csv de 01–04 jun las escalas son bajas y suben al cargar más días. Confirmar que es el comportamiento deseado (avance del mes) y no "facturado del período de reconocimiento" (que sería otra fuente/período).
+2. **Dato ERP a revisar:** clientes AS 8010/8139/8230/1093 tienen exactamente $785.458 neto en 1 fila en ventas.csv (idéntico) — verificar en el ERP.
+3. **Pendiente confirmar en Render tras push.**
+
+---
+
 ## Sesión 2026-06-05 (b) — Objetivos del perfil de vendedor desde resultado.xlsx
 
 ### HECHO EN ESTA SESIÓN ✅

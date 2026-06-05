@@ -1,5 +1,18 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-05 — fix(planes_as): facturado del Plan AS desde ventas.csv (no del Excel)
+
+**`generar_datasets_acum.py`** + regen `04_DATASETS_ORBIT/mod_planes_as.csv`. Afecta `/api/gerencia/planes_as` y `/api/vendedor/<vid>/planes_as` (tarjetas "Facturado").
+
+- **Problema:** el "Facturado" (`total_facturado`) de las pantallas Plan AS (gerencia y perfil vendedor) salía de la **columna 14 del Excel `Reconocimiento Plan As.xlsx`** (valor estático, ~$77,9M total), no de ventas reales. Violaba la **regla 3.10** (REGLAS_CALCULO_Y_FUENTES_PENAFLOR): fuente oficial del Plan AS = `ventas.csv`, salida = "venta acumulada válida".
+- **Fix:** `generar_planes_as` ahora calcula `total_facturado` = suma de `ImporteNetoItem` (> 0) por cliente desde **ventas.csv**, y **recalcula la escala alcanzada** con esa venta real contra `escala_junio.xlsx`. El Excel de Reconocimiento se sigue usando solo para lo que le corresponde (plan_as, tope, sin-cargo ganado por producto, dcto_plan). Se extrajo el cálculo de escala a un helper reutilizable `_calc_escala_actual()`.
+- **Validado (endpoints en vivo):** `total_facturado` coincide 1:1 con la suma neta de ventas.csv por cliente; escalas recalculadas; gerencia 31 clientes AS; V8 16 clientes AS. Total facturado OLD $77,9M (Excel) → NEW $7,8M (ventas.csv mes vivo 01–04 jun).
+- **Nota operativa:** ventas.csv es el **mes vivo** (hoy 01–04 jun). El facturado/escala reflejan el avance del mes a la fecha y **suben cada día** que se carga el ventas.csv. 11 clientes aún sin compra en junio → escala 0.
+- **Observación de dato (ERP):** en ventas.csv 4 clientes AS (8010, 8139, 8230, 1093) tienen exactamente $785.458 neto en 1 sola fila cada uno — revisar en el ERP si es correcto.
+- **No se tocó:** server_orbit.py, portal.html, otras datasets, cierre mensual.
+
+---
+
 ## 2026-06-05 — fix(objetivos): perfil de vendedor usa resultado.xlsx (no mod_volumen)
 
 **`server_orbit.py`** — endpoints `/api/vendedor/<vid>` y `/api/dashboard`.
