@@ -59,3 +59,6 @@ ESTADO_*.txt
 04_DATASETS_ORBIT/mod_inversion_desc.csv
 04_DATASETS_ORBIT/mod_reintegros_ctrl.csv
 04_DATASETS_ORBIT/resumen_alertas_vend.csv
+
+# Salidas/backups temporales del loader de acciones (no versionar)
+01_INPUTS/ACCIONES COMERCIALES/*/salida/
