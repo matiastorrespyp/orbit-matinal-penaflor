@@ -1,5 +1,13 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-04 — fix(cierre): CIERRE_DIA_ORBIT.bat con finales LF (rompía el push)
+
+- **Causa raíz:** `CIERRE_DIA_ORBIT.bat` tenía **finales de línea LF** (0 CRLF). En cmd.exe eso rompe los bloques `if exist (...) else (...)` → errores `'exist'`/`'else'`/`'hq.'` no reconocidos y, peor, **la sección git (PASO 3/3) no se ejecutaba** → el cierre regeneraba los datos pero **nunca los pusheaba**. Por eso Render quedaba con `ventas.csv` viejo (no avanzaba a viernes) y no reflejaba los cambios.
+- **Fix:** `.bat` convertido a **CRLF** + `.gitattributes` (`*.bat/*.cmd eol=crlf`) para que no se repita. `.gitignore`: `01_INPUTS/ACCIONES COMERCIALES/*/salida/`.
+- **Datos pendientes del cierre del usuario** (ya consistentes con las correcciones: 11T=11 marcas, innovaciones junio=38, planes con dirección) commiteados y pusheados. Render: `fecha_corte=2026-06-04` → `dia_operativo=VI` ✓.
+
+---
+
 ## 2026-06-04 — fix(vendedor): pantalla Ruta correcta (clientes.xlsx + ventas.csv, 11 titulares)
 
 **`server_orbit.py`** (`/api/vendedor/<vid>/ruta`) y **`portal.html`** (vRuta).
