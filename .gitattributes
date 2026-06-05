@@ -1,0 +1,4 @@
+# Los scripts de Windows DEBEN tener finales de línea CRLF.
+# Con LF, cmd.exe rompe los bloques if/else y falla el cierre.
+*.bat text eol=crlf
+*.cmd text eol=crlf
