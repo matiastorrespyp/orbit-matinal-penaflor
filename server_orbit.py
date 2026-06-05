@@ -1051,8 +1051,12 @@ def dashboard():
         # venta_ayer live desde ventas.csv; fallback al CSV estático
         venta_ayer = _venta_ayer_live.get(cod_int, float(vv["venta_ayer"].sum()) if not vv.empty else 0)
 
-        # tendencia_pct: recalcular siempre con acum/obj reales
-        tendencia_pct = round((acum / _corridos) * _total / obj * 100, 2) if obj else 0
+        # tendencia_pct = Avance de resultado.xlsx (Tendencia/Objetivo) cuando hay fuente;
+        # para vendedores sin resultado.xlsx (fallback mod_volumen) se proyecta por días hábiles.
+        if cn in resultado_fallback:
+            tendencia_pct = round(av, 2)
+        else:
+            tendencia_pct = round((acum / _corridos) * _total / obj * 100, 2) if obj else 0
         cli_total = int(vv["clientes_planificados"].sum()) if not vv.empty and "clientes_planificados" in vv.columns else 0
         cli_sin = int(vv["clientes_sin_compra_mes"].sum()) if not vv.empty and "clientes_sin_compra_mes" in vv.columns else 0
         # Override with day-specific counts when dia requested (0 if vendor not scheduled that day)
@@ -1210,17 +1214,42 @@ def vendedor_detalle(vid):
     # Regla de negocio: V3 no trabaja autoservicio
     trabaja_as = (vid_norm != "V3")
 
-    # KPIs volumen
+    # Clientes / venta del día — desde el motor (mod_volumen_vendedor.csv)
     vol = read_csv(DATASETS / "mod_volumen_vendedor.csv")
     vv = vol[vol["vendedor_codigo"].astype(str).apply(clean_code) == cn] if not vol.empty else pd.DataFrame()
-    obj   = float(vv["objetivo_mes"].sum())          if not vv.empty else 0
-    acum  = float(vv["acumulado_mes"].sum())         if not vv.empty else 0
-    av    = float(vv["avance_pct"].mean())           if not vv.empty else 0
     venta_hoy = float(vv["venta_ayer"].sum())        if not vv.empty else 0
     cli_total = int(vv["clientes_planificados"].sum()) if not vv.empty and "clientes_planificados" in vv.columns else 0
     cli_sin   = int(vv["clientes_sin_compra_mes"].sum()) if not vv.empty and "clientes_sin_compra_mes" in vv.columns else 0
-    dias_vd          = contar_dias_habiles()
-    tendencia_pct_vd = round((acum / max(dias_vd["corridos"], 1)) * dias_vd["total"] / obj * 100, 2) if obj else 0
+
+    # objetivo/acumulado/avance — fuente primaria resultado.xlsx (igual que /api/dashboard);
+    # se actualiza a diario sin regenerar el motor. Fallback a mod_volumen_vendedor.csv.
+    obj = acum = av = 0.0
+    _usa_resultado = False
+    _resultado_path = INPUTS / "resultado.xlsx"
+    if _resultado_path.exists():
+        try:
+            _adf = pd.read_excel(_resultado_path, sheet_name="Avance")
+            _row = _adf[_adf["VendedorCodigo"].astype(str).apply(clean_code) == cn]
+            if not _row.empty:
+                _r = _row.iloc[0]
+                obj  = float(_r.get("ValorObjetivo", 0) or 0)
+                acum = float(_r.get("Acumulado", 0) or 0)
+                av   = float(_r.get("Avance", 0) or 0)   # Avance = Tendencia/Objetivo*100 (regla Peñaflor)
+                _usa_resultado = True
+        except Exception:
+            pass
+    if not _usa_resultado:
+        obj  = float(vv["objetivo_mes"].sum())  if not vv.empty else 0
+        acum = float(vv["acumulado_mes"].sum()) if not vv.empty else 0
+        av   = float(vv["avance_pct"].mean())   if not vv.empty else 0
+
+    # tendencia_pct = Avance de resultado.xlsx (Tendencia/Objetivo); sin recálculo por días para
+    # no divergir del dashboard. Fallback: proyección por días hábiles si no hay resultado.xlsx.
+    if _usa_resultado:
+        tendencia_pct_vd = round(av, 2)
+    else:
+        dias_vd          = contar_dias_habiles()
+        tendencia_pct_vd = round((acum / max(dias_vd["corridos"], 1)) * dias_vd["total"] / obj * 100, 2) if obj else 0
 
     # CCC Compradores Mes — desde ventas.csv del mes actual
     ventas_mes_vd = _cargar_ventas_mes_actual()

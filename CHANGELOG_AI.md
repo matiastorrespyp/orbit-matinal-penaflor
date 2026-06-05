@@ -1,5 +1,17 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-05 — fix(objetivos): perfil de vendedor usa resultado.xlsx (no mod_volumen)
+
+**`server_orbit.py`** — endpoints `/api/vendedor/<vid>` y `/api/dashboard`.
+
+- **Problema:** las tarjetas del perfil de vendedor ("Te falta para el objetivo" y "Tendencia vs. Objetivo") tomaban objetivo/acumulado/tendencia de `mod_volumen_vendedor.csv`, mientras el dashboard ya usaba `resultado.xlsx`. Resultado: la **tendencia divergía** entre pantallas (ej. V3 dashboard 20.62% vs perfil 16.49%; V9 109.88% vs 87.9%) y el perfil se quedaba viejo cuando se actualizaba `resultado.xlsx` sin regenerar el motor.
+- **Causa raíz:** `/api/vendedor/<vid>` calculaba `obj/acum/av` desde mod_volumen y recalculaba la tendencia con su propio conteo de días hábiles, distinto al del dashboard.
+- **Fix:** `/api/vendedor/<vid>` ahora lee `objetivo/acumulado/avance` de `resultado.xlsx` hoja Avance como fuente primaria (fallback a mod_volumen si falta el Excel), y `tendencia_pct = Avance` (= Tendencia/Objetivo, regla Peñaflor) sin recálculo por días. En `/api/dashboard` la tendencia también se fija al `Avance` de resultado.xlsx para los vendedores con fuente (mismo valor mostrado hoy, pero robusto ante cambios de días corridos).
+- **Validado (instancia temp puerto 8599):** los 7 activos coinciden 1:1 con `resultado.xlsx` en objetivo, acumulado y tendencia. Dashboard OBJ compañía = **$330.000.000** (suma de los 7 ValorObjetivo). Perfil V3 16.49%→**20.62%**, V9 87.9%→**109.88%**.
+- **No se tocó:** portal.html / diseño, datasets, CCC/11T, objetivos del dashboard (ya correctos).
+
+---
+
 ## 2026-06-05 — feat(plan vs real): real del día = acumulado hoy − ayer (resultado.xlsx)
 
 **`server_orbit.py`**, **`generar_datasets_acum.py`**, **`CIERRE_DIA_ORBIT.bat`**, nuevo `02_HISTORY/acumulado_resultado_historico.csv`.

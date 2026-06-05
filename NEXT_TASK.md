@@ -1,5 +1,20 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-05 (b) — Objetivos del perfil de vendedor desde resultado.xlsx
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ Auditados los OBJ de dashboard (Acumulado Compañía + Ranking): **ya salían de `resultado.xlsx`**. OBJ compañía = **$330.000.000** (suma de los 7 activos). Correcto.
+- ✅ Bug detectado y corregido: `/api/vendedor/<vid>` tomaba obj/acum/tendencia de `mod_volumen_vendedor.csv` y recalculaba la tendencia distinto → divergía del dashboard (V3 16.49% vs 20.62%; V9 87.9% vs 109.88%). Ahora usa `resultado.xlsx` (Avance) como fuente primaria; `tendencia_pct = Avance`.
+- ✅ `/api/dashboard`: tendencia fijada al `Avance` de resultado.xlsx (robusto ante días corridos).
+- ✅ Validado en instancia temp (8599): perfil coincide 1:1 con resultado.xlsx en los 7 vendedores.
+
+### A OBSERVAR / PENDIENTE
+1. **Reiniciar el server de producción (8502)** para que tome el cambio — había **dos** instancias `python server_orbit.py` corriendo a la vez sobre el 8502 (PIDs 15004 y 9508). Conviene dejar **una sola**.
+2. La pantalla de Plan vs Real y el "% del objetivo" usan `tendencia_pct` (= Avance = Tendencia/Objetivo). No se expone un avance "real" Acumulado/Objetivo aparte; si se quisiera, es otra tarea.
+3. **Pendiente confirmar en Render tras push.**
+
+---
+
 ## Sesión 2026-06-05 — Real del día = acumulado hoy − ayer (resultado.xlsx)
 
 ### HECHO EN ESTA SESIÓN ✅
