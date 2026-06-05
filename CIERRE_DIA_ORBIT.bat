@@ -77,6 +77,7 @@ git add "01_INPUTS/resultado.xlsx"
 git add "01_INPUTS/ventas.csv"
 git add "01_INPUTS/ventas_acumulada.csv"
 git add "02_HISTORY/historial_ventas_cliente.csv"
+git add "02_HISTORY/acumulado_resultado_historico.csv"
 git add "04_DATASETS_ORBIT/"
 git add "01_INPUTS/ACCIONES COMERCIALES/*/acciones_comerciales_*.csv"
 

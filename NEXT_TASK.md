@@ -1,5 +1,19 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-05 — Real del día = acumulado hoy − ayer (resultado.xlsx)
+
+### HECHO EN ESTA SESIÓN ✅
+- ✅ Plan vs Real: el "real del día" por vendedor ahora sale de **`Acumulado(hoy) − Acumulado(ayer)`** de `resultado.xlsx`, no del conteo de ventas.csv por FechaComprobante. V10 pasó de "sin ventas" a **$357.851** (04/06).
+- ✅ Snapshot diario `02_HISTORY/acumulado_resultado_historico.csv` (bootstrap 06-02/03/04 desde git; se actualiza en cada cierre vía `snapshot_acumulado_resultado`). Bat lo commitea.
+- ✅ `_real_dia_resultado()` en server_orbit.py (mismo mes, negativos→0). Portal ya lee `real_ayer`/`tiene_real` (sin cambios de frontend).
+- ✅ Validado local. **Pendiente confirmar en Render tras push.**
+
+### A OBSERVAR
+1. El histórico arranca el **06-02** (el 06-01 era cierre de mayo, se excluyó). El primer día de cada mes no tiene "ayer" del mismo mes → ese día el real puede no calcularse por diferencia (cae a ventas.csv o queda pendiente).
+2. Las columnas CCC de Plan vs Real siguen viniendo de ventas.csv (el usuario pidió cambiar la VENTA $). Si se quieren los CCC también por otra fuente, es aparte.
+
+---
+
 ## Sesión 2026-06-04 — Ruta del vendedor (clientes.xlsx + ventas.csv, 11 titulares)
 
 ### HECHO EN ESTA SESIÓN ✅

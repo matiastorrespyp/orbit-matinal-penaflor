@@ -1600,6 +1600,38 @@ def orbit_data():
     return jsonify(data)
 
 # ====== MATINAL RESUMEN: plan vs real ======
+def _real_dia_resultado(fecha_objetivo=None):
+    """Real del día por vendedor = Acumulado(fecha) − Acumulado(día anterior del MISMO mes),
+    desde 02_HISTORY/acumulado_resultado_historico.csv (snapshots diarios de resultado.xlsx).
+    Es la forma correcta del 'real del día' (diferencia de acumulado), robusta a la FechaComprobante.
+    Devuelve (dict {vendedor_codigo:int -> real_$}, fecha_hoy, fecha_ayer)."""
+    p = BASE / "02_HISTORY" / "acumulado_resultado_historico.csv"
+    if not p.exists():
+        return {}, None, None
+    df = read_csv(p)
+    if df.empty or "fecha" not in df.columns:
+        return {}, None, None
+    df["fecha"] = df["fecha"].astype(str)
+    df["vc"] = pd.to_numeric(df["vendedor_codigo"], errors="coerce")
+    df["ac"] = pd.to_numeric(df["acumulado"], errors="coerce").fillna(0.0)
+    df = df.dropna(subset=["vc"])
+    fechas = sorted(df["fecha"].dropna().unique())
+    if not fechas:
+        return {}, None, None
+    cand = [f for f in fechas if (not fecha_objetivo or f <= fecha_objetivo)]
+    f_hoy = cand[-1] if cand else fechas[-1]
+    prev = [f for f in fechas if f < f_hoy and f[:7] == f_hoy[:7]]   # mismo mes (evita borde de mes)
+    f_ayer = prev[-1] if prev else None
+    hoy  = dict(zip(df[df["fecha"] == f_hoy]["vc"].astype(int), df[df["fecha"] == f_hoy]["ac"]))
+    ayer = (dict(zip(df[df["fecha"] == f_ayer]["vc"].astype(int), df[df["fecha"] == f_ayer]["ac"]))
+            if f_ayer else {})
+    real = {}
+    for vc, a in hoy.items():
+        d = float(a) - float(ayer.get(vc, 0.0))
+        real[int(vc)] = round(d if d > 0 else 0.0, 2)   # negativo (reset) -> 0
+    return real, f_hoy, f_ayer
+
+
 @app.route("/api/matinal/resumen")
 def matinal_resumen():
     """
@@ -1646,9 +1678,15 @@ def matinal_resumen():
                   "SELECT * FROM planificacion WHERE fecha=?", (fecha_plan,)).fetchall()}
     conn.close()
 
-    # PASO 2: Buscar real para esa misma fecha en ventas.csv (puede no existir aún)
+    # PASO 2: Buscar real para esa misma fecha en ventas.csv (CCC) + real $ por diferencia de acumulado
     ventas_dia, fecha_real = _cargar_ventas_dia(fecha_plan)
     tiene_real = not ventas_dia.empty  # False = aún no se corrió el .bat con ese día
+    # Real del día ($) = Acumulado(hoy) − Acumulado(ayer) desde resultado.xlsx (snapshots).
+    real_dia_map, f_real_hoy, f_real_ayer = _real_dia_resultado(fecha_plan)
+    usa_resultado = (f_real_hoy == fecha_plan) and (f_real_ayer is not None) and bool(real_dia_map)
+    if usa_resultado:
+        tiene_real = True
+        fecha_real = f_real_hoy
 
     # PASO 3: Calcular real_map solo si hay datos de ventas
     real_map = {}
@@ -1678,7 +1716,13 @@ def matinal_resumen():
             cod_int = int(cn) if cn.isdigit() else 0
 
             real       = real_map.get(cod_int, {})
-            real_venta = float(real.get("venta") or 0)
+            # Venta real del día: diferencia de acumulado (resultado.xlsx); fallback a ventas.csv
+            if usa_resultado and cod_int in real_dia_map:
+                real_venta = float(real_dia_map[cod_int])
+                v_tiene_real = True
+            else:
+                real_venta = float(real.get("venta") or 0)
+                v_tiene_real = bool(real)
 
             plan       = planes.get(cod, {})
             plan_venta = float(plan.get("venta_esperada") or 0)
@@ -1706,7 +1750,7 @@ def matinal_resumen():
                 "plan_estado":      plan.get("estado") or "sin_plan",
                 "plan_id":          plan.get("id"),
                 "tiene_plan":       bool(plan),
-                "tiene_real":       bool(real),
+                "tiene_real":       v_tiene_real,
             })
 
     return jsonify({
@@ -1714,7 +1758,8 @@ def matinal_resumen():
         "fecha_real":  fecha_real or None,
         "tiene_real":  tiene_real,
         "modo":        modo,
-        "fuente_real": "ventas.csv",
+        "fuente_real": ("resultado.xlsx (acumulado hoy − ayer)" if usa_resultado else "ventas.csv"),
+        "fecha_real_ayer": f_real_ayer if usa_resultado else None,
         "generado_en": _now_ar(),
         "resumen":     resultado,
     })

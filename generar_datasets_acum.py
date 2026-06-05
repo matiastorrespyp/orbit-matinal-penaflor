@@ -172,6 +172,49 @@ def cargar_ventas_acumulada():
     return _parsear_ventas_csv(p)
 
 
+def snapshot_acumulado_resultado(ventas):
+    """Snapshot diario del Acumulado por vendedor desde resultado.xlsx → para el real del día
+    (= acumulado hoy − ayer) en Plan vs Real. Append a 02_HISTORY/acumulado_resultado_historico.csv,
+    deduplicando por fecha (si se re-corre el mismo día, reescribe)."""
+    rp = BASE / "01_INPUTS" / "resultado.xlsx"
+    hp = BASE / "02_HISTORY" / "acumulado_resultado_historico.csv"
+    if not rp.exists():
+        print("  [AVISO] resultado.xlsx no existe; sin snapshot de acumulado")
+        return
+    try:
+        av = pd.read_excel(rp, sheet_name="Avance")
+    except Exception as e:
+        print(f"  [AVISO] snapshot acumulado: {e}")
+        return
+    av.columns = [str(c).strip() for c in av.columns]
+    f = (pd.to_datetime(ventas.get("FechaComprobante"), dayfirst=True, errors="coerce")
+         if "FechaComprobante" in ventas.columns else None)
+    fecha = (f.max().strftime("%Y-%m-%d") if (f is not None and f.notna().any())
+             else datetime.now().strftime("%Y-%m-%d"))
+    snap = pd.DataFrame({
+        "fecha": fecha,
+        "vendedor_codigo": pd.to_numeric(av["VendedorCodigo"], errors="coerce"),
+        "vendedor_nombre": av["VendedorNombre"].astype(str),
+        "acumulado": pd.to_numeric(av["Acumulado"], errors="coerce"),
+        "objetivo": pd.to_numeric(av.get("ValorObjetivo"), errors="coerce"),
+        "tendencia": pd.to_numeric(av.get("Tendencia"), errors="coerce"),
+    }).dropna(subset=["vendedor_codigo"])
+    snap["vendedor_codigo"] = snap["vendedor_codigo"].astype(int)
+    hist = pd.DataFrame()
+    if hp.exists():
+        try:
+            hist = pd.read_csv(hp)
+            hist["fecha"] = hist["fecha"].astype(str)
+            hist = hist[hist["fecha"] != fecha]
+        except Exception:
+            hist = pd.DataFrame()
+    comb = pd.concat([hist, snap], ignore_index=True) if not hist.empty else snap
+    comb = comb.sort_values(["fecha", "vendedor_codigo"])
+    hp.parent.mkdir(parents=True, exist_ok=True)
+    comb.to_csv(hp, index=False, encoding="utf-8-sig")
+    print(f"  Snapshot acumulado resultado.xlsx -> {fecha} ({len(snap)} vendedores)")
+
+
 def cargar_clientes():
     p = BASE / "01_INPUTS" / "clientes.xlsx"
     df = pd.read_excel(p)
@@ -965,6 +1008,9 @@ def main():
     print(f"  clientes           : {len(clientes):>6} filas")
     print(f"  planes_as BBDD     : {len(bbdd):>6} clientes AS")
     print(f"  maestro productos  : {len(maestro):>6} productos")
+
+    # Snapshot del acumulado (resultado.xlsx) para el real del día en Plan vs Real
+    snapshot_acumulado_resultado(ventas)
 
     # ── Cobertura ──
     print("\n[1/3] Generando mod_cobertura_acum.csv ...")

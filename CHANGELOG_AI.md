@@ -1,5 +1,15 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-05 — feat(plan vs real): real del día = acumulado hoy − ayer (resultado.xlsx)
+
+**`server_orbit.py`**, **`generar_datasets_acum.py`**, **`CIERRE_DIA_ORBIT.bat`**, nuevo `02_HISTORY/acumulado_resultado_historico.csv`.
+
+- **Problema:** el "real del día" en Plan vs Real se calculaba contando líneas de `ventas.csv` por `FechaComprobante` → si las facturas del día no quedan fechadas ese día, el vendedor figuraba **"sin ventas"**. Caso real: **V10 figuraba sin ventas el 04/06** pese a haber vendido.
+- **Fix (validado por usuario):** real del día por vendedor = **`Acumulado(hoy) − Acumulado(ayer)`** de `resultado.xlsx` (hoja Avance). Con eso **V10 = $357.851** el 04/06 (acum 3.988.161 − 3.630.310). Captura las ventas sin depender de la fecha del comprobante.
+- **Mecanismo:** snapshot diario del Acumulado por vendedor → `02_HISTORY/acumulado_resultado_historico.csv` (función `snapshot_acumulado_resultado` en el cierre; histórico bootstrapeado desde git para 06-02/03/04). `_real_dia_resultado(fecha)` en server_orbit.py hace la diferencia (mismo mes; negativos→0). `matinal_resumen` usa el resultado cuando hay snapshot exacto del día; fallback a ventas.csv. El bat ahora commitea el histórico.
+
+---
+
 ## 2026-06-04 — fix(cierre): CIERRE_DIA_ORBIT.bat con finales LF (rompía el push)
 
 - **Causa raíz:** `CIERRE_DIA_ORBIT.bat` tenía **finales de línea LF** (0 CRLF). En cmd.exe eso rompe los bloques `if exist (...) else (...)` → errores `'exist'`/`'else'`/`'hq.'` no reconocidos y, peor, **la sección git (PASO 3/3) no se ejecutaba** → el cierre regeneraba los datos pero **nunca los pusheaba**. Por eso Render quedaba con `ventas.csv` viejo (no avanzaba a viernes) y no reflejaba los cambios.
