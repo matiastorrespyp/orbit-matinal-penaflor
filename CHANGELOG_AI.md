@@ -1,5 +1,17 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-06 — feat(cierre): CIERRE_MES_ORBIT.bat — versionado automático del cierre
+
+**Nuevos: `CIERRE_MES_ORBIT.bat` (CRLF) + `tools/cerrar_mes.py`.**
+
+- Automatiza la generación de los archivos del cierre en `01_INPUTS/cierres mes/`: el usuario deja las fuentes del mes en `01_INPUTS` y ejecuta el `.bat`; este copia/versiona con sufijo `_MMAAAA` y publica a Render (commit + pull --rebase + push).
+- `cerrar_mes.py`: autodetecta el mes por la fecha máx de `ventas_mes.csv` (o `MMAAAA` por argumento), mapea 6 fuentes → versionadas (resultado_mes, ventas_mes, objetivo 11T, acciones, reconocimiento, escala), **backup** a `99_BACKUPS_ORBIT/`, **log** a `99_LOGS_ORBIT/`. NO inventa datos (solo copia las fuentes reales).
+- **Protección:** un mes ya cerrado (con archivos en la carpeta) NO se toca sin `--force` → evita pisar un cierre hecho con fuentes de otro mes. `--dry-run` para previsualizar.
+- Validado: dry-run y run real sobre mayo = no-op (los 3 archivos de mayo intactos). Acciones de mayo: no hay catálogo de mayo → el cierre usa fallback (correcto).
+- **Pendiente FASE 2b:** que el server calcule **Acciones** y **Planes AS** desde los catálogos versionados (`acciones_<MMAAAA>.csv`, `reconocimiento_<MMAAAA>.xlsx`, `escala_<MMAAAA>.xlsx`) con fallback al artefacto viejo. Se construye/valida con los catálogos reales de junio al cerrarse, para no desplegar lógica comercial sin datos que la validen.
+
+---
+
 ## 2026-06-06 — fix+feat(cierre): FASE 2a re-aplicada y corregida (Sell-Out/Innov/Ranking)
 
 **`server_orbit.py`**. Re-aplica la Fase 2a tras el revert `4690b9a` (que se hizo porque la 1ª versión rompía Render con HTTP 500 a los ~31s).

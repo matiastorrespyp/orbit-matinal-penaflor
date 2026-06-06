@@ -2,14 +2,20 @@
 
 ## Sesión 2026-06-06 — Cierre versionado por carpeta (cierres mes/)
 
-### HECHO (FASE 1) ✅
-- ✅ Trío de archivos por mes en `01_INPUTS/cierres mes/`: `resultado_mes_<MMAAAA>.xlsx` + `ventas_mes_<MMAAAA>.csv` + `objetivo 11T_<MMAAAA>.xlsx`.
-- ✅ `cierres_historicos` recalcula objetivos/avance + CCC + 11T desde ese trío cuando existe (helpers `_cierre_*`). Mayo validado.
+### HECHO ✅
+- ✅ FASE 1: `cierres_historicos` recalcula objetivos/avance + CCC + 11T desde el trío del mes. Mayo validado en Render.
+- ✅ FASE 2a: Sell-Out + Innovaciones + Ranking desde `ventas_mes_<MMAAAA>.csv` (+ maestro 04D CSV, Innovaciones.xlsx). Validado en Render. (Hubo incidente 500 por numpy + Excel 19MB; corregido con casteo nativo + maestro CSV.)
+- ✅ Automatización: `CIERRE_MES_ORBIT.bat` + `tools/cerrar_mes.py` versionan los archivos del mes (backup+log+protección, publican a Render). Validado en mayo (no-op).
 
-### PENDIENTE (FASE 2)
-1. Migrar al trío del mes: **Sell-Out** (+maestro 04D), **Planes AS** (+escala/reconocimiento), **Acciones** (+catálogo), **Innovaciones** (+innovaciones.xlsx), **Ranking**.
-2. **Descubrir cierres desde la carpeta** `cierres mes/` (hoy aún se listan desde `07_CIERRES_MENSUALES/index`). Meta: agregar el trío `_062026` y que aparezca junio solo.
-3. Una vez migrado todo, deprecar los artefactos `cierre_*.json` de `07_CIERRES_MENSUALES`.
+### PENDIENTE (FASE 2b) — construir/validar con catálogos reales de JUNIO al cerrarse
+1. Server: **Acciones** desde `acciones_<MMAAAA>.csv` + `ventas_mes_<MMAAAA>.csv` (catalog-match), con fallback al artefacto viejo si no hay catálogo del mes.
+2. Server: **Planes AS** desde `reconocimiento_<MMAAAA>.xlsx` + `escala_<MMAAAA>.xlsx` + `ventas_mes_<MMAAAA>.csv`, con fallback.
+3. **Descubrir cierres desde la carpeta** `cierres mes/` (hoy se listan desde `07_CIERRES_MENSUALES/index`). Meta: agregar el trío `_062026` y que aparezca junio solo.
+4. Innovaciones: listar las 17 (no solo las 13 con venta) marcando 0 las sin venta (regla 3.9).
+5. Una vez migrado todo, deprecar los artefactos `cierre_*.json`.
+
+### LECCIÓN
+- Validar **serialización estricta (sin numpy)** y **performance tipo-Render** antes de pushear, no solo que el endpoint responda en local. El Excel 04D (19MB) tarda ~40s; usar siempre el CSV liviano.
 
 ---
 
