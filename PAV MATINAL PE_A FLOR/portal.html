@@ -1510,8 +1510,20 @@ function gDashboard(p){
       if(!r.ok){ bodyEl.innerHTML=`<div style="padding:16px;color:var(--bd);font-size:12px;">Error HTTP ${r.status}</div>`; return; }
       const data=await r.json();
       const vendedores=data.vendedores||[];
+      const supervisores=data.supervisores||[];
       if(chipEl) chipEl.textContent=vendedores.length+' vendedores';
-      if(!vendedores.length){ bodyEl.innerHTML=`<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">Sin datos de rechazos</div>`; return; }
+      if(!vendedores.length && !supervisores.length){ bodyEl.innerHTML=`<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">Sin datos de rechazos</div>`; return; }
+      // Franja de supervisores (rechazo por supervisor: Esteban / Raul)
+      let supHtml='';
+      if(supervisores.length){
+        supHtml=`<div style="padding:9px 12px;border-bottom:1px solid var(--b);">
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;">Rechazo por supervisor</div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;">
+          ${supervisores.map(s=>{const pct=s.rechazo_pct||0;const cl=pct>=10?'bd':pct>=3?'wn':'ok';
+            return `<span style="font-size:12px;display:inline-flex;align-items:center;gap:6px;"><b>${s.nombre}</b><span class="chip ${cl}" style="font-size:10px;">${pct.toFixed(1)}%</span></span>`;}).join('')}
+          </div>
+        </div>`;
+      }
       const maxPct=Math.max(...vendedores.map(v=>v.rechazo_pct||0),1);
       let html=`<table class="tbl">
         <thead><tr>
@@ -1532,7 +1544,7 @@ function gDashboard(p){
       });
       html+=`</tbody></table>
         <div style="font-size:9px;color:var(--text3);padding:4px 12px 6px;">Fuente: resultado.xlsx · hoja Rechazos · ${data.generado_en||''}</div>`;
-      bodyEl.innerHTML=html;
+      bodyEl.innerHTML=supHtml+html;
     }catch(e){
       const bodyEl2=document.getElementById('body-rechazos');
       if(bodyEl2) bodyEl2.innerHTML=`<div style="padding:16px;color:var(--bd);font-size:12px;">Error: ${e.message}</div>`;

@@ -2107,6 +2107,23 @@ def gerencia_ranking_rechazos():
 
     df.columns = [c.strip() for c in df.columns]
 
+    # Supervisores: filas Origen == Supervisor (rechazo total por supervisor)
+    supervisores = []
+    if "Origen" in df.columns and "SupervisorNombre" in df.columns:
+        sup = df[df["Origen"].astype(str).str.strip().str.lower() == "supervisor"]
+        for _, row in sup.iterrows():
+            nom_full = str(row.get("SupervisorNombre", "")).strip()
+            if not nom_full or nom_full.lower() == "nan":
+                continue
+            pct = round(float(pd.to_numeric(row.get("PorcRechazo"), errors="coerce") or 0), 1)
+            nombre_corto = nom_full.title().split()[-1] if nom_full.split() else nom_full.title()
+            supervisores.append({
+                "supervisor_nombre": nom_full.title(),
+                "nombre":            nombre_corto,   # nombre de pila (ej. Esteban, Raul)
+                "rechazo_pct":       pct,
+            })
+        supervisores.sort(key=lambda x: x["rechazo_pct"], reverse=True)
+
     # Solo vendedores (excluir filas de supervisores)
     if "Origen" in df.columns:
         df = df[df["Origen"].astype(str).str.strip().str.lower() == "vendedor"]
@@ -2128,9 +2145,10 @@ def gerencia_ranking_rechazos():
 
     resultado.sort(key=lambda x: x["rechazo_pct"], reverse=True)
     return jsonify({
-        "generado_en": _now_ar(),
-        "fuente":      "resultado.xlsx · hoja Rechazos",
-        "vendedores":  resultado,
+        "generado_en":  _now_ar(),
+        "fuente":       "resultado.xlsx · hoja Rechazos",
+        "supervisores": supervisores,
+        "vendedores":   resultado,
     })
 
 

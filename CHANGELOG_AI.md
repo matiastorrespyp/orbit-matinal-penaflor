@@ -1,5 +1,13 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-06 — feat(dashboard): rechazo por supervisor en tarjeta Ranking de Rechazos
+
+**`server_orbit.py`** (`/api/gerencia/ranking_rechazos`) + **`portal.html`** (tarjeta Ranking de Rechazos del dashboard gerencial).
+
+- Se agrega el **% de rechazo de los dos supervisores** (Esteban = Gribaudo, Raul = Benítez) en una franja "Rechazo por supervisor" arriba del ranking de vendedores.
+- Fuente: `resultado.xlsx` hoja Rechazos, filas `Origen == Supervisor` (campo `SupervisorNombre` + `PorcRechazo`). El endpoint ahora devuelve `supervisores: [{supervisor_nombre, nombre, rechazo_pct}]` (nombre = nombre de pila). Salida casteada a tipos nativos (jsonify-safe).
+- Validado (instancia temp): Esteban 0.5% · Raul 0.4%; sin tipos numpy.
+
 ## 2026-06-06 — feat(cierre): CIERRE_MES_ORBIT.bat — versionado automático del cierre
 
 **Nuevos: `CIERRE_MES_ORBIT.bat` (CRLF) + `tools/cerrar_mes.py`.**
