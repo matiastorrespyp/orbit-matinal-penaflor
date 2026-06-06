@@ -1,5 +1,14 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-06 — feat(tool): EXCEL_PREVENTA.bat — Excel de preventa 11 Titulares por día
+
+**Nuevos: `EXCEL_PREVENTA.bat` (CRLF) + `tools/excel_preventa.py`.**
+
+- Genera un Excel con **una hoja por día de visita** (Lunes→Sábado). Cada hoja lista los clientes de ese día (ordenados por vendedor + orden de ruta) con: Vendedor, Código, Nombre, Dirección, Localidad, Segmento, **Compró (Sí/No)**, **Titulares cubiertos (X/11)** y **una columna por cada uno de los 11 Titulares**.
+- En cada columna de titular: estado de cobertura vs `ventas_acumulada.csv` → "OK" si cubre, o "b/umbral vender f" (compró b botellas, faltan f). **Umbral: TRADICIONAL=3 (kiosco/almacén/despensa), resto=6** (regla Peñaflor). Colores verde/amarillo/rojo.
+- Reglas reutilizadas de `generar_datasets_acum.py` (ALIAS_LOOKUP, _ONCE_TITULARES, UMBRAL, segmento, cargar_clientes/ventas_acumulada). No toca server/Render.
+- Salida: `03_OUTPUTS/PREVENTA_11T_<fecha>.xlsx` (el .bat lo abre solo). Validado: 6 hojas, 2035 clientes.
+
 ## 2026-06-06 — feat(dashboard): rechazo por supervisor en tarjeta Ranking de Rechazos
 
 **`server_orbit.py`** (`/api/gerencia/ranking_rechazos`) + **`portal.html`** (tarjeta Ranking de Rechazos del dashboard gerencial).
