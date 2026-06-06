@@ -4573,6 +4573,34 @@ _OBJ_ALIAS_11T_CIERRE = {
 }
 
 
+_VENTAS_MES_CACHE = {}
+def _leer_ventas_mes_cacheado(path):
+    """Lee ventas_mes versionado con caché (archivos del cierre = inmutables, clave path+mtime).
+    Evita releer el CSV (3MB, parser python) varias veces por request → era la causa de los ~31s."""
+    try:
+        key = (str(path), os.path.getmtime(path))
+    except OSError:
+        key = (str(path), 0)
+    df = _VENTAS_MES_CACHE.get(key)
+    if df is None:
+        df = _leer_ventas_mes_csv(path)
+        _VENTAS_MES_CACHE[key] = df
+    return df
+
+
+def _to_native(o):
+    """Convierte recursivamente numpy/pandas → tipos nativos de Python. El JSON provider de
+    Flask no serializa numpy.int64/float64 (causaba HTTP 500 en Render aunque local funcionara)."""
+    import numpy as _np
+    if isinstance(o, dict):
+        return {k: _to_native(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [_to_native(x) for x in o]
+    if isinstance(o, _np.generic):
+        return o.item()
+    return o
+
+
 def _cierre_archivos_mes(periodo):
     """periodo 'AAAA-MM' → dict con los 3 archivos del cierre versionado, o None si faltan."""
     try:
@@ -4627,7 +4655,7 @@ def _cierre_objetivos_avance(files):
             "acumulado": float(r.get("Acumulado", 0) or 0),
         }
 
-    ccc_por_vend = _cierre_ccc_por_vend_segmento(_leer_ventas_mes_csv(files["ventas_mes"]))
+    ccc_por_vend = _cierre_ccc_por_vend_segmento(_leer_ventas_mes_cacheado(files["ventas_mes"]))
 
     vend_df = read_csv(CONFIG / "vendedores_activos.csv")
     vend_activos = {}
@@ -4701,7 +4729,7 @@ def _cierre_once_titulares(files):
         pass
 
     ccc_map = {}
-    df = _leer_ventas_mes_csv(files["ventas_mes"])
+    df = _leer_ventas_mes_cacheado(files["ventas_mes"])
     if not df.empty:
         if "Empresa" in df.columns:
             df = df[df["Empresa"].astype(str).str.strip() == "Empresa"]
@@ -4733,6 +4761,140 @@ def _cierre_once_titulares(files):
             "total_marcas": len(marcas),
         },
     }
+
+
+_GCM_MODULE = None
+def _gcm():
+    """Importa (cacheado) tools/generar_cierre_mensual.py para reutilizar el motor oficial
+    de cálculo del cierre (litros, 11T, innovaciones, ranking) sobre un DataFrame."""
+    global _GCM_MODULE
+    if _GCM_MODULE is None:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "generar_cierre_mensual", str(BASE / "tools" / "generar_cierre_mensual.py"))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _GCM_MODULE = mod
+    return _GCM_MODULE
+
+
+_GCM_VENTAS_CACHE = {}
+def _gcm_leer_ventas_cacheado(path):
+    """DataFrame de ventas_mes leído por el motor oficial (filtra activos, V3 solo trad), cacheado."""
+    try:
+        key = (str(path), os.path.getmtime(path))
+    except OSError:
+        key = (str(path), 0)
+    df = _GCM_VENTAS_CACHE.get(key)
+    if df is None:
+        df = _gcm()._leer_ventas(path)
+        _GCM_VENTAS_CACHE[key] = df
+    return df
+
+
+def _cierre_ranking_payload(rank):
+    """Transforma la lista de ranking en {ranking_top3, ranking, ganadores} para el portal."""
+    top3 = sorted(rank, key=lambda r: r.get("ranking_general", 99))[:3]
+    ranking_top3 = [{
+        "ranking_general":       r.get("ranking_general"),
+        "vendedor_codigo":       r.get("vendedor_codigo"),
+        "vendedor_nombre":       r.get("vendedor_nombre"),
+        "score_total":           r.get("score_total"),
+        "clientes_11_titulares": r.get("clientes_11_titulares"),
+        "clientes_innovaciones": r.get("clientes_innovaciones"),
+        "etiqueta_destacada":    r.get("etiqueta_destacada", ""),
+    } for r in top3]
+    ranking = [{
+        "vendedor_codigo":        r.get("vendedor_codigo"),
+        "vendedor_nombre":        r.get("vendedor_nombre"),
+        "dinero_vendido":         r.get("dinero_vendido"),
+        "litros_vendidos":        r.get("litros_vendidos"),
+        "clientes_11_titulares":  r.get("clientes_11_titulares"),
+        "clientes_innovaciones":  r.get("clientes_innovaciones"),
+        "score_total":            r.get("score_total"),
+        "ranking_general":        r.get("ranking_general"),
+        "ranking_volumen_dinero": r.get("ranking_volumen_dinero"),
+        "ranking_11_titulares":   r.get("ranking_11_titulares"),
+        "ranking_innovaciones":   r.get("ranking_innovaciones"),
+        "etiqueta_destacada":     r.get("etiqueta_destacada", ""),
+    } for r in sorted(rank, key=lambda r: r.get("ranking_general", 99))]
+
+    def _ganador(campo, metrica):
+        for r in rank:
+            if r.get(campo) == 1:
+                return {"vendedor_codigo": r.get("vendedor_codigo"),
+                        "vendedor_nombre": r.get("vendedor_nombre"),
+                        "score_total": r.get("score_total"),
+                        "metrica": r.get(metrica)}
+        return None
+    ganadores = {
+        "general":        _ganador("ranking_general",        "score_total"),
+        "volumen_dinero": _ganador("ranking_volumen_dinero", "dinero_vendido"),
+        "once_titulares": _ganador("ranking_11_titulares",   "clientes_11_titulares"),
+        "innovaciones":   _ganador("ranking_innovaciones",   "clientes_innovaciones"),
+    }
+    return {"ranking_top3": ranking_top3, "ranking": ranking, "ganadores": ganadores}
+
+
+def _cierre_extras_versionado(files):
+    """Sell-Out, Innovaciones y Ranking del cierre desde ventas_mes_<MMAAAA>.csv,
+    reutilizando el motor oficial. Catálogos compartidos: 04D, Innovaciones.xlsx, vendedores.
+    Devuelve todo casteado a tipos nativos (jsonify-safe)."""
+    out = {}
+    # Sell-Out
+    try:
+        so_df = _leer_ventas_mes_cacheado(files["ventas_mes"])
+        out["sellout"] = {
+            "fuente": files["ventas_mes"].name,
+            "filas_ventas_mes": int(len(so_df)),
+            "categorias": _sellout_desde_ventas(so_df) if not so_df.empty else [],
+        }
+    except Exception as e:
+        out["sellout"] = {"error": str(e), "categorias": []}
+
+    # Innovaciones + Ranking (motor oficial sobre el ventas_mes versionado)
+    try:
+        gcm = _gcm()
+        df = _gcm_leer_ventas_cacheado(files["ventas_mes"])
+        vn = gcm._leer_vendedores(CONFIG / "vendedores_activos.csv")
+        cod_inov = gcm._leer_innovaciones(INPUTS / "INNOVACIONES" / "Innovaciones.xlsx")
+
+        ccc_mes = int(df["Cliente"].nunique()) if not df.empty else 0
+        prod = {}
+        for r in gcm._inov_detalle(df, cod_inov, vn):
+            k = (int(r["producto_codigo"]), str(r["producto_nombre"]))
+            prod[k] = prod.get(k, 0) + int(r["clientes_compraron"])
+        por_producto = [{
+            "producto_codigo": cod, "producto_nombre": nom,
+            "compraron": int(comp), "pct": round(comp / ccc_mes * 100, 1) if ccc_mes else 0.0,
+        } for (cod, nom), comp in prod.items()]
+        por_producto.sort(key=lambda x: -x["pct"])
+        out["innovaciones"] = {
+            "resumen": {
+                "productos":       len(por_producto),
+                "compraron_total": int(sum(p["compraron"] for p in por_producto)),
+                "ccc_mes":         ccc_mes,
+                "pct_promedio":    round(sum(p["pct"] for p in por_producto) / len(por_producto), 1) if por_producto else 0,
+            },
+            "por_producto": por_producto[:20],
+        }
+
+        # Ranking — litros desde el maestro 04D CSV liviano (el xlsx de 19MB tarda ~40s).
+        # castear litros/dinero a float nativo (groupby.to_dict() devuelve numpy)
+        _, _, cod2lxu, _ = _cargar_maestro_04D()
+        dfl = df.copy()
+        dfl["_lxu"] = (dfl["Codigo"].astype(str).str.strip().str.upper()
+                       .str.replace(r"\.0$", "", regex=True).map(cod2lxu).fillna(0.0))
+        dfl["litros"] = dfl["CantBase"] * dfl["_lxu"]
+        litros = {int(k): float(v) for k, v in dfl.groupby("CodVendedor")["litros"].sum().items()}
+        dinero = {int(k): float(v) for k, v in df.groupby("CodVendedor")["ImporteNetoItem"].sum().items()}
+        c11t   = {int(k): int(v) for k, v in gcm._11t_por_vend(df).items()}
+        inov   = {int(k): int(v) for k, v in gcm._inov_por_vend(df, cod_inov).items()}
+        out["ranking"] = gcm._ranking(litros, dinero, c11t, inov, vn)
+    except Exception as e:
+        out["_warn"] = "extras versionado (sellout/innov/ranking): " + str(e)
+
+    return _to_native(out)
 
 
 # ====== CIERRES HISTORICOS ======
@@ -4952,6 +5114,22 @@ def gerencia_cierres_historicos():
                 cierre["fuente_cierre_versionado"] = "01_INPUTS/cierres mes/"
             except Exception as e:
                 cierre["warn"].append("recálculo cierre versionado (objetivos/11T): " + str(e))
+            # Sell-Out + Innovaciones + Ranking desde el ventas_mes versionado (FASE 2a)
+            try:
+                _ex = _cierre_extras_versionado(_files)
+                if _ex.get("sellout") is not None:
+                    cierre["sellout"] = _ex["sellout"]
+                if _ex.get("innovaciones") is not None:
+                    cierre["innovaciones"] = _ex["innovaciones"]
+                if _ex.get("ranking"):
+                    _rk = _cierre_ranking_payload(_ex["ranking"])
+                    cierre["ranking_top3"] = _rk["ranking_top3"]
+                    cierre["ranking"]      = _rk["ranking"]
+                    cierre["ganadores"]    = _rk["ganadores"]
+                if _ex.get("_warn"):
+                    cierre["warn"].append(_ex["_warn"])
+            except Exception as e:
+                cierre["warn"].append("recálculo cierre versionado (sellout/innov/ranking): " + str(e))
 
         if not cierre["warn"]:
             cierre.pop("warn")

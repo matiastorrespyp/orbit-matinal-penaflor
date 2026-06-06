@@ -1,5 +1,15 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-06 — fix+feat(cierre): FASE 2a re-aplicada y corregida (Sell-Out/Innov/Ranking)
+
+**`server_orbit.py`**. Re-aplica la Fase 2a tras el revert `4690b9a` (que se hizo porque la 1ª versión rompía Render con HTTP 500 a los ~31s).
+
+- **Causa 1 (HTTP 500):** el ranking traía `numpy.float64` (de `groupby().to_dict()`) que el JSON provider de Flask no serializa en Render (en local sí). **Fix:** casteo de litros/dinero/11t/innov a `float`/`int` nativos + sanitizador recursivo `_to_native()` sobre toda la salida de extras.
+- **Causa 2 (~43s → timeout):** se leía `04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx` (19MB con imágenes, ~40s) para los litros del ranking. **Fix:** usar `_cargar_maestro_04D()` (CSV liviano `09_CONFIG/maestro_04D_productos.csv`) → endpoint **3.2s**. Caché de lecturas de ventas_mes (`_leer_ventas_mes_cacheado`, `_gcm_leer_ventas_cacheado`).
+- **Validado (instancia temp):** 1er request 3.2s, sin warnings, sin tipos numpy; Sell-Out 6 cat, Innovaciones 13 productos, Ranking #1 V8.
+
+---
+
 ## 2026-06-06 — feat(cierre): cierre versionado por carpeta (FASE 1: objetivos/avance + 11T)
 
 **`server_orbit.py`** (endpoint `/api/gerencia/cierres_historicos`) + nuevos archivos en `01_INPUTS/cierres mes/`.
