@@ -1,16 +1,5 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
-## 2026-06-06 — feat(cierre): FASE 2a — Sell-Out + Innovaciones + Ranking desde el trío del mes
-
-**`server_orbit.py`** (`/api/gerencia/cierres_historicos`).
-
-- Continúa la migración del cierre al trío versionado de `01_INPUTS/cierres mes/`. Ahora **Sell-Out**, **Innovaciones** y **Ranking** también se calculan desde `ventas_mes_<MMAAAA>.csv` (+ catálogos compartidos 04D y Innovaciones.xlsx), reutilizando el motor oficial `tools/generar_cierre_mensual.py` (importado vía `_gcm()`).
-- Helpers nuevos: `_gcm()` (importa el motor cacheado), `_cierre_extras_versionado()` (sell-out vía `_sellout_desde_ventas`, innovaciones por producto, ranking vía `_ranking`), `_cierre_ranking_payload()` (arma ranking_top3/ranking/ganadores).
-- **Validado (instancia temp):** Sell-Out 6 categorías (VINOS DEL AÑO 78.5%, SPIRITS 104.7%, RTD 127.9%); Innovaciones 13 productos con venta, CCC Mes 1026; Ranking #1 V8 (84.81), #2 V10, #3 V9.
-- **Pendiente:** Acciones y Planes AS siguen leyendo artefactos viejos — necesitan catálogos mensuales versionados (catálogo de acciones ACJ + reconocimiento/escala) para migrarse igual. Innovaciones lista solo productos con venta (13); opción de listar las 17 con 0.
-
----
-
 ## 2026-06-06 — feat(cierre): cierre versionado por carpeta (FASE 1: objetivos/avance + 11T)
 
 **`server_orbit.py`** (endpoint `/api/gerencia/cierres_historicos`) + nuevos archivos en `01_INPUTS/cierres mes/`.
