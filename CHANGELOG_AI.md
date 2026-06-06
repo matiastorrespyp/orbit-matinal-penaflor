@@ -1,5 +1,15 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-06 — ui(cierre): quitar tarjeta "Resumen empresa del cierre"
+
+**`PAV MATINAL PE_A FLOR/portal.html`** — función `gCierreMes` / `_renderCierreHistorico`.
+
+- A pedido del usuario se elimina de la pantalla **Cierre de Mes** la tarjeta **"🏢 Resumen empresa del cierre"** (Importe neto total / Litros total / CCC total / Filas ventas mes, derivada de `ventas_mes.csv` vía `c.empresa`).
+- Solo se removió el bloque HTML de esa tarjeta. La variable `e=c.empresa` se mantiene porque sigue usándose en la tarjeta de metadatos (`e.filas_ventas_mes`). La tarjeta "🏢 Resumen compañía" (objetivos/avance desde resultado.xlsx) queda intacta.
+- Cambio solo de presentación; no toca endpoints ni datos.
+
+---
+
 ## 2026-06-05 — fix(planes_as): facturado del Plan AS desde ventas.csv (no del Excel)
 
 **`generar_datasets_acum.py`** + regen `04_DATASETS_ORBIT/mod_planes_as.csv`. Afecta `/api/gerencia/planes_as` y `/api/vendedor/<vid>/planes_as` (tarjetas "Facturado").
