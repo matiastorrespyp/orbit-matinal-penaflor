@@ -1894,13 +1894,15 @@ async function gPlanificacion(p){
 }
 
 /* — Alertas gerencial — */
+let gAlSegKeys={};   // idx -> clave (vendedor|cliente|articulo) para el seguimiento gerencial
 function gAlertas(p){
   const al=D.al||[];
   const alta=al.filter(a=>a.prioridad==='alta');
   const media=al.filter(a=>a.prioridad==='media'||a.prioridad==='normal');
   const otros=al.filter(a=>!['alta','media','normal'].includes(a.prioridad));
+  gAlSegKeys={}; let _si=0;
   let html=`<div class="gph">
-    <div><div class="gph-title">Alertas Comerciales</div><div class="gph-sub">Copiloto ORBIT · ${al.length} alertas activas</div></div>
+    <div><div class="gph-title">Alertas Comerciales</div><div class="gph-sub">Copiloto ORBIT · ${al.length} alertas activas · escribí al lado de cada una si fue vista y hablada con el vendedor</div></div>
     <div class="gph-chips"><span class="chip bd">${alta.length} altas</span><span class="chip wn">${media.length} medias</span></div>
   </div>`;
   if(!al.length){ html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">✅</div><p>Sin alertas activas hoy.</p></div></div></div>`; }
@@ -1909,19 +1911,54 @@ function gAlertas(p){
     return `<div class="card" style="margin-bottom:13px;">
       <div class="card-hd"><span class="card-title">${label}</span><span class="chip ${cls}">${items.length}</span></div>
       <div class="card-body nop">
-        ${items.slice(0,30).map(a=>`<div class="arow">
+        ${items.slice(0,30).map(a=>{
+          const idx=_si++;
+          gAlSegKeys[idx]=`${a.vendedor_id||''}|${a.cliente_id||''}|${a.articulo||''}`;
+          return `<div class="arow">
           <div class="adot ${a.prioridad||'baja'}"></div>
           <div class="abody">
             <div class="atitle">${a.cliente_nombre||a.titulo||'Sin nombre'} <span style="font-size:10px;color:var(--text3);font-family:var(--f-mono);">[${a.cliente_id||'–'}]</span> <span class="chip" style="font-size:9px;color:${CV[a.vendedor_id]||'var(--text2)'};">${a.vendedor_id||''}</span>${a.fecha_carga?` <span style="font-size:9px;color:var(--text3);font-family:var(--f-mono);">📅 ${a.fecha_carga}</span>`:''}</div>
             <div class="adetail">${(a.detalle||a.accion||'').substring(0,200)}</div>
+            <div style="margin-top:7px;display:flex;gap:6px;align-items:center;">
+              <input id="aseg_${idx}" placeholder="📝 Visto / hablado con el vendedor…" onkeydown="if(event.key==='Enter')guardarSeguimiento(${idx})" style="flex:1;padding:6px 9px;font-size:11px;background:rgba(0,0,0,.3);border:1px solid var(--bs);border-radius:7px;color:var(--text);">
+              <button onclick="guardarSeguimiento(${idx})" style="padding:6px 11px;font-size:11px;border:none;border-radius:7px;background:var(--orbit-magenta,#E2147A);color:#fff;cursor:pointer;font-weight:700;">Guardar</button>
+              <span id="asegm_${idx}" style="font-size:9px;color:var(--text3);white-space:nowrap;"></span>
+            </div>
           </div>
           <span class="chip ${cls}" style="flex-shrink:0;font-size:9px;">${(a.prioridad||'info').toUpperCase()}</span>
-        </div>`).join('')}
+        </div>`;}).join('')}
       </div>
     </div>`;
   };
   html+=rg(alta,'⚡ Prioridad Alta','bd')+rg(media,'⚠️ Prioridad Media','wn')+rg(otros,'📋 Sin clasificar','');
   p.innerHTML=html;
+  _cargarSeguimientoAlertas();
+}
+
+async function _cargarSeguimientoAlertas(){
+  try{
+    const r=await fetch('/api/alertas/seguimiento'); if(!r.ok) return;
+    const data=await r.json();
+    Object.keys(gAlSegKeys).forEach(idx=>{
+      const s=data[gAlSegKeys[idx]];
+      if(!s) return;
+      const inp=document.getElementById('aseg_'+idx), meta=document.getElementById('asegm_'+idx);
+      if(inp) inp.value=s.mensaje||'';
+      if(meta&&s.mensaje) meta.textContent='✓ '+(s.autor||'')+' · '+(s.updated_at||'');
+    });
+  }catch(e){}
+}
+
+async function guardarSeguimiento(idx){
+  const clave=gAlSegKeys[idx]; if(!clave) return;
+  const inp=document.getElementById('aseg_'+idx), meta=document.getElementById('asegm_'+idx);
+  if(meta) meta.textContent='guardando…';
+  try{
+    const r=await fetch('/api/alertas/seguimiento',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({clave:clave,mensaje:(inp&&inp.value)||'',autor:'Gerencia'})});
+    const d=await r.json();
+    if(meta) meta.textContent=(d&&d.ok&&d.mensaje)?('✓ '+(d.autor||'Gerencia')+' · '+(d.updated_at||'')):(d&&d.ok?'(borrado)':'error');
+  }catch(e){ if(meta) meta.textContent='error de red'; }
 }
 
 /* ════ VENDEDOR RENDERS ════ */

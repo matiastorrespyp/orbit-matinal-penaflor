@@ -81,6 +81,9 @@ def init_db():
     c.execute("""CREATE TABLE IF NOT EXISTS mensajes(
         id INTEGER PRIMARY KEY AUTOINCREMENT, vendedor_id TEXT NOT NULL,
         mensaje TEXT NOT NULL, leido INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
+    # Seguimiento gerencial de alertas: nota por alerta (clave = vendedor|cliente|articulo)
+    c.execute("""CREATE TABLE IF NOT EXISTS alerta_seguimiento(
+        clave TEXT PRIMARY KEY, mensaje TEXT, autor TEXT, updated_at TEXT)""")
     conn.commit()
     conn.close()
 
@@ -1195,6 +1198,43 @@ def alertas():
     # de acciones del mes (acciones_comerciales_<mes>_penaflor.csv). Ya no depende de
     # mod_alertas_descuentos.csv (reglas de mayo). El catálogo contempla Plan AS / 11T.
     return jsonify(_alertas_descuento_mes())
+
+
+# ====== SEGUIMIENTO GERENCIAL DE ALERTAS ======
+@app.route("/api/alertas/seguimiento", methods=["GET", "POST"])
+def alertas_seguimiento():
+    """Nota gerencial por alerta (si fue vista y hablada con el vendedor).
+    Clave estable = 'vendedor_id|cliente_id|articulo'. Persiste en orbit.db (disco persistente)."""
+    conn = sqlite3.connect(str(DB_PATH), timeout=10, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    try:
+        if request.method == "POST":
+            d = request.get_json(silent=True) or {}
+            clave = str(d.get("clave", "")).strip()
+            if not clave:
+                return jsonify({"error": "falta 'clave'"}), 400
+            mensaje = str(d.get("mensaje", "")).strip()
+            autor = str(d.get("autor", "Gerencia")).strip() or "Gerencia"
+            ts = _now_ar()
+            if mensaje:
+                conn.execute(
+                    """INSERT INTO alerta_seguimiento(clave, mensaje, autor, updated_at)
+                       VALUES(?,?,?,?)
+                       ON CONFLICT(clave) DO UPDATE SET mensaje=excluded.mensaje,
+                           autor=excluded.autor, updated_at=excluded.updated_at""",
+                    (clave, mensaje, autor, ts))
+            else:
+                conn.execute("DELETE FROM alerta_seguimiento WHERE clave=?", (clave,))
+            conn.commit()
+            return jsonify({"ok": True, "clave": clave, "mensaje": mensaje,
+                            "autor": autor, "updated_at": ts})
+        # GET: devuelve todas las notas {clave: {mensaje, autor, updated_at}}
+        rows = conn.execute("SELECT clave, mensaje, autor, updated_at FROM alerta_seguimiento").fetchall()
+        return jsonify({r["clave"]: {"mensaje": r["mensaje"], "autor": r["autor"],
+                                     "updated_at": r["updated_at"]} for r in rows})
+    finally:
+        conn.close()
+
 
 # ====== DETALLE VENDEDOR ======
 @app.route("/api/vendedor/<vid>")

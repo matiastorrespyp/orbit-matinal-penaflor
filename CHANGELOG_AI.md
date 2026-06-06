@@ -1,5 +1,14 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-06 — feat(alertas): nota gerencial por alerta (vista/hablada con el vendedor)
+
+**`server_orbit.py`** (tabla `alerta_seguimiento` + endpoint `/api/alertas/seguimiento`) + **`portal.html`** (pantalla Alertas gerencial).
+
+- En la pantalla **Alertas** del perfil gerencial, cada alerta tiene ahora un **campo de nota + botón Guardar** para dejar asentado si fue vista y hablada con el vendedor. La nota persiste y se pre-carga al volver a entrar.
+- Backend: tabla `alerta_seguimiento(clave, mensaje, autor, updated_at)` en orbit.db (disco persistente en Render). Endpoint GET (todas las notas) y POST (upsert; mensaje vacío borra). Clave estable = `vendedor_id|cliente_id|articulo`.
+- Frontend: `gAlertas` arma la clave por fila, `_cargarSeguimientoAlertas()` pre-llena, `guardarSeguimiento(idx)` hace POST (Enter o botón). Autor = "Gerencia".
+- Validado (instancia temp): ciclo GET vacío → POST guardar → GET con nota → POST vacío borra → GET vacío.
+
 ## 2026-06-06 — feat(tool): EXCEL_PREVENTA.bat — Excel de preventa 11 Titulares por día
 
 **Nuevos: `EXCEL_PREVENTA.bat` (CRLF) + `tools/excel_preventa.py`.**
