@@ -1,5 +1,18 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-06 — Cierre versionado por carpeta (cierres mes/)
+
+### HECHO (FASE 1) ✅
+- ✅ Trío de archivos por mes en `01_INPUTS/cierres mes/`: `resultado_mes_<MMAAAA>.xlsx` + `ventas_mes_<MMAAAA>.csv` + `objetivo 11T_<MMAAAA>.xlsx`.
+- ✅ `cierres_historicos` recalcula objetivos/avance + CCC + 11T desde ese trío cuando existe (helpers `_cierre_*`). Mayo validado.
+
+### PENDIENTE (FASE 2)
+1. Migrar al trío del mes: **Sell-Out** (+maestro 04D), **Planes AS** (+escala/reconocimiento), **Acciones** (+catálogo), **Innovaciones** (+innovaciones.xlsx), **Ranking**.
+2. **Descubrir cierres desde la carpeta** `cierres mes/` (hoy aún se listan desde `07_CIERRES_MENSUALES/index`). Meta: agregar el trío `_062026` y que aparezca junio solo.
+3. Una vez migrado todo, deprecar los artefactos `cierre_*.json` de `07_CIERRES_MENSUALES`.
+
+---
+
 ## Sesión 2026-06-05 (c) — Facturado Plan AS desde ventas.csv
 
 ### HECHO EN ESTA SESIÓN ✅

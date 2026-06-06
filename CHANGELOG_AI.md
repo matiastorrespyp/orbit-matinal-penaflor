@@ -1,5 +1,20 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-06 — feat(cierre): cierre versionado por carpeta (FASE 1: objetivos/avance + 11T)
+
+**`server_orbit.py`** (endpoint `/api/gerencia/cierres_historicos`) + nuevos archivos en `01_INPUTS/cierres mes/`.
+
+- **Objetivo:** cada cierre mensual se calcula desde un trío de archivos versionados por `_MMAAAA` en `01_INPUTS/cierres mes/`, autocontenido y sin romper meses anteriores:
+  - `resultado_mes_<MMAAAA>.xlsx` → objetivo/acumulado/avance por vendedor.
+  - `ventas_mes_<MMAAAA>.csv` → CCC (y en fases siguientes sell-out/planes/acciones/innov).
+  - `objetivo 11T_<MMAAAA>.xlsx` → objetivo del 11T por marca.
+- **FASE 1 (esta):** `cierres_historicos` ahora, si existen los 3 archivos del período, recalcula **objetivos_avance** (Resumen compañía + Cierre por vendedor + CCC por segmento) y **once_titulares** (11 Titulares · CCC vs Objetivo) desde ese trío, sustituyendo a los artefactos congelados. Helpers nuevos: `_cierre_archivos_mes`, `_cierre_ccc_por_vend_segmento`, `_cierre_objetivos_avance`, `_cierre_once_titulares`.
+- **Corrige** el bug reportado: el 11T del cierre tomaba CCC de `ventas_acumulada.csv` (mayo+junio mezclados → 2656/74.8%). Ahora sale de `ventas_mes_052026.csv` (mayo aislado) → **2066 CCC / 58.2%**, 1/11 marcas ≥100%.
+- **Validado (instancia temp):** Resumen compañía obj $326.8M / acum $323.9M / 99.11%; CCC 831; 7 vendedores poblados; 11T 11 marcas. Catálogos compartidos (maestro 04D, escala, acciones, innovaciones) NO se mueven a la carpeta.
+- **Pendiente FASE 2:** migrar Sell-Out / Planes AS / Acciones / Innovaciones / Ranking al mismo trío, y descubrir cierres directamente desde la carpeta (hoy aún usa el índice de 07_CIERRES_MENSUALES).
+
+---
+
 ## 2026-06-06 — ui(cierre): quitar tarjeta "Resumen empresa del cierre"
 
 **`PAV MATINAL PE_A FLOR/portal.html`** — función `gCierreMes` / `_renderCierreHistorico`.

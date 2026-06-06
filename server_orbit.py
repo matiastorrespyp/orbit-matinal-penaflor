@@ -4527,6 +4527,214 @@ def gerencia_cierre_mes():
     })
 
 
+# ====== CIERRE VERSIONADO POR CARPETA (01_INPUTS/cierres mes/) ======
+# Cada cierre es autocontenido en 3 archivos versionados por _MMAAAA:
+#   resultado_mes_<MMAAAA>.xlsx   → objetivo/acumulado/avance por vendedor
+#   ventas_mes_<MMAAAA>.csv       → CCC, 11T (y luego sell-out/planes/acciones/innov)
+#   objetivo 11T_<MMAAAA>.xlsx    → objetivo del 11T por marca
+# Catálogos compartidos (maestro 04D, escala, acciones, innovaciones) NO van acá.
+CIERRES_MES_DIR = INPUTS / "cierres mes"
+
+_MARCA_LKP_CIERRE = {
+    "ALMA MORA": "ALMA MORA", "ALARIS": "ALARIS", "TRAPICHE ALARIS": "ALARIS",
+    "DON DAVID": "DON DAVID", "DADA": "DADA", "LOS ARBOLES": "LOS ARBOLES",
+    "FINCA LAS MORAS": "FINCA LAS MORAS", "F LAS MORAS": "FINCA LAS MORAS",
+    "TRAPICHE RESERVA": "TRAPICHE RESERVA",
+    "FOND DE CAVE": "FOND DE CAVE", "FOND CAVE": "FOND DE CAVE",
+    "CAZADOR": "CAZADOR", "ANTARES": "ANTARES",
+    "GORDON'S FLAVOURS": "GORDON'S FLAVOURS", "GORDONS FLAVOURS": "GORDON'S FLAVOURS",
+    "GORDONS": "GORDON'S FLAVOURS", "GORDON'S": "GORDON'S FLAVOURS",
+    "SMIRNOFF": "SMIRNOFF FLAVOURS", "SMIRNOFF FLAVOURS": "SMIRNOFF FLAVOURS",
+    "SMIRNOFF ICE": "SMIRNOFF ICE",
+    "JW BLACK": "JW BLACK", "JW RED": "JW RED",
+    "MASCOTA": "MASCOTA", "NC ESPUMANTES": "NC ESPUMANTES",
+    "TRAPICHE MEDALLA": "TRAPICHE MEDALLA",
+}
+_ART_KW_11T_CIERRE = [
+    ("SMIRNOFF ICE", "SMIRNOFF ICE"), ("SMF ICE", "SMIRNOFF ICE"),
+    ("SMIRNOFF", "SMIRNOFF FLAVOURS"), ("GORDON", "GORDON'S FLAVOURS"),
+    ("ANTARES", "ANTARES"), ("CAZADOR", "CAZADOR"),
+    ("FOND DE CAVE", "FOND DE CAVE"), ("ALMA MORA", "ALMA MORA"),
+    ("LOS ARBOLES", "LOS ARBOLES"), ("DADA", "DADA"),
+    ("FINCA LAS MORAS", "FINCA LAS MORAS"), ("DON DAVID", "DON DAVID"),
+    ("ALARIS", "ALARIS"), ("TRAPICHE RESERVA", "TRAPICHE RESERVA"),
+    ("JW BLACK", "JW BLACK"), ("JW RED", "JW RED"),
+]
+_OBJ_ALIAS_11T_CIERRE = {
+    "ALMA MORA": "ALMA MORA", "TRAPICHE RESERVA": "TRAPICHE RESERVA",
+    "FINCA LAS MORAS": "FINCA LAS MORAS",
+    "ALARIS": "ALARIS", "DON DAVID": "DON DAVID", "DADA": "DADA",
+    "SIMRNOFF FLAVORS": "SMIRNOFF FLAVOURS", "SMIRNOFF FLAVORS": "SMIRNOFF FLAVOURS",
+    "SMIRNOFF FLAVOURS": "SMIRNOFF FLAVOURS",
+    "LOS ARBOLES": "LOS ARBOLES", "ANTARES": "ANTARES",
+    "SMIRNOFF ICE": "SMIRNOFF ICE", "SMF ICE": "SMIRNOFF ICE",
+    "GORDONS FLAVOURS": "GORDON'S FLAVOURS", "GORDONS FLAVORS": "GORDON'S FLAVOURS",
+    "GORDON'S FLAVOURS": "GORDON'S FLAVOURS",
+}
+
+
+def _cierre_archivos_mes(periodo):
+    """periodo 'AAAA-MM' → dict con los 3 archivos del cierre versionado, o None si faltan."""
+    try:
+        y, m = periodo.split("-")
+        mmaaaa = f"{int(m):02d}{int(y)}"
+    except Exception:
+        return None
+    res   = CIERRES_MES_DIR / f"resultado_mes_{mmaaaa}.xlsx"
+    vmes  = CIERRES_MES_DIR / f"ventas_mes_{mmaaaa}.csv"
+    obj11 = CIERRES_MES_DIR / f"objetivo 11T_{mmaaaa}.xlsx"
+    if res.exists() and vmes.exists() and obj11.exists():
+        return {"resultado": res, "ventas_mes": vmes, "objetivo_11t": obj11, "mmaaaa": mmaaaa}
+    return None
+
+
+def _cierre_ccc_por_vend_segmento(vmes_df):
+    """CCC (clientes únicos, neto>0) por vendedor × segmento desde ventas_mes del cierre.
+    Solo Peñaflor (Empresa=='Empresa'). V2/V5/V20 ya excluidos por _leer_ventas_mes_csv."""
+    out = {}
+    if vmes_df.empty:
+        return out
+    df = vmes_df
+    if "Empresa" in df.columns:
+        df = df[df["Empresa"].astype(str).str.strip() == "Empresa"]
+    df = df.copy()
+    df["_cli"]  = pd.to_numeric(df["Cliente"], errors="coerce")
+    df["_vend"] = pd.to_numeric(df["CodVendedor"], errors="coerce")
+    df["_seg"]  = [
+        _clasificar_segmento(str(r), str(s))
+        for r, s in zip(df.get("Ramo", pd.Series([""] * len(df))),
+                        df.get("Subramo", pd.Series([""] * len(df))))
+    ]
+    df = df.dropna(subset=["_cli", "_vend"])
+    for (vend, seg), grp in df.groupby([df["_vend"].astype(int), "_seg"]):
+        cn = clean_code(str(int(vend)))
+        out.setdefault(cn, {"TRADICIONAL": 0, "AUTOSERVICIO": 0, "ON_PREMISE_VTK": 0, "OTROS": 0})
+        out[cn][seg] = int(grp["_cli"].nunique())
+    return out
+
+
+def _cierre_objetivos_avance(files):
+    """objetivos_avance del cierre desde resultado_mes_<MMAAAA>.xlsx (obj/acum) + ventas_mes (CCC)."""
+    obj_por_vend = {}
+    av = pd.read_excel(files["resultado"], sheet_name="Avance")
+    for _, r in av.iterrows():
+        cn = clean_code(str(r.get("VendedorCodigo", "")))
+        if not cn or int(cn) in _VENDEDORES_EXCLUIDOS:
+            continue
+        obj_por_vend[cn] = {
+            "nombre":    str(r.get("VendedorNombre", "")).strip().title(),
+            "objetivo":  float(r.get("ValorObjetivo", 0) or 0),
+            "acumulado": float(r.get("Acumulado", 0) or 0),
+        }
+
+    ccc_por_vend = _cierre_ccc_por_vend_segmento(_leer_ventas_mes_csv(files["ventas_mes"]))
+
+    vend_df = read_csv(CONFIG / "vendedores_activos.csv")
+    vend_activos = {}
+    if not vend_df.empty:
+        for _, v in vend_df[vend_df["activo"] == 1].iterrows():
+            cn = clean_code(str(v["codigo_vendedor"]))
+            if int(cn) not in _VENDEDORES_EXCLUIDOS:
+                vend_activos[cn] = str(v["nombre_vendedor"]).strip()
+
+    vendedores = []
+    for cn, nombre_config in vend_activos.items():
+        ob  = obj_por_vend.get(cn, {})
+        ccc = ccc_por_vend.get(cn, {})
+        objetivo   = ob.get("objetivo", 0)
+        acumulado  = ob.get("acumulado", 0)
+        avance_pct = round(acumulado / objetivo * 100, 2) if objetivo else 0
+        ccc_trad = ccc.get("TRADICIONAL", 0)
+        ccc_auto = 0 if cn == "3" else ccc.get("AUTOSERVICIO", 0)   # V3 no AS
+        ccc_op   = ccc.get("ON_PREMISE_VTK", 0)
+        ccc_total = ccc_trad + ccc_auto + ccc_op + ccc.get("OTROS", 0)
+        vendedores.append({
+            "codigo": cn, "nombre": ob.get("nombre") or nombre_config,
+            "objetivo": objetivo, "acumulado": acumulado, "avance_pct": avance_pct,
+            "faltante": round(objetivo - acumulado, 2),
+            "ccc_total": ccc_total, "ccc_tradicional": ccc_trad,
+            "ccc_autoservicio": ccc_auto, "ccc_onpremise": ccc_op,
+        })
+    vendedores.sort(key=lambda x: x["avance_pct"], reverse=True)
+
+    empresa = {k: sum(v[k] for v in vendedores) for k in
+               ("objetivo", "acumulado", "ccc_total", "ccc_tradicional",
+                "ccc_autoservicio", "ccc_onpremise")}
+    empresa["avance_pct"] = round(empresa["acumulado"] / empresa["objetivo"] * 100, 2) if empresa["objetivo"] else 0
+    empresa["faltante"]   = round(empresa["objetivo"] - empresa["acumulado"], 2)
+
+    dias_habiles = None
+    try:
+        from calendar import monthrange
+        y, m = int(files["mmaaaa"][2:]), int(files["mmaaaa"][:2])
+        cal = contar_dias_habiles(fecha_corte=datetime(y, m, monthrange(y, m)[1], 23, 59, 59))
+        dias_habiles = cal.get("total")
+    except Exception:
+        pass
+
+    return {
+        "dias_habiles":     dias_habiles,
+        "empresa":          empresa,
+        "vendedores":       vendedores,
+        "fuente_objetivos": files["resultado"].name,
+        "fuente_acumulado": files["resultado"].name,
+        "fuente_ccc":       files["ventas_mes"].name,
+        "congelado_desde":  "01_INPUTS/cierres mes/ (versionado por archivo)",
+    }
+
+
+def _cierre_once_titulares(files):
+    """11T CCC vs Objetivo del cierre: CCC desde ventas_mes_<MMAAAA>.csv,
+    objetivo desde objetivo 11T_<MMAAAA>.xlsx."""
+    obj_map = {}
+    try:
+        odf = pd.read_excel(files["objetivo_11t"], header=1)
+        odf = odf.dropna(subset=odf.columns[1:2])
+        for _, r in odf.iterrows():
+            raw = str(r.iloc[1]).upper().strip()
+            mk = _OBJ_ALIAS_11T_CIERRE.get(raw, raw)
+            try:
+                obj_map[mk] = int(float(r.iloc[2]))
+            except (ValueError, TypeError):
+                pass
+    except Exception:
+        pass
+
+    ccc_map = {}
+    df = _leer_ventas_mes_csv(files["ventas_mes"])
+    if not df.empty:
+        if "Empresa" in df.columns:
+            df = df[df["Empresa"].astype(str).str.strip() == "Empresa"]
+        df = df.copy()
+        df["mo"] = df["Marca"].astype(str).str.upper().str.strip().map(_MARCA_LKP_CIERRE)
+        for kw, mo in _ART_KW_11T_CIERRE:
+            still = df["mo"].isna()
+            if not still.any():
+                break
+            hits = df.loc[still, "Articulo"].astype(str).str.upper().str.contains(kw, regex=False, na=False)
+            df.loc[still & hits, "mo"] = mo
+        df["_cli"] = pd.to_numeric(df["Cliente"], errors="coerce")
+        ccc_map = df[df["mo"].notna()].groupby("mo")["_cli"].nunique().to_dict()
+
+    marcas, tot_ccc, tot_obj = [], 0, 0
+    for mk in sorted(obj_map, key=lambda x: ccc_map.get(x, 0), reverse=True):
+        ccc_v = int(ccc_map.get(mk, 0))
+        obj_v = obj_map[mk]
+        pct   = round(ccc_v / obj_v * 100, 1) if obj_v else None
+        marcas.append({"marca": mk, "ccc": ccc_v, "objetivo": obj_v, "pct": pct})
+        tot_ccc += ccc_v
+        tot_obj += obj_v
+    return {
+        "marcas": marcas,
+        "empresa": {
+            "ccc_total": tot_ccc, "objetivo_total": tot_obj,
+            "pct": round(tot_ccc / tot_obj * 100, 1) if tot_obj else 0,
+            "marcas_sobre_objetivo": sum(1 for m in marcas if (m["pct"] or 0) >= 100),
+            "total_marcas": len(marcas),
+        },
+    }
+
+
 # ====== CIERRES HISTORICOS ======
 @app.route("/api/gerencia/cierres_historicos")
 def gerencia_cierres_historicos():
@@ -4716,6 +4924,34 @@ def gerencia_cierres_historicos():
         cierre["sellout"]              = _load_art("cierre_sellout.json")
         cierre["planes_as"]            = _load_art("cierre_planes_as.json")
         cierre["acciones_comerciales"] = _load_art("cierre_acciones_comerciales.json")
+
+        # ── Cierre versionado por carpeta (01_INPUTS/cierres mes/) — FASE 1 ──
+        # Si existen los 3 archivos del mes, objetivos/avance + 11T se calculan desde ellos
+        # (fuente única y versionada), sustituyendo a los artefactos congelados.
+        _files = _cierre_archivos_mes(periodo)
+        if _files:
+            try:
+                oa = _cierre_objetivos_avance(_files)
+                cierre["objetivos_avance"] = oa
+                emp_oa = oa.get("empresa", {}) or {}
+                cierre["ccc_segmentos"] = {
+                    "empresa": {
+                        "ccc_total":        emp_oa.get("ccc_total"),
+                        "ccc_tradicional":  emp_oa.get("ccc_tradicional"),
+                        "ccc_autoservicio": emp_oa.get("ccc_autoservicio"),
+                        "ccc_onpremise":    emp_oa.get("ccc_onpremise"),
+                    },
+                    "vendedores": [
+                        {"codigo": v.get("codigo"), "nombre": v.get("nombre"),
+                         "ccc_total": v.get("ccc_total"), "ccc_tradicional": v.get("ccc_tradicional"),
+                         "ccc_autoservicio": v.get("ccc_autoservicio"), "ccc_onpremise": v.get("ccc_onpremise")}
+                        for v in oa.get("vendedores", [])
+                    ],
+                }
+                cierre["once_titulares"] = _cierre_once_titulares(_files)
+                cierre["fuente_cierre_versionado"] = "01_INPUTS/cierres mes/"
+            except Exception as e:
+                cierre["warn"].append("recálculo cierre versionado (objetivos/11T): " + str(e))
 
         if not cierre["warn"]:
             cierre.pop("warn")
