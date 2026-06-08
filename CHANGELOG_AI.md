@@ -1,5 +1,15 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-08 — fix(cierre): tarjeta 11 Titulares · CCC vs Objetivo — fuente bimestral + sin filtro Empresa
+
+**`server_orbit.py`** (`_cierre_archivos_mes`, `_cierre_once_titulares`, nuevo `_leer_ventas_acum_cierre`; endpoint `/api/gerencia/cierres_historicos` → pantalla **Cierre de Mes**).
+
+- **Síntoma:** la tarjeta "11 Titulares · CCC vs Objetivo" del cierre daba muy por debajo del real (mayo 2026: 2066 / 58.2%).
+- **Causa raíz (dos):** (1) `_cierre_once_titulares` filtraba `Empresa == "Empresa"`, descartando las filas de **P&P Logística** (ventas reales de vendedores activos); el 11T canónico (`/api/gerencia/once_titulares`) no filtra Empresa. (2) Leía de `ventas_mes_<MMAAAA>.csv` (1 mes), pero **el 11 Titulares se mide bimestral** (2 meses) → la fuente correcta es `ventas_acumulada_<MMAAAA>.csv`.
+- **Fix:** `_cierre_archivos_mes` ahora expone `ventas_acumulada` (opcional). `_cierre_once_titulares` lee de esa acumulada bimestral (nuevo lector `_leer_ventas_acum_cierre`, sep=';'/latin1, neto>0, excl V2/V5/V20, sin filtro Empresa), con **fallback** a `ventas_mes` si un cierre viejo no tiene la acumulada. Mismo criterio que el dashboard diario. Objetivos y mapeo de marcas sin cambios.
+- **Validado** sobre `01_INPUTS/cierres mes/ventas_acumulada_052026.csv` (rango 2026-04-01→05-30): **4424 CCC / 124.5%**, 11/11 marcas ≥ objetivo. Por marca: ALMA MORA 749, DADA 556, ALARIS 541, SMIRNOFF ICE 519, SMIRNOFF FLAVOURS 481, FINCA LAS MORAS 448, LOS ARBOLES 445, ANTARES 230, TRAPICHE RESERVA 187, DON DAVID 134, GORDON'S 134.
+- **Decisión del usuario:** el cierre queda **con nuestro criterio canónico**, aun con diferencias vs el reporte oficial de Peñaflor (ellos ~4007). Diferencia bidireccional (mapeo de SKUs + base de clientes) que no se reconcilia sin su detalle cliente-nivel; auditoría exportada en `99_AUDITORIA_ORBIT/auditoria_11t_clientes_052026.csv`.
+
 ## 2026-06-06 — feat(alertas): nota gerencial por alerta (vista/hablada con el vendedor)
 
 **`server_orbit.py`** (tabla `alerta_seguimiento` + endpoint `/api/alertas/seguimiento`) + **`portal.html`** (pantalla Alertas gerencial).

@@ -4669,8 +4669,12 @@ def _cierre_archivos_mes(periodo):
     res   = CIERRES_MES_DIR / f"resultado_mes_{mmaaaa}.xlsx"
     vmes  = CIERRES_MES_DIR / f"ventas_mes_{mmaaaa}.csv"
     obj11 = CIERRES_MES_DIR / f"objetivo 11T_{mmaaaa}.xlsx"
+    # 11T es bimestral → su fuente es ventas_acumulada_<MMAAAA>.csv (2 meses). Opcional:
+    # si no existe, _cierre_once_titulares cae a ventas_mes (1 mes).
+    vacum = CIERRES_MES_DIR / f"ventas_acumulada_{mmaaaa}.csv"
     if res.exists() and vmes.exists() and obj11.exists():
-        return {"resultado": res, "ventas_mes": vmes, "objetivo_11t": obj11, "mmaaaa": mmaaaa}
+        return {"resultado": res, "ventas_mes": vmes, "objetivo_11t": obj11, "mmaaaa": mmaaaa,
+                "ventas_acumulada": vacum if vacum.exists() else None}
     return None
 
 
@@ -4769,9 +4773,31 @@ def _cierre_objetivos_avance(files):
     }
 
 
+_VACUM_CIERRE_CACHE = {}
+def _leer_ventas_acum_cierre(path):
+    """Lee ventas_acumulada_<MMAAAA>.csv del cierre (sep=';', latin1) con caché.
+    Mismo criterio que /api/gerencia/once_titulares: excluye V2/V5/V20 y filtra neto>0."""
+    try:
+        key = (str(path), os.path.getmtime(path))
+    except OSError:
+        key = (str(path), 0)
+    df = _VACUM_CIERRE_CACHE.get(key)
+    if df is None:
+        df = pd.read_csv(path, sep=";", encoding="latin1", low_memory=False)
+        df.columns = [c.strip() for c in df.columns]
+        df["ImporteNetoItem"] = pd.to_numeric(
+            df["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
+        cv = pd.to_numeric(df["CodVendedor"], errors="coerce")
+        df = df[(~cv.isin(_VENDEDORES_EXCLUIDOS)) & (df["ImporteNetoItem"] > 0)].copy()
+        _VACUM_CIERRE_CACHE[key] = df
+    return df
+
+
 def _cierre_once_titulares(files):
-    """11T CCC vs Objetivo del cierre: CCC desde ventas_mes_<MMAAAA>.csv,
-    objetivo desde objetivo 11T_<MMAAAA>.xlsx."""
+    """11T CCC vs Objetivo del cierre. CCC = clientes únicos (neto>0) por marca titular,
+    MISMO criterio que /api/gerencia/once_titulares. Fuente: ventas_acumulada_<MMAAAA>.csv
+    (bimestral — el 11T se mide en 2 meses); fallback a ventas_mes si no existe la acumulada.
+    Objetivo: objetivo 11T_<MMAAAA>.xlsx."""
     obj_map = {}
     try:
         odf = pd.read_excel(files["objetivo_11t"], header=1)
@@ -4787,10 +4813,12 @@ def _cierre_once_titulares(files):
         pass
 
     ccc_map = {}
-    df = _leer_ventas_mes_cacheado(files["ventas_mes"])
+    # Fuente bimestral (ventas_acumulada) si está; si no, ventas_mes (1 mes). Ambos lectores
+    # ya filtran neto>0 y excluyen V2/V5/V20. SIN filtro de Empresa: P&P Logística son ventas
+    # reales de los vendedores activos (igual criterio que el dashboard /api/gerencia/once_titulares).
+    src_acum = files.get("ventas_acumulada")
+    df = _leer_ventas_acum_cierre(src_acum) if src_acum is not None else _leer_ventas_mes_cacheado(files["ventas_mes"])
     if not df.empty:
-        if "Empresa" in df.columns:
-            df = df[df["Empresa"].astype(str).str.strip() == "Empresa"]
         df = df.copy()
         df["mo"] = df["Marca"].astype(str).str.upper().str.strip().map(_MARCA_LKP_CIERRE)
         for kw, mo in _ART_KW_11T_CIERRE:
