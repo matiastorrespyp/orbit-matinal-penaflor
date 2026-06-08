@@ -4864,6 +4864,22 @@ def _gcm():
     return _GCM_MODULE
 
 
+_GDA_MODULE = None
+def _gda():
+    """Importa (cacheado) generar_datasets_acum.py para reutilizar el catálogo y el matching
+    de acciones comerciales (_REGLA_CANAL_SEG_MAP, _filtrar_ventas_accion, INOV_PRODUCTOS,
+    cargar_clientes). Solo define funciones/constantes al import (sin I/O ni main())."""
+    global _GDA_MODULE
+    if _GDA_MODULE is None:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "generar_datasets_acum", str(BASE / "generar_datasets_acum.py"))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _GDA_MODULE = mod
+    return _GDA_MODULE
+
+
 _GCM_VENTAS_CACHE = {}
 def _gcm_leer_ventas_cacheado(path):
     """DataFrame de ventas_mes leído por el motor oficial (filtra activos, V3 solo trad), cacheado."""
@@ -4981,6 +4997,98 @@ def _cierre_extras_versionado(files):
         out["_warn"] = "extras versionado (sellout/innov/ranking): " + str(e)
 
     return _to_native(out)
+
+
+# Catálogo de reglas de acciones por período. FASE 2b: versionar por mes en el cierre.
+# Por ahora el único cierre (mayo) usa el catálogo de mayo en 09_CONFIG.
+_ACC_REGLAS_POR_MMAAAA = {"052026": "reglas_acciones_mayo_2026_orbit.csv"}
+
+
+def _cierre_acciones_versionado(files):
+    """Acciones Comerciales del cierre desde ventas_mes_<MMAAAA>.csv.
+    Inversión = valorDescuento × CantBase (descuento REAL; NO ImporteItem-ImporteNetoItem,
+    que es IVA ~21%). Matching de catálogo idéntico a generar_acciones_ranking (reutiliza
+    _REGLA_CANAL_SEG_MAP / _filtrar_ventas_accion / INOV_PRODUCTOS). Maestro vía CSV liviano
+    (no el xlsx de 19MB). Devuelve {resumen, detalle} jsonify-safe, o None si no hay catálogo/ventas."""
+    reglas_name = _ACC_REGLAS_POR_MMAAAA.get(files.get("mmaaaa", ""))
+    if not reglas_name:
+        return None
+    reglas_path = CONFIG / reglas_name
+    if not reglas_path.exists():
+        return None
+    gda = _gda()
+    df = _leer_ventas_mes_cacheado(files["ventas_mes"]).copy()   # neto>0, excl V2/V5/V20
+    if df.empty:
+        return None
+
+    # Preparación (réplica de _preparar_ventas_acciones pero con inversión correcta = vd×CantBase)
+    cod2cat, _cod2seg, cod2lxu, _cod2linea = _cargar_maestro_04D()
+    clientes = gda.cargar_clientes()   # clientes.xlsx (liviano) → _seg oficial por cliente
+    df["_cod"] = pd.to_numeric(df["Codigo"], errors="coerce")
+    df["_cli"] = pd.to_numeric(df["Cliente"], errors="coerce")
+    df["_codstr"] = (df["Codigo"].astype(str).str.strip().str.upper().str.replace(r"\.0$", "", regex=True))
+    df["_vd"] = pd.to_numeric(df["valorDescuento"].astype(str).str.replace(",", ".", regex=False),
+                              errors="coerce").fillna(0)
+    df["Descuento_pct"] = pd.to_numeric(
+        df["Descuento"].astype(str).str.replace("%", "", regex=False).str.replace(",", ".", regex=False),
+        errors="coerce").fillna(0)
+    v = df[df["Descuento_pct"] > 0].copy()
+    if v.empty:
+        return None
+    v["_descuento_p"] = (v["_vd"] * v["CantBase"]).clip(lower=0)      # inversión real
+    v["Categoria"] = v["_codstr"].map(cod2cat)
+    v["_litros"] = v["CantBase"] * v["_codstr"].map(cod2lxu).fillna(0.0)
+    cs = clientes[["Codigo", "_seg"]].copy()
+    cs["Codigo"] = pd.to_numeric(cs["Codigo"], errors="coerce")
+    v = v.merge(cs.rename(columns={"Codigo": "cli_id"}), left_on="_cli", right_on="cli_id", how="left")
+
+    reglas = pd.read_csv(reglas_path, encoding="utf-8-sig")
+    reglas.columns = [c.strip() for c in reglas.columns]
+
+    seen, detalle, cli_union = set(), [], set()
+    for _, r in reglas.iterrows():
+        canal = str(r.get("canal", "")).strip()
+        cat   = str(r.get("categoria", "")).strip().upper()
+        grupo = str(r.get("accion_grupo", f"{canal}|{cat}")).strip()
+        if grupo in seen:
+            continue
+        seen.add(grupo)
+        if canal == "PLANES AASS" or cat == "RESTO SKU" or canal not in gda._REGLA_CANAL_SEG_MAP:
+            continue
+        vm = gda._filtrar_ventas_accion(v, canal, cat, gda._REGLA_CANAL_SEG_MAP[canal])
+        if vm is None or vm.empty:
+            continue
+        desc_vals = sorted(vm["Descuento_pct"].dropna().unique())
+        if desc_vals:
+            lo, hi = round(min(desc_vals)), round(max(desc_vals))
+            desc_disp = f"{int(lo)}%" if lo == hi else f"{int(lo)}-{int(hi)}%"
+        else:
+            desc_disp = "–"
+        cli_ids = set(vm["_cli"].dropna().astype(int))
+        cli_union |= cli_ids
+        detalle.append({
+            "nombre":       str(r.get("accion_nombre", grupo)).strip(),
+            "tipo":         str(r.get("tipo_accion", "")).strip(),
+            "canal":        canal,
+            "categoria":    cat,
+            "descuento":    desc_disp,
+            "litros":       round(float(vm["_litros"].sum()), 1),
+            "inversion":    round(float(vm["_descuento_p"].sum()), 0),
+            "importe_neto": round(float(vm["ImporteNetoItem"].sum()), 0),
+            "clientes":     int(len(cli_ids)),
+        })
+
+    if not detalle:
+        return None
+    detalle.sort(key=lambda a: -a["inversion"])
+    resumen = {
+        "total_acciones":     len(detalle),
+        "inversion_total":    round(sum(a["inversion"] for a in detalle), 0),
+        "importe_neto":       round(sum(a["importe_neto"] for a in detalle), 0),
+        "clientes_afectados": int(len(cli_union)),
+    }
+    return _to_native({"resumen": resumen, "detalle": detalle[:10],
+                       "fuente": files["ventas_mes"].name, "catalogo": reglas_name})
 
 
 # ====== CIERRES HISTORICOS ======
@@ -5216,6 +5324,14 @@ def gerencia_cierres_historicos():
                     cierre["warn"].append(_ex["_warn"])
             except Exception as e:
                 cierre["warn"].append("recálculo cierre versionado (sellout/innov/ranking): " + str(e))
+            # Acciones Comerciales desde ventas_mes versionado (FASE 2b) — inversión real (vd×CantBase),
+            # NO IVA. Solo si hay catálogo del mes; si no, queda el artefacto congelado.
+            try:
+                _acc = _cierre_acciones_versionado(_files)
+                if _acc is not None:
+                    cierre["acciones_comerciales"] = _acc
+            except Exception as e:
+                cierre["warn"].append("recálculo cierre versionado (acciones): " + str(e))
 
         if not cierre["warn"]:
             cierre.pop("warn")

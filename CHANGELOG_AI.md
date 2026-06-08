@@ -1,5 +1,15 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-08 — fix(cierre): tarjeta Acciones Comerciales mostraba IVA, no inversión real
+
+**`server_orbit.py`** (nuevo `_cierre_acciones_versionado` + helper `_gda`; endpoint `/api/gerencia/cierres_historicos` → pantalla **Cierre de Mes**, tarjeta Acciones Comerciales).
+
+- **Síntoma:** la tarjeta mostraba 6 acciones, inversión 828.235, 50 clientes (artefacto congelado `cierre_acciones_comerciales.json`).
+- **Causa raíz:** ese artefacto calculó inversión = `ImporteItem − ImporteNetoItem`, que es **IVA (21%)**, no descuento. Comprobado: inversión 828.235 = 21% del neto 3.943.978; las 6 acciones daban exactamente 21% c/u. Además solo cubría 6 de 11 acciones del catálogo y subcontaba clientes.
+- **Fix:** `_cierre_acciones_versionado(files)` recalcula desde `ventas_mes_<MMAAAA>.csv` con el matching canónico de `generar_acciones_ranking` (`_REGLA_CANAL_SEG_MAP`/`_filtrar_ventas_accion`/`INOV_PRODUCTOS`) pero con **inversión = `valorDescuento × CantBase`** (descuento real). Maestro 04D vía CSV liviano (no el xlsx 19MB). Catálogo por mes en `_ACC_REGLAS_POR_MMAAAA`. Fallback al artefacto si no hay catálogo.
+- **Validado** sobre `01_INPUTS/cierres mes/ventas_mes_052026.csv`: clientes/neto idénticos al generador canónico (139/286/752…), solo cambia la inversión (item−neto→vd×CantBase). Resultado: **11 acciones, inversión 14.856.477, neto 112.346.234, 936 clientes**. Serialización nativa verificada (jsonify-safe).
+- **Pendiente:** `mod_acciones_ranking.csv` (datasets vivos) y el endpoint `gerencia_cierre_mes` siguen usando item−neto=IVA en `inversion_pesos` → corregir aparte.
+
 ## 2026-06-08 — fix(cierre): tarjeta 11 Titulares · CCC vs Objetivo — fuente bimestral + sin filtro Empresa
 
 **`server_orbit.py`** (`_cierre_archivos_mes`, `_cierre_once_titulares`, nuevo `_leer_ventas_acum_cierre`; endpoint `/api/gerencia/cierres_historicos` → pantalla **Cierre de Mes**).

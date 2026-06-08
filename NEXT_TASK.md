@@ -6,8 +6,14 @@
 - ✅ 11T del cierre: fuente cambiada a `ventas_acumulada_<MMAAAA>.csv` (bimestral abril+mayo) con criterio canónico (neto>0, excl V2/V5/V20, sin filtro Empresa) + fallback a `ventas_mes`. Mayo: **4424 CCC / 124.5%**, 11/11 marcas ≥ objetivo. Validado en local; **pendiente pushear a Render**.
 - ✅ Decisión: el cierre queda con NUESTRO criterio, aunque difiera del reporte oficial Peñaflor (~4007). No se reconcilia sin detalle cliente-nivel de ellos. Auditoría en `99_AUDITORIA_ORBIT/auditoria_11t_clientes_052026.csv`. Ver [[business_rule_11t_bimestral]].
 
+- ✅ Acciones Comerciales del cierre: nuevo `_cierre_acciones_versionado` recalcula desde `ventas_mes_<MMAAAA>.csv` con inversión real (`valorDescuento×CantBase`, no IVA). Mayo: 11 acciones, inversión 14.856.477, 936 clientes. (FASE 2b parcial.) Ver [[business_rule_acciones_mensuales]].
+
 ### A REVISAR (consistencia P&P Logística en el cierre)
 - `_cierre_ccc_por_vend_segmento` (CCC por segmento del cierre, tarjetas "Resumen compañía" / "Cierre por vendedor") **sí** filtra `Empresa=='Empresa'`. Definir con el usuario si CCC-por-segmento del cierre debe incluir P&P Logística o no (hoy 11T sí, segmento no). El `gerencia_cierre_mes` live también filtra Empresa en CCC segmento.
+
+### A CORREGIR (mismo bug de IVA en inversión, fuera del cierre histórico)
+- `generar_datasets_acum.py::_preparar_ventas_acciones` usa `inversion = ImporteItem−ImporteNetoItem` (IVA) → `mod_acciones_ranking.csv` y el endpoint `gerencia_cierre_mes` muestran IVA, no descuento real. Corregir a `valorDescuento×CantBase` y regenerar datasets.
+- FASE 2b acciones: versionar el catálogo de reglas por cierre (hoy `_ACC_REGLAS_POR_MMAAAA` mapea 052026→reglas_acciones_mayo en 09_CONFIG; generalizar para junio+).
 
 ## Sesión 2026-06-06 — Cierre versionado por carpeta (cierres mes/)
 
