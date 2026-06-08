@@ -1,5 +1,15 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-08 — feat(faro): Incentivo Club FARO en gerencia y vendedor
+
+**`server_orbit.py`** (sección INCENTIVO CLUB FARO: `_faro_objetivos`, `_faro_ventas`, `_faro_detalle_vendedor`, endpoints `/api/gerencia/incentivo_faro` y `/api/vendedor/<vid>/incentivo_faro`) + **`portal.html`** (botón + pantalla gerencial `gIncentivoFaro` y tab vendedor `vFaro`) + **`01_INPUTS/incentivo_club_faro .xlsx`** (objetivos).
+
+- **Objetivos**: desde `incentivo_club_faro*.xlsx` (3 categorías × vendedor). Supervisores = suma de su equipo (Esteban=V3/4/6/8/10, Raúl=V7/9).
+- **3 categorías** (segmento por Ramo+Subramo de la venta; Autoservicio incluye autoservicio-tradicional): **Alaris+Finca Las Moras** (Tradicional, ≥3 bot, 1 CCC/cliente) · **Antares** (Autoservicio, ≥6, por SKU con XPA/Lager **doble**) · **Familia Smirnoff** (Autoservicio, ≥6, 1 CCC/cliente; Marca SMIRNOFF, excluye Smirnoff Ice).
+- **Logrado y no-compradores**: desde `ventas_acumulada.csv` (bimestre mayo-junio). No-compradores = clientes del canal a los que el vendedor vendió en el bimestre y NO cubrieron la marca (con botellas compradas o "sin compra").
+- **Gerencia**: tabla vendedores + supervisores con logrado/objetivo/% por categoría. **Vendedor**: tab FARO con su objetivo (3 tarjetas con barra de avance) y debajo la lista de no-compradores por categoría.
+- **Validado** (test_client): ambos endpoints 200. V8: alaris 42/65, antares 13/10 (130% por regla doble), smirnoff 25/25. V3 (no AS): alaris 120/100, antares/smirnoff 0/0. Serialización nativa (`_to_native`).
+
 ## 2026-06-08 — fix(cierre): tarjeta Acciones Comerciales mostraba IVA, no inversión real
 
 **`server_orbit.py`** (nuevo `_cierre_acciones_versionado` + helper `_gda`; endpoint `/api/gerencia/cierres_historicos` → pantalla **Cierre de Mes**, tarjeta Acciones Comerciales).

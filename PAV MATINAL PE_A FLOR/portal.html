@@ -918,6 +918,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       <div class="gs-item" data-sc="innovaciones"        onclick="gSw('innovaciones',this)"><span class="gs-ico">🚀</span>Innovaciones</div>
       <div class="gs-item" data-sc="planes_as"           onclick="gSw('planes_as',this)"><span class="gs-ico">🏆</span>Planes AS</div>
       <div class="gs-item" data-sc="acciones_comerciales" onclick="gSw('acciones_comerciales',this)"><span class="gs-ico">💰</span>Acciones Comerciales</div>
+      <div class="gs-item" data-sc="incentivo_faro" onclick="gSw('incentivo_faro',this)"><span class="gs-ico">🌟</span>Incentivo FARO</div>
       <div class="gs-sec">Reportes</div>
       <div class="gs-item" data-sc="cierre_mes" onclick="gSw('cierre_mes',this)"><span class="gs-ico">🏁</span>Cierre de Mes</div>
     </div>
@@ -984,6 +985,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
   <div class="vcont" id="vT-plan"></div>
   <div class="vcont" id="vT-alertas"></div>
   <div class="vcont" id="vT-planes_as"></div>
+  <div class="vcont" id="vT-faro"></div>
 
   <nav class="vbnav">
     <div class="vtab active" onclick="vSw('inicio',this)"><span class="vtab-ico">🏠</span><span>Inicio</span></div>
@@ -995,6 +997,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       <div class="vtab-badge" id="vBadge"></div>
     </div>
     <div class="vtab" onclick="vSw('planes_as',this)"><span class="vtab-ico">🏆</span><span>Plan AS</span></div>
+    <div class="vtab" onclick="vSw('faro',this)"><span class="vtab-ico">🌟</span><span>FARO</span></div>
   </nav>
 </div>
 
@@ -1261,7 +1264,7 @@ function gSw(id,el){
   gScreen=id;
   document.querySelectorAll('.gs-item').forEach(n=>n.classList.remove('active'));
   (el||document.querySelector(`[data-sc="${id}"]`))?.classList.add('active');
-  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',planificacion:'Planificación',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',cierre_mes:'Cierre de Mes'};
+  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',planificacion:'Planificación',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',incentivo_faro:'Incentivo FARO',cierre_mes:'Cierre de Mes'};
   document.getElementById('gTopTitle').textContent=tt[id]||'';
   gRender();
 }
@@ -1276,6 +1279,7 @@ function gRender(){
   else if(gScreen==='innovaciones')          gInnovaciones(p);
   else if(gScreen==='planes_as')             gPlanesAS(p);
   else if(gScreen==='acciones_comerciales')  gAccionesComerciales(p);
+  else if(gScreen==='incentivo_faro')        gIncentivoFaro(p);
   else if(gScreen==='dormidos')              gDormidos(p);
   else if(gScreen==='cierre_mes')            gCierreMes(p);
 }
@@ -1969,7 +1973,44 @@ function vSw(tab,el){
   el.classList.add('active');
 }
 
-function vRenderAll(){ vInicio(); vRuta(); vKpis(); vPlan(); vAlertas(); vPlanesAS(); }
+function vRenderAll(){ vInicio(); vRuta(); vKpis(); vPlan(); vAlertas(); vPlanesAS(); vFaro(); }
+
+/* — Incentivo Club FARO (vendedor): mi objetivo + clientes no compradores por categoría — */
+function vFaro(){
+  const cont=document.getElementById('vT-faro'); if(!cont) return;
+  const vid=(userData.vendedor_id||'').toUpperCase();
+  cont.innerHTML=`<div class="vsh">🌟 Incentivo Club FARO</div><div style="text-align:center;padding:24px;color:var(--text3);">Cargando…</div>`;
+  const fmtN=n=>Number(n||0).toLocaleString('es-AR');
+  const avc=x=>(x>=100?'ok':x>=70?'wn':'bd');
+  fetch('/api/vendedor/'+vid+'/incentivo_faro').then(r=>r.json()).then(j=>{
+    const cats=j.categorias||[];
+    let h=`<div class="vsh">🌟 Incentivo Club FARO</div>
+      <div style="font-size:11px;color:var(--text3);margin:-6px 0 10px;">Cobertura mayo-junio · 3 botellas en Tradicional, 6 en Autoservicio</div>`;
+    cats.forEach(c=>{
+      const pct=c.pct!=null?c.pct:0; const nc=c.no_compradores||[];
+      h+=`<div class="vkw" style="background:var(--surf2);margin-bottom:10px;">
+        <div class="row-b" style="align-items:center;">
+          <div><div class="vkl">${c.nombre}</div><div class="xs" style="color:var(--text3)">${c.segmento}</div></div>
+          <div style="text-align:right;"><div class="vkv" style="font-size:22px;">${fmtN(c.logrado)}<span style="color:var(--text3);font-size:14px;">/${fmtN(c.objetivo)}</span></div>
+            <span class="chip ${avc(pct)}" style="font-size:10px;">${c.pct!=null?c.pct+'%':'s/obj'}</span></div>
+        </div>
+        <div class="bar" style="height:6px;margin-top:8px;"><div class="bar-f ${avc(pct)}" style="width:${clamp(pct,0,100)}%"></div></div>
+      </div>`;
+      // No compradores de esta marca (clientes del canal sin cobertura)
+      h+=`<div style="margin:0 2px 16px;">
+        <div class="xs" style="color:var(--text2);font-weight:600;margin-bottom:6px;">No compradores de ${c.nombre} (${nc.length}) — ${c.segmento}</div>`;
+      if(!nc.length){ h+=`<div class="xs" style="color:var(--text3);padding:6px 0;">Todos los clientes del canal ya cubren esta marca 🎉</div>`; }
+      else { h+=nc.map(x=>`<div class="row-b" style="padding:7px 10px;background:var(--surf);border-radius:8px;margin-bottom:4px;">
+          <div style="min-width:0;"><div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.razon_social||('Cliente '+x.cliente)}</div>
+            <div class="xs" style="color:var(--text3)">#${x.cliente} · ${x.localidad||'–'}</div></div>
+          <div style="text-align:right;white-space:nowrap;"><span class="chip ${x.botellas_marca>0?'wn':'bd'}" style="font-size:9px;">${x.botellas_marca>0?x.botellas_marca+' bot':'sin compra'}</span></div>
+        </div>`).join(''); }
+      h+=`</div>`;
+    });
+    h+=`<div class="xs" style="color:var(--text3);padding:4px 2px 20px;">Antares cuenta por SKU (XPA y Lager doble). Fuente: ${j.fuente||'ventas_acumulada.csv'}.</div>`;
+    cont.innerHTML=h;
+  }).catch(e=>{ cont.innerHTML=`<div class="vsh">🌟 Incentivo Club FARO</div><div style="color:var(--bd);padding:16px;">Error: ${e.message}</div>`; });
+}
 
 /* — Inicio — */
 function vInicio(){
@@ -3028,6 +3069,36 @@ function vPlanesAS(){
 }
 
 /* ════ CIERRE DE MES ════ */
+/* ── Incentivo Club FARO (gerencia): objetivo vs logrado por vendedor + supervisores ── */
+function gIncentivoFaro(p){
+  p.innerHTML=`<div class="gph"><div><div class="gph-title">🌟 Incentivo Club FARO</div>
+    <div class="gph-sub">Objetivo (incentivo_club_faro.xlsx) vs logrado · cobertura mayo-junio desde ventas_acumulada.csv</div></div></div>
+    <div id="faro-g"><div class="card"><div class="card-body"><div class="empty"><div class="eico" style="font-size:28px">⏳</div><p>Cargando incentivo FARO…</p></div></div></div></div>`;
+  (async()=>{
+    const cont=document.getElementById('faro-g'); if(!cont) return;
+    const fmtN=n=>Number(n||0).toLocaleString('es-AR');
+    const avc=x=>(x>=100?'ok':x>=70?'wn':'bd');
+    try{
+      const r=await fetch('/api/gerencia/incentivo_faro');
+      if(!r.ok){ cont.innerHTML=`<div class="card"><div class="card-body"><p style="color:var(--bd);padding:16px">FARO: HTTP ${r.status}</p></div></div>`; return; }
+      const j=await r.json();
+      const cats=j.categorias||{}; const ck=['alaris_flm','antares','smirnoff'];
+      const cell=o=>{const pct=o&&o.pct!=null?o.pct:(o&&o.objetivo?0:null);
+        return `<td style="text-align:center;white-space:nowrap;"><b>${fmtN(o?o.logrado:0)}</b><span style="color:var(--text3)">/${fmtN(o?o.objetivo:0)}</span>`+
+        (pct!=null?` <span class="chip ${avc(pct)}" style="font-size:9px;">${pct}%</span>`:'')+`</td>`;};
+      const filas=(arr,esSup)=>arr.map(v=>`<tr${esSup?' style="background:rgba(226,20,122,.06);font-weight:600;"':''}>
+        <td style="font-weight:600;white-space:nowrap;">${esSup?'👤 '+v.nombre:('V'+v.codigo+' · '+(v.nombre||''))}${esSup&&v.vendedores?`<div style="font-size:9px;color:var(--text3);font-weight:400;">${v.vendedores.join(' ')}</div>`:''}</td>
+        ${ck.map(c=>cell(v[c])).join('')}</tr>`).join('');
+      const head=`<thead><tr><th>Vendedor</th><th style="text-align:center">${cats.alaris_flm||'Alaris+FLM'}<div style="font-size:9px;color:var(--text3);font-weight:400">Tradicional</div></th><th style="text-align:center">${cats.antares||'Antares'}<div style="font-size:9px;color:var(--text3);font-weight:400">Autoservicio</div></th><th style="text-align:center">${cats.smirnoff||'Familia Smirnoff'}<div style="font-size:9px;color:var(--text3);font-weight:400">Autoservicio</div></th></tr></thead>`;
+      cont.innerHTML=`<div class="card"><div class="card-hd"><span class="card-title">Vendedores</span><span class="chip">logrado / objetivo</span></div>
+        <div class="card-body nop"><table class="tbl" style="font-size:12px;">${head}<tbody>${filas(j.vendedores||[],false)}</tbody></table></div></div>
+        <div class="card" style="margin-top:14px;"><div class="card-hd"><span class="card-title">Supervisores</span><span class="chip">suma de su equipo</span></div>
+        <div class="card-body nop"><table class="tbl" style="font-size:12px;">${head}<tbody>${filas(j.supervisores||[],true)}</tbody></table></div></div>
+        <div style="font-size:10px;color:var(--text3);margin-top:8px;">Antares cuenta por SKU (XPA y Lager suman doble) → el logrado puede superar el objetivo. Cobertura: 3 botellas en Tradicional, 6 en Autoservicio. Fuente: ${j.fuente||'ventas_acumulada.csv'} (${j.periodo||'mayo-junio'}).</div>`;
+    }catch(e){ cont.innerHTML=`<div class="card"><div class="card-body"><p style="color:var(--bd);padding:16px">FARO — error: ${e.message}</p></div></div>`; }
+  })();
+}
+
 function gCierreMes(p){
   p.innerHTML=`<div class="gph">
     <div><div class="gph-title">Cierre de Mes — Histórico Versionado</div>

@@ -8,6 +8,13 @@
 
 - ✅ Acciones Comerciales del cierre: nuevo `_cierre_acciones_versionado` recalcula desde `ventas_mes_<MMAAAA>.csv` con inversión real (`valorDescuento×CantBase`, no IVA). Mayo: 11 acciones, inversión 14.856.477, 936 clientes. (FASE 2b parcial.) Ver [[business_rule_acciones_mensuales]].
 
+- ✅ Incentivo Club FARO: botón en gerencia (`gIncentivoFaro`) + tab vendedor (`vFaro`); endpoints `/api/gerencia/incentivo_faro` y `/api/vendedor/<vid>/incentivo_faro`. Objetivos de `incentivo_club_faro .xlsx`, logrado+no-compradores de `ventas_acumulada.csv` (mayo-junio). Ver [[business_rule_incentivo_faro]].
+
+### A REVISAR (FARO)
+- Período: hoy usa `ventas_acumulada.csv` (cubre 04-may→06-jun). Cuando cierre junio, confirmar que la fuente siga siendo el bimestre completo mayo+junio.
+- V7 da logrado muy bajo (pocas ventas suyas en `ventas_acumulada.csv`) — revisar si faltan datos de V7 en esa fuente.
+- Antares "Lager botella": el doble se aplica a artículos con XPA o LAGER (en datos solo hay lata). Confirmar si aparece un SKU botella.
+
 ### A REVISAR (consistencia P&P Logística en el cierre)
 - `_cierre_ccc_por_vend_segmento` (CCC por segmento del cierre, tarjetas "Resumen compañía" / "Cierre por vendedor") **sí** filtra `Empresa=='Empresa'`. Definir con el usuario si CCC-por-segmento del cierre debe incluir P&P Logística o no (hoy 11T sí, segmento no). El `gerencia_cierre_mes` live también filtra Empresa en CCC segmento.
 

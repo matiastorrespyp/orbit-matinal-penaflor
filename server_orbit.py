@@ -4211,6 +4211,195 @@ def vendedor_oportunidades_innovacion(vid):
                     "clientes": clientes, "innovaciones": innov3, "texto": texto}), 200
 
 
+# ====== INCENTIVO CLUB FARO ======
+# Objetivos: 01_INPUTS/incentivo_club_faro*.xlsx (3 categorías × vendedor + supervisores).
+# Avance (logrado) y no-compradores: ventas_acumulada.csv (bimestre mayo+junio).
+# Segmento por Ramo+Subramo de la venta (Autoservicio = autoservicio + autoservicio tradicional).
+#   alaris_flm → Tradicional, umbral 3 botellas, 1 CCC/cliente (Marca ALARIS/FINCA LAS MORAS/PAZ DE FLM)
+#   antares    → Autoservicio, umbral 6, por SKU con XPA/Lager doble (Marca ANTARES*)
+#   smirnoff   → Autoservicio, umbral 6, 1 CCC/cliente (Marca SMIRNOFF, excluye Smirnoff Ice)
+_FARO_SUP_MAP = {"Esteban": [3, 4, 6, 8, 10], "Raul": [7, 9]}
+_FARO_CATS = ("alaris_flm", "antares", "smirnoff")
+_FARO_CAT_NOMBRE = {"alaris_flm": "Alaris + Finca Las Moras", "antares": "Antares", "smirnoff": "Familia Smirnoff"}
+_FARO_CAT_SEG = {"alaris_flm": "TRADICIONAL", "antares": "AUTOSERVICIO", "smirnoff": "AUTOSERVICIO"}
+_FARO_CAT_UMBRAL = {"alaris_flm": 3, "antares": 6, "smirnoff": 6}
+
+
+def _faro_xlsx_path():
+    cands = sorted(INPUTS.glob("incentivo_club_faro*.xlsx"))
+    return cands[0] if cands else None
+
+
+def _faro_objetivos():
+    """{cod_vend(int): {alaris_flm, antares, smirnoff}} desde el xlsx (filas vendedor)."""
+    p = _faro_xlsx_path()
+    obj = {}
+    if not p:
+        return obj
+    try:
+        raw = pd.read_excel(p, sheet_name="Hoja1", header=None, dtype=str)
+        for ri in range(3, 10):
+            c0 = str(raw.iat[ri, 0]).strip()
+            if not c0.isdigit():
+                continue
+            obj[int(c0)] = {
+                "alaris_flm": int(float(raw.iat[ri, 1])),
+                "antares":    int(float(raw.iat[ri, 2])),
+                "smirnoff":   int(float(raw.iat[ri, 3])),
+            }
+    except Exception:
+        pass
+    return obj
+
+
+_FARO_VENTAS_CACHE = {}
+def _faro_ventas():
+    """ventas_acumulada.csv (bimestre) preparada para FARO, cacheada por mtime.
+    Columnas calc: _neto,_cant,_vend,_cli,_seg,_cat,_w (peso Antares),_clinom,_loc."""
+    p = INPUTS / "ventas_acumulada.csv"
+    if not p.exists():
+        return pd.DataFrame()
+    try:
+        key = os.path.getmtime(p)
+    except OSError:
+        key = 0
+    df = _FARO_VENTAS_CACHE.get(key)
+    if df is not None:
+        return df
+    df = pd.read_csv(p, sep=";", encoding="latin1", low_memory=False)
+    df.columns = [c.strip() for c in df.columns]
+    df["_neto"] = pd.to_numeric(df["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce").fillna(0)
+    df["_cant"] = pd.to_numeric(df["CantBase"].astype(str).str.replace(",", ".", regex=False), errors="coerce").fillna(0)
+    df["_vend"] = pd.to_numeric(df["CodVendedor"], errors="coerce")
+    df["_cli"]  = pd.to_numeric(df["Cliente"], errors="coerce")
+    df = df[(df["_neto"] > 0) & (~df["_vend"].isin(_VENDEDORES_EXCLUIDOS))].copy()
+    df["_seg"] = [_clasificar_segmento(str(r), str(s))
+                  for r, s in zip(df.get("Ramo", ""), df.get("Subramo", ""))]
+    mu = df["Marca"].astype(str).str.upper().str.strip()
+    au = df["Articulo"].astype(str).str.upper()
+    cat = pd.Series([None] * len(df), index=df.index, dtype=object)
+    cat[mu.isin(["ALARIS", "FINCA LAS MORAS", "PAZ DE FINCA LAS MORAS"])] = "alaris_flm"
+    cat[mu.str.startswith("ANTARES")] = "antares"
+    cat[mu == "SMIRNOFF"] = "smirnoff"   # excluye SMIRNOFF ICE / ICE FLAVOURS
+    df["_cat"] = cat
+    df["_w"] = [2 if ("XPA" in a or "LAGER" in a) else 1 for a in au]
+    df["_clinom"] = (df["RazonSocial"].astype(str) if "RazonSocial" in df.columns else df["Cliente"].astype(str))
+    df["_loc"] = (df["Localidad"].astype(str) if "Localidad" in df.columns else pd.Series([""] * len(df), index=df.index))
+    _FARO_VENTAS_CACHE.clear()
+    _FARO_VENTAS_CACHE[key] = df
+    return df
+
+
+def _faro_detalle_vendedor(df, cod):
+    """Por categoría: {logrado, no_compradores:[...]} para un vendedor (CodVendedor=cod).
+    Logrado: alaris_flm/smirnoff = 1 CCC por cliente que alcanza el umbral; antares = suma por
+    SKU (XPA/Lager doble) sobre SKUs con ≥6 botellas. No-compradores = clientes del canal a los
+    que el vendedor vendió en el bimestre y NO cubrieron la marca (con botellas compradas <umbral o 0)."""
+    out = {}
+    dv = df[df["_vend"] == cod] if not df.empty else df
+    for cat in _FARO_CATS:
+        seg = _FARO_CAT_SEG[cat]
+        um  = _FARO_CAT_UMBRAL[cat]
+        canal = dv[dv["_seg"] == seg]
+        canal_ids = set(canal["_cli"].dropna().astype(int))
+        marca = canal[canal["_cat"] == cat]
+        bot_cli = marca.groupby("_cli")["_cant"].sum()
+        cubiertos = set(bot_cli[bot_cli >= um].index.astype(int))
+        if cat == "antares":
+            sku = marca.groupby(["_cli", "Articulo"]).agg(cant=("_cant", "sum"), w=("_w", "first")).reset_index()
+            logrado = int(sku.loc[sku["cant"] >= um, "w"].sum())
+        else:
+            logrado = len(cubiertos)
+        # No-compradores: clientes del canal del vendedor que no cubrieron la marca
+        meta = canal.groupby("_cli").agg(nom=("_clinom", "first"), loc=("_loc", "first"))
+        bot_map = bot_cli.to_dict()
+        no_comp = []
+        for cid in (canal_ids - cubiertos):
+            no_comp.append({
+                "cliente":        int(cid),
+                "razon_social":   str(meta["nom"].get(cid, "")).strip()[:45],
+                "localidad":      str(meta["loc"].get(cid, "")).strip()[:25],
+                "botellas_marca": round(float(bot_map.get(cid, 0)), 1),
+            })
+        no_comp.sort(key=lambda x: (-x["botellas_marca"], x["cliente"]))
+        out[cat] = {"logrado": logrado, "no_compradores": no_comp}
+    return out
+
+
+def _faro_nombres_vendedores():
+    vend = read_csv(CONFIG / "vendedores_activos.csv")
+    m = {}
+    if not vend.empty:
+        for _, v in vend.iterrows():
+            try:
+                m[int(clean_code(str(v["codigo_vendedor"])))] = str(v["nombre_vendedor"]).strip()
+            except (ValueError, TypeError):
+                pass
+    return m
+
+
+@app.route("/api/gerencia/incentivo_faro")
+def gerencia_incentivo_faro():
+    """Incentivo Club FARO — objetivo vs logrado por vendedor y supervisor (gerencia)."""
+    obj = _faro_objetivos()
+    df = _faro_ventas()
+    nombres = _faro_nombres_vendedores()
+    logr = {cod: _faro_detalle_vendedor(df, cod) for cod in obj}
+
+    def _cat_block(o_dict, l_dict):
+        b = {}
+        for cat in _FARO_CATS:
+            o = o_dict.get(cat, 0)
+            l = l_dict.get(cat, {}).get("logrado", 0)
+            b[cat] = {"objetivo": o, "logrado": l, "pct": round(l / o * 100, 1) if o else None}
+        return b
+
+    vendedores = []
+    for cod in sorted(obj):
+        row = {"codigo": cod, "nombre": nombres.get(cod, f"V{cod}"), "tipo": "vendedor"}
+        row.update(_cat_block(obj[cod], logr.get(cod, {})))
+        vendedores.append(row)
+
+    supervisores = []
+    for nom, vends in _FARO_SUP_MAP.items():
+        o_sum = {cat: sum(obj.get(v, {}).get(cat, 0) for v in vends) for cat in _FARO_CATS}
+        l_sum = {cat: {"logrado": sum(logr.get(v, {}).get(cat, {}).get("logrado", 0) for v in vends)} for cat in _FARO_CATS}
+        row = {"nombre": nom, "tipo": "supervisor", "vendedores": [f"V{v}" for v in vends]}
+        row.update(_cat_block(o_sum, l_sum))
+        supervisores.append(row)
+
+    return jsonify(_to_native({
+        "vendedores": vendedores, "supervisores": supervisores,
+        "categorias": _FARO_CAT_NOMBRE, "fuente": "ventas_acumulada.csv",
+        "periodo": "mayo-junio", "objetivo_fuente": (_faro_xlsx_path().name if _faro_xlsx_path() else None),
+    }))
+
+
+@app.route("/api/vendedor/<vid>/incentivo_faro")
+def vendedor_incentivo_faro(vid):
+    """Incentivo Club FARO del vendedor: objetivo vs logrado + clientes no compradores por categoría."""
+    import re as _re
+    cod = int(_re.sub(r"\D", "", vid) or 0)
+    obj = _faro_objetivos().get(cod, {c: 0 for c in _FARO_CATS})
+    df = _faro_ventas()
+    det = _faro_detalle_vendedor(df, cod)
+    categorias = []
+    for cat in _FARO_CATS:
+        o = obj.get(cat, 0)
+        l = det.get(cat, {}).get("logrado", 0)
+        categorias.append({
+            "cat": cat, "nombre": _FARO_CAT_NOMBRE[cat],
+            "segmento": "Tradicional" if cat == "alaris_flm" else "Autoservicio",
+            "umbral": _FARO_CAT_UMBRAL[cat],
+            "objetivo": o, "logrado": l, "pct": round(l / o * 100, 1) if o else None,
+            "no_compradores": det.get(cat, {}).get("no_compradores", []),
+        })
+    return jsonify(_to_native({
+        "vendedor": vid, "codigo": cod, "categorias": categorias,
+        "fuente": "ventas_acumulada.csv", "periodo": "mayo-junio",
+    }))
+
+
 # ====== CIERRE DE MES ======
 @app.route("/api/gerencia/cierre_mes")
 def gerencia_cierre_mes():
