@@ -1,5 +1,14 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesión 2026-06-09 — Objetivos Sellout litros desde OBJSELLOUT.xlsx
+
+### HECHO ✅
+- ✅ Tarjeta gerencial *Sellout acumulado en litros · por categoría* (`/api/gerencia/sellout_litros`): objetivos por categoría ahora salen de `01_INPUTS/OBJSELLOUT.xlsx` (nuevo `_cargar_objetivos_sellout`), ya no hardcode. Subcategorías sin objetivo (None). `_renderSoDash` tolera nulls. Validado en local (test_client 200). Ver [[business_rule_sellout_maestro]].
+
+### A REVISAR / PENDIENTE
+- **Pushear a Render** este cambio (validar que `OBJSELLOUT.xlsx` esté disponible en el deploy o que el endpoint tolere su ausencia → hoy devuelve objetivo None, no rompe).
+- Si en el futuro se quieren objetivos por subcategoría, agregar columnas a `OBJSELLOUT.xlsx` y extender el loader.
+
 ## Sesión 2026-06-08 — Fix tarjeta 11T del cierre
 
 ### HECHO ✅

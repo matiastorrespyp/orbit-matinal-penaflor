@@ -1,5 +1,16 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-09 — feat(sellout): objetivos de la tarjeta Sellout litros desde OBJSELLOUT.xlsx
+
+**`server_orbit.py`** (nuevo `_cargar_objetivos_sellout`; `_sellout_desde_ventas` → endpoint `/api/gerencia/sellout_litros`) + **`PAV MATINAL PE_A FLOR/portal.html`** (`_renderSoDash`, tarjeta gerencial *Sellout acumulado en litros · por categoría*) + **`01_INPUTS/OBJSELLOUT.xlsx`** (objetivos).
+
+- **Antes:** los objetivos por categoría estaban **hardcodeados** en el dict `OBJ` de `_sellout_desde_ventas` (VINOS DEL AÑO 19015, RTD 9999, etc.).
+- **Ahora:** `_cargar_objetivos_sellout()` lee `01_INPUTS/OBJSELLOUT.xlsx` (Hoja1: `categoria` | `objetivo en litros`) y es la **fuente única** de objetivos. Clave = categoría en mayúsculas, coincide con los buckets. Valores: VINOS DEL AÑO 17023 · VINOS DE GUARDA 817 · SPIRITS 17019 · RTD 9056 · CHAMPAÑA 747 · CERVEZA ARTESANAL 425.
+- **Subcategorías** (VDA: Alto/Medio Alto/Superior/Medio · SPIRITS: Nacionales/Importados): el archivo solo trae objetivo a nivel categoría, así que las subcategorías muestran **litros sin objetivo** (`objetivo=None`, `alcance_pct=None`). Decisión del usuario: "sin objetivo de sub".
+- **Frontend:** `_renderSoDash` tolera `alcance_pct`/`objetivo` null → muestra `–` en vez de romper con `.toFixed`. (La vista congelada/cierre de la línea ~3244 ya manejaba null; no se tocó.)
+- **Si falta una categoría en el archivo** → objetivo `None` (Dato no disponible), no se cae a valores viejos.
+- **Validado** (test_client `/api/gerencia/sellout_litros` → 200): objetivos = OBJSELLOUT.xlsx; avances recalculados (VDA 13.8%, SPIRITS 35.1%, RTD 17.6%…); subs con litros y objetivo/alcance None. Loader: 6/6 buckets matchean.
+
 ## 2026-06-08 — feat(faro): Incentivo Club FARO en gerencia y vendedor
 
 **`server_orbit.py`** (sección INCENTIVO CLUB FARO: `_faro_objetivos`, `_faro_ventas`, `_faro_detalle_vendedor`, endpoints `/api/gerencia/incentivo_faro` y `/api/vendedor/<vid>/incentivo_faro`) + **`portal.html`** (botón + pantalla gerencial `gIncentivoFaro` y tab vendedor `vFaro`) + **`01_INPUTS/incentivo_club_faro .xlsx`** (objetivos).

@@ -1639,8 +1639,9 @@ function gDashboard(p){
           <th style="text-align:right">Clientes</th>
         </tr></thead><tbody>`;
       sellData.forEach((c,ci)=>{
-        const cl=alcColor(c.alcance_pct);
-        const barW=Math.min(Math.round(c.alcance_pct),100);
+        const hasAlc=c.alcance_pct!=null;
+        const cl=hasAlc?alcColor(c.alcance_pct):'';
+        const barW=hasAlc?Math.min(Math.round(c.alcance_pct),100):0;
         const exp=soExp.has(ci);
         const hasSubs=(c.subcategorias||[]).length>0;
         const hasMarcas=(c.marcas||[]).length>0;
@@ -1648,29 +1649,30 @@ function gDashboard(p){
         sH+=`<tr style="cursor:${canExp?'pointer':'default'}" onclick="window._soTogDash(${ci})">
           <td><b>${canExp?`<span style="font-size:10px;opacity:.45;margin-right:4px">${exp?'▼':'▶'}</span>`:''}${c.categoria}</b></td>
           <td style="text-align:right;font-variant-numeric:tabular-nums">${fmtL(c.litros)} L</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--text3)">${fmtL(c.objetivo)} L</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--text3)">${c.objetivo!=null?fmtL(c.objetivo)+' L':'–'}</td>
           <td style="text-align:right">
-            <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;">
+            ${hasAlc?`<div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;">
               <div class="bar" style="height:4px;width:60px;"><div class="bar-f ${cl}" style="width:${barW}%"></div></div>
               <span class="chip ${cl}" style="font-size:10px;padding:1px 5px;">${c.alcance_pct.toFixed(1)}%</span>
-            </div>
+            </div>`:`<span style="color:var(--text3)">–</span>`}
           </td>
           <td style="text-align:right">${c.clientes}</td>
         </tr>`;
         if(exp){
           if(hasSubs){
             (c.subcategorias||[]).forEach(s=>{
-              const scl=alcColor(s.alcance_pct);
-              const sBarW=Math.min(Math.round(s.alcance_pct),100);
+              const sHasAlc=s.alcance_pct!=null;
+              const scl=sHasAlc?alcColor(s.alcance_pct):'';
+              const sBarW=sHasAlc?Math.min(Math.round(s.alcance_pct),100):0;
               sH+=`<tr style="background:rgba(255,255,255,.02)">
                 <td style="padding-left:22px;color:var(--text3);font-size:11px;">↳ ${s.nombre}</td>
                 <td style="text-align:right;font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums">${fmtL(s.litros)} L</td>
-                <td style="text-align:right;font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums">${fmtL(s.objetivo)} L</td>
+                <td style="text-align:right;font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums">${s.objetivo!=null?fmtL(s.objetivo)+' L':'–'}</td>
                 <td style="text-align:right;font-size:11px">
-                  <div style="display:flex;align-items:center;gap:4px;justify-content:flex-end;">
+                  ${sHasAlc?`<div style="display:flex;align-items:center;gap:4px;justify-content:flex-end;">
                     <div class="bar" style="height:3px;width:40px;"><div class="bar-f ${scl}" style="width:${sBarW}%"></div></div>
                     <span class="chip ${scl}" style="font-size:9px;padding:1px 4px;">${s.alcance_pct.toFixed(1)}%</span>
-                  </div>
+                  </div>`:`<span style="color:var(--text3)">–</span>`}
                 </td>
                 <td style="text-align:right;font-size:11px;color:var(--text3)">${s.clientes}</td>
               </tr>`;

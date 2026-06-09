@@ -3575,6 +3575,35 @@ _SO_SEG_VDA = {"Alto": "Alto", "Medio Alto": "Medio Alto", "Superior": "Superior
 _SO_SEG_SPIRITS = {"Nacional": "Nacionales", "Importados": "Importados"}
 
 
+def _cargar_objetivos_sellout() -> dict:
+    """Lee 01_INPUTS/OBJSELLOUT.xlsx → {CATEGORIA_UPPER: objetivo_litros (int)}.
+    Fuente única de objetivos de sell out por categoría (reemplaza valores hardcodeados).
+    Estructura del archivo: fila 1 'SELL OUT', fila 2 encabezados (categoria | objetivo en
+    litros), luego una fila por categoría + una fila 'total'. Devuelve {} si falta o falla.
+    La clave es la categoría en mayúsculas (ej. 'vinos del año' → 'VINOS DEL AÑO'),
+    que coincide con los buckets de _sellout_desde_ventas."""
+    path = INPUTS / "OBJSELLOUT.xlsx"
+    obj = {}
+    if not path.exists():
+        return obj
+    try:
+        df = pd.read_excel(path, header=1)
+        df.columns = [str(c).strip().lower() for c in df.columns]
+        cat_col = next((c for c in df.columns if "categor" in c), df.columns[0])
+        obj_col = next((c for c in df.columns if "objetivo" in c or "litro" in c), df.columns[-1])
+        for _, r in df.iterrows():
+            cat = str(r[cat_col]).strip()
+            if not cat or cat.lower() in ("total", "nan"):
+                continue
+            val = pd.to_numeric(r[obj_col], errors="coerce")
+            if pd.isna(val):
+                continue
+            obj[cat.upper()] = int(round(float(val)))
+    except Exception:
+        pass
+    return obj
+
+
 def _sellout_desde_ventas(df_raw: pd.DataFrame) -> list:
     """
     Calcula sell out en litros por categoría desde un DataFrame de ventas ya filtrado
@@ -3593,13 +3622,17 @@ def _sellout_desde_ventas(df_raw: pd.DataFrame) -> list:
         subcategorias: [{nombre, litros, objetivo, alcance_pct, clientes,
                          marcas: [{marca, litros}]}]}]
     """
-    OBJ = {
-        "VINOS DEL AÑO":    {"total": 19015, "sub": {"Alto": 11792, "Medio Alto": 4651, "Superior": 2171, "Medio": 401}},
-        "VINOS DE GUARDA":  {"total": 678,   "sub": {}},
-        "SPIRITS":          {"total": 17752,  "sub": {"Nacionales": 17045, "Importados": 707}},
-        "RTD":              {"total": 9999,   "sub": {}},
-        "CHAMPAÑA":         {"total": 686,    "sub": {}},
-        "CERVEZA ARTESANAL":{"total": 405,    "sub": {}},
+    # Objetivos por categoría: fuente única OBJSELLOUT.xlsx (no hardcode).
+    obj_file = _cargar_objetivos_sellout()
+    # Estructura de subcategorías (solo nombres). OBJSELLOUT.xlsx trae objetivo
+    # SOLO a nivel categoría → las subcategorías muestran litros SIN objetivo.
+    SUBS = {
+        "VINOS DEL AÑO":     ["Alto", "Medio Alto", "Superior", "Medio"],
+        "VINOS DE GUARDA":   [],
+        "SPIRITS":           ["Nacionales", "Importados"],
+        "RTD":               [],
+        "CHAMPAÑA":          [],
+        "CERVEZA ARTESANAL": [],
     }
     _NAC_KW = ("SMIRNOFF", "GORDON", "WHITE HORSE", "J&B", "JYB")
 
@@ -3649,38 +3682,35 @@ def _sellout_desde_ventas(df_raw: pd.DataFrame) -> list:
     df["_linea"] = df["_linea"].fillna("").astype(str).str.strip()
 
     resultado = []
-    for cat, obj_info in OBJ.items():
+    for cat, sub_names in SUBS.items():
         grp = df[df["_cat"] == cat]
         litros   = round(float(grp["litros"].sum()), 1)
         clientes = int(grp["Cliente"].nunique()) if "Cliente" in grp.columns else 0
-        obj_total = obj_info["total"]
-        alcance   = round(litros / obj_total * 100, 1) if obj_total else 0.0
+        obj_total = obj_file.get(cat)               # None si la categoría no está en OBJSELLOUT.xlsx
+        alcance   = round(litros / obj_total * 100, 1) if obj_total else None
         subs = []
 
         if cat == "VINOS DEL AÑO":
-            for sn, so_v in obj_info["sub"].items():
+            for sn in sub_names:
                 # Segmento del maestro 04D: Alto / Medio Alto / Superior / Medio
                 sg = grp[grp["_seg"].map(_SO_SEG_VDA) == sn]
                 sl = round(float(sg["litros"].sum()), 1)
                 sc = int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0
                 marcas = _marcas_de_grupo(sg)
-                subs.append({"nombre": sn, "litros": sl, "objetivo": so_v,
-                             "alcance_pct": round(sl/so_v*100,1) if so_v else 0.0,
-                             "clientes": sc, "marcas": marcas})
+                subs.append({"nombre": sn, "litros": sl, "objetivo": None,
+                             "alcance_pct": None, "clientes": sc, "marcas": marcas})
 
         elif cat == "SPIRITS":
             # Spirits NO están en maestro 04D → keyword por nombre de artículo
             _art = grp["Articulo"].astype(str).str.upper() if "Articulo" in grp.columns else pd.Series("", index=grp.index)
             mask_nac = _art.str.contains("|".join(_NAC_KW), na=False)
-            for sn, mask_s, so_v in [("Nacionales", mask_nac, obj_info["sub"]["Nacionales"]),
-                                      ("Importados", ~mask_nac, obj_info["sub"]["Importados"])]:
+            for sn, mask_s in [("Nacionales", mask_nac), ("Importados", ~mask_nac)]:
                 sg = grp[mask_s]
                 sl = round(float(sg["litros"].sum()), 1)
                 sc = int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0
                 marcas = _marcas_de_grupo(sg)
-                subs.append({"nombre": sn, "litros": sl, "objetivo": so_v,
-                             "alcance_pct": round(sl/so_v*100,1) if so_v else 0.0,
-                             "clientes": sc, "marcas": marcas})
+                subs.append({"nombre": sn, "litros": sl, "objetivo": None,
+                             "alcance_pct": None, "clientes": sc, "marcas": marcas})
 
         resultado.append({
             "categoria": cat, "litros": litros, "objetivo": obj_total,
