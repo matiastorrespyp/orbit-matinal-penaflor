@@ -3070,6 +3070,24 @@ def _acc_seg_canon(seg_text, canal_text):
     return out
 
 
+# Subtipos de tradicional para acciones que aplican SOLO a almacén/despensa/kiosco.
+_ACC_SUBSEG_TRAD = {"ALMACEN": "ALMACEN", "ALMACENES": "ALMACEN", "DESPENSA": "DESPENSA",
+                    "KIOSCO": "KIOSCO", "MAXIKIOSCO": "KIOSCO"}
+
+
+def _acc_subseg_filtro(seg_text, canal_text):
+    """Sub-filtro dentro del canon TRADICIONAL por Subramo de la venta.
+    Si la regla nombra subtipos específicos (almacén/despensa/kiosco) SIN el genérico
+    de canal ('tradicional'/'trad'), devuelve el set de tokens permitidos; si no, None
+    (la regla aplica a todo el canal tradicional, sin sub-restricción)."""
+    t = _acc_norm(str(seg_text or "") + " " + str(canal_text or ""))
+    if (_re.search(r"\bTRADICIONAL(?:ES)?\b", t) or _re.search(r"\bTRADITIONAL\b", t)
+            or _re.search(r"\bTRAD\b", t)):
+        return None
+    allowed = {tok for kw, tok in _ACC_SUBSEG_TRAD.items() if kw in t}
+    return allowed or None
+
+
 def _acc_norm(s):
     """Normaliza para matchear marcas: mayúsculas, sin acentos, sin puntuación (apóstrofes/´)."""
     import unicodedata
@@ -3181,10 +3199,13 @@ def _acc_preparar_ventas(nombre="ventas.csv"):
                       else df.get("Cliente", pd.Series([""] * len(df))).astype(str))
     out["_vnom"] = (df["Vendedor"].astype(str) if "Vendedor" in df.columns
                     else pd.Series([""] * len(df), index=df.index))
+    _subr = df.get("Subramo", pd.Series([""] * len(df)))
     out["_seg"]  = [
         _clasificar_segmento(str(r), str(s))
-        for r, s in zip(df.get("Ramo", pd.Series([""] * len(df))), df.get("Subramo", pd.Series([""] * len(df))))
+        for r, s in zip(df.get("Ramo", pd.Series([""] * len(df))), _subr)
     ]
+    # Subramo normalizado: sub-filtro de acciones acotadas a almacén/despensa/kiosco.
+    out["_subseg"] = [_acc_norm(s) for s in _subr]
     _fc = pd.to_datetime(df.get("FechaComprobante"), dayfirst=True, errors="coerce")
     out["_mes"]  = _fc.dt.to_period("M")
     out["_fcomp"] = _fc.dt.strftime("%d/%m/%Y").fillna("")
@@ -3228,6 +3249,7 @@ def _acciones_mes_payload(vid_filtro=None):
         vend_codes = {int(x[1:]) for x in vend_set if x[1:].isdigit()} & {3, 4, 6, 7, 8, 9, 10}
 
         seg_set = _acc_seg_canon(r.get("segmento_cliente_aplica"), r.get("canal_aplica"))
+        sub_allowed = _acc_subseg_filtro(r.get("segmento_cliente_aplica"), r.get("canal_aplica"))
         pred = _acc_product_pred(r, all_lineas)
 
         # filtro por vendedor (vista vendedor) + regla V3 sin autoservicio
@@ -3241,10 +3263,12 @@ def _acciones_mes_payload(vid_filtro=None):
             if vnum == 3:
                 seg_use.discard("AUTOSERVICIO")
 
-        def _match(df):
+        def _match(df, sub_allowed=sub_allowed):
             if df.empty:
                 return df
             m = df["_vend"].isin(codes) & df["_seg"].isin(seg_use)
+            if sub_allowed is not None:
+                m = m & df["_subseg"].apply(lambda s: any(tok in s for tok in sub_allowed))
             if not m.any():
                 return df.iloc[0:0]
             sub = df[m]
@@ -3312,12 +3336,13 @@ def _alertas_descuento_mes():
         else:
             codes = {int(_re.sub(r"\D", "", x)) for x in _re.findall(r"V\s*\d+", vends_raw)} & {3, 4, 6, 7, 8, 9, 10}
         seg = _acc_seg_canon(r.get("segmento_cliente_aplica"), r.get("canal_aplica"))
+        sub_allowed = _acc_subseg_filtro(r.get("segmento_cliente_aplica"), r.get("canal_aplica"))
         pred = _acc_product_pred(r, all_lineas)
         tipo = str(r.get("tipo_regla", "")).upper()
         tramos = [float(x) for x in str(r.get("descuento_pct", "")).replace(",", ".").split("|")
                   if x.strip().replace(".", "").isdigit()]
         maxpct = 100.0 if ("BONIFIC" in tipo or "SIN_CARGO" in tipo) else (max(tramos) if tramos else 0.0)
-        parsed.append((str(r.get("id_accion", "")).strip(), codes, seg, pred, maxpct))
+        parsed.append((str(r.get("id_accion", "")).strip(), codes, seg, sub_allowed, pred, maxpct))
 
     # Clientes Plan AS: tienen 10% de descuento en factura SIEMPRE → piso permitido = 10%.
     pas = read_csv(DATASETS / "mod_planes_as.csv")
@@ -3332,7 +3357,9 @@ def _alertas_descuento_mes():
             continue
         vend = row["_vend"]; seg_v = row["_seg"]
         allowed, fuente_id = 0.0, None
-        for rid, codes, seg, pred, maxpct in parsed:
+        for rid, codes, seg, sub_allowed, pred, maxpct in parsed:
+            if sub_allowed is not None and not any(tok in row["_subseg"] for tok in sub_allowed):
+                continue
             if (vend in codes) and (seg_v in seg) and pred(row["_cat"], row["_linea"], row["_art"], row["_marca"], row["_cod"]):
                 if maxpct > allowed:
                     allowed, fuente_id = maxpct, rid

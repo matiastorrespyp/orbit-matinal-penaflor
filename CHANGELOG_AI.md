@@ -1,5 +1,15 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-10 — feat(acciones): ACJ26-017 20% almacén/despensa+kiosco, V3/V4/V6/V8/V10 + sub-filtro de tradicional
+
+**`server_orbit.py`** (nuevo `_acc_subseg_filtro` + columna `_subseg` en `_acc_preparar_ventas`; aplicado en `_acciones_mes_payload._match` y `_alertas_descuento_mes`) + **catálogo** `01_INPUTS/ACCIONES COMERCIALES/2026-06/acciones_comerciales_junio_2026_penaflor.csv` (fuente real) + `.json` (derivado sincronizado).
+
+- **Antes:** ACJ26-017 = Tradicional, vendedores V3/V4/V6, **30%**, tope "No informado". El motor segmentaba solo a nivel canon `TRADICIONAL` (no distinguía almacén/despensa/kiosco de panadería/carnicería/etc.).
+- **Ahora regla:** vendedores **V3/V4/V6/V8/V10**; **solo almacén/despensa/kiosco** (segmento "Almacén; Despensa; Kiosco", canal `ALMACEN_DESPENSA_KIOSCO`); **20%**; mismas 4 marcas (Alma Mora, Dada vino, Alaris, Finca Las Moras); **tope 2 cajas/mes combinable entre marcas** (ej. 3 botellas de una y 3 de otra → `maximo=2`, `unidad_maximo=cajas en el mes`).
+- **Sub-filtro de motor:** `_acc_subseg_filtro` detecta cuando una acción nombra subtipos específicos (almacén/despensa/kiosco/maxikiosco) **sin** el genérico de canal ("tradicional"/"trad") y, en ese caso, restringe el match por `Subramo` de la venta (`_subseg`). Opt-in: ACJ26-002/005/006/007/021 (genéricos "Tradicional") quedan **intactos** = todo el canal. Solo ACJ26-017 sub-filtra. No se tocó `_clasificar_segmento` (cobertura).
+- **Efecto en alertas de descuento:** el % permitido para estas marcas/vendedores en almacén/despensa/kiosco baja de 30% → **20%**.
+- **Validado** (endpoint real): subfiltro ACJ26-017={ALMACEN,DESPENSA,KIOSCO}, ACJ26-002/021=None. Tarjeta gerencia: canal ALMACEN_DESPENSA_KIOSCO, vendedores [V3,V4,V6,V8,V10], 20%, tope OK, 17 clientes / $145.091. ACJ26-002 sin cambios (36 cli / $387.509). V8/V10 ven la acción, V7 no. Alertas: 51 filas sin excepción. Footprint junio: 46 líneas, todas subramo "Almacen/Despensa" (0 excluidas este mes; el filtro discrimina y excluiría otros sub-tradicionales).
+
 ## 2026-06-09 — feat(sellout): objetivos de la tarjeta Sellout litros desde OBJSELLOUT.xlsx
 
 **`server_orbit.py`** (nuevo `_cargar_objetivos_sellout`; `_sellout_desde_ventas` → endpoint `/api/gerencia/sellout_litros`) + **`PAV MATINAL PE_A FLOR/portal.html`** (`_renderSoDash`, tarjeta gerencial *Sellout acumulado en litros · por categoría*) + **`01_INPUTS/OBJSELLOUT.xlsx`** (objetivos).
