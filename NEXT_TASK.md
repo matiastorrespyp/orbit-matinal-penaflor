@@ -5,9 +5,10 @@
 ### HECHO ✅
 - ✅ ACJ26-017 reescrita: vendedores **V3/V4/V6/V8/V10**, **solo almacén/despensa/kiosco** (canal `ALMACEN_DESPENSA_KIOSCO`), **20%**, mismas 4 marcas, **tope 2 cajas/mes combinable entre marcas**. Catálogo (CSV+JSON) + **motor**: nuevo `_acc_subseg_filtro` sub-filtra por `Subramo` cuando la acción nombra subtipos sin el genérico "tradicional" (opt-in; otras acciones intactas). Aplicado en `_acciones_mes_payload` y `_alertas_descuento_mes`. Validado con endpoint real. Ver [[business_rule_acciones_mensuales]].
 
+- ✅ **Control de tope de cajas:** nuevo `_alertas_tope_cajas_mes` (server_orbit.py) — alerta cuando un cliente supera el tope mensual de cajas de una acción (catálogo-driven: `maximo`+`unidad_maximo` con caja/mes). `/api/alertas` = descuento + tope. Caja = botellas/6 (CantBase en botellas). 4 alertas para ACJ26-017 en junio. Aparece en alertas de gerencia y de vendedor sin tocar frontend.
+
 ### A REVISAR / PENDIENTE
-- **Pushear a Render** (CSV/JSON viven en `01_INPUTS/` + cambio en `server_orbit.py`; no commiteado todavía, requiere orden explícita).
-- **Tope 2 cajas:** definido en la tarjeta (display) pero el motor NO controla el límite de cajas, solo el % de descuento. Evaluar si se quiere alerta por exceso de cajas/cliente/mes.
+- **Validar en Render** el feed combinado de `/api/alertas` (tipo "tope" presente, serialización OK).
 
 ## Sesión 2026-06-09 — Objetivos Sellout litros desde OBJSELLOUT.xlsx
 

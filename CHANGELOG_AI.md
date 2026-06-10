@@ -1,5 +1,15 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-10 — feat(alertas): control automático de tope mensual de cajas por cliente
+
+**`server_orbit.py`** (nuevo `_acc_botellas_por_caja` + `_alertas_tope_cajas_mes`; el endpoint `/api/alertas` ahora devuelve `_alertas_descuento_mes() + _alertas_tope_cajas_mes()`).
+
+- **Qué hace:** alerta cuando un cliente supera el **tope mensual de cajas** de una acción. Catálogo-driven: aplica a toda regla con `maximo` numérico + `unidad_maximo` que contenga "caja" y "mes" (hoy: ACJ26-017, tope 2 cajas/mes). Sin hardcode del id de acción.
+- **Caja = botellas/caja del artículo** (`_acc_botellas_por_caja`: "ALMA MORA MALBEC **6X750**" → 6; default 6). `CantBase` viene en **botellas** (confirmado: lxu maestro 04D = 0.75 L/unidad). Cajas = CantBase / botellas-por-caja.
+- **Footprint:** mismas líneas que matchean la acción (vendedor + segmento canon + sub-segmento almacén/despensa/kiosco + marca) con **descuento real (>0)**. Se suman las cajas por cliente en el mes (combinable entre las 4 marcas) y se alerta si superan el tope.
+- **Feed unificado:** la alerta usa el mismo contrato que las de descuento (`cliente_nombre`/`titulo`, `vendedor_id`, `detalle`, `prioridad: alta`, `fecha_carga`), `tipo: "tope"`. Clave de seguimiento estable `vendedor_id|cliente_id|articulo` con `articulo="TOPE <id_accion>"`. Se renderiza solo en gerencia (`gAlertas`) y vendedor (`vAlertas` filtra `D.al` por vendedor) **sin tocar frontend**.
+- **Validado** (local): 4 alertas de tope para ACJ26-017 — cli 643 (V8, 5 cajas), 7518 (V3, 5), 30064 (V8, 4.5), 509 (V8, 4); todas con exceso y marcas combinadas. Feed combinado = 55 (51 descuento + 4 tope), serializable para jsonify (Render).
+
 ## 2026-06-10 — feat(acciones): ACJ26-017 20% almacén/despensa+kiosco, V3/V4/V6/V8/V10 + sub-filtro de tradicional
 
 **`server_orbit.py`** (nuevo `_acc_subseg_filtro` + columna `_subseg` en `_acc_preparar_ventas`; aplicado en `_acciones_mes_payload._match` y `_alertas_descuento_mes`) + **catálogo** `01_INPUTS/ACCIONES COMERCIALES/2026-06/acciones_comerciales_junio_2026_penaflor.csv` (fuente real) + `.json` (derivado sincronizado).

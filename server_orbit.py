@@ -1194,10 +1194,10 @@ def clientes():
 
 @app.route("/api/alertas")
 def alertas():
-    # Alertas de descuento del mes en curso, calculadas en vivo desde el catálogo
-    # de acciones del mes (acciones_comerciales_<mes>_penaflor.csv). Ya no depende de
-    # mod_alertas_descuentos.csv (reglas de mayo). El catálogo contempla Plan AS / 11T.
-    return jsonify(_alertas_descuento_mes())
+    # Alertas en vivo desde el catálogo de acciones del mes (acciones_comerciales_<mes>_penaflor.csv):
+    #  - descuento: % aplicado supera el tramo máximo de la acción (Plan AS / 11T contemplados).
+    #  - tope: cajas/mes por cliente superan el tope mensual de la acción (combinable entre marcas).
+    return jsonify(_alertas_descuento_mes() + _alertas_tope_cajas_mes())
 
 
 # ====== SEGUIMIENTO GERENCIAL DE ALERTAS ======
@@ -3391,6 +3391,99 @@ def _alertas_descuento_mes():
             "impacto_alertas_ars": round(desc, 0),
         })
     alerts.sort(key=lambda a: a["exceso_pct"], reverse=True)
+    return alerts
+
+
+def _acc_botellas_por_caja(articulo):
+    """Botellas por caja desde el formato del artículo (ej. 'ALMA MORA MALBEC 6X750' -> 6).
+    Default 6 (formato estándar de estas líneas). CantBase viene en botellas (lxu=0.75 L)."""
+    m = _re.search(r"(\d+)\s*[xX]\s*\d+", str(articulo or ""))
+    if m:
+        n = int(m.group(1))
+        if 1 <= n <= 48:
+            return n
+    return 6
+
+
+def _alertas_tope_cajas_mes():
+    """Alerta por exceso del TOPE MENSUAL DE CAJAS por cliente (combinable entre marcas).
+    Aplica a acciones del catálogo con tope mensual en cajas: `maximo` numérico +
+    `unidad_maximo` con 'caja' y 'mes' (ej. ACJ26-017: maximo=2, unidad_maximo='cajas en el mes').
+    Caja = botellas/caja del artículo (6X750 -> 6). Footprint = líneas que matchean la acción
+    (vendedor + segmento + sub-segmento + marca) con descuento real (>0); se suman las cajas
+    por cliente en el mes y se alerta si superan el tope."""
+    mes, fuente, reglas = _acc_catalogo_mes()
+    v = _acc_preparar_ventas("ventas.csv")   # MES VIVO
+    if v.empty or not reglas:
+        return []
+    try:
+        per = pd.Period(mes, freq="M")
+    except Exception:
+        per = v["_mes"].max()
+    cur = v[(v["_mes"] == per) & (v["_desc"] > 0)].copy()
+    if cur.empty:
+        return []
+    all_lineas = set(l for l in v["_linea"].dropna().unique() if l and l != "NAN")
+    cur["_cajas"] = [float(c) / _acc_botellas_por_caja(a) for c, a in zip(cur["_cant"], cur["_art"])]
+
+    alerts = []
+    for r in reglas:
+        try:
+            tope_cajas = float(str(r.get("maximo", "")).replace(",", ".").strip())
+        except (ValueError, TypeError):
+            continue
+        um = _acc_norm(r.get("unidad_maximo"))
+        if tope_cajas <= 0 or "CAJA" not in um or "MES" not in um:
+            continue   # solo acciones con tope mensual en cajas
+        rid = str(r.get("id_accion", "")).strip()
+        vends_raw = str(r.get("vendedores_aplica", "")).upper()
+        if "TODOS" in vends_raw:
+            codes = {3, 4, 6, 7, 8, 9, 10}
+        else:
+            codes = {int(_re.sub(r"\D", "", x)) for x in _re.findall(r"V\s*\d+", vends_raw)} & {3, 4, 6, 7, 8, 9, 10}
+        seg = _acc_seg_canon(r.get("segmento_cliente_aplica"), r.get("canal_aplica"))
+        sub_allowed = _acc_subseg_filtro(r.get("segmento_cliente_aplica"), r.get("canal_aplica"))
+        pred = _acc_product_pred(r, all_lineas)
+
+        m = cur["_vend"].isin(codes) & cur["_seg"].isin(seg)
+        if sub_allowed is not None:
+            m = m & cur["_subseg"].apply(lambda s: any(tok in s for tok in sub_allowed))
+        sub = cur[m]
+        if sub.empty:
+            continue
+        keep = sub.apply(lambda x: pred(x["_cat"], x["_linea"], x["_art"], x["_marca"], x["_cod"]), axis=1)
+        sub = sub[keep]
+        if sub.empty:
+            continue
+
+        for cli, grp in sub.groupby("_cli"):
+            cajas = round(float(grp["_cajas"].sum()), 2)
+            if cajas <= tope_cajas + 1e-9:
+                continue
+            exceso = round(cajas - tope_cajas, 2)
+            try: cli_int = int(cli)
+            except Exception: cli_int = None
+            try: cod_int = int(grp["_vend"].iloc[0])
+            except Exception: cod_int = 0
+            desc_total = round(float(grp["_desc"].sum()), 0)
+            marcas_txt = ", ".join(sorted({str(x) for x in grp["_marca"].dropna() if str(x).strip()}))
+            cnom = str(grp["_clinom"].iloc[0]); vnom = str(grp["_vnom"].iloc[0])
+            fcarga = next((f for f in grp["_fcarga"][::-1] if str(f).strip()), "")
+            tope_txt = (f"{tope_cajas:g}").rstrip()
+            alerts.append({
+                "vendedor_codigo": cod_int, "vendedor_nombre": vnom,
+                "vendedor_id": "V" + str(cod_int), "cliente_id": cli_int,
+                "cliente_nombre": cnom, "articulo": f"TOPE {rid}", "marca": marcas_txt,
+                "fecha_pedido": "", "fecha_carga": str(fcarga),
+                "cajas_mes": cajas, "cajas_tope": tope_cajas, "exceso_cajas": exceso,
+                "fuente_regla": rid, "valor_descuento": desc_total,
+                "prioridad": "alta", "tipo": "tope", "titulo": cnom,
+                "detalle": (f"Tope {tope_txt} cajas/mes superado en {marcas_txt or 'marcas de la acción'}: "
+                            f"{cajas:g} cajas con descuento (acción {rid}). Exceso {exceso:g} cajas."),
+                "accion": f"Revisar tope de cajas ({rid})",
+                "impacto_alertas_ars": desc_total,
+            })
+    alerts.sort(key=lambda a: a["exceso_cajas"], reverse=True)
     return alerts
 
 
