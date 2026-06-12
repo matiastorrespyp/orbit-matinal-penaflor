@@ -1882,6 +1882,9 @@ def gerencia_ccc_empresa():
 @app.route("/api/gerencia/once_titulares")
 def gerencia_once_titulares():
     """11 Titulares: CCC acumulado vs objetivo CCC.
+    REGLA: se mide con TODO el contenido de ventas_acumulada.csv, sin filtro de mes.
+    El archivo puede abarcar más de 2 meses (no es "bimestral"); CCC = clientes
+    únicos con compra válida por marca titular sobre todo el archivo.
     Fuente primaria : ventas_acumulada.csv (importeNeto > 0, excluye V2/V5/V20).
     Fuente fallback : mod_11_titulares.csv  (tiene_flag = 1).
     Fuente objetivo : objetivo 11T.xlsx."""
