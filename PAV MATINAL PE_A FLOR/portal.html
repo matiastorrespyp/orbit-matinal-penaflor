@@ -2912,12 +2912,17 @@ function gAccionesComerciales(p){
 
 
 /* ════ CLIENTES DORMIDOS ════ */
+function descargarDormidosExcel(){
+  // Descarga server-side (.xlsx) con el listado COMPLETO de clientes dormidos.
+  window.location.href='/api/gerencia/alertas_caida/export';
+}
 function gDormidos(p){
   const dat=D.dormidos;
   const fmtARS=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
   let html=`<div class="gph">
     <div><div class="gph-title">Clientes Dormidos</div>
     <div class="gph-sub">Sin compra hace más de 60 días · riesgo $ y litros</div></div>
+    <div class="gph-chips"><button class="g-prim" onclick="descargarDormidosExcel()">⬇ Descargar Excel</button></div>
   </div>`;
   if(!dat||!dat.resumen){
     html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">💤</div><p>Sin datos disponibles.</p></div></div></div>`;

@@ -1,8 +1,9 @@
 """
 ORBIT Server v3 — Flask API con diagnóstico, CCC real, 11T real, sin mock
 """
-from flask import Flask, jsonify, request, send_from_directory, make_response
+from flask import Flask, jsonify, request, send_from_directory, make_response, send_file
 import json, sqlite3, pandas as pd, math
+from io import BytesIO
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 
@@ -4053,11 +4054,11 @@ def _litros_por_unidad(articulo):
     return val / 1000.0   # ml/cc o sin unidad
 
 
-@app.route("/api/gerencia/alertas_caida")
-def gerencia_alertas_caida():
+def _dormidos_payload():
     """Clientes DORMIDOS: sin compra hace MÁS de 60 días (criterio por días).
     Última compra por cliente = max fecha en historial_ventas_cliente.csv + ventas.csv.
     Riesgo = importe_neto y litros acumulados del cliente. Excluye V2, V5, V20.
+    Devuelve dict {resumen, por_vendedor, detalle}; lanza FileNotFoundError si falta la fuente.
     """
     EXCLUIR = [2, 5, 20]
     DIAS_DORMIDO = 60
@@ -4065,12 +4066,12 @@ def gerencia_alertas_caida():
     VTAS_PATH = INPUTS / "ventas.csv"
 
     if not HIST_PATH.exists():
-        return jsonify({"error": "Fuente no disponible"}), 404
+        raise FileNotFoundError("Fuente no disponible")
 
     def _vacio():
-        return jsonify({"resumen": {"total_dormidos": 0, "importe_en_riesgo": 0,
-                                    "litros_en_riesgo": 0, "criterio_dias": DIAS_DORMIDO},
-                        "por_vendedor": [], "detalle": []})
+        return {"resumen": {"total_dormidos": 0, "importe_en_riesgo": 0,
+                            "litros_en_riesgo": 0, "criterio_dias": DIAS_DORMIDO},
+                "por_vendedor": [], "detalle": []}
     try:
         # ── Historial ──
         hc = pd.read_csv(HIST_PATH, encoding="utf-8-sig", sep=None, engine="python")
@@ -4166,7 +4167,7 @@ def gerencia_alertas_caida():
             for _, r in dorm.iterrows()
         ]
 
-        return jsonify({
+        return {
             "resumen": {
                 "total_dormidos": len(dorm),
                 "importe_en_riesgo": round(float(dorm["importe_anterior"].sum()), 0),
@@ -4178,9 +4179,57 @@ def gerencia_alertas_caida():
             },
             "por_vendedor": top_por_vend,
             "detalle": detalle,
-        })
+        }
+    except Exception:
+        raise   # propaga al route, que responde 500 con el mensaje
+
+
+@app.route("/api/gerencia/alertas_caida")
+def gerencia_alertas_caida():
+    """Clientes dormidos (JSON). `detalle` trae el listado COMPLETO."""
+    try:
+        return jsonify(_dormidos_payload())
+    except FileNotFoundError as e:
+        return jsonify({"error": str(e)}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/gerencia/alertas_caida/export")
+def gerencia_alertas_caida_export():
+    """Descarga Excel (.xlsx) con el listado COMPLETO de clientes dormidos."""
+    try:
+        data = _dormidos_payload()
+    except FileNotFoundError as e:
+        return jsonify({"error": str(e)}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    cols = ["cliente_id", "cliente_nombre", "vendedor_codigo", "vendedor_nombre",
+            "ultima_compra", "dias_sin_compra", "importe_anterior", "litros_anterior"]
+    df = pd.DataFrame(data.get("detalle", []), columns=cols).rename(columns={
+        "cliente_id": "Cliente ID", "cliente_nombre": "Cliente",
+        "vendedor_codigo": "Vendedor", "vendedor_nombre": "Nombre vendedor",
+        "ultima_compra": "Última compra", "dias_sin_compra": "Días sin compra",
+        "importe_anterior": "Importe anterior $", "litros_anterior": "Litros anteriores",
+    })
+
+    buf = BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as xl:
+        df.to_excel(xl, index=False, sheet_name="Dormidos")
+        ws = xl.sheets["Dormidos"]
+        for i, col in enumerate(df.columns, start=1):
+            if len(df):
+                ancho = max(len(str(col)), int(df.iloc[:, i - 1].astype(str).map(len).max()))
+            else:
+                ancho = len(str(col))
+            ws.column_dimensions[chr(64 + i)].width = min(max(ancho + 2, 10), 50)
+    buf.seek(0)
+
+    corte = data.get("resumen", {}).get("fecha_corte", "")
+    fname = f"clientes_dormidos_{corte}.xlsx" if corte else "clientes_dormidos.xlsx"
+    return send_file(buf, as_attachment=True, download_name=fname,
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 # ====== RUTA DEL DÍA (vendedor) ======

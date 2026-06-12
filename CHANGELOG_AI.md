@@ -1,5 +1,14 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-12 — feat(dormidos): botón de descarga Excel con el listado completo
+
+**`server_orbit.py`** (refactor `gerencia_alertas_caida` → helper `_dormidos_payload()` + nuevo endpoint `/api/gerencia/alertas_caida/export`; imports `send_file` + `BytesIO`) + **`PAV MATINAL PE_A FLOR/portal.html`** (botón "⬇ Descargar Excel" en la pantalla Dormidos + `descargarDormidosExcel()`).
+
+- **Qué hace:** botón en la pantalla gerencial de Clientes Dormidos que descarga un `.xlsx` con el **listado COMPLETO** (la tabla en pantalla muestra solo top 100 por importe; el Excel trae todos).
+- **Una sola fuente de verdad:** el cálculo de dormidos se extrajo a `_dormidos_payload()` (sin cambiar el criterio: sin compra +60 días, excluye V2/V5/V20, riesgo $ y litros desde `historial_ventas_cliente.csv` + `ventas.csv`). Lo consumen tanto el JSON (`/api/gerencia/alertas_caida`) como el Excel (`/export`), así no divergen.
+- **Excel:** 8 columnas (Cliente ID, Cliente, Vendedor, Nombre vendedor, Última compra, Días sin compra, Importe anterior $, Litros anteriores), anchos auto, hoja "Dormidos", nombre `clientes_dormidos_<fecha_corte>.xlsx`. `openpyxl` ya estaba en requirements.txt → deploy Render OK.
+- **Validado** (endpoint en vivo, puerto 8502): JSON `total_dormidos=17` / `len(detalle)=17`; `/export` → HTTP 200, `Content-Disposition: attachment; filename=clientes_dormidos_2026-06-12.xlsx`, mimetype spreadsheet, **18 filas (17 + encabezado) = listado completo**, 8 columnas. `py_compile` OK.
+
 ## 2026-06-12 — fix(V3): regla "V3 no trabaja On Premise" (espejo de Autoservicio)
 
 **`server_orbit.py`** (13 puntos) + **`PAV MATINAL PE_A FLOR/portal.html`** (tarjeta CCC por Segmento del vendedor).
