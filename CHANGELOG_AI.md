@@ -1,5 +1,14 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-12 — fix(V3): regla "V3 no trabaja On Premise" (espejo de Autoservicio)
+
+**`server_orbit.py`** (13 puntos) + **`PAV MATINAL PE_A FLOR/portal.html`** (tarjeta CCC por Segmento del vendedor).
+
+- **Síntoma:** en el cierre del día (Plan vs Real) V3 (Nadia Gambino) figuraba con **1 cliente CCC On Premise** (cliente 696, "AWAY FROM HOME / Bar/Restaurant", Alma Mora, 2026-06-11). V3 no aplica a ese subcanal, igual que ya no aplica a Autoservicio.
+- **Regla aplicada:** V3 → CCC On Premise = 0 en **todas** las superficies donde ya se forzaba AS=0: `_ccc_mes_por_vendedor` (fuente del CCC mes), dashboard (mes/día/oportunidades + flag `trabaja_onpremise`), vendedor (día + flag), `matinal/resumen` (Plan vs Real, `real_ccc_op`), `cobertura_segmento`, cierre mensual versionado, y **planificación** POST/PATCH (no se puede planificar OP a V3). Portal: la vista del vendedor **oculta** la casilla "ON PREMISE" para V3 (grid de columnas dinámico), como ya hacía con AUTOSERV.
+- **Fuente:** `ventas.csv` (verificado: V3 tiene 1 cliente OP). No se toca el dato crudo ni la clasificación de segmentos; solo el conteo atribuido a V3.
+- **Validado** (endpoints en vivo, puerto 8502): `ccc_empresa` V3 onpremise=0; `dashboard` V3 ccc_onpremise(mes)=0, ccc_dia_onpremise=0, trabaja_onpremise=False; `vendedor/V3` idem; `matinal/resumen` V3 plan_ccc_op=0/real_ccc_op=0; `cobertura_segmento` V3 = solo TRADICIONAL. Otros vendedores conservan su On Premise (V6=4, V8=4, V9=5, V10=2). `py_compile` OK.
+
 ## 2026-06-10 — feat(alertas): control automático de tope mensual de cajas por cliente
 
 **`server_orbit.py`** (nuevo `_acc_botellas_por_caja` + `_alertas_tope_cajas_mes`; el endpoint `/api/alertas` ahora devuelve `_alertas_descuento_mes() + _alertas_tope_cajas_mes()`).

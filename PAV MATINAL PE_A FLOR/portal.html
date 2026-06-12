@@ -2138,10 +2138,10 @@ function vKpis(){
     <div class="card">
       <div class="card-hd"><span class="card-title">👥 CCC por Segmento</span></div>
       <div class="card-body">
-        <div style="display:grid;grid-template-columns:${d.trabaja_autoservicio===false?'1fr 1fr':'1fr 1fr 1fr'};gap:10px;text-align:center;">
+        <div style="display:grid;grid-template-columns:repeat(${1+(d.trabaja_autoservicio===false?0:1)+(d.trabaja_onpremise===false?0:1)},1fr);gap:10px;text-align:center;">
           <div><div class="xs m3 mb12">TRADICIONAL</div><div style="font-size:22px;font-weight:700;font-family:var(--f-dis);">${vk.ccc_tradicional!=null?vk.ccc_tradicional:(d.ccc_tradicional!=null?d.ccc_tradicional:0)}</div></div>
           ${d.trabaja_autoservicio===false?'':'<div><div class="xs m3 mb12">AUTOSERV.</div><div style="font-size:22px;font-weight:700;font-family:var(--f-dis);">'+(vk.ccc_autoservicio!=null?vk.ccc_autoservicio:(d.ccc_autoservicio!=null?d.ccc_autoservicio:0))+'</div></div>'}
-          <div><div class="xs m3 mb12">ON PREMISE</div><div style="font-size:22px;font-weight:700;font-family:var(--f-dis);">${vk.ccc_onpremise!=null?vk.ccc_onpremise:(d.ccc_onpremise!=null?d.ccc_onpremise:0)}</div></div>
+          ${d.trabaja_onpremise===false?'':'<div><div class="xs m3 mb12">ON PREMISE</div><div style="font-size:22px;font-weight:700;font-family:var(--f-dis);">'+(vk.ccc_onpremise!=null?vk.ccc_onpremise:(d.ccc_onpremise!=null?d.ccc_onpremise:0))+'</div></div>'}
         </div>
       </div>
     </div>`;

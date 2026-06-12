@@ -576,8 +576,9 @@ def _ccc_mes_por_vendedor(ventas_mes: pd.DataFrame) -> dict:
         trad  = int((grp["segmento_operativo"] == "TRADICIONAL").sum())
         aas   = int((grp["segmento_operativo"] == "AUTOSERVICIO").sum())
         op    = int((grp["segmento_operativo"] == "ON_PREMISE_VTK").sum())
-        if cod_int == 3:  # V3 no trabaja autoservicio
+        if cod_int == 3:  # V3 no trabaja autoservicio ni on premise (regla de negocio)
             aas = 0
+            op  = 0
         result[cod_int] = {
             "tradicional": trad,
             "autoservicio": aas,
@@ -1095,9 +1096,10 @@ def dashboard():
             t11_cumplidos = int(tv["tiene_flag"].sum()) if not tv.empty and "tiene_flag" in tv.columns else 0
             t11_total = len(tv)
 
-        # V3 no trabaja autoservicio (ccc_mes_as ya es 0; refuerzo ccc_dia)
+        # V3 no trabaja autoservicio ni on premise (ccc_mes ya es 0; refuerzo ccc_dia)
         if cod.upper() == "V3":
             ccc_dia_as = 0
+            ccc_dia_op = 0
 
         # Oportunidades: clientes sin compra del día (V3 excluye AS)
         oportunidades = 0
@@ -1107,7 +1109,8 @@ def dashboard():
             opv = cdia_df[cdia_df["vendedor_codigo"].astype(str).apply(clean_code) == cn]
             omask = opv["estado_cliente"].astype(str).str.lower().str.contains("sin", na=False)
             if cod.upper() == "V3" and "segmento_operativo" in opv.columns:
-                omask = omask & (opv["segmento_operativo"].astype(str).str.upper() != "AUTOSERVICIO")
+                _segu = opv["segmento_operativo"].astype(str).str.upper()
+                omask = omask & (_segu != "AUTOSERVICIO") & (~_segu.str.contains("ON_PREMISE|VTK", na=False))
             oportunidades = int(omask.sum())
 
         result.append({
@@ -1130,7 +1133,8 @@ def dashboard():
                 "alertas_criticas": 0, "oportunidades": oportunidades,
                 "inversion_desc_ars": 0.0, "sin_cargo_ars": 0.0,
                 "impacto_alertas_ars": 0.0, "venta_mes_anterior": 0.0,
-                "trabaja_autoservicio": cod.upper() != "V3"
+                "trabaja_autoservicio": cod.upper() != "V3",
+                "trabaja_onpremise": cod.upper() != "V3"
             }
         })
     return jsonify(result)
@@ -1251,8 +1255,9 @@ def vendedor_detalle(vid):
             return jsonify({"error": f"Vendedor {vid} no encontrado o inactivo"}), 404
         nombre = str(fila.iloc[0]["nombre_vendedor"])
 
-    # Regla de negocio: V3 no trabaja autoservicio
+    # Regla de negocio: V3 no trabaja autoservicio ni on premise
     trabaja_as = (vid_norm != "V3")
+    trabaja_op = (vid_norm != "V3")
 
     # Clientes / venta del día — desde el motor (mod_volumen_vendedor.csv)
     vol = read_csv(DATASETS / "mod_volumen_vendedor.csv")
@@ -1313,9 +1318,10 @@ def vendedor_detalle(vid):
     ccc_dia_as   = _ccc_dia(cv, "AUTOSERVICIO")
     ccc_dia_op   = _ccc_dia(cv, "ON_PREMISE|VTK")
 
-    # V3 no trabaja autoservicio (ccc_as ya es 0; refuerzo ccc_dia)
+    # V3 no trabaja autoservicio ni on premise (ccc_as/ccc_op ya son 0; refuerzo ccc_dia)
     if vid_norm == "V3":
         ccc_dia_as = 0
+        ccc_dia_op = 0
 
     # 11 Titulares por vendedor — cantidad de clientes a los que logró vender cada marca:
     # cubiertos_dia = clientes de la ZONA DEL DÍA; cubiertos = total de todas las zonas.
@@ -1354,6 +1360,7 @@ def vendedor_detalle(vid):
         "vendedor_id":       vid_norm,
         "vendedor_nombre":   nombre,
         "trabaja_autoservicio": trabaja_as,
+        "trabaja_onpremise": trabaja_op,
         "objetivo":          obj,
         "acumulado":         acum,
         "avance_pct":        round(av, 2),
@@ -1404,8 +1411,9 @@ def planificacion():
             conn.close()
             return jsonify({"ok": False, "error": f"Vendedor {vid_raw} no autorizado"}), 400
 
-        # Regla: V3 no trabaja autoservicio
+        # Regla: V3 no trabaja autoservicio ni on premise
         ccc_as = 0 if vid_raw == "V3" else int(d.get("ccc_autoservicio") or 0)
+        ccc_op = 0 if vid_raw == "V3" else int(d.get("ccc_onpremise") or 0)
         fecha_raw = str(d.get("fecha") or "").strip().lower()
         fecha  = _fecha_planificacion_default() if fecha_raw in ("", "auto", "default") else d.get("fecha")
         _ts    = _now_ar()  # hora Argentina para ambos timestamps
@@ -1418,7 +1426,7 @@ def planificacion():
             "venta_esperada": float(d.get("venta_esperada") or 0),
             "ccc_tradicional": int(d.get("ccc_tradicional") or 0),
             "ccc_autoservicio": ccc_as,
-            "ccc_onpremise": int(d.get("ccc_onpremise") or 0),
+            "ccc_onpremise": ccc_op,
             "once_t": int(d.get("once_t") or 0),
             "marcas": d.get("marcas"), "clientes_clave": d.get("clientes_clave"),
             "acciones": d.get("acciones"), "estado": "enviada",
@@ -1452,7 +1460,7 @@ def planificacion():
             (fecha, vid_raw, d.get("zona"), d.get("dia_visita"),
              float(d.get("venta_esperada") or 0),
              int(d.get("ccc_tradicional") or 0), ccc_as,
-             int(d.get("ccc_onpremise") or 0), int(d.get("once_t") or 0),
+             ccc_op, int(d.get("once_t") or 0),
              d.get("marcas"), d.get("clientes_clave"), d.get("acciones"),
              _ts, _ts))
         conn.commit(); conn.close()
@@ -1514,13 +1522,18 @@ def planificacion_patch(plan_id):
     row_merge = dict(row_d)
 
     for f in ["zona","dia_visita","venta_esperada","ccc_tradicional",
-              "ccc_onpremise","once_t","marcas","clientes_clave","acciones"]:
+              "once_t","marcas","clientes_clave","acciones"]:
         if f in d:
             fields.append(f"{f}=?"); vals.append(d[f]); row_merge[f] = d[f]
 
     if "ccc_autoservicio" in d:
         val_as = 0 if vid_row == "V3" else int(d.get("ccc_autoservicio") or 0)
         fields.append("ccc_autoservicio=?"); vals.append(val_as); row_merge["ccc_autoservicio"] = val_as
+
+    # V3 no trabaja on premise → su CCC On Premise planificado siempre 0
+    if "ccc_onpremise" in d:
+        val_op = 0 if vid_row == "V3" else int(d.get("ccc_onpremise") or 0)
+        fields.append("ccc_onpremise=?"); vals.append(val_op); row_merge["ccc_onpremise"] = val_op
 
     if estado:
         fields.append("estado=?"); vals.append(estado); row_merge["estado"] = estado
@@ -1765,8 +1778,9 @@ def matinal_resumen():
             ccc_t = int(grp[grp["segmento_operativo"] == "TRADICIONAL"]["cliente_id"].nunique())
             ccc_a = int(grp[grp["segmento_operativo"] == "AUTOSERVICIO"]["cliente_id"].nunique())
             ccc_o = int(grp[grp["segmento_operativo"] == "ON_PREMISE_VTK"]["cliente_id"].nunique())
-            if cod_int == 3:
+            if cod_int == 3:           # V3 no trabaja autoservicio ni on premise
                 ccc_a = 0
+                ccc_o = 0
             real_map[cod_int] = {
                 "venta":     round(float(grp["importe_neto"].sum()), 2),
                 "ccc_trad":  ccc_t,
@@ -2317,9 +2331,10 @@ def gerencia_cobertura_segmento():
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
     df = df[~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
-    # V3 no trabaja autoservicio
-    mask_v3_as = (df["vendedor_codigo"] == 3) & (df["segmento_operativo"].astype(str).str.upper() == "AUTOSERVICIO")
-    df = df[~mask_v3_as]
+    # V3 no trabaja autoservicio ni on premise
+    _segu = df["segmento_operativo"].astype(str).str.upper()
+    mask_v3 = (df["vendedor_codigo"] == 3) & (_segu.isin(["AUTOSERVICIO", "ON_PREMISE_VTK"]))
+    df = df[~mask_v3]
 
     if "segmento_operativo" not in df.columns or "cobertura_mes_flag" not in df.columns:
         return jsonify({"error": "Columnas esperadas no encontradas", "columnas": list(df.columns)}), 500
@@ -5078,7 +5093,7 @@ def _cierre_objetivos_avance(files):
         avance_pct = round(acumulado / objetivo * 100, 2) if objetivo else 0
         ccc_trad = ccc.get("TRADICIONAL", 0)
         ccc_auto = 0 if cn == "3" else ccc.get("AUTOSERVICIO", 0)   # V3 no AS
-        ccc_op   = ccc.get("ON_PREMISE_VTK", 0)
+        ccc_op   = 0 if cn == "3" else ccc.get("ON_PREMISE_VTK", 0) # V3 no On Premise
         ccc_total = ccc_trad + ccc_auto + ccc_op + ccc.get("OTROS", 0)
         vendedores.append({
             "codigo": cn, "nombre": ob.get("nombre") or nombre_config,
