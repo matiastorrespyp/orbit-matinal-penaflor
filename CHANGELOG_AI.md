@@ -1,5 +1,25 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-13 — feat(acciones): ACJ26-028 (Antares Lager + Dadá Tinto Verano, 5/8% six pack) + Despensa = Almacén
+
+**`01_INPUTS/ACCIONES COMERCIALES/2026-06/...csv`** (nueva fila ACJ26-028) + **`server_orbit.py`** (motor de acciones: despensa→almacén + sub-filtro multicanal).
+
+- **Nueva acción `ACJ26-028`** (DESCUENTO_ESCALA): `Antares Lager Porrón` (cód 60021; el 660 se suma con su código) + `Dadá Lata Tinto de Verano` (74884), canal **Autoservicio + Almacén + Kiosco**, **1 six pack → 5% / 2+ six packs → 8%**, sin tope, TODOS_ACTIVOS. Tokens de marca precisos: **excluye la lata Antares Lager 473**. Aparece en gerencia (`/api/gerencia/acciones_mes`) y vendedor (`/api/vendedor/<vid>/acciones_mes`) + alertas, sin tocar frontend (data-driven).
+- **Regla nueva: Despensa = Almacén** en todas las estadísticas. Único lugar que las distinguía era el sub-filtro de acciones `_ACC_SUBSEG_TRAD` (despensa→"DESPENSA"); ahora despensa→"ALMACEN" y el subramo de la venta se canoniza despensa→almacén en `_acc_preparar_ventas`. El resto del sistema ya las colapsaba en TRADICIONAL.
+- **Motor multicanal (una sola tarjeta):** el sub-filtro almacén/kiosco ahora SOLO restringe el canon TRADICIONAL; las líneas de Autoservicio/On Premise no se filtran por subramo. Aplicado en `_acciones_mes_payload._match`, `_alertas_descuento_mes` y `_alertas_tope_cajas_mes`. Permite que ACJ26-028 cubra AS + Almacén/Kiosco en una fila.
+- **Validado (baseline vs después, vía import directo):** 27→28 acciones, **las 27 existentes con números idénticos** (0 cambios, incl. ACJ26-017 $567.635/135). ACJ26-028 = $2.342/5 clientes. Alertas descuento 85→85, tope 9→9 (sin regresión). Presente en vista V4 (1 cli) y V3 (aparece, $0). `py_compile` OK.
+- **Pendiente:** Antares Lager 660 ml (token/código a sumar cuando el usuario lo pase).
+
+## 2026-06-13 — feat(productos): alta Antares Lager Porrón 330 (Cerveza Artesanal) y Dadá Tinto Verano (RTD)
+
+**`09_CONFIG/maestro_04D_productos.csv`** + **`01_INPUTS/04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx`** + **`generar_datasets_acum.py`** (`INOV_PRODUCTOS`) + datasets regenerados (`mod_innovaciones_segmento.csv`, `mod_sellout_categoria.csv`).
+
+- **Alta de 2 productos nuevos** (pedido del usuario): `60021` ANTARES LAGER PORRON 6X330 → Categoría **Cerveza Artesanal** (línea Cerveza Lager, lxc 1.98, UxC 6); `74884` DADA LATA TINTO VERANO 4X6X355 → Categoría **RTD** (lxc 8.52, UxC 24). Ambos ya se venden este mes (60021: 2 clientes; 74884: 10).
+- **Sell out:** quedan clasificados en sus categorías; `OBJSELLOUT.xlsx` ya tenía objetivo para RTD (9.056 L) y Cerveza Artesanal (425 L), así que se suman solos. Validado en `/api/gerencia/sellout_litros`.
+- **Innovaciones:** agregados a `INOV_PRODUCTOS` (17 → 19). Validado en `/api/gerencia/innovaciones_total` (19 productos, los 2 nuevos presentes).
+- **Maestro xlsx defragmentado**: estaba inflado a 1.048.527 filas (19 MB con imágenes) → reescrito limpio (0,02 MB, 255 filas) preservando estructura (header en fila 3) para que el generador lo parsee igual. Backup del original en `99_BACKUPS_ORBIT/`.
+- **Pendiente:** Antares Lager **660 ml** (sin código en el sistema) — se suma cuando el usuario pase el código. Acción comercial (tarjeta) = Fase 2.
+
 ## 2026-06-12 — feat(dormidos): botón de descarga Excel con el listado completo
 
 **`server_orbit.py`** (refactor `gerencia_alertas_caida` → helper `_dormidos_payload()` + nuevo endpoint `/api/gerencia/alertas_caida/export`; imports `send_file` + `BytesIO`) + **`PAV MATINAL PE_A FLOR/portal.html`** (botón "⬇ Descargar Excel" en la pantalla Dormidos + `descargarDormidosExcel()`).

@@ -3090,7 +3090,8 @@ def _acc_seg_canon(seg_text, canal_text):
 
 
 # Subtipos de tradicional para acciones que aplican SOLO a almacén/despensa/kiosco.
-_ACC_SUBSEG_TRAD = {"ALMACEN": "ALMACEN", "ALMACENES": "ALMACEN", "DESPENSA": "DESPENSA",
+# Despensa = Almacén (regla de negocio): se canoniza a "ALMACEN" en todas las estadísticas.
+_ACC_SUBSEG_TRAD = {"ALMACEN": "ALMACEN", "ALMACENES": "ALMACEN", "DESPENSA": "ALMACEN",
                     "KIOSCO": "KIOSCO", "MAXIKIOSCO": "KIOSCO"}
 
 
@@ -3223,8 +3224,9 @@ def _acc_preparar_ventas(nombre="ventas.csv"):
         _clasificar_segmento(str(r), str(s))
         for r, s in zip(df.get("Ramo", pd.Series([""] * len(df))), _subr)
     ]
-    # Subramo normalizado: sub-filtro de acciones acotadas a almacén/despensa/kiosco.
-    out["_subseg"] = [_acc_norm(s) for s in _subr]
+    # Subramo normalizado: sub-filtro de acciones acotadas a almacén/kiosco.
+    # Despensa = Almacén (regla de negocio): se canoniza despensa→almacén en todas las estadísticas.
+    out["_subseg"] = [_acc_norm(s).replace("DESPENSA", "ALMACEN") for s in _subr]
     _fc = pd.to_datetime(df.get("FechaComprobante"), dayfirst=True, errors="coerce")
     out["_mes"]  = _fc.dt.to_period("M")
     out["_fcomp"] = _fc.dt.strftime("%d/%m/%Y").fillna("")
@@ -3287,7 +3289,11 @@ def _acciones_mes_payload(vid_filtro=None):
                 return df
             m = df["_vend"].isin(codes) & df["_seg"].isin(seg_use)
             if sub_allowed is not None:
-                m = m & df["_subseg"].apply(lambda s: any(tok in s for tok in sub_allowed))
+                # el sub-filtro almacén/kiosco SOLO restringe el canon TRADICIONAL;
+                # Autoservicio / On Premise no se filtran por subramo (acción multicanal).
+                is_trad = df["_seg"].astype(str).str.upper().eq("TRADICIONAL")
+                sub_ok = df["_subseg"].apply(lambda s: any(tok in s for tok in sub_allowed))
+                m = m & (~is_trad | sub_ok)
             if not m.any():
                 return df.iloc[0:0]
             sub = df[m]
@@ -3377,7 +3383,9 @@ def _alertas_descuento_mes():
         vend = row["_vend"]; seg_v = row["_seg"]
         allowed, fuente_id = 0.0, None
         for rid, codes, seg, sub_allowed, pred, maxpct in parsed:
-            if sub_allowed is not None and not any(tok in row["_subseg"] for tok in sub_allowed):
+            # el sub-filtro almacén/kiosco SOLO restringe el canon TRADICIONAL
+            if (sub_allowed is not None and str(row["_seg"]).upper() == "TRADICIONAL"
+                    and not any(tok in row["_subseg"] for tok in sub_allowed)):
                 continue
             if (vend in codes) and (seg_v in seg) and pred(row["_cat"], row["_linea"], row["_art"], row["_marca"], row["_cod"]):
                 if maxpct > allowed:
@@ -3466,7 +3474,9 @@ def _alertas_tope_cajas_mes():
 
         m = cur["_vend"].isin(codes) & cur["_seg"].isin(seg)
         if sub_allowed is not None:
-            m = m & cur["_subseg"].apply(lambda s: any(tok in s for tok in sub_allowed))
+            is_trad = cur["_seg"].astype(str).str.upper().eq("TRADICIONAL")
+            sub_ok = cur["_subseg"].apply(lambda s: any(tok in s for tok in sub_allowed))
+            m = m & (~is_trad | sub_ok)
         sub = cur[m]
         if sub.empty:
             continue
