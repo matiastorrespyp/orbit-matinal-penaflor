@@ -3102,6 +3102,23 @@ function vPlanesAS(){
 }
 
 /* ════ CIERRE DE MES ════ */
+/* ── FARO: drill-down de clientes con cobertura lograda (clic en una celda de avance) ── */
+function faroShow(cod,cat){
+  const v=(window._faroByCod||{})[cod]; const cont=document.getElementById('faro-detalle'); if(!v||!cont) return;
+  const o=v[cat]||{}; const cl=o.compradores||[];
+  const cats=(D.faroData&&D.faroData.categorias)||{}; const catName=cats[cat]||cat;
+  if(cont.dataset.k===cod+'|'+cat){ cont.innerHTML=''; cont.dataset.k=''; return; }  // toggle: re-clic cierra
+  cont.dataset.k=cod+'|'+cat;
+  const fmtN2=n=>Number(n||0).toLocaleString('es-AR');
+  cont.innerHTML=`<div class="card" style="border:1px solid var(--mg);"><div class="card-hd">
+    <span class="card-title">✅ V${cod} · ${catName} — clientes con cobertura lograda</span>
+    <span style="display:flex;gap:6px;align-items:center;"><span class="chip ok">${cl.length} clientes</span>
+    <span class="chip" style="cursor:pointer;" onclick="var d=document.getElementById('faro-detalle');d.innerHTML='';d.dataset.k='';">✕</span></span></div>
+    <div class="card-body nop">${cl.length?`<table class="tbl" style="font-size:12px;"><thead><tr><th>Cliente</th><th>Razón social</th><th>Localidad</th><th style="text-align:right">Botellas</th></tr></thead>
+    <tbody>${cl.map(c=>`<tr><td style="color:var(--text3);font-size:11px;">#${c.cliente}</td><td>${c.razon_social||'–'}</td><td style="font-size:11px;color:var(--text3);">${c.localidad||'–'}</td><td style="text-align:right;font-weight:600;font-variant-numeric:tabular-nums;">${fmtN2(c.botellas_marca)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty" style="padding:16px;text-align:center;color:var(--text3);"><p>Sin clientes con cobertura lograda en esta categoría.</p></div>'}</div></div>`;
+  cont.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
 /* ── Incentivo Club FARO (gerencia): objetivo vs logrado por vendedor + supervisores ── */
 function gIncentivoFaro(p){
   p.innerHTML=`<div class="gph"><div><div class="gph-title">🌟 Incentivo Club FARO</div>
@@ -3116,15 +3133,20 @@ function gIncentivoFaro(p){
       if(!r.ok){ cont.innerHTML=`<div class="card"><div class="card-body"><p style="color:var(--bd);padding:16px">FARO: HTTP ${r.status}</p></div></div>`; return; }
       const j=await r.json();
       const cats=j.categorias||{}; const ck=['alaris_flm','antares','smirnoff'];
-      const cell=o=>{const pct=o&&o.pct!=null?o.pct:(o&&o.objetivo?0:null);
-        return `<td style="text-align:center;white-space:nowrap;"><b>${fmtN(o?o.logrado:0)}</b><span style="color:var(--text3)">/${fmtN(o?o.objetivo:0)}</span>`+
-        (pct!=null?` <span class="chip ${avc(pct)}" style="font-size:9px;">${pct}%</span>`:'')+`</td>`;};
+      D.faroData=j; window._faroByCod={}; (j.vendedores||[]).forEach(v=>{window._faroByCod[v.codigo]=v;});
+      const cell=(o,cod,c,clk)=>{const pct=o&&o.pct!=null?o.pct:(o&&o.objetivo?0:null);
+        const inner=`<b>${fmtN(o?o.logrado:0)}</b><span style="color:var(--text3)">/${fmtN(o?o.objetivo:0)}</span>`+
+          (pct!=null?` <span class="chip ${avc(pct)}" style="font-size:9px;">${pct}%</span>`:'');
+        const n=(o&&o.compradores)?o.compradores.length:0;
+        if(clk&&n>0) return `<td class="faro-cell" style="text-align:center;white-space:nowrap;cursor:pointer;" title="Ver ${n} clientes con cobertura lograda" onclick="faroShow(${cod},'${c}')">${inner} <span style="font-size:9px;color:var(--mg);">▸</span></td>`;
+        return `<td style="text-align:center;white-space:nowrap;">${inner}</td>`;};
       const filas=(arr,esSup)=>arr.map(v=>`<tr${esSup?' style="background:rgba(226,20,122,.06);font-weight:600;"':''}>
         <td style="font-weight:600;white-space:nowrap;">${esSup?'👤 '+v.nombre:('V'+v.codigo+' · '+(v.nombre||''))}${esSup&&v.vendedores?`<div style="font-size:9px;color:var(--text3);font-weight:400;">${v.vendedores.join(' ')}</div>`:''}</td>
-        ${ck.map(c=>cell(v[c])).join('')}</tr>`).join('');
+        ${ck.map(c=>cell(v[c], v.codigo, c, !esSup)).join('')}</tr>`).join('');
       const head=`<thead><tr><th>Vendedor</th><th style="text-align:center">${cats.alaris_flm||'Alaris+FLM'}<div style="font-size:9px;color:var(--text3);font-weight:400">Tradicional</div></th><th style="text-align:center">${cats.antares||'Antares'}<div style="font-size:9px;color:var(--text3);font-weight:400">Autoservicio</div></th><th style="text-align:center">${cats.smirnoff||'Familia Smirnoff'}<div style="font-size:9px;color:var(--text3);font-weight:400">Autoservicio</div></th></tr></thead>`;
       cont.innerHTML=`<div class="card"><div class="card-hd"><span class="card-title">Vendedores</span><span class="chip">logrado / objetivo</span></div>
         <div class="card-body nop"><table class="tbl" style="font-size:12px;">${head}<tbody>${filas(j.vendedores||[],false)}</tbody></table></div></div>
+        <div id="faro-detalle" style="margin-top:14px;"></div>
         <div class="card" style="margin-top:14px;"><div class="card-hd"><span class="card-title">Supervisores</span><span class="chip">suma de su equipo</span></div>
         <div class="card-body nop"><table class="tbl" style="font-size:12px;">${head}<tbody>${filas(j.supervisores||[],true)}</tbody></table></div></div>
         <div style="font-size:10px;color:var(--text3);margin-top:8px;">Antares cuenta por SKU (XPA y Lager suman doble) → el logrado puede superar el objetivo. Cobertura: 3 botellas en Tradicional, 6 en Autoservicio. Fuente: ${j.fuente||'ventas_acumulada.csv'} (${j.periodo||'mayo-junio'}).</div>`;

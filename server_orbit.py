@@ -4535,21 +4535,26 @@ def _faro_detalle_vendedor(df, cod):
         if cat == "antares":
             sku = marca.groupby(["_cli", "Articulo"]).agg(cant=("_cant", "sum"), w=("_w", "first")).reset_index()
             logrado = int(sku.loc[sku["cant"] >= um, "w"].sum())
+            ach_ids = set(sku.loc[sku["cant"] >= um, "_cli"].astype(int))  # clientes con un SKU cubierto
         else:
             logrado = len(cubiertos)
-        # No-compradores: clientes del canal del vendedor que no cubrieron la marca
+            ach_ids = cubiertos
         meta = canal.groupby("_cli").agg(nom=("_clinom", "first"), loc=("_loc", "first"))
         bot_map = bot_cli.to_dict()
-        no_comp = []
-        for cid in (canal_ids - cubiertos):
-            no_comp.append({
+        def _cli_row(cid):
+            return {
                 "cliente":        int(cid),
                 "razon_social":   str(meta["nom"].get(cid, "")).strip()[:45],
                 "localidad":      str(meta["loc"].get(cid, "")).strip()[:25],
                 "botellas_marca": round(float(bot_map.get(cid, 0)), 1),
-            })
-        no_comp.sort(key=lambda x: (-x["botellas_marca"], x["cliente"]))
-        out[cat] = {"logrado": logrado, "no_compradores": no_comp}
+            }
+        # Clientes CON cobertura lograda (drill-down de gerencia)
+        compradores = sorted((_cli_row(c) for c in ach_ids),
+                             key=lambda x: (-x["botellas_marca"], x["cliente"]))
+        # No-compradores: clientes del canal del vendedor que no cubrieron la marca
+        no_comp = sorted((_cli_row(c) for c in (canal_ids - cubiertos)),
+                         key=lambda x: (-x["botellas_marca"], x["cliente"]))
+        out[cat] = {"logrado": logrado, "compradores": compradores, "no_compradores": no_comp}
     return out
 
 
@@ -4578,7 +4583,8 @@ def gerencia_incentivo_faro():
         for cat in _FARO_CATS:
             o = o_dict.get(cat, 0)
             l = l_dict.get(cat, {}).get("logrado", 0)
-            b[cat] = {"objetivo": o, "logrado": l, "pct": round(l / o * 100, 1) if o else None}
+            b[cat] = {"objetivo": o, "logrado": l, "pct": round(l / o * 100, 1) if o else None,
+                      "compradores": l_dict.get(cat, {}).get("compradores", [])}
         return b
 
     vendedores = []

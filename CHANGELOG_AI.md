@@ -1,5 +1,14 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-13 — feat(faro): drill-down de clientes con cobertura lograda (clic en el avance)
+
+**`server_orbit.py`** (`_faro_detalle_vendedor` + `gerencia_incentivo_faro`) + **`PAV MATINAL PE_A FLOR/portal.html`** (`gIncentivoFaro` + nueva `faroShow`).
+
+- En la pantalla gerencial **Incentivo Club FARO**, cada celda de avance (logrado/objetivo) de un vendedor es **clickeable** → abre abajo una tarjeta con los **clientes que tienen la cobertura lograda** en esa categoría (cliente, razón social, localidad, botellas). Re-clic o ✕ cierra.
+- **Backend:** `_faro_detalle_vendedor` ya calculaba los clientes cubiertos pero los descartaba; ahora devuelve `compradores` (Alaris/Smirnoff = clientes que alcanzan el umbral; Antares = clientes con un SKU ≥6). Expuesto en `/api/gerencia/incentivo_faro` por vendedor×categoría. Supervisores → `compradores=[]`.
+- **Frontend:** la respuesta se cachea en `D.faroData`/`window._faroByCod`; `faroShow(cod,cat)` renderiza la tarjeta en `#faro-detalle`. Sin librerías nuevas.
+- **Validado (test_client):** Alaris/Smirnoff `len(compradores)==logrado` (V3 alaris 121=121, V4 smirnoff 23=23); Antares logrado por SKU (V4=13) vs 2 clientes distintos. Portal sirve 200 con `faroShow`. `py_compile` OK.
+
 ## 2026-06-13 — feat(plan-vs-real): fila TOTAL con lo planificado por cada KPI
 
 **`PAV MATINAL PE_A FLOR/portal.html`** (`gPlanVsReal`, solo frontend).
