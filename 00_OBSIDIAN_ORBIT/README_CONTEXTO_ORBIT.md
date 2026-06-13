@@ -15,6 +15,7 @@ Esta carpeta contiene la documentación operativa del proyecto **ORBIT Matinal P
 | `04_PROMPTS_MAESTROS/` | Prompts de auditoría y corrección ya validados | Antes de ejecutar una auditoría nueva |
 | `08_ARQUITECTURA/` | Arquitectura del sistema, stack, dependencias | Antes de cambiar estructura de archivos o endpoints |
 | `05_ERRORES_Y_SOLUCIONES/` | Errores conocidos, causa raíz y solución aplicada | Antes de intentar corregir un bug ya visto |
+| `BITACORA_2026-06-13.md` | Registro de cambios de la sesión 12-13/06: reglas (V3 On Premise, Despensa=Almacén, 11T), productos nuevos, ACJ26-028, features de portal | Para ver qué se tocó recientemente |
 
 ---
 

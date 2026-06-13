@@ -17,11 +17,11 @@ V2, V5 y V20 se excluyen de **todos** los reportes, filtros, sumas y denominador
 - **V20 = DEPOSITO**: venta directa de depósito, no es vendedor de ruta Peñaflor. Aparece en fuentes ERP crudas con ramos `CASH&CARRY`, `AWAY FROM HOME`, `Empleados`, `MAYORISTAS`.
 
 ### V3 — Nadia Gambino
-- No trabaja el canal Autoservicio.
-- `ccc_autoservicio = 0` en todos los endpoints y datasets.
-- `trabaja_autoservicio = false` en todos los endpoints.
-- Excluir Autoservicio de objetivos, cobertura y 11 Titulares para V3.
-- Si un segmento de V3 figura como Autoservicio en ventas.csv, igualmente contar como 0 en sus métricas.
+- No trabaja el canal Autoservicio **ni On Premise / Vinoteca** (regla agregada 2026-06-12).
+- `ccc_autoservicio = 0` y `ccc_onpremise = 0` en todos los endpoints y datasets (CCC mes, CCC día, Plan vs Real, cobertura, cierre mensual y planificación POST/PATCH).
+- `trabaja_autoservicio = false` y `trabaja_onpremise = false` en los endpoints; el portal **oculta** esas casillas en la vista del vendedor para V3.
+- Excluir Autoservicio y On Premise de objetivos, cobertura y 11 Titulares para V3.
+- Si un segmento de V3 figura como Autoservicio u On Premise en ventas.csv, igualmente contar como 0 en sus métricas.
 
 ---
 
@@ -183,6 +183,8 @@ Función: `_clasificar_segmento(ramo, subsegmento)` en `server_orbit.py`.
 | ON_PREMISE_VTK | ON PREMISE, AWAY FROM HOME, VINOTECA, BAR, RESTAURANT, ESTACION DE SERVICIO, CATERING |
 | TRADICIONAL | TRADITIONAL TRADE, ALMACEN, DESPENSA, KIOSCO, MAXIKIOSCO, FIAMBRERIA, PANADERIA |
 | OTROS | Todo lo que no clasifica arriba |
+
+**Despensa = Almacén (regla agregada 2026-06-13):** dentro de TRADICIONAL, el subcanal *Despensa* se trata igual que *Almacén* en **todas** las estadísticas. En el motor de acciones se canoniza `despensa → almacén` (`_ACC_SUBSEG_TRAD` y el `_subseg` de la venta en `_acc_preparar_ventas`). Una acción acotada a "almacén/kiosco" también cubre despensa. El resto del sistema ya colapsaba almacén/despensa/kiosco en TRADICIONAL por igual.
 
 ---
 
