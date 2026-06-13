@@ -1,5 +1,12 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-13 — feat(plan-vs-real): fila TOTAL con lo planificado por cada KPI
+
+**`PAV MATINAL PE_A FLOR/portal.html`** (`gPlanVsReal`, solo frontend).
+
+- La tarjeta gerencial **Plan vs Real** suma un `<tfoot>` **TOTAL** con la suma de lo **planificado** por cada KPI: Plan $, CCC Tradicional, CCC Autoservicio, CCC On Premise y 11T (en negrita). Al lado, en las subcolumnas Real, el total real correspondiente + Cumpl% global, para mantener la fila alineada con el encabezado Plan/Real.
+- **Sin cambios de backend:** se calcula en JS sobre `pvr.resumen` (endpoint `/api/matinal/resumen`), respetando `tiene_plan`/`tiene_real`. Validado contra el endpoint: Plan $ 4.920.000 (6 planes), CCC Trad 31 / Auto 8 / OP 6, 11T 35.
+
 ## 2026-06-13 — feat(acciones): ACJ26-028 (Antares Lager + Dadá Tinto Verano, 5/8% six pack) + Despensa = Almacén
 
 **`01_INPUTS/ACCIONES COMERCIALES/2026-06/...csv`** (nueva fila ACJ26-028) + **`server_orbit.py`** (motor de acciones: despensa→almacén + sub-filtro multicanal).

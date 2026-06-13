@@ -2353,6 +2353,15 @@ function gPlanVsReal(p){
   const conPlan   = data.filter(v=>v.tiene_plan).length;
   const enMeta    = tieneReal ? data.filter(v=>v.pct_cumplimiento!=null&&v.pct_cumplimiento>=90).length : 0;
   const fuenteR   = pvr.fuente_real||'ventas.csv';
+  // Totales por KPI para el pie de tabla: lo PLANIFICADO (y el real al lado).
+  const _sum=(f,cond)=>data.reduce((s,v)=>s+(cond(v)?(Number(v[f])||0):0),0);
+  const tPlanV=_sum('plan_venta',v=>v.tiene_plan),       tRealV=_sum('real_ayer',v=>v.tiene_real);
+  const tDelta=tRealV-tPlanV, tPct=tPlanV>0?tRealV/tPlanV*100:null;
+  const tPlanTrad=_sum('plan_ccc_trad',v=>v.tiene_plan), tRealTrad=_sum('real_ccc_trad',v=>v.tiene_real);
+  const tPlanAs=_sum('plan_ccc_as',v=>v.tiene_plan),     tRealAs=_sum('real_ccc_as',v=>v.tiene_real);
+  const tPlanOp=_sum('plan_ccc_op',v=>v.tiene_plan),     tRealOp=_sum('real_ccc_op',v=>v.tiene_real);
+  const tPlanT11=_sum('plan_once_t',v=>v.tiene_plan);
+  const _spt='<span class="pvr-none">–</span>';
   let h=`<div class="gph">
     <div><div class="gph-title">Plan vs Real</div>
     <div class="gph-sub">Plan: ${pvr.fecha_plan||'–'} · Real: ${tieneReal?(pvr.fecha_real||pvr.fecha_plan):'pendiente (ejecutar .bat)'}  </div></div>
@@ -2427,6 +2436,23 @@ function gPlanVsReal(p){
             <td><span class="chip ${v.plan_estado==='aprobada'?'ok':v.plan_estado==='modificada'?'vio':v.plan_estado==='enviada'?'info':''}" style="font-size:9px;">${v.plan_estado||'–'}</span></td>
           </tr>`;}).join('')}
         </tbody>
+        <tfoot>
+          <tr style="border-top:2px solid var(--bs);background:rgba(255,255,255,.03);font-weight:700;">
+            <td><b>TOTAL</b><span style="font-size:9px;color:var(--text3);margin-left:4px;">${conPlan} planes</span></td>
+            <td><b>${fmtM(tPlanV)}</b></td>
+            <td>${tieneReal?'<b>'+fmtM(tRealV)+'</b>':_spt}</td>
+            <td class="${tieneReal?(tDelta>=0?'pvr-pos':'pvr-neg'):''}">${tieneReal?(tDelta>=0?'+':'')+fmtM(tDelta):_spt}</td>
+            <td><span class="chip ${tPct==null?'':tPct>=90?'ok':tPct>=60?'wn':'bd'}">${tPct!=null?tPct.toFixed(1)+'%':'–'}</span></td>
+            <td style="text-align:center;color:var(--text3);"><b>${tPlanTrad}</b></td>
+            <td style="text-align:center;color:var(--ok);">${tieneReal?'<b>'+tRealTrad+'</b>':_spt}</td>
+            <td style="text-align:center;color:var(--text3);"><b>${tPlanAs}</b></td>
+            <td style="text-align:center;color:var(--ok);">${tieneReal?'<b>'+tRealAs+'</b>':_spt}</td>
+            <td style="text-align:center;color:var(--text3);"><b>${tPlanOp}</b></td>
+            <td style="text-align:center;color:var(--ok);">${tieneReal?'<b>'+tRealOp+'</b>':_spt}</td>
+            <td style="text-align:center;"><b>${tPlanT11}</b></td>
+            <td></td>
+          </tr>
+        </tfoot>
       </table>
     </div>
   </div>`;
