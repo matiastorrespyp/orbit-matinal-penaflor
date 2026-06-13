@@ -1,5 +1,12 @@
 ﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-13 — feat(productos): alta Antares Lager 660 ml (cód 60022) + sumado a ACJ26-028
+
+**`09_CONFIG/maestro_04D_productos.csv`** + **`01_INPUTS/04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx`** + **`generar_datasets_acum.py`** + catálogo de acciones + datasets.
+
+- Código provisto por el usuario: **60022**. Alta en maestro 04D (CSV + xlsx) → Categoría **Cerveza Artesanal**, línea Cerveza Lager, Lts x caja 3.96 / UxC 6 → **lxu 0.66** (correcto para 660 ml, independiente del pack; UxC=6 es placeholder, no afecta ninguna métrica). Sumado a `INOV_PRODUCTOS` (19 → 20). Aún sin ventas → contribución 0 en sell out/innovaciones hasta que se venda.
+- **Acción `ACJ26-028`**: `productos_marcas += 60022` (token de código → match exacto por SKU). Validado con el predicado: matchea 60022 (660) y 60021 (porrón 330), **excluye la lata 473** (60018). Cierra el pendiente del 660 ml.
+
 ## 2026-06-13 — feat(faro): drill-down de clientes con cobertura lograda (clic en el avance)
 
 **`server_orbit.py`** (`_faro_detalle_vendedor` + `gerencia_incentivo_faro`) + **`PAV MATINAL PE_A FLOR/portal.html`** (`gIncentivoFaro` + nueva `faroShow`).
