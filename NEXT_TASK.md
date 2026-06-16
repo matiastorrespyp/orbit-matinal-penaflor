@@ -1,5 +1,17 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-16 - Perf login (cache por mtime)
+
+### HECHO
+- Cacheados por mtime `_acciones_mes_payload`, `_acc_preparar_ventas` y `_cargar_maestro_04D` en `server_orbit.py`.
+- Validado en local: `acciones_mes` cold 4.09s -> warm 0.001s, output identico; cache por vendedor no pisa la de gerencia.
+
+### A REVISAR / PENDIENTE
+- Falta commit + push + deploy a Render para que el usuario lo note (pendiente de aprobacion).
+- Medir en Render el login warm completo; si sigue lento, evaluar cachear tambien `/api/diagnostico` (4.4s), `/api/gerencia/planes_as` (3.7s) y `/api/alertas` (3s) con el mismo patron.
+- Opcional mayor riesgo: gunicorn `--threads` para paralelizar fetch del login (cuidar escritura SQLite de planificaciones).
+- Nota: el primer login tras cada cierre diario paga el costo completo una vez (cache se invalida por mtime).
+
 ## Sesion 2026-06-16 - Buscador Cliente 360
 
 ### HECHO

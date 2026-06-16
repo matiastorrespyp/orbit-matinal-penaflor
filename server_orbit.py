@@ -3467,6 +3467,7 @@ def _acc_product_pred(rule, all_lineas):
     return pred
 
 
+_ACC_VENTAS_CACHE = {}
 def _acc_preparar_ventas(nombre="ventas.csv"):
     """Ventas preparadas para acciones/alertas. Columnas calc: _cli,_vend,_cat,_linea,
     _seg,_litros,_desc,_imp_neto,_mes (Period), _fcomp, _fcarga.
@@ -3475,6 +3476,13 @@ def _acc_preparar_ventas(nombre="ventas.csv"):
     p = INPUTS / nombre
     if not p.exists():
         return pd.DataFrame()
+    try:
+        key = (nombre, os.path.getmtime(p))
+    except OSError:
+        key = (nombre, 0)
+    cached = _ACC_VENTAS_CACHE.get(key)
+    if cached is not None:
+        return cached
     df = None
     for enc in ("latin1", "utf-8-sig", "windows-1252"):
         try:
@@ -3529,10 +3537,51 @@ def _acc_preparar_ventas(nombre="ventas.csv"):
     out["_fcarga"] = (pd.to_datetime(df.get("FechaCarga"), dayfirst=True, errors="coerce")
                       .dt.strftime("%d/%m/%Y").fillna(""))
     out = out[(out["_imp_neto"] > 0) & (~out["_vend"].isin(_VENDEDORES_EXCLUIDOS))]
+    # cachear por (archivo, mtime); purgar mtimes viejos del mismo archivo
+    for k in [k for k in _ACC_VENTAS_CACHE if k[0] == nombre]:
+        _ACC_VENTAS_CACHE.pop(k, None)
+    _ACC_VENTAS_CACHE[key] = out
     return out
 
 
+_ACC_MES_CACHE = {}
+def _acc_mes_sig():
+    """Firma de invalidación del payload de acciones: mtime de las fuentes reales."""
+    sig = []
+    for p in (INPUTS / "ventas.csv", INPUTS / "ventas_acumulada.csv",
+              DATASETS / "mod_planes_as.csv", CONFIG / "maestro_04D_productos.csv",
+              INPUTS / "04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx"):
+        try:
+            sig.append((p.name, os.path.getmtime(p) if p.exists() else 0))
+        except OSError:
+            sig.append((p.name, 0))
+    base = INPUTS / "ACCIONES COMERCIALES"
+    try:
+        cat = max((os.path.getmtime(c) for sub in base.iterdir() if sub.is_dir()
+                   for c in sub.glob("*.csv")), default=0) if base.exists() else 0
+    except OSError:
+        cat = 0
+    sig.append(("acc_cat", cat))
+    return tuple(sig)
+
+
 def _acciones_mes_payload(vid_filtro=None):
+    """Wrapper cacheado por (firma de fuentes, vendedor). Evita recalcular el payload
+    (lectura de ventas + apply por regla, ~18s) en cada login; el cómputo real está en
+    _acciones_mes_payload_uncached. Se invalida cuando cambia el mtime de alguna fuente."""
+    ckey = (_acc_mes_sig(), vid_filtro)
+    cached = _ACC_MES_CACHE.get(ckey)
+    if cached is not None:
+        return cached
+    payload = _acciones_mes_payload_uncached(vid_filtro)
+    # purgar firmas viejas; conservar variantes por vendedor de la firma actual
+    for k in [k for k in _ACC_MES_CACHE if k[0] != ckey[0]]:
+        _ACC_MES_CACHE.pop(k, None)
+    _ACC_MES_CACHE[ckey] = payload
+    return payload
+
+
+def _acciones_mes_payload_uncached(vid_filtro=None):
     mes, fuente, reglas = _acc_catalogo_mes()
     if not reglas:
         return {"mes": mes, "fuente": fuente, "acciones": [], "nota": "Sin catálogo de acciones del mes."}
@@ -3994,7 +4043,28 @@ def _infer_litros_por_nombre(nombre: str) -> float:
     return 0.0
 
 
+_MAESTRO_04D_CACHE = {}
 def _cargar_maestro_04D():
+    """Wrapper cacheado por mtime del maestro 04D (CSV preferido, xlsx fallback).
+    El cómputo real está en _cargar_maestro_04D_uncached; cachear evita reconstruir
+    los 4 dicts en cada request (lo usan acciones, dashboard, sellout, alertas)."""
+    csv_path  = CONFIG / "maestro_04D_productos.csv"
+    xlsx_path = INPUTS / "04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx"
+    src = csv_path if csv_path.exists() else (xlsx_path if xlsx_path.exists() else None)
+    try:
+        key = (str(src), os.path.getmtime(src)) if src else None
+    except OSError:
+        key = None
+    if key is not None and key in _MAESTRO_04D_CACHE:
+        return _MAESTRO_04D_CACHE[key]
+    result = _cargar_maestro_04D_uncached()
+    if key is not None:
+        _MAESTRO_04D_CACHE.clear()
+        _MAESTRO_04D_CACHE[key] = result
+    return result
+
+
+def _cargar_maestro_04D_uncached():
     """
     Carga maestro de productos 04D. Prefiere CSV liviano (09_CONFIG/maestro_04D_productos.csv)
     sobre el xlsx original (19MB con imágenes, tarda ~40s). Fallback al xlsx si el CSV no existe.

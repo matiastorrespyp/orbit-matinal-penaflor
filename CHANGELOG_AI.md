@@ -1,5 +1,16 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-16 - perf(login): cache por mtime de endpoints pesados
+
+**`server_orbit.py`** (`_acciones_mes_payload`, `_acc_preparar_ventas`, `_cargar_maestro_04D`).
+
+- **Causa:** tras el login, el portal dispara en paralelo todos los endpoints, pero gunicorn corre 1 worker sync, así que se serializan. `/api/gerencia/acciones_mes` tardaba **18.8 s** porque recalculaba todo en cada request (lectura de ventas + `.apply(axis=1)` por regla), sin caché.
+- **Cambio:** memoización por mtime (mismo patrón que `_faro_ventas`/`_clientes_maestro`), sin tocar lógica de negocio:
+  - `_acciones_mes_payload` cacheado por (firma de fuentes, vendedor); se invalida al cambiar el mtime de ventas/catálogo/planes_as/04D.
+  - `_acc_preparar_ventas` cacheado por (archivo, mtime).
+  - `_cargar_maestro_04D` cacheado por mtime (lo usan acciones, dashboard, sellout, alertas).
+- **Validación:** payload cold 4.09 s → warm 0.001 s, **output idéntico bit a bit**; un vendedor distinto no invalida el de gerencia; primer login tras cada cierre paga el costo una vez, el resto del día es instantáneo.
+
 ## 2026-06-16 - feat(cliente): buscador y ficha 360 en gerencia/vendedor
 
 **`server_orbit.py`** (`/api/clientes/buscar`, `/api/clientes/<id>/ficha`) + **`PAV MATINAL PE_A FLOR/portal.html`** (pantalla/pestaña Cliente).
