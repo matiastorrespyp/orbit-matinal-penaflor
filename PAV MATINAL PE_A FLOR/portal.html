@@ -1037,7 +1037,27 @@ const pcol  = p => p>=70 ? 'ok' : p>=40 ? 'wn' : 'bd';
 const safe  = async url => { try { const r=await fetch(url); return r.ok ? await r.json() : null; } catch{ return null; } };
 
 /* ── modo día / noche (login) ── */
-let loginMode = localStorage.getItem('orbitLoginMode') || 'day';
+/* Automático según horario argentino (UTC-3). El botón manual lo sobreescribe
+   hasta recargar; al reabrir el portal vuelve a seguir la hora automáticamente. */
+let loginModeManual = false;
+
+function arHour() {
+  try {
+    return parseInt(new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Argentina/Buenos_Aires', hour: 'numeric', hour12: false
+    }).format(new Date()), 10);
+  } catch (e) {
+    return new Date().getHours(); // fallback: hora local del dispositivo
+  }
+}
+
+/* día 07:00–18:59 · noche 19:00–06:59 (hora argentina) */
+function autoLoginMode() {
+  const h = arHour();
+  return (h >= 7 && h < 19) ? 'day' : 'night';
+}
+
+let loginMode = autoLoginMode();
 
 function applyLoginMode(mode) {
   loginMode = mode;
@@ -1054,10 +1074,20 @@ function applyLoginMode(mode) {
     if (ico) ico.textContent = '☀️';
     if (lbl) lbl.textContent = 'Día';
   }
-  localStorage.setItem('orbitLoginMode', mode);
 }
 
-function toggleMode() { applyLoginMode(loginMode === 'day' ? 'night' : 'day'); }
+function toggleMode() {
+  loginModeManual = true; // el usuario decide; el auto deja de pisar hasta recargar
+  applyLoginMode(loginMode === 'day' ? 'night' : 'day');
+}
+
+/* refresco en vivo: si no hubo override manual, sigue el horario argentino */
+function refreshAutoLoginMode() {
+  if (loginModeManual) return;
+  const m = autoLoginMode();
+  if (m !== loginMode) applyLoginMode(m);
+}
+setInterval(refreshAutoLoginMode, 60000);
 
 /* ── login ── */
 async function doLogin(){

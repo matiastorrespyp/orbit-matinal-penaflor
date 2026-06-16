@@ -1,5 +1,14 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-16 - feat(login): modo día/noche automático por horario argentino
+
+**`PAV MATINAL PE_A FLOR/portal.html`** (`arHour`, `autoLoginMode`, `applyLoginMode`, `toggleMode`, `refreshAutoLoginMode`).
+
+- La pantalla de ingreso ahora elige **día/noche automáticamente según la hora argentina** (`Intl` con `America/Argentina/Buenos_Aires`, robusto aunque el dispositivo esté en otra zona). Día 07:00–18:59, noche 19:00–06:59.
+- Se mantiene el **botón manual**: al tocarlo sobreescribe el modo hasta recargar; al reabrir el portal vuelve a seguir el horario.
+- Refresco cada 60s: si no hubo override manual, flipea en vivo al cruzar el límite con la pantalla abierta.
+- Se quitó la persistencia en `localStorage` (`orbitLoginMode`), que fijaba el modo para siempre e impedía el automático.
+
 ## 2026-06-16 - perf(login): cache por mtime de endpoints pesados
 
 **`server_orbit.py`** (`_acciones_mes_payload`, `_acc_preparar_ventas`, `_cargar_maestro_04D`).

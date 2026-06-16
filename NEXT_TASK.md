@@ -1,5 +1,16 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-16 - Login dia/noche automatico
+
+### HECHO
+- Pantalla de ingreso cambia dia/noche automaticamente por hora argentina (Intl America/Argentina/Buenos_Aires).
+- Boton manual sigue funcionando (override hasta recargar); refresco cada 60s.
+- Validado con Node: 07h->dia, 18h->dia, 19h->noche, 00/06h->noche.
+
+### A REVISAR / PENDIENTE
+- Falta commit + push + deploy a Render.
+- Si negocio quiere otros umbrales (ej. dia 06:00 o noche 20:00), ajustar autoLoginMode en portal.html.
+
 ## Sesion 2026-06-16 - Perf login (cache por mtime)
 
 ### HECHO
