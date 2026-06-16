@@ -1,4 +1,34 @@
-﻿# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
+# CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
+
+## 2026-06-16 - feat(cliente): buscador y ficha 360 en gerencia/vendedor
+
+**`server_orbit.py`** (`/api/clientes/buscar`, `/api/clientes/<id>/ficha`) + **`PAV MATINAL PE_A FLOR/portal.html`** (pantalla/pestaña Cliente).
+
+- Nuevo botón **Cliente** en gerencia y en perfil vendedor.
+- Gerencia puede buscar cualquier cliente de `clientes.xlsx` sin V2/V5/V20; vendedor solo ve clientes de su cartera.
+- La ficha muestra nombre, dirección, localidad, vendedor, día/frecuencia de visita, subcanal, frecuencia de compra mensual, marcas compradas en el mes con litros/dinero, ventas por mes con color por variación de litros, promedio disponible y posibilidad de venta.
+- Fuente viva: `clientes.xlsx` + `ventas_acumulada.csv`/`ventas.csv`. Litros = `PesoKg`, igual que Sell Out. Si no hay 12 meses reales disponibles, se informa `meses_con_datos`.
+
+## 2026-06-16 - fix(faro): medicion mayo-junio y reglas por categoria
+
+**`server_orbit.py`** (`_faro_ventas`, `_faro_detalle_vendedor`, endpoints FARO) + **`PAV MATINAL PE_A FLOR/portal.html`** (`vFaro`, `faroShow`, `gIncentivoFaro`).
+
+- **Periodo corregido:** FARO ahora filtra `ventas_acumulada.csv` a comprobantes de **mayo y junio** con venta neta (`ImporteNetoItem > 0`) y excluye V2/V5.
+- **Reglas de producto/canal:** Smirnoff cuenta solo familia 700cc en Autoservicio; Antares cuenta en Autoservicio por SKU cubierto, con XPA y Lager 330/660 doble; Alaris/Finca Las Moras cuentan en Almacen/Despensa/Kiosco.
+- **Detalle corregido:** el portal separa **coberturas logradas** de **clientes cubiertos**. En Antares, el drill-down muestra articulo y peso de cobertura, evitando interpretar coberturas como clientes.
+- **Control inicial:** V4 Antares pasa de 13 inflado a **6/8 coberturas**, con **2 clientes unicos** y 5 filas de articulos cubiertos en mayo-junio.
+
+## 2026-06-16 — fix(acciones): tarjetas desde ventas.csv + drill-down clientes
+
+**`server_orbit.py`** (`_acciones_mes_payload`, predicados 11T/innovaciones, filtro Plan AS) + **`PAV MATINAL PE_A FLOR/portal.html`** (`accShowDetalle` en gerencia y vendedor).
+
+- **Fuente corregida:** las tarjetas de Acciones Comerciales ahora cuentan `clientes_alcanzados` y `clientes_nuevos` desde **ventas netas de `01_INPUTS/ventas.csv`** (`ImporteNetoItem > 0`, sin V2/V5/V20). La `inversion_pesos` queda separada y sigue saliendo de `valorDescuento × CantBase`.
+- **11 Titulares:** ACJ26-021/022/023 ya no buscan literalmente `"11 titulares por segmento"`; usan las marcas de `objetivo 11T.xlsx`. Validado: ACJ26-021 = 146 clientes, ACJ26-022 = 27, ACJ26-023 = 3.
+- **Innovaciones:** ACJ26-008/024 usan la lista cerrada de códigos de `INNOVACIONES/Innovaciones.xlsx`. Validado: ACJ26-008 = 25 clientes; ACJ26-024 = 1.
+- **Plan AS:** ACJ26-010/011/012/013 filtran clientes contra `mod_planes_as.csv` antes de contar. Validado: ACJ26-011 = 10 clientes, ACJ26-012 = 6, ACJ26-013 = 14.
+- **Drill-down:** en gerencia y perfil vendedor, los textos **clientes** y **nuevos** son clickeables; abren una tarjeta con cliente, dirección, localidad, vendedor, venta neta, descuento, litros y última compra. Re-clic o ✕ cierra.
+- **Validado:** `python -m py_compile server_orbit.py` OK; scripts del portal extraídos y `node --check -` OK; `test_client` OK para `/api/gerencia/acciones_mes` y `/api/vendedor/V8/acciones_mes`.
+- **Observación:** ACJ26-026 queda en 0 correctamente con el catálogo actual porque no hay ventas Dadá Tinto de Verano en VTK/TDB; las 7 ventas existentes son Tradicional/Autoservicio.
 
 ## 2026-06-13 — feat(productos): alta Antares Lager 660 ml (cód 60022) + sumado a ACJ26-028
 
@@ -2414,3 +2444,5 @@ __pycache__/
 - `CIERRE_DIA_ORBIT.bat`: deja de levantar/abrir portal local y publica el cierre hacia Render.
 - `render.yaml`: agrega disco persistente `orbit-data` y variables `ORBIT_DB_PATH` / `ORBIT_PLAN_BACKUP_DIR`.
 - `portal.html`: Planificacion gerencial incorpora selector de fecha de matinal para revisar planes historicos por dia.
+
+

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -904,6 +904,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       <div class="gs-item active" data-sc="dashboard" onclick="gSw('dashboard',this)"><span class="gs-ico">📊</span>Dashboard</div>
       <div class="gs-item" data-sc="vendedores"  onclick="gSw('vendedores',this)"><span class="gs-ico">👥</span>Vendedores</div>
       <div class="gs-item" data-sc="clientes"    onclick="gSw('clientes',this)"><span class="gs-ico">🏪</span>Clientes Críticos</div>
+      <div class="gs-item" data-sc="cliente"     onclick="gSw('cliente',this)"><span class="gs-ico">🔎</span>Cliente</div>
       <div class="gs-item" data-sc="planificacion" onclick="gSw('planificacion',this)"><span class="gs-ico">📋</span>Planificación</div>
       <div class="gs-item" data-sc="planvsreal"   onclick="gSw('planvsreal',this)"><span class="gs-ico">📊</span>Plan vs Real</div>
       <div class="gs-item" data-sc="alertas"    onclick="gSw('alertas',this)">
@@ -984,6 +985,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
   <div class="vcont" id="vT-kpis"></div>
   <div class="vcont" id="vT-plan"></div>
   <div class="vcont" id="vT-alertas"></div>
+  <div class="vcont" id="vT-cliente"></div>
   <div class="vcont" id="vT-planes_as"></div>
   <div class="vcont" id="vT-faro"></div>
 
@@ -996,6 +998,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       <span class="vtab-ico">⚡</span><span>Alertas</span>
       <div class="vtab-badge" id="vBadge"></div>
     </div>
+    <div class="vtab" onclick="vSw('cliente',this)"><span class="vtab-ico">🔎</span><span>Cliente</span></div>
     <div class="vtab" onclick="vSw('planes_as',this)"><span class="vtab-ico">🏆</span><span>Plan AS</span></div>
     <div class="vtab" onclick="vSw('faro',this)"><span class="vtab-ico">🌟</span><span>FARO</span></div>
   </nav>
@@ -1264,7 +1267,7 @@ function gSw(id,el){
   gScreen=id;
   document.querySelectorAll('.gs-item').forEach(n=>n.classList.remove('active'));
   (el||document.querySelector(`[data-sc="${id}"]`))?.classList.add('active');
-  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',planificacion:'Planificación',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',incentivo_faro:'Incentivo FARO',cierre_mes:'Cierre de Mes'};
+  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',cliente:'Cliente',planificacion:'Planificación',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',incentivo_faro:'Incentivo FARO',cierre_mes:'Cierre de Mes'};
   document.getElementById('gTopTitle').textContent=tt[id]||'';
   gRender();
 }
@@ -1273,6 +1276,7 @@ function gRender(){
   if(gScreen==='dashboard')     gDashboard(p);
   else if(gScreen==='vendedores')    gVendedores(p);
   else if(gScreen==='clientes')      gClientes(p);
+  else if(gScreen==='cliente')       gCliente(p);
   else if(gScreen==='planificacion') gPlanificacion(p);
   else if(gScreen==='planvsreal')    gPlanVsReal(p);
   else if(gScreen==='alertas')       gAlertas(p);
@@ -1763,6 +1767,84 @@ function gClientes(p){
     </div>`;
 }
 
+function gCliente(p){ renderClienteBuscador(p,'g'); }
+
+const clienteFmtARS=n=>'$'+Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
+const clienteFmtL=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:1});
+const clienteEsc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+function renderClienteBuscador(cont,scope){
+  const vend=scope==='v'?(userData?.vendedor_id||''):'';
+  cont.innerHTML=`<div class="${scope==='v'?'vsh':'gph'}">${scope==='v'?'Cliente':'<div><div class="gph-title">Cliente</div><div class="gph-sub">Busqueda y ficha comercial</div></div>'}</div>
+    <div class="card"><div class="card-body">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input id="cli-q-${scope}" placeholder="Buscar por nombre, codigo o localidad" onkeydown="if(event.key==='Enter')clienteBuscar('${scope}')" style="flex:1;min-width:220px;padding:11px 12px;border-radius:8px;border:1px solid var(--bs);background:var(--surf2);color:var(--text);">
+        <button class="g-ghost" onclick="clienteBuscar('${scope}')">Buscar</button>
+      </div>
+      <div class="xs" style="color:var(--text3);margin-top:8px;">${vend?'Solo cartera '+vend:'Cartera completa sin V2/V5/V20'}.</div>
+    </div></div>
+    <div id="cli-res-${scope}" style="margin-top:12px;"></div>
+    <div id="cli-card-${scope}" style="margin-top:12px;"></div>`;
+}
+
+async function clienteBuscar(scope){
+  const q=(document.getElementById('cli-q-'+scope)?.value||'').trim();
+  const res=document.getElementById('cli-res-'+scope);
+  const card=document.getElementById('cli-card-'+scope);
+  if(card) card.innerHTML='';
+  if(!res) return;
+  if(q.length<2){ res.innerHTML=`<div class="card"><div class="card-body xs" style="color:var(--text3);">Escribi al menos 2 caracteres.</div></div>`; return; }
+  res.innerHTML=`<div class="card"><div class="card-body xs" style="color:var(--text3);">Buscando...</div></div>`;
+  const vend=scope==='v'?(userData?.vendedor_id||''):'';
+  const url='/api/clientes/buscar?q='+encodeURIComponent(q)+(vend?'&vendedor='+encodeURIComponent(vend):'');
+  const list=await safe(url);
+  if(!Array.isArray(list)||!list.length){ res.innerHTML=`<div class="card"><div class="card-body xs" style="color:var(--text3);">Sin clientes encontrados.</div></div>`; return; }
+  res.innerHTML=`<div class="card"><div class="card-hd"><span class="card-title">Resultados</span><span class="chip">${list.length}</span></div>
+    <div class="card-body nop"><table class="tbl" style="font-size:12px;"><thead><tr><th>Cliente</th><th>Localidad</th><th>Vendedor</th><th>Subcanal</th></tr></thead>
+    <tbody>${list.map(c=>`<tr onclick="clienteFicha('${scope}',${c.cliente_id})" style="cursor:pointer;">
+      <td><b>#${c.cliente_id}</b> ${clienteEsc(c.nombre)}</td>
+      <td style="color:var(--text3);">${clienteEsc(c.localidad||'-')}</td>
+      <td><span class="chip" style="color:${CV[c.vendedor_id]||'var(--text2)'}">${clienteEsc(c.vendedor_id||'-')}</span></td>
+      <td style="font-size:11px;color:var(--text3);">${clienteEsc(c.subcanal||'-')}</td>
+    </tr>`).join('')}</tbody></table></div></div>`;
+}
+
+async function clienteFicha(scope,id){
+  const cont=document.getElementById('cli-card-'+scope); if(!cont) return;
+  cont.innerHTML=`<div class="card"><div class="card-body xs" style="color:var(--text3);">Cargando ficha...</div></div>`;
+  const vend=scope==='v'?(userData?.vendedor_id||''):'';
+  const c=await safe('/api/clientes/'+id+'/ficha'+(vend?'?vendedor='+encodeURIComponent(vend):''));
+  if(!c||c.error){ cont.innerHTML=`<div class="card"><div class="card-body" style="color:var(--bd);">No se pudo cargar el cliente${c&&c.error?': '+clienteEsc(c.error):''}.</div></div>`; return; }
+  const meses=c.ventas_mensuales||[];
+  const marcas=c.marcas_mes||[];
+  cont.innerHTML=`<div class="card" style="border:1px solid var(--mg);">
+    <div class="card-hd"><span class="card-title">#${c.cliente_id} - ${clienteEsc(c.nombre)}</span><span class="chip" style="color:${CV[c.vendedor_id]||'var(--text2)'}">${clienteEsc(c.vendedor_id||'-')}</span></div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:12px;">
+        <div><div class="xs m3">Direccion</div><b>${clienteEsc(c.direccion||'-')}</b><div class="xs" style="color:var(--text3);">${clienteEsc(c.localidad||'-')}</div></div>
+        <div><div class="xs m3">Vendedor</div><b>${clienteEsc(c.vendedor_nombre||c.vendedor_id||'-')}</b><div class="xs" style="color:var(--text3);">Visita ${clienteEsc(c.dia_visita||'-')} - ${clienteEsc(c.frecuencia_visita||'-')}</div></div>
+        <div><div class="xs m3">Subcanal</div><b>${clienteEsc(c.subcanal||'-')}</b><div class="xs" style="color:var(--text3);">${clienteEsc(c.ramo||'-')}</div></div>
+        <div><div class="xs m3">Frecuencia compra</div><b>${clienteFmtL(c.frecuencia_compra_mensual)} dias/mes</b><div class="xs" style="color:var(--text3);">Ultima: ${clienteEsc(c.fecha_ultima_compra||'-')}</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin-bottom:12px;">
+        <div class="kcard ok"><div class="kl">Mes ${clienteEsc(c.periodo_mes||'-')}</div><div class="kv" style="font-size:16px;">${clienteFmtL(c.venta_mes?.litros)} L</div><div class="xs">${clienteFmtARS(c.venta_mes?.importe)}</div></div>
+        <div class="kcard mg"><div class="kl">Promedio disponible</div><div class="kv" style="font-size:16px;">${clienteFmtL(c.promedio_12m?.litros)} L</div><div class="xs">${clienteFmtARS(c.promedio_12m?.importe)} - ${c.promedio_12m?.meses_con_datos||0}/12 meses</div></div>
+        <div class="kcard wn"><div class="kl">Posibilidad venta</div><div class="kv" style="font-size:16px;">${clienteFmtL(c.posibilidad_venta?.litros)} L</div><div class="xs">${clienteFmtARS(c.posibilidad_venta?.importe)}</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr;gap:12px;">
+        <div><div class="xs" style="font-weight:700;color:var(--text2);margin-bottom:6px;">Marcas compradas en el mes</div>
+          ${marcas.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;">${marcas.map(m=>`<span class="chip">${clienteEsc(m.marca)} - ${clienteFmtL(m.litros)} L - ${clienteFmtARS(m.importe)}</span>`).join('')}</div>`:`<div class="xs" style="color:var(--text3);">Sin compras en el mes vigente.</div>`}
+        </div>
+        <div><div class="xs" style="font-weight:700;color:var(--text2);margin-bottom:6px;">Ventas ultimos meses</div>
+          ${meses.length?`<table class="tbl" style="font-size:12px;"><thead><tr><th>Mes</th><th style="text-align:right">Litros</th><th style="text-align:right">Dinero</th><th style="text-align:right">Compras</th></tr></thead><tbody>${meses.map(m=>`<tr><td><span class="chip ${m.tendencia_litros==='verde'?'ok':m.tendencia_litros==='rojo'?'bd':''}">${clienteEsc(m.periodo)}</span></td><td style="text-align:right;font-weight:700;">${clienteFmtL(m.litros)}</td><td style="text-align:right;">${clienteFmtARS(m.importe)}</td><td style="text-align:right;">${m.compras||0}</td></tr>`).join('')}</tbody></table>`:`<div class="xs" style="color:var(--text3);">Sin ventas disponibles.</div>`}
+        </div>
+      </div>
+      <div class="xs" style="color:var(--text3);margin-top:10px;">Fuente: ${clienteEsc(c.fuente||'')}.</div>
+    </div>
+  </div>`;
+  cont.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
 /* — Planificación — */
 async function gPlanificacion(p){
   const pl_fresh=await safe('/api/planificacion?limit=all'); if(pl_fresh) D.plan=Array.isArray(pl_fresh)?pl_fresh:[];
@@ -1975,7 +2057,12 @@ function vSw(tab,el){
   el.classList.add('active');
 }
 
-function vRenderAll(){ vInicio(); vRuta(); vKpis(); vPlan(); vAlertas(); vPlanesAS(); vFaro(); }
+function vRenderAll(){ vInicio(); vRuta(); vKpis(); vPlan(); vAlertas(); vCliente(); vPlanesAS(); vFaro(); }
+
+function vCliente(){
+  const cont=document.getElementById('vT-cliente'); if(!cont) return;
+  renderClienteBuscador(cont,'v');
+}
 
 /* — Incentivo Club FARO (vendedor): mi objetivo + clientes no compradores por categoría — */
 function vFaro(){
@@ -1989,7 +2076,8 @@ function vFaro(){
     let h=`<div class="vsh">🌟 Incentivo Club FARO</div>
       <div style="font-size:11px;color:var(--text3);margin:-6px 0 10px;">Cobertura mayo-junio · 3 botellas en Tradicional, 6 en Autoservicio</div>`;
     cats.forEach(c=>{
-      const pct=c.pct!=null?c.pct:0; const nc=c.no_compradores||[];
+      const pct=c.pct!=null?c.pct:0; const nc=c.no_compradores||[]; const comp=c.compradores||[];
+      const clientesCub=c.clientes_cubiertos!=null?c.clientes_cubiertos:(new Set(comp.map(x=>x.cliente))).size;
       h+=`<div class="vkw" style="background:var(--surf2);margin-bottom:10px;">
         <div class="row-b" style="align-items:center;">
           <div><div class="vkl">${c.nombre}</div><div class="xs" style="color:var(--text3)">${c.segmento}</div></div>
@@ -1997,7 +2085,17 @@ function vFaro(){
             <span class="chip ${avc(pct)}" style="font-size:10px;">${c.pct!=null?c.pct+'%':'s/obj'}</span></div>
         </div>
         <div class="bar" style="height:6px;margin-top:8px;"><div class="bar-f ${avc(pct)}" style="width:${clamp(pct,0,100)}%"></div></div>
+        <div class="xs" style="color:var(--text3);margin-top:6px;">${fmtN(c.logrado)} coberturas logradas - ${fmtN(clientesCub)} clientes cubiertos</div>
       </div>`;
+      h+=`<div style="margin:0 2px 12px;">
+        <div class="xs" style="color:var(--text2);font-weight:600;margin-bottom:6px;">Coberturas logradas de ${c.nombre} (${fmtN(c.logrado)})</div>`;
+      if(!comp.length){ h+=`<div class="xs" style="color:var(--text3);padding:6px 0;">Sin clientes con cobertura lograda en esta categoria.</div>`; }
+      else { h+=comp.map(x=>`<div class="row-b" style="padding:7px 10px;background:var(--surf);border-radius:8px;margin-bottom:4px;gap:8px;">
+          <div style="min-width:0;"><div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.razon_social||('Cliente '+x.cliente)}</div>
+            <div class="xs" style="color:var(--text3)">#${x.cliente} - ${x.localidad||'-'}${x.articulo?' - '+x.articulo:''}</div></div>
+          <div style="text-align:right;white-space:nowrap;"><span class="chip ok" style="font-size:9px;">${fmtN(x.peso||1)} cob.</span><div class="xs" style="color:var(--text3);margin-top:2px;">${fmtN(x.botellas_marca)} bot</div></div>
+        </div>`).join(''); }
+      h+=`</div>`;
       // No compradores de esta marca (clientes del canal sin cobertura)
       h+=`<div style="margin:0 2px 16px;">
         <div class="xs" style="color:var(--text2);font-weight:600;margin-bottom:6px;">No compradores de ${c.nombre} (${nc.length}) — ${c.segmento}</div>`;
@@ -2009,7 +2107,7 @@ function vFaro(){
         </div>`).join(''); }
       h+=`</div>`;
     });
-    h+=`<div class="xs" style="color:var(--text3);padding:4px 2px 20px;">Antares cuenta por SKU (XPA y Lager doble). Fuente: ${j.fuente||'ventas_acumulada.csv'}.</div>`;
+    h+=`<div class="xs" style="color:var(--text3);padding:4px 2px 20px;">Regla FARO: Familia Smirnoff 700cc en Autoservicio; Antares en Autoservicio con XPA y Lager 330/660 doble; Alaris/Finca Las Moras en Almacen/Despensa/Kiosco. Fuente: ${j.fuente||'ventas_acumulada.csv'} (${j.periodo||'mayo-junio'}).</div>`;
     cont.innerHTML=h;
   }).catch(e=>{ cont.innerHTML=`<div class="vsh">🌟 Incentivo Club FARO</div><div style="color:var(--bd);padding:16px;">Error: ${e.message}</div>`; });
 }
@@ -2310,12 +2408,12 @@ function vAlertas(){
         <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--text2);">
           <span class="chip ok" style="font-size:10px;font-weight:800;">$${_fmtARSa(a.inversion_pesos)} inv.</span>
           <span>📦 ${_fmtARSa(a.litros)} L</span>
-          <span>👥 ${a.clientes_alcanzados} cli.</span>
-          <span style="color:var(--ok)">🆕 ${a.clientes_nuevos} nuevos</span>
+          <span onclick="accShowDetalle('v','${a.id_accion}','clientes')" style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">👥 ${a.clientes_alcanzados} cli.</span>
+          <span onclick="accShowDetalle('v','${a.id_accion}','nuevos')" style="color:var(--ok);cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">🆕 ${a.clientes_nuevos} nuevos</span>
         </div>
       </div>`;
     });
-    h+=`</div>`;
+    h+=`<div id="acc-v-detalle" style="margin:0 12px 12px;"></div></div>`;
   }
 
   // ── BLOQUE 2: Alertas de clientes ────────────────────────
@@ -2343,6 +2441,39 @@ function vAlertas(){
       </div>`;}).join('');
   }
   document.getElementById('vT-alertas').innerHTML=h;
+}
+
+function accShowDetalle(scope,id,kind){
+  const dat=scope==='v'?(D.acc_mes_v||{}):(D.acc_mes||{});
+  const acc=(dat.acciones||[]).find(a=>a.id_accion===id);
+  const cont=document.getElementById(scope==='v'?'acc-v-detalle':'acc-g-detalle');
+  if(!acc||!cont) return;
+  const key=scope+'|'+id+'|'+kind;
+  if(cont.dataset.k===key){cont.innerHTML='';cont.dataset.k='';return;}
+  cont.dataset.k=key;
+  const list=kind==='nuevos'?(acc.clientes_nuevos_detalle||[]):(acc.clientes_detalle||[]);
+  const fmt=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
+  const title=kind==='nuevos'?'clientes nuevos':'clientes que compraron';
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  cont.innerHTML=`<div class="card" style="border:1px solid var(--mg);">
+    <div class="card-hd">
+      <span class="card-title">${id} · ${title}</span>
+      <span style="display:flex;gap:6px;align-items:center;"><span class="chip ${kind==='nuevos'?'ok':'info'}">${list.length} clientes</span>
+      <span class="chip" style="cursor:pointer;" onclick="var d=document.getElementById('${scope==='v'?'acc-v-detalle':'acc-g-detalle'}');d.innerHTML='';d.dataset.k='';">✕</span></span>
+    </div>
+    <div class="card-body nop">${list.length?`<table class="tbl" style="font-size:12px;">
+      <thead><tr><th>Cliente</th><th>Dirección</th><th>Vendedor</th><th style="text-align:right">Venta neta</th><th style="text-align:right">Dto.</th><th style="text-align:right">Litros</th><th style="text-align:right">Últ. compra</th></tr></thead>
+      <tbody>${list.map(c=>`<tr>
+        <td><span style="font-size:10px;color:var(--text3)">#${esc(c.cliente_id)}</span> ${esc(c.cliente_nombre)}</td>
+        <td style="font-size:11px;color:var(--text3);">${esc(c.direccion||'–')}${c.localidad?` · ${esc(c.localidad)}`:''}</td>
+        <td style="font-size:11px;">${esc(c.vendedor_id||'')} · <span style="color:var(--text3)">${esc(c.vendedor_nombre||'–')}</span></td>
+        <td style="text-align:right;font-variant-numeric:tabular-nums;">$${fmt(c.importe_neto)}</td>
+        <td style="text-align:right;font-variant-numeric:tabular-nums;">$${fmt(c.descuento_pesos)}</td>
+        <td style="text-align:right;font-variant-numeric:tabular-nums;">${fmt(c.litros)}</td>
+        <td style="text-align:right;font-size:11px;color:var(--text3);">${esc(c.fecha_ultima||'–')}</td>
+      </tr>`).join('')}</tbody></table>`:`<div class="empty" style="padding:18px;text-align:center;color:var(--text3);"><p>Sin ${title} para esta acción.</p></div>`}</div>
+  </div>`;
+  cont.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 /* ════ PLAN VS REAL (gerencia) ════ */
@@ -2812,13 +2943,13 @@ function gAccionesComerciales(p){
           <div class="kcard ok"><div class="kl">Litros</div><div class="kv" style="font-size:15px;">${fmtL(a.litros)}</div></div>
         </div>
         <div style="display:flex;gap:14px;margin-top:8px;font-size:11px;color:var(--text2);">
-          <span>👥 ${a.clientes_alcanzados} clientes</span>
-          <span style="color:var(--ok)">🆕 ${a.clientes_nuevos} nuevos</span>
+          <span onclick="accShowDetalle('g','${a.id_accion}','clientes')" style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">👥 ${a.clientes_alcanzados} clientes</span>
+          <span onclick="accShowDetalle('g','${a.id_accion}','nuevos')" style="color:var(--ok);cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">🆕 ${a.clientes_nuevos} nuevos</span>
         </div>
       </div>
     </div>`;
   }).join('');
-  html+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:13px;">${grid}</div>`;
+  html+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:13px;">${grid}</div><div id="acc-g-detalle" style="margin-top:14px;"></div>`;
   p.innerHTML=html;
   return;
   /* ===== versión anterior (mayo) deshabilitada — reemplazada por acciones del mes =====
@@ -3105,14 +3236,17 @@ function vPlanesAS(){
 /* ── FARO: drill-down de clientes con cobertura lograda (clic en una celda de avance) ── */
 function faroShow(cod,cat){
   const v=(window._faroByCod||{})[cod]; const cont=document.getElementById('faro-detalle'); if(!v||!cont) return;
-  const o=v[cat]||{}; const cl=o.compradores||[];
+  const o=v[cat]||{}; let cl=o.compradores||[];
   const cats=(D.faroData&&D.faroData.categorias)||{}; const catName=cats[cat]||cat;
   if(cont.dataset.k===cod+'|'+cat){ cont.innerHTML=''; cont.dataset.k=''; return; }  // toggle: re-clic cierra
   cont.dataset.k=cod+'|'+cat;
   const fmtN2=n=>Number(n||0).toLocaleString('es-AR');
+  const totalCob=o.logrado!=null?o.logrado:cl.reduce((s,c)=>s+Number(c.peso||1),0);
+  const clientesUnicos=(o.clientes_cubiertos!=null)?o.clientes_cubiertos:(new Set(cl.map(c=>c.cliente))).size;
+  cl=cl.map(c=>Object.assign({},c,{localidad:[c.localidad||'',c.articulo||'',c.peso?('cob. '+c.peso):''].filter(Boolean).join(' - ')}));
   cont.innerHTML=`<div class="card" style="border:1px solid var(--mg);"><div class="card-hd">
-    <span class="card-title">✅ V${cod} · ${catName} — clientes con cobertura lograda</span>
-    <span style="display:flex;gap:6px;align-items:center;"><span class="chip ok">${cl.length} clientes</span>
+    <span class="card-title">✅ V${cod} · ${catName} — coberturas logradas</span>
+    <span style="display:flex;gap:6px;align-items:center;"><span class="chip ok">${fmtN2(totalCob)} cob.</span><span class="chip">${fmtN2(clientesUnicos)} clientes</span>
     <span class="chip" style="cursor:pointer;" onclick="var d=document.getElementById('faro-detalle');d.innerHTML='';d.dataset.k='';">✕</span></span></div>
     <div class="card-body nop">${cl.length?`<table class="tbl" style="font-size:12px;"><thead><tr><th>Cliente</th><th>Razón social</th><th>Localidad</th><th style="text-align:right">Botellas</th></tr></thead>
     <tbody>${cl.map(c=>`<tr><td style="color:var(--text3);font-size:11px;">#${c.cliente}</td><td>${c.razon_social||'–'}</td><td style="font-size:11px;color:var(--text3);">${c.localidad||'–'}</td><td style="text-align:right;font-weight:600;font-variant-numeric:tabular-nums;">${fmtN2(c.botellas_marca)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty" style="padding:16px;text-align:center;color:var(--text3);"><p>Sin clientes con cobertura lograda en esta categoría.</p></div>'}</div></div>`;
@@ -3137,8 +3271,8 @@ function gIncentivoFaro(p){
       const cell=(o,cod,c,clk)=>{const pct=o&&o.pct!=null?o.pct:(o&&o.objetivo?0:null);
         const inner=`<b>${fmtN(o?o.logrado:0)}</b><span style="color:var(--text3)">/${fmtN(o?o.objetivo:0)}</span>`+
           (pct!=null?` <span class="chip ${avc(pct)}" style="font-size:9px;">${pct}%</span>`:'');
-        const n=(o&&o.compradores)?o.compradores.length:0;
-        if(clk&&n>0) return `<td class="faro-cell" style="text-align:center;white-space:nowrap;cursor:pointer;" title="Ver ${n} clientes con cobertura lograda" onclick="faroShow(${cod},'${c}')">${inner} <span style="font-size:9px;color:var(--mg);">▸</span></td>`;
+        const n=(o&&o.logrado)?o.logrado:0;
+        if(clk&&n>0) return `<td class="faro-cell" style="text-align:center;white-space:nowrap;cursor:pointer;" title="Ver ${n} coberturas logradas" onclick="faroShow(${cod},'${c}')">${inner} <span style="font-size:9px;color:var(--mg);">▸</span></td>`;
         return `<td style="text-align:center;white-space:nowrap;">${inner}</td>`;};
       const filas=(arr,esSup)=>arr.map(v=>`<tr${esSup?' style="background:rgba(226,20,122,.06);font-weight:600;"':''}>
         <td style="font-weight:600;white-space:nowrap;">${esSup?'👤 '+v.nombre:('V'+v.codigo+' · '+(v.nombre||''))}${esSup&&v.vendedores?`<div style="font-size:9px;color:var(--text3);font-weight:400;">${v.vendedores.join(' ')}</div>`:''}</td>
@@ -3439,3 +3573,4 @@ window.addEventListener('DOMContentLoaded', ()=>{
 </script>
 </body>
 </html>
+

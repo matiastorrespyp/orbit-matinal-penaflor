@@ -1,5 +1,42 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-16 - Buscador Cliente 360
+
+### HECHO
+- Boton Cliente agregado en gerencia y vendedor.
+- Endpoints nuevos: `/api/clientes/buscar` y `/api/clientes/<id>/ficha`.
+- Gerencia busca toda la cartera activa; vendedor queda restringido a sus clientes.
+- Ficha cliente con datos maestro, marcas del mes, litros/dinero, historico mensual, color por tendencia de litros y posibilidad de venta contra promedio disponible.
+
+### A REVISAR / PENDIENTE
+- Validar visualmente en navegador que la tabla mensual y chips de marcas no desborden en mobile.
+- Si negocio requiere promedio exacto de 12 meses, cargar una fuente historica con litros (`PesoKg`) para los 12 meses completos; hoy la ficha informa cuantos meses reales hay disponibles.
+
+## Sesion 2026-06-16 - Fix Incentivo Club FARO mayo-junio
+
+### HECHO
+- FARO filtra ventas netas de `ventas_acumulada.csv` solo a mayo y junio, excluyendo V2/V5.
+- Smirnoff mide familia 700cc en Autoservicio; Antares mide Autoservicio por SKU cubierto con XPA y Lager 330/660 doble; Alaris/Finca Las Moras mide Almacen/Despensa/Kiosco.
+- Gerencia y vendedor separan coberturas logradas de clientes cubiertos. Antares muestra articulo/peso para explicar diferencias entre avance y cantidad de clientes.
+- Control puntual: V4 Antares queda en 6/8 coberturas y 2 clientes unicos, no 13 clientes.
+
+### A REVISAR / PENDIENTE
+- Validar visualmente en navegador la tarjeta desplegable FARO en escritorio y movil.
+- Cuando ingresen ventas Antares Lager 330/660, confirmar que los codigos nuevos esten en `ventas_acumulada.csv` y sigan matcheando la regla doble.
+
+## Sesión 2026-06-16 — Acciones comerciales desde ventas.csv + drill-down
+
+### HECHO ✅
+- ✅ Tarjetas de Acciones Comerciales corregidas para contar clientes desde **`ventas.csv` con `ImporteNetoItem > 0`**, sin V2/V5/V20. `inversion_pesos` queda separada como descuento real (`valorDescuento × CantBase`).
+- ✅ ACJ26-021/022/023 usan las marcas de **`objetivo 11T.xlsx`**; ACJ26-008/024 usan códigos de **`INNOVACIONES/Innovaciones.xlsx`**; ACJ26-010/011/012/013 filtran contra **`mod_planes_as.csv`**.
+- ✅ En gerencia y perfil vendedor, clic en **clientes** o **nuevos** abre el detalle de clientes que compraron la acción: dirección, vendedor, venta neta, descuento, litros y última compra.
+- ✅ Validado local: `py_compile`, `node --check` de scripts extraídos y endpoints `/api/gerencia/acciones_mes` + `/api/vendedor/V8/acciones_mes`.
+
+### A REVISAR / PENDIENTE
+- Validar visualmente en navegador/Render que la tarjeta desplegable no desborde en móvil.
+- Las acciones Petit Mayoristas (ACJ26-014/015/016) y Plan Cobertura OP (ACJ26-018/019/020) siguen dependiendo de datos operativos externos para validar condición completa; el portal muestra ventas que matchean catálogo, no liquidación final.
+- ACJ26-026 queda en cero con canal VTK/TDB porque no hay ventas Dadá Tinto de Verano en ese canal; si negocio quiere contar Tradicional/Autoservicio, hay que cambiar el catálogo.
+
 ## Sesión 2026-06-10 — Nueva regla ACJ26-017
 
 ### HECHO ✅
@@ -1055,3 +1092,4 @@ Se oculta automáticamente si no hay datos. Commit `c3f7813`.
 4. Al dia siguiente, actualizar `ventas.csv`, ejecutar `CIERRE_DIA_ORBIT.bat` y verificar en Render que Plan vs Real muestra el cierre de la fecha anterior aunque ya existan planes nuevos.
 5. Validar en la solapa Planificacion que el selector "Matinal YYYY-MM-DD" trae todos los vendedores de la fecha elegida.
 6. Si Render rechaza `plan: starter` o `disk` por configuracion de cuenta, corregir el servicio desde el dashboard de Render antes de reintentar deploy.
+

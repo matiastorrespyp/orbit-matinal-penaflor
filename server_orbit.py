@@ -1197,6 +1197,220 @@ def clientes():
                 rec[k] = None
     return jsonify(records)
 
+_CLIENTES_MAESTRO_CACHE = {}
+
+def _clientes_maestro():
+    """Cartera real desde clientes.xlsx, sin vendedores excluidos."""
+    p = INPUTS / "clientes.xlsx"
+    if not p.exists():
+        return pd.DataFrame()
+    try:
+        key = os.path.getmtime(p)
+    except OSError:
+        key = 0
+    df = _CLIENTES_MAESTRO_CACHE.get(key)
+    if df is not None:
+        return df
+    try:
+        df = pd.read_excel(p)
+    except Exception:
+        return pd.DataFrame()
+    df.columns = [str(c).strip() for c in df.columns]
+    if "Codigo" not in df.columns:
+        return pd.DataFrame()
+    df["_cliente_id"] = pd.to_numeric(df["Codigo"], errors="coerce")
+    df["_vend"] = pd.to_numeric(df.get("codven"), errors="coerce")
+    df = df.dropna(subset=["_cliente_id"])
+    df = df[~df["_vend"].isin(_VENDEDORES_EXCLUIDOS)].copy()
+    df["_cliente_id"] = df["_cliente_id"].astype(int)
+    df["_vend_id"] = df["_vend"].apply(lambda x: f"V{int(x)}" if pd.notna(x) else "")
+    _CLIENTES_MAESTRO_CACHE.clear()
+    _CLIENTES_MAESTRO_CACHE[key] = df
+    return df
+
+
+_CLIENTE_VENTAS_CACHE = {}
+
+def _cliente_ventas_base():
+    """Ventas vivas disponibles para ficha cliente. Usa PesoKg como litros, igual que Sell Out."""
+    paths = [INPUTS / "ventas_acumulada.csv", INPUTS / "ventas.csv"]
+    key = tuple((str(p), os.path.getmtime(p) if p.exists() else 0) for p in paths)
+    df = _CLIENTE_VENTAS_CACHE.get(key)
+    if df is not None:
+        return df
+    frames = []
+    for p in paths:
+        if p.exists():
+            v = _preparar_df_ventas(p)
+            if not v.empty:
+                frames.append(v)
+    if not frames:
+        return pd.DataFrame()
+    df = pd.concat(frames, ignore_index=True)
+    df.columns = [str(c).strip() for c in df.columns]
+    df["_cli"] = pd.to_numeric(df.get("Cliente"), errors="coerce")
+    df["_vend"] = pd.to_numeric(df.get("CodVendedor"), errors="coerce")
+    df["_fecha"] = pd.to_datetime(df.get("FechaComprobante"), dayfirst=True, errors="coerce")
+    df["_litros"] = pd.to_numeric(df.get("PesoKg"), errors="coerce").fillna(0)
+    df["_importe"] = pd.to_numeric(df.get("ImporteNetoItem"), errors="coerce").fillna(0)
+    df["_marca"] = df.get("Marca", pd.Series([""] * len(df), index=df.index)).astype(str).str.strip()
+    df["_linea"] = df.get("Linea", pd.Series([""] * len(df), index=df.index)).astype(str).str.strip()
+    df = df.dropna(subset=["_cli", "_vend", "_fecha"])
+    if "NroComprobante" in df.columns and "Codigo" in df.columns:
+        df = df.drop_duplicates(subset=["NroComprobante", "Cliente", "Codigo", "CantBase", "ImporteNetoItem"])
+    else:
+        df = df.drop_duplicates()
+    df["_cli"] = df["_cli"].astype(int)
+    df["_vend"] = df["_vend"].astype(int)
+    _CLIENTE_VENTAS_CACHE.clear()
+    _CLIENTE_VENTAS_CACHE[key] = df
+    return df
+
+
+def _cliente_row_to_dict(row):
+    vend = int(row.get("_vend")) if pd.notna(row.get("_vend")) else None
+    return {
+        "cliente_id": int(row.get("_cliente_id")),
+        "nombre": str(row.get("Razon_Social", row.get("_cliente_id", ""))).strip(),
+        "direccion": str(row.get("Direccion", "")).strip(),
+        "localidad": str(row.get("Localidad", "")).strip(),
+        "telefono": "" if pd.isna(row.get("Telefono", "")) else str(row.get("Telefono", "")).strip(),
+        "vendedor_codigo": vend,
+        "vendedor_id": f"V{vend}" if vend is not None else "",
+        "vendedor_nombre": str(row.get("Vendedor", "")).strip(),
+        "dia_visita": str(row.get("DiasVisita", "")).strip(),
+        "frecuencia_visita": str(row.get("Frecuencia", "")).strip(),
+        "subcanal": str(row.get("SubSegmento", row.get("Ramo", ""))).strip(),
+        "ramo": str(row.get("Ramo", "")).strip(),
+    }
+
+
+@app.route("/api/clientes/buscar")
+def clientes_buscar():
+    q = (request.args.get("q") or "").strip().upper()
+    vend = normalizar_vendedor_codigo(request.args.get("vendedor") or "")
+    try:
+        limit = min(max(int(request.args.get("limit", 20)), 1), 50)
+    except Exception:
+        limit = 20
+    df = _clientes_maestro()
+    if df.empty:
+        return jsonify([])
+    if vend:
+        df = df[df["_vend_id"] == vend]
+    if q:
+        nom = df.get("Razon_Social", pd.Series([""] * len(df), index=df.index)).astype(str).str.upper()
+        cid = df["_cliente_id"].astype(str)
+        loc = df.get("Localidad", pd.Series([""] * len(df), index=df.index)).astype(str).str.upper()
+        df = df[nom.str.contains(q, na=False) | cid.str.contains(q, na=False) | loc.str.contains(q, na=False)]
+    df = df.sort_values(["Razon_Social", "_cliente_id"], na_position="last").head(limit)
+    return jsonify(_to_native([_cliente_row_to_dict(r) for _, r in df.iterrows()]))
+
+
+@app.route("/api/clientes/<int:cliente_id>/ficha")
+def cliente_ficha(cliente_id):
+    vend = normalizar_vendedor_codigo(request.args.get("vendedor") or "")
+    cli = _clientes_maestro()
+    if cli.empty:
+        return jsonify({"error": "clientes.xlsx no disponible"}), 404
+    row_df = cli[cli["_cliente_id"] == int(cliente_id)]
+    if row_df.empty:
+        return jsonify({"error": "cliente no encontrado"}), 404
+    row = row_df.iloc[0]
+    base = _cliente_row_to_dict(row)
+    if vend and base.get("vendedor_id") != vend:
+        return jsonify({"error": "cliente fuera de la cartera del vendedor"}), 403
+
+    ventas = _cliente_ventas_base()
+    vc = ventas[ventas["_cli"] == int(cliente_id)].copy() if not ventas.empty else pd.DataFrame()
+    if vc.empty:
+        base.update({
+            "marcas_mes": [],
+            "ventas_mensuales": [],
+            "frecuencia_compra_mensual": 0,
+            "fecha_ultima_compra": None,
+            "promedio_12m": {"litros": 0, "importe": 0, "meses_con_datos": 0, "meses_ventana": 12},
+            "posibilidad_venta": {"litros": 0, "importe": 0, "criterio": "sin ventas disponibles"},
+            "fuente": "clientes.xlsx + ventas_acumulada.csv/ventas.csv",
+        })
+        return jsonify(_to_native(base))
+
+    latest = vc["_fecha"].max()
+    periodo_actual = latest.to_period("M")
+    inicio_12 = (periodo_actual - 11).to_timestamp()
+    vc12 = vc[vc["_fecha"] >= inicio_12].copy()
+    vc12["_periodo"] = vc12["_fecha"].dt.to_period("M").astype(str)
+    mes_actual = vc12[vc12["_fecha"].dt.to_period("M") == periodo_actual]
+
+    marca_col = "_marca"
+    marcas = []
+    if not mes_actual.empty:
+        mm = (mes_actual.groupby(marca_col, dropna=False)
+              .agg(litros=("_litros", "sum"), importe=("_importe", "sum"))
+              .reset_index())
+        for _, r in mm.sort_values("litros", ascending=False).iterrows():
+            nombre = str(r[marca_col]).strip() or "Sin marca"
+            marcas.append({
+                "marca": nombre,
+                "litros": round(float(r["litros"]), 1),
+                "importe": round(float(r["importe"]), 0),
+            })
+
+    mensual = (vc12.groupby("_periodo")
+               .agg(litros=("_litros", "sum"), importe=("_importe", "sum"),
+                    compras=("_fecha", lambda s: int(s.dt.date.nunique())))
+               .reset_index()
+               .sort_values("_periodo"))
+    ventas_mensuales = []
+    prev_litros = None
+    for _, r in mensual.iterrows():
+        litros = round(float(r["litros"]), 1)
+        if prev_litros is None:
+            tendencia = "neutro"
+        elif litros > prev_litros:
+            tendencia = "verde"
+        elif litros < prev_litros:
+            tendencia = "rojo"
+        else:
+            tendencia = "neutro"
+        ventas_mensuales.append({
+            "periodo": str(r["_periodo"]),
+            "litros": litros,
+            "importe": round(float(r["importe"]), 0),
+            "compras": int(r["compras"]),
+            "tendencia_litros": tendencia,
+        })
+        prev_litros = litros
+
+    meses_con_datos = int(len(mensual))
+    promedio_litros = float(mensual["litros"].mean()) if meses_con_datos else 0
+    promedio_importe = float(mensual["importe"].mean()) if meses_con_datos else 0
+    litros_mes = float(mes_actual["_litros"].sum()) if not mes_actual.empty else 0
+    importe_mes = float(mes_actual["_importe"].sum()) if not mes_actual.empty else 0
+    frecuencia = float(mensual["compras"].mean()) if meses_con_datos else 0
+
+    base.update({
+        "periodo_mes": str(periodo_actual),
+        "marcas_mes": marcas,
+        "ventas_mensuales": ventas_mensuales,
+        "frecuencia_compra_mensual": round(frecuencia, 1),
+        "fecha_ultima_compra": latest.strftime("%Y-%m-%d") if pd.notna(latest) else None,
+        "venta_mes": {"litros": round(litros_mes, 1), "importe": round(importe_mes, 0)},
+        "promedio_12m": {
+            "litros": round(promedio_litros, 1),
+            "importe": round(promedio_importe, 0),
+            "meses_con_datos": meses_con_datos,
+            "meses_ventana": 12,
+        },
+        "posibilidad_venta": {
+            "litros": round(max(0, promedio_litros - litros_mes), 1),
+            "importe": round(max(0, promedio_importe - importe_mes), 0),
+            "criterio": "promedio mensual de los meses disponibles dentro de la ventana de 12 meses",
+        },
+        "fuente": "clientes.xlsx + ventas_acumulada.csv/ventas.csv",
+    })
+    return jsonify(_to_native(base))
+
 @app.route("/api/alertas")
 def alertas():
     # Alertas en vivo desde el catálogo de acciones del mes (acciones_comerciales_<mes>_penaflor.csv):
@@ -3038,6 +3252,9 @@ _ACC_LINEA_TOK = {"VDA": "VDA", "VDG": "VDG", "VDM": "VDM",
                   "SIDRA": "SIDRA", "SPIRIT": "SPIRITS", "SPIRITS": "SPIRITS"}
 _ACC_PROD_GENERICOS = {"", "SEGUN MAESTRO PRODUCTOS ACTIVOS", "RESTO SKU", "RESTO",
                        "TODOS", "TODOS_ACTIVOS", "LISTA CERRADA DE INNOVACIONES JUNIO 2026"}
+_ACC_11T_CACHE = None
+_ACC_INNOV_CACHE = None
+_ACC_PLAN_AS_CACHE = None
 
 
 def _acc_canon_cat(c):
@@ -3133,8 +3350,85 @@ def _acc_lineas_de_marca(token, all_lineas):
     return out
 
 
+def _acc_once_titulares_tokens():
+    """Marcas 11T vigentes desde objetivo 11T.xlsx, normalizadas para match contra ventas.csv."""
+    global _ACC_11T_CACHE
+    if _ACC_11T_CACHE is not None:
+        return _ACC_11T_CACHE
+    toks = []
+    p = INPUTS / "objetivo 11T.xlsx"
+    if p.exists():
+        try:
+            df = pd.read_excel(p)
+            col = next((c for c in df.columns if "linea" in str(c).lower()), None)
+            if col is None and len(df.columns) > 1:
+                col = df.columns[1]
+            vals = df[col].dropna().tolist() if col is not None else []
+            for v in vals:
+                n = _acc_norm(v).replace("SIMRNOFF", "SMIRNOFF")
+                if n and n != "LINEA COMERCIAL":
+                    toks.append(n)
+        except Exception:
+            toks = []
+    if not toks:
+        toks = [_acc_norm(x) for x in [
+            "Alma Mora", "Trapiche Reserva", "Finca Las Moras", "Alaris", "Don David",
+            "Dada", "Smirnoff Flavors", "Los Arboles", "Antares", "Smirnoff Ice",
+            "Gordons Flavours",
+        ]]
+    _ACC_11T_CACHE = set(toks)
+    return _ACC_11T_CACHE
+
+
+def _acc_innovaciones_codigos():
+    """Codigos de la lista cerrada de Innovaciones.xlsx."""
+    global _ACC_INNOV_CACHE
+    if _ACC_INNOV_CACHE is not None:
+        return _ACC_INNOV_CACHE
+    out = set()
+    p = INPUTS / "INNOVACIONES" / "Innovaciones.xlsx"
+    if p.exists():
+        try:
+            df = pd.read_excel(p, sheet_name=0, header=None, dtype=str)
+            for val in df.stack().dropna().astype(str):
+                for m in _re.finditer(r"(?:0{3,})?(\d{5})\s*-", val):
+                    out.add(m.group(1).lstrip("0"))
+        except Exception:
+            out = set()
+    _ACC_INNOV_CACHE = out
+    return _ACC_INNOV_CACHE
+
+
+def _acc_plan_as_clientes():
+    """Clientes con Plan AS vigente desde mod_planes_as.csv."""
+    global _ACC_PLAN_AS_CACHE
+    if _ACC_PLAN_AS_CACHE is not None:
+        return _ACC_PLAN_AS_CACHE
+    df = read_csv(DATASETS / "mod_planes_as.csv")
+    if df.empty or "cliente_id" not in df.columns:
+        _ACC_PLAN_AS_CACHE = set()
+    else:
+        _ACC_PLAN_AS_CACHE = set(pd.to_numeric(df["cliente_id"], errors="coerce").dropna().astype(int))
+    return _ACC_PLAN_AS_CACHE
+
+
 def _acc_product_pred(rule, all_lineas):
     """Devuelve función(cat_canon, linea, articulo, marca, cod=None)->bool para esta regla."""
+    regla_txt = _acc_norm(" ".join(str(rule.get(k, "")) for k in (
+        "categoria", "subcategoria", "productos_marcas", "lineas_comerciales", "tipo_regla"
+    )))
+    if "11 TITULARES" in regla_txt:
+        marcas_11t = _acc_once_titulares_tokens()
+        def pred_11t(cat_canon, linea, articulo, marca, cod=None):
+            txt = _acc_norm(f"{linea or ''} {articulo or ''} {marca or ''}")
+            return any(tok in txt for tok in marcas_11t)
+        return pred_11t
+    if "LISTA CERRADA DE INNOVACIONES JUNIO 2026" in regla_txt or "INNOVACIONES LISTADAS" in regla_txt:
+        codigos = _acc_innovaciones_codigos()
+        def pred_innov(cat_canon, linea, articulo, marca, cod=None):
+            return bool(codigos) and cod is not None and str(cod).strip() in codigos
+        return pred_innov
+
     raw = (str(rule.get("productos_marcas", "")) + ";" + str(rule.get("lineas_comerciales", ""))).upper()
     toks = [t.strip() for t in raw.replace(",", ";").split(";") if t.strip()]
     line_cats, brand_lineas = set(), set()
@@ -3217,6 +3511,8 @@ def _acc_preparar_ventas(nombre="ventas.csv"):
     out["_marca"] = df.get("Marca", "").astype(str).str.upper()
     out["_clinom"] = (df["RazonSocial"].astype(str) if "RazonSocial" in df.columns
                       else df.get("Cliente", pd.Series([""] * len(df))).astype(str))
+    out["_dir"] = df.get("Direccion", pd.Series([""] * len(df))).astype(str)
+    out["_loc"] = df.get("Localidad", pd.Series([""] * len(df))).astype(str)
     out["_vnom"] = (df["Vendedor"].astype(str) if "Vendedor" in df.columns
                     else pd.Series([""] * len(df), index=df.index))
     _subr = df.get("Subramo", pd.Series([""] * len(df)))
@@ -3258,6 +3554,40 @@ def _acciones_mes_payload(vid_filtro=None):
     v_ant = v_acum[v_acum["_mes"] == per_ant] if not v_acum.empty else v_cur.iloc[0:0]
     _lin = [v_cur["_linea"]] + ([v_acum["_linea"]] if not v_acum.empty else [])
     all_lineas = set(l for l in pd.concat(_lin).dropna().unique() if l and l != "NAN")
+    plan_as_clientes = _acc_plan_as_clientes()
+
+    def _detalle_clientes(df, nuevos=None):
+        if df.empty:
+            return []
+        nuevos = set(nuevos or [])
+        rows = []
+        for cli, g in df.groupby("_cli", dropna=True):
+            try:
+                cli_int = int(cli)
+            except Exception:
+                continue
+            vend = pd.to_numeric(g["_vend"], errors="coerce").dropna()
+            vend_int = int(vend.iloc[0]) if not vend.empty else None
+            fechas = pd.to_datetime(g["_fcomp"], dayfirst=True, errors="coerce")
+            ult = fechas.max()
+            rows.append({
+                "cliente_id": cli_int,
+                "cliente_nombre": str(g["_clinom"].iloc[0]),
+                "direccion": str(g["_dir"].iloc[0]) if "_dir" in g.columns else "",
+                "localidad": str(g["_loc"].iloc[0]) if "_loc" in g.columns else "",
+                "vendedor_codigo": vend_int,
+                "vendedor_id": f"V{vend_int}" if vend_int is not None else "",
+                "vendedor_nombre": str(g["_vnom"].iloc[0]) if "_vnom" in g.columns else "",
+                "lineas": int(len(g)),
+                "importe_neto": round(float(g["_imp_neto"].sum()), 0),
+                "descuento_pesos": round(float(g["_desc"].sum()), 0),
+                "litros": round(float(g["_litros"].sum()), 1),
+                "cant_base": round(float(g["_cant"].sum()), 1),
+                "fecha_ultima": ult.strftime("%d/%m/%Y") if pd.notna(ult) else "",
+                "nuevo": cli_int in nuevos,
+            })
+        rows.sort(key=lambda x: (not x["nuevo"], -x["importe_neto"], x["cliente_nombre"]))
+        return rows
 
     acciones = []
     for r in reglas:
@@ -3272,6 +3602,10 @@ def _acciones_mes_payload(vid_filtro=None):
         seg_set = _acc_seg_canon(r.get("segmento_cliente_aplica"), r.get("canal_aplica"))
         sub_allowed = _acc_subseg_filtro(r.get("segmento_cliente_aplica"), r.get("canal_aplica"))
         pred = _acc_product_pred(r, all_lineas)
+        regla_txt = _acc_norm(" ".join(str(r.get(k, "")) for k in (
+            "categoria", "canal_aplica", "segmento_cliente_aplica"
+        )))
+        requiere_plan_as = "PLANES AASS" in regla_txt or "PLAN AASS" in regla_txt
 
         # filtro por vendedor (vista vendedor) + regla V3 sin autoservicio
         codes = vend_codes
@@ -3298,20 +3632,25 @@ def _acciones_mes_payload(vid_filtro=None):
                 return df.iloc[0:0]
             sub = df[m]
             keep = sub.apply(lambda x: pred(x["_cat"], x["_linea"], x["_art"], x["_marca"], x["_cod"]), axis=1)
-            return sub[keep]
+            sub = sub[keep]
+            if requiere_plan_as:
+                sub = sub[pd.to_numeric(sub["_cli"], errors="coerce").isin(plan_as_clientes)]
+            return sub
 
-        # Footprint de la acción = ventas con descuento real (valorDescuento>0) que matchean.
-        cur_desc = _match(v_act)
-        cur_desc = cur_desc[cur_desc["_desc"] > 0]
-        cur = cur_desc
+        # Footprint comercial = ventas netas que matchean la accion.
+        # La inversion se calcula aparte con descuento real (valorDescuento > 0).
+        cur = _match(v_act)
+        cur_desc = cur[cur["_desc"] > 0]
         clientes_act = set(cur["_cli"].dropna().astype(int))
         prev = _match(v_ant)
-        prev = prev[prev["_desc"] > 0]
         clientes_ant = set(prev["_cli"].dropna().astype(int))
         nuevos = clientes_act - clientes_ant
+        clientes_desc = set(cur_desc["_cli"].dropna().astype(int))
 
         tipo_raw = str(r.get("tipo_regla", "")).upper()
         tipo = "Sin cargo" if ("SIN_CARGO" in tipo_raw or "BONIFIC" in tipo_raw) else "Descuento"
+        detalle = _detalle_clientes(cur, nuevos)
+        detalle_nuevos = [d for d in detalle if d["nuevo"]]
 
         acciones.append({
             "id_accion":     str(r.get("id_accion", "")).strip(),
@@ -3328,8 +3667,13 @@ def _acciones_mes_payload(vid_filtro=None):
             # computado
             "inversion_pesos":   round(float(cur_desc["_desc"].sum()), 0),
             "litros":            round(float(cur["_litros"].sum()), 1),
+            "importe_neto":       round(float(cur["_imp_neto"].sum()), 0),
             "clientes_alcanzados": int(len(clientes_act)),
             "clientes_nuevos":   int(len(nuevos)),
+            "clientes_con_descuento": int(len(clientes_desc)),
+            "clientes_detalle": detalle,
+            "clientes_nuevos_detalle": detalle_nuevos,
+            "nota_calculo": "clientes desde ventas.csv con ImporteNetoItem > 0; inversion desde valorDescuento x CantBase",
         })
 
     return {"mes": mes, "fuente": fuente, "periodo": str(per_actual),
@@ -4440,11 +4784,11 @@ def vendedor_oportunidades_innovacion(vid):
 
 # ====== INCENTIVO CLUB FARO ======
 # Objetivos: 01_INPUTS/incentivo_club_faro*.xlsx (3 categorías × vendedor + supervisores).
-# Avance (logrado) y no-compradores: ventas_acumulada.csv (bimestre mayo+junio).
+# Avance (logrado) y no-compradores: ventas_acumulada.csv filtrado a mayo+junio.
 # Segmento por Ramo+Subramo de la venta (Autoservicio = autoservicio + autoservicio tradicional).
 #   alaris_flm → Tradicional, umbral 3 botellas, 1 CCC/cliente (Marca ALARIS/FINCA LAS MORAS/PAZ DE FLM)
-#   antares    → Autoservicio, umbral 6, por SKU con XPA/Lager doble (Marca ANTARES*)
-#   smirnoff   → Autoservicio, umbral 6, 1 CCC/cliente (Marca SMIRNOFF, excluye Smirnoff Ice)
+#   antares    → Autoservicio, umbral 6, por SKU; XPA y Lager 330/660 suman doble
+#   smirnoff   → Autoservicio, umbral 6, 1 CCC/cliente (familia Smirnoff botella 700cc, excluye RTD/Ice)
 _FARO_SUP_MAP = {"Esteban": [3, 4, 6, 8, 10], "Raul": [7, 9]}
 _FARO_CATS = ("alaris_flm", "antares", "smirnoff")
 _FARO_CAT_NOMBRE = {"alaris_flm": "Alaris + Finca Las Moras", "antares": "Antares", "smirnoff": "Familia Smirnoff"}
@@ -4481,7 +4825,7 @@ def _faro_objetivos():
 
 _FARO_VENTAS_CACHE = {}
 def _faro_ventas():
-    """ventas_acumulada.csv (bimestre) preparada para FARO, cacheada por mtime.
+    """ventas_acumulada.csv (mayo+junio) preparada para FARO, cacheada por mtime.
     Columnas calc: _neto,_cant,_vend,_cli,_seg,_cat,_w (peso Antares),_clinom,_loc."""
     p = INPUTS / "ventas_acumulada.csv"
     if not p.exists():
@@ -4495,21 +4839,33 @@ def _faro_ventas():
         return df
     df = pd.read_csv(p, sep=";", encoding="latin1", low_memory=False)
     df.columns = [c.strip() for c in df.columns]
+    df["_fecha"] = pd.to_datetime(df.get("FechaComprobante"), dayfirst=True, errors="coerce")
     df["_neto"] = pd.to_numeric(df["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce").fillna(0)
     df["_cant"] = pd.to_numeric(df["CantBase"].astype(str).str.replace(",", ".", regex=False), errors="coerce").fillna(0)
     df["_vend"] = pd.to_numeric(df["CodVendedor"], errors="coerce")
     df["_cli"]  = pd.to_numeric(df["Cliente"], errors="coerce")
     df = df[(df["_neto"] > 0) & (~df["_vend"].isin(_VENDEDORES_EXCLUIDOS))].copy()
+    df = df[df["_fecha"].dt.month.isin([5, 6])].copy()
     df["_seg"] = [_clasificar_segmento(str(r), str(s))
                   for r, s in zip(df.get("Ramo", ""), df.get("Subramo", ""))]
     mu = df["Marca"].astype(str).str.upper().str.strip()
     au = df["Articulo"].astype(str).str.upper()
+    cod = df.get("Codigo", pd.Series([""] * len(df), index=df.index)).astype(str).str.strip().str.replace(r"\.0$", "", regex=True)
     cat = pd.Series([None] * len(df), index=df.index, dtype=object)
     cat[mu.isin(["ALARIS", "FINCA LAS MORAS", "PAZ DE FINCA LAS MORAS"])] = "alaris_flm"
     cat[mu.str.startswith("ANTARES")] = "antares"
-    cat[mu == "SMIRNOFF"] = "smirnoff"   # excluye SMIRNOFF ICE / ICE FLAVOURS
+    smirnoff_700 = (mu == "SMIRNOFF") & au.str.contains("700", regex=False, na=False)
+    cat[smirnoff_700] = "smirnoff"   # familia Smirnoff botella 700cc; excluye SMIRNOFF ICE / RTD lata
     df["_cat"] = cat
-    df["_w"] = [2 if ("XPA" in a or "LAGER" in a) else 1 for a in au]
+    doble_antares = (
+        (mu.str.startswith("ANTARES") & au.str.contains("XPA", regex=False, na=False))
+        | (mu.str.startswith("ANTARES") & (
+            cod.isin({"60021", "60022"})
+            | (au.str.contains("LAGER", regex=False, na=False)
+               & (au.str.contains("330", regex=False, na=False) | au.str.contains("660", regex=False, na=False)))
+        ))
+    )
+    df["_w"] = [2 if x else 1 for x in doble_antares]
     df["_clinom"] = (df["RazonSocial"].astype(str) if "RazonSocial" in df.columns else df["Cliente"].astype(str))
     df["_loc"] = (df["Localidad"].astype(str) if "Localidad" in df.columns else pd.Series([""] * len(df), index=df.index))
     _FARO_VENTAS_CACHE.clear()
@@ -4532,13 +4888,6 @@ def _faro_detalle_vendedor(df, cod):
         marca = canal[canal["_cat"] == cat]
         bot_cli = marca.groupby("_cli")["_cant"].sum()
         cubiertos = set(bot_cli[bot_cli >= um].index.astype(int))
-        if cat == "antares":
-            sku = marca.groupby(["_cli", "Articulo"]).agg(cant=("_cant", "sum"), w=("_w", "first")).reset_index()
-            logrado = int(sku.loc[sku["cant"] >= um, "w"].sum())
-            ach_ids = set(sku.loc[sku["cant"] >= um, "_cli"].astype(int))  # clientes con un SKU cubierto
-        else:
-            logrado = len(cubiertos)
-            ach_ids = cubiertos
         meta = canal.groupby("_cli").agg(nom=("_clinom", "first"), loc=("_loc", "first"))
         bot_map = bot_cli.to_dict()
         def _cli_row(cid):
@@ -4547,14 +4896,41 @@ def _faro_detalle_vendedor(df, cod):
                 "razon_social":   str(meta["nom"].get(cid, "")).strip()[:45],
                 "localidad":      str(meta["loc"].get(cid, "")).strip()[:25],
                 "botellas_marca": round(float(bot_map.get(cid, 0)), 1),
+                "peso":           1,
             }
-        # Clientes CON cobertura lograda (drill-down de gerencia)
-        compradores = sorted((_cli_row(c) for c in ach_ids),
-                             key=lambda x: (-x["botellas_marca"], x["cliente"]))
+        if cat == "antares":
+            sku = marca.groupby(["_cli", "Articulo"]).agg(
+                cant=("_cant", "sum"), w=("_w", "first"),
+                nom=("_clinom", "first"), loc=("_loc", "first")
+            ).reset_index()
+            sku_ok = sku[sku["cant"] >= um].copy()
+            logrado = int(sku_ok["w"].sum())
+            ach_ids = set(sku_ok["_cli"].astype(int))  # clientes con al menos un SKU cubierto
+            compradores = []
+            for _, sr in sku_ok.sort_values(["_cli", "Articulo"]).iterrows():
+                compradores.append({
+                    "cliente": int(sr["_cli"]),
+                    "razon_social": str(sr["nom"]).strip()[:45],
+                    "localidad": str(sr["loc"]).strip()[:25],
+                    "articulo": str(sr["Articulo"]).strip()[:55],
+                    "botellas_marca": round(float(sr["cant"]), 1),
+                    "peso": int(sr["w"]),
+                })
+        else:
+            logrado = len(cubiertos)
+            ach_ids = cubiertos
+            # Clientes CON cobertura lograda (drill-down de gerencia/vendedor)
+            compradores = sorted((_cli_row(c) for c in ach_ids),
+                                 key=lambda x: (-x["botellas_marca"], x["cliente"]))
         # No-compradores: clientes del canal del vendedor que no cubrieron la marca
         no_comp = sorted((_cli_row(c) for c in (canal_ids - cubiertos)),
                          key=lambda x: (-x["botellas_marca"], x["cliente"]))
-        out[cat] = {"logrado": logrado, "compradores": compradores, "no_compradores": no_comp}
+        out[cat] = {
+            "logrado": logrado,
+            "clientes_cubiertos": int(len(ach_ids)),
+            "compradores": compradores,
+            "no_compradores": no_comp,
+        }
     return out
 
 
@@ -4584,6 +4960,7 @@ def gerencia_incentivo_faro():
             o = o_dict.get(cat, 0)
             l = l_dict.get(cat, {}).get("logrado", 0)
             b[cat] = {"objetivo": o, "logrado": l, "pct": round(l / o * 100, 1) if o else None,
+                      "clientes_cubiertos": l_dict.get(cat, {}).get("clientes_cubiertos", 0),
                       "compradores": l_dict.get(cat, {}).get("compradores", [])}
         return b
 
@@ -4625,6 +5002,8 @@ def vendedor_incentivo_faro(vid):
             "segmento": "Tradicional" if cat == "alaris_flm" else "Autoservicio",
             "umbral": _FARO_CAT_UMBRAL[cat],
             "objetivo": o, "logrado": l, "pct": round(l / o * 100, 1) if o else None,
+            "clientes_cubiertos": det.get(cat, {}).get("clientes_cubiertos", 0),
+            "compradores": det.get(cat, {}).get("compradores", []),
             "no_compradores": det.get(cat, {}).get("no_compradores", []),
         })
     return jsonify(_to_native({
