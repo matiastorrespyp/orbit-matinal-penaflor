@@ -1,5 +1,9 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-17 - fix(sellout): RTD se abre en RTD + RTD (S) (obj y litros)
+
+**`server_orbit.py`**: en OBJSELLOUT.xlsx, 'rtd' y 'rtd (s)' comparten Grupo PBP 'RTD' → se trataban como categorías separadas (RTD (S) quedaba huérfano). Ahora `_OBJ_CAT_NORM` mapea 'rtd (s)'→RTD y `_cargar_objetivos_sellout` detecta la colisión de Grupo PBP y etiqueta los subgrupos por nombre de categoría → RTD: total 9056, subs {RTD 4028, RTD (S) 5028}. En `_sellout_desde_ventas` se agregó `_cat_raw` (categoría cruda del maestro 04D) y la rama RTD que abre los litros logrados en RTD vs RTD (S). Validado: RTD 619 L (15.4%) + RTD (S) 1946.9 L (38.7%) = 2565.9 L (total 28.3%).
+
 ## 2026-06-17 - feat(sellout): objetivo abierto por Grupo PBP (subgrupos con objetivo+alcance)
 
 **`server_orbit.py`** (`_cargar_objetivos_sellout`, `_sellout_desde_ventas`): OBJSELLOUT.xlsx ahora trae el objetivo abierto por **Grupo PBP** (categoria | Grupo PBP | objetivo litros + fila Total por categoría). `_cargar_objetivos_sellout` devuelve `{CAT: {total, subs:{grupo:obj}}}`. La tarjeta de sell out (`/api/gerencia/sellout_litros`) asigna objetivo y alcance_pct a cada subcategoría (antes objetivo=None). Validado: VDA total 17023 (Alto 10711/Medio Alto 4111/Superior 1863/Medio 338), SPIRITS 17019 (Nacionales 16341/Importados 678), RTD 9056, etc. El portal ya renderiza objetivo+alcance por subcategoría (sin cambios de front).

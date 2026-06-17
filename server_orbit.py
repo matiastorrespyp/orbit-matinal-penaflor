@@ -4152,6 +4152,10 @@ _SO_SEG_VDA = {"Alto": "Alto", "Medio Alto": "Medio Alto", "Superior": "Superior
 _SO_SEG_SPIRITS = {"Nacional": "Nacionales", "Importados": "Importados"}
 
 
+# Normalización de la categoría del OBJSELLOUT.xlsx → categoría de la tarjeta.
+# 'rtd (s)' no es categoría aparte: es un subgrupo de RTD (igual que en _SO_CAT_MAP).
+_OBJ_CAT_NORM = {"RTD (S)": "RTD"}
+
 def _cargar_objetivos_sellout() -> dict:
     """Lee 01_INPUTS/OBJSELLOUT.xlsx → {CATEGORIA_UPPER: {"total": litros, "subs": {grupo_pbp: litros}}}.
     Fuente única de objetivos de sell out. El archivo abre el objetivo por 'Grupo PBP'
@@ -4169,24 +4173,37 @@ def _cargar_objetivos_sellout() -> dict:
         cat_col = next((c for c in df.columns if "categor" in c), df.columns[0])
         grp_col = next((c for c in df.columns if "pbp" in c or "grupo" in c), None)
         obj_col = next((c for c in df.columns if "objetivo" in c or "litro" in c), df.columns[-1])
+        rows = {}      # card_cat -> [(cat_orig, grupo_pbp, val)]
+        totals = {}    # card_cat -> val (fila 'Total')
         for _, r in df.iterrows():
-            cat = str(r[cat_col]).strip()
-            if not cat or cat.lower() in ("total", "nan"):
+            cat_orig = str(r[cat_col]).strip()
+            if not cat_orig or cat_orig.lower() in ("total", "nan"):
                 continue
             val = pd.to_numeric(r[obj_col], errors="coerce")
             if pd.isna(val):
                 continue
             val = int(round(float(val)))
-            d = out.setdefault(cat.upper(), {"total": None, "subs": {}})
+            card = _OBJ_CAT_NORM.get(cat_orig.upper(), cat_orig.upper())
             grupo = str(r[grp_col]).strip() if grp_col is not None else ""
             if grupo.lower() == "total":
-                d["total"] = val
+                totals[card] = val
             elif grupo and grupo.lower() != "nan":
-                d["subs"][grupo] = val
-        # Categorías sin fila 'Total' explícita: total = suma de sus subgrupos.
-        for d in out.values():
-            if d["total"] is None:
-                d["total"] = sum(d["subs"].values()) if d["subs"] else None
+                rows.setdefault(card, []).append((cat_orig, grupo, val))
+        for card, rs in rows.items():
+            grupos = [g for _, g, _ in rs]
+            # Si dos filas comparten Grupo PBP (caso RTD: 'rtd' y 'rtd (s)' ambos PBP 'RTD'),
+            # se etiqueta el subgrupo por el nombre de categoría para no pisarse.
+            use_cat = len(set(grupos)) < len(grupos)
+            subs = {}
+            for cat_orig, grupo, val in rs:
+                label = cat_orig.upper() if use_cat else grupo
+                subs[label] = subs.get(label, 0) + val
+            total = totals.get(card)
+            if total is None:
+                total = sum(subs.values()) if subs else None
+            out[card] = {"total": total, "subs": subs}
+        for card, t in totals.items():           # categorías que sólo tenían fila 'Total'
+            out.setdefault(card, {"total": t, "subs": {}})
     except Exception:
         pass
     return out
@@ -4218,7 +4235,7 @@ def _sellout_desde_ventas(df_raw: pd.DataFrame) -> list:
         "VINOS DEL AÑO":     ["Alto", "Medio Alto", "Superior", "Medio"],
         "VINOS DE GUARDA":   [],
         "SPIRITS":           ["Nacionales", "Importados"],
-        "RTD":               [],
+        "RTD":               ["RTD", "RTD (S)"],
         "CHAMPAÑA":          [],
         "CERVEZA ARTESANAL": [],
     }
@@ -4252,6 +4269,8 @@ def _sellout_desde_ventas(df_raw: pd.DataFrame) -> list:
     cat_maestro_norm = cat_maestro.str.strip().str.lower().map(_SO_CAT_MAP) if cat_maestro.notna().any() else cat_maestro
     cat_rubro = df["Rubro"].astype(str).str.strip().str.lower().map(_SO_CAT_MAP) if "Rubro" in df.columns else pd.Series(None, index=df.index, dtype=object)
     df["_cat"] = cat_maestro_norm.where(cat_maestro_norm.notna(), cat_rubro)
+    # Categoría CRUDA del maestro (sin colapsar) para abrir RTD vs RTD (S)
+    df["_cat_raw"] = cat_maestro.astype(str).str.strip().str.upper()
 
     # ── Segmento VDA: maestro 04D
     df["_seg"] = df["_cod"].map(cod2seg_04d).astype(str).str.strip()
@@ -4303,6 +4322,19 @@ def _sellout_desde_ventas(df_raw: pd.DataFrame) -> list:
             _art = grp["Articulo"].astype(str).str.upper() if "Articulo" in grp.columns else pd.Series("", index=grp.index)
             mask_nac = _art.str.contains("|".join(_NAC_KW), na=False)
             for sn, mask_s in [("Nacionales", mask_nac), ("Importados", ~mask_nac)]:
+                sg = grp[mask_s]
+                sl = round(float(sg["litros"].sum()), 1)
+                sc = int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0
+                marcas = _marcas_de_grupo(sg)
+                osub = _obj_sub(sn)
+                subs.append({"nombre": sn, "litros": sl, "objetivo": osub,
+                             "alcance_pct": round(sl / osub * 100, 1) if osub else None,
+                             "clientes": sc, "marcas": marcas})
+
+        elif cat == "RTD":
+            # RTD se abre en RTD (regular) y RTD (S), por la categoría cruda del maestro 04D.
+            is_s = grp["_cat_raw"].astype(str).str.upper().str.replace(" ", "", regex=False) == "RTD(S)"
+            for sn, mask_s in [("RTD", ~is_s), ("RTD (S)", is_s)]:
                 sg = grp[mask_s]
                 sl = round(float(sg["litros"].sum()), 1)
                 sc = int(sg["Cliente"].nunique()) if "Cliente" in sg.columns else 0
