@@ -1,5 +1,10 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-17 - feat(sellout): objetivo abierto por Grupo PBP (subgrupos con objetivo+alcance)
+
+**`server_orbit.py`** (`_cargar_objetivos_sellout`, `_sellout_desde_ventas`): OBJSELLOUT.xlsx ahora trae el objetivo abierto por **Grupo PBP** (categoria | Grupo PBP | objetivo litros + fila Total por categoría). `_cargar_objetivos_sellout` devuelve `{CAT: {total, subs:{grupo:obj}}}`. La tarjeta de sell out (`/api/gerencia/sellout_litros`) asigna objetivo y alcance_pct a cada subcategoría (antes objetivo=None). Validado: VDA total 17023 (Alto 10711/Medio Alto 4111/Superior 1863/Medio 338), SPIRITS 17019 (Nacionales 16341/Importados 678), RTD 9056, etc. El portal ya renderiza objetivo+alcance por subcategoría (sin cambios de front).
+**`01_INPUTS/OBJSELLOUT.xlsx`**: commiteado (excepción a la regla de 01_INPUTS) porque Render lo lee en vivo para esta tarjeta.
+
 ## 2026-06-17 - feat(innovaciones): lista de productos desde Innovaciones.xlsx
 
 **`generar_datasets_acum.py`**: `_cargar_inov_productos()` lee `01_INPUTS/INNOVACIONES/Innovaciones.xlsx` (formato "CODIGO - NOMBRE") como fuente oficial de los productos innovación; antes era una lista hardcodeada de 20. `INOV_PRODUCTOS` ahora se carga de ahí (fallback `_INOV_PRODUCTOS_DEFAULT` si falta el archivo). Misma mecánica de medición (CCC por vendedor × segmento). Pasó de 20 a **22 productos** (suma 42337 Don David Torrontes Low, 74882 Los Arboles bco dulce). Validado: dataset `mod_innovaciones_segmento.csv` con 22 productos en gerencia y por vendedor; `mod_innovaciones_plan_as.csv` activas=22. Endpoints de ambos perfiles OK.
