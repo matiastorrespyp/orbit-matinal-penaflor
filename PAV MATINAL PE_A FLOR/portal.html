@@ -1145,20 +1145,21 @@ function refreshAfterRole(){
    loadRole = el resto (pestañas secundarias), se carga en segundo plano tras showApp
    para que el ingreso sea casi instantáneo. loadAll = ambos (lo usa reloadData). */
 async function loadCore(){
-  const [diag,dash,cli,al,plan,pvr] = await Promise.all([
+  // Sólo lo que pinta el dashboard / inicio. El resto va en loadRole (2do plano).
+  const [diag,dash,cli,al] = await Promise.all([
     safe('/api/diagnostico'), safe('/api/dashboard'),
-    safe('/api/clientes'), safe('/api/alertas'),
-    safe('/api/planificacion'), safe('/api/matinal/resumen')
+    safe('/api/clientes'), safe('/api/alertas')
   ]);
   if(diag){ D.diag=diag; if(diag.dia_operativo) currentDay=diag.dia_operativo.toUpperCase(); }
   if(dash) D.dash=Array.isArray(dash)?dash:[];
   if(cli)  D.cli =Array.isArray(cli) ?cli :[];
   if(al)   D.al  =Array.isArray(al)  ?al  :[];
-  if(plan) D.plan=Array.isArray(plan)?plan:[];
-  if(pvr)  D.pvr =pvr;
 }
 async function loadAll(){ await loadCore(); await loadRole(); }
 async function loadRole(){
+  const [plan,pvr] = await Promise.all([safe('/api/planificacion'), safe('/api/matinal/resumen')]);
+  if(plan) D.plan=Array.isArray(plan)?plan:[];
+  if(pvr)  D.pvr =pvr;
   if(userData?.rol==='vendedor'){
     const [det,msgs,inov,planInov,plasASV,accV,oportInov,ruta]=await Promise.all([
       safe('/api/vendedor/'+userData.vendedor_id),
