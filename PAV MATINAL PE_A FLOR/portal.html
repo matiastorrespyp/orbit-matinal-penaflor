@@ -1112,8 +1112,9 @@ async function doLogin(){
     if(d.ok){
       userData=d;
       fill.classList.add('done'); // rellena hasta 100% verde
-      await loadAll();
+      await loadCore();           // sólo lo esencial → ingreso casi instantáneo
       showApp();
+      loadRole().then(refreshAfterRole).catch(()=>{});  // resto en 2do plano
     } else {
       loader.classList.remove('show');
       iso.classList.remove('loading');
@@ -1128,8 +1129,22 @@ async function doLogin(){
   }
 }
 
-/* ── carga datos ── */
-async function loadAll(){
+/* Re-render tras cargar los datos secundarios en 2do plano (badges + pantalla actual). */
+function refreshAfterRole(){
+  try{
+    const altasN=(D.al||[]).filter(a=>a.prioridad==='alta').length;
+    if(altasN){ const b=document.getElementById('gAlertBadge'); if(b){ b.textContent=altasN; b.style.display=''; } }
+    const dormN=D.dormidos?.resumen?.total_dormidos||0;
+    if(dormN){ const b=document.getElementById('gDormBadge'); if(b){ b.textContent=dormN; b.style.display='inline-flex'; } }
+    if(userData?.rol==='gerencia') gRender(); else vRenderAll();
+  }catch(e){}
+}
+
+/* ── carga datos ──
+   loadCore = lo mínimo para pintar la primera pantalla (dashboard / inicio).
+   loadRole = el resto (pestañas secundarias), se carga en segundo plano tras showApp
+   para que el ingreso sea casi instantáneo. loadAll = ambos (lo usa reloadData). */
+async function loadCore(){
   const [diag,dash,cli,al,plan,pvr] = await Promise.all([
     safe('/api/diagnostico'), safe('/api/dashboard'),
     safe('/api/clientes'), safe('/api/alertas'),
@@ -1141,6 +1156,9 @@ async function loadAll(){
   if(al)   D.al  =Array.isArray(al)  ?al  :[];
   if(plan) D.plan=Array.isArray(plan)?plan:[];
   if(pvr)  D.pvr =pvr;
+}
+async function loadAll(){ await loadCore(); await loadRole(); }
+async function loadRole(){
   if(userData?.rol==='vendedor'){
     const [det,msgs,inov,planInov,plasASV,accV,oportInov,ruta]=await Promise.all([
       safe('/api/vendedor/'+userData.vendedor_id),
