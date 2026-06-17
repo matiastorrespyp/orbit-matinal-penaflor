@@ -108,8 +108,10 @@ for _mo, _aliases in MARCA_ALIASES.items():
     for _a in _aliases:
         ALIAS_LOOKUP[_a.upper().strip()] = _mo
 
-# Innovaciones: codigo_articulo → nombre_comercial
-INOV_PRODUCTOS = {
+# Innovaciones: codigo_articulo → nombre_comercial.
+# Lista por defecto (fallback). La fuente OFICIAL es 01_INPUTS/INNOVACIONES/Innovaciones.xlsx
+# (formato "CODIGO - NOMBRE"); _cargar_inov_productos() la lee al iniciar.
+_INOV_PRODUCTOS_DEFAULT = {
     14620: "FRIZZE MANXANA POP 6X1000",
     60020: "ANTARES XPA LATA 6X473",
     74813: "DADA EXTRA BRUT 6X750",
@@ -131,6 +133,30 @@ INOV_PRODUCTOS = {
     74884: "DADA LATA TINTO VERANO 4X6X355",
     60022: "ANTARES LAGER 660 6X660",
 }
+
+def _cargar_inov_productos():
+    """Productos innovación (codigo→nombre) desde 01_INPUTS/INNOVACIONES/Innovaciones.xlsx
+    (formato 'CODIGO - NOMBRE', una por fila). Fuente única para la pantalla de innovaciones
+    de ambos perfiles. Si falta el archivo o no se puede leer, usa la lista por defecto."""
+    p = BASE / "01_INPUTS" / "INNOVACIONES" / "Innovaciones.xlsx"
+    if not p.exists():
+        return dict(_INOV_PRODUCTOS_DEFAULT)
+    try:
+        df = pd.read_excel(p, sheet_name=0, header=None, dtype=str)
+        out = {}
+        for val in df.stack().dropna().astype(str):
+            cod_part, sep, nombre = val.partition("-")
+            cod = cod_part.strip().lstrip("0")
+            if sep and cod.isdigit():
+                out[int(cod)] = nombre.strip()
+        if out:
+            print(f"  Innovaciones desde: {p.name} ({len(out)} productos)")
+            return out
+    except Exception as e:
+        print(f"  [AVISO] innovaciones {p.name}: {e}")
+    return dict(_INOV_PRODUCTOS_DEFAULT)
+
+INOV_PRODUCTOS = _cargar_inov_productos()
 VENDEDORES_ACTIVOS_INOV = [3, 4, 6, 7, 8, 9, 10]
 
 
