@@ -393,12 +393,33 @@ def normalizar_vendedor_codigo(valor):
     except Exception:
         return s
 
+_READ_CSV_CACHE = {}
+
 def read_csv(path):
+    """Lee un CSV cacheando el parseo por (ruta, mtime). Devuelve una COPIA para que los
+    endpoints puedan agregar/transformar columnas sin contaminar el caché. Evita re-parsear
+    los datasets en cada request — clave para la velocidad del portal en Render."""
     if not path.exists(): return pd.DataFrame()
-    try: return pd.read_csv(path, encoding="utf-8-sig")
-    except:
-        try: return pd.read_csv(path, encoding="latin1")
-        except: return pd.read_csv(path, encoding="utf-8")
+    try:
+        key = (str(path), os.path.getmtime(path))
+    except OSError:
+        key = (str(path), 0)
+    cached = _READ_CSV_CACHE.get(key)
+    if cached is not None:
+        return cached.copy()
+    df = None
+    for enc in ("utf-8-sig", "latin1", "utf-8"):
+        try:
+            df = pd.read_csv(path, encoding=enc); break
+        except Exception:
+            continue
+    if df is None:
+        return pd.DataFrame()
+    _READ_CSV_CACHE[key] = df
+    # No acumular versiones viejas del mismo archivo (mtime distinto)
+    for k in [k for k in _READ_CSV_CACHE if k[0] == str(path) and k != key]:
+        _READ_CSV_CACHE.pop(k, None)
+    return df.copy()
 
 _VENDEDORES_EXCLUIDOS = {2, 5, 20}
 _VENDEDORES_ACTIVOS_PLAN = {"V3","V4","V6","V7","V8","V9","V10"}
