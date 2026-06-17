@@ -237,7 +237,12 @@ def _cargar_escala_df():
     Reconocimiento Plan As.xlsx. Mapea columnas por NOMBRE de encabezado (robusto a la posición).
     Devuelve DataFrame con: escala_num, thresh_gold, thresh_silver, thresh_inicial."""
     pdir = BASE / "01_INPUTS" / "PLANES_AS"
-    candidatos = sorted(pdir.glob("escala_*.xlsx"), key=lambda f: f.stat().st_mtime, reverse=True)
+    pdir2 = BASE / "01_INPUTS" / "Planes AASS"
+    candidatos = []
+    for d, pat in ((pdir, "escala_*.xlsx"), (pdir2, "escala*.xlsx")):
+        if d.exists():
+            candidatos += list(d.glob(pat))
+    candidatos = sorted(set(candidatos), key=lambda f: f.stat().st_mtime, reverse=True)
     fuentes = [(c, 0) for c in candidatos] + [(pdir / "Reconocimiento Plan As.xlsx", "ESCALA")]
     for path, sheet in fuentes:
         if not path.exists():
@@ -276,6 +281,113 @@ def _cargar_escala_df():
     return pd.DataFrame(columns=["escala_num", "thresh_gold", "thresh_silver", "thresh_inicial"])
 
 
+def _cargar_sincargos_mes():
+    """Sin cargos ASIGNADOS del mes desde 01_INPUTS/Planes AASS/sincargos*.xlsx
+    (autodetecta el más reciente por mtime → sincargosjulio.xlsx el mes que viene).
+
+    Hoja 'Planes AASS': columna código + 'Cjas Sin Cargos' (total del mes) + tabla escala
+    (ESCALA 1..N → LC = marca). La escala es ACUMULATIVA: para N cajas se toman las primeras
+    N posiciones de la escala y se cuentan por marca. Ej: 9 cajas con escala
+    1-4 Alaris, 5-8 Alma Mora, 9 Frizze → 4 Alaris + 4 Alma Mora + 1 Frizze.
+
+    Devuelve {cliente_id: {sc_alaris, sc_alma_mora, sc_frizze, sc_antares_ipa,
+    sc_smf_flavours, sc_total_ganado}}. Si no hay archivo válido devuelve {} y el motor
+    cae al cálculo por facturación (fail-safe)."""
+    pdir = BASE / "01_INPUTS" / "Planes AASS"
+    if not pdir.exists():
+        return {}
+    # marca de la escala (LC) → columna sc_* del dataset
+    MARCA_COL = {
+        "alaris":    "sc_alaris",
+        "alma mora": "sc_alma_mora",
+        "frizze":    "sc_frizze",
+        "antares":   "sc_antares_ipa",
+        "smirnoff":  "sc_smf_flavours",
+    }
+    SC_COLS = ["sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa", "sc_smf_flavours"]
+    cand = sorted(pdir.glob("sincargos*.xlsx"), key=lambda f: f.stat().st_mtime, reverse=True)
+    for path in cand:
+        try:
+            df = pd.read_excel(path, sheet_name="Planes AASS", header=0)
+            df.columns = [str(c).strip() for c in df.columns]
+            ccol = next((c for c in df.columns
+                         if c.lower().replace("í", "i").replace("�", "")
+                         .strip() in ("codigo", "cdigo", "código", "cod", "cliente")), None)
+            qcol = next((c for c in df.columns if "sin cargo" in c.lower()), None)
+            ecol = next((c for c in df.columns if c.strip().upper() == "ESCALA"), None)
+            lcol = next((c for c in df.columns if c.strip().upper() == "LC"), None)
+            if not (ccol and qcol and ecol and lcol):
+                print(f"  [AVISO] sincargos {path.name}: faltan columnas "
+                      f"(codigo={ccol}, sincargo={qcol}, ESCALA={ecol}, LC={lcol})")
+                continue
+            # Tabla escala ordenada por posición → columna sc_* (None si la marca no mapea)
+            esc = df[[ecol, lcol]].copy()
+            esc[ecol] = pd.to_numeric(esc[ecol], errors="coerce")
+            esc = esc.dropna(subset=[ecol]).sort_values(ecol)
+            pos_to_col = []
+            for _, r in esc.iterrows():
+                marca = str(r[lcol]).strip().lower()
+                pos_to_col.append(next((v for k, v in MARCA_COL.items() if k in marca), None))
+            # Asignación por cliente
+            out = {}
+            for _, r in df[[ccol, qcol]].dropna(subset=[ccol]).iterrows():
+                cid = pd.to_numeric(r[ccol], errors="coerce")
+                n = pd.to_numeric(r[qcol], errors="coerce")
+                if pd.isna(cid) or pd.isna(n):
+                    continue
+                cid, n = int(cid), int(n)
+                alloc = {c: 0 for c in SC_COLS}
+                for i in range(min(n, len(pos_to_col))):
+                    col = pos_to_col[i]
+                    if col:
+                        alloc[col] += 1
+                alloc["sc_total_ganado"] = sum(alloc[c] for c in SC_COLS)
+                out[cid] = alloc
+            if out:
+                print(f"  Sin cargos del mes desde: {path.name} ({len(out)} clientes)")
+                return out
+        except Exception as e:
+            print(f"  [AVISO] sincargos {path.name}: {e}")
+    return {}
+
+
+def _cargar_planfrio_mes():
+    """Plan frío del mes: clientes que tienen 1 Six Pack Smirnoff ICE sin cargo.
+    Hoja 'plan frío' de Planes AASS/sincargos*.xlsx (columna 'clientes' con los códigos).
+    Devuelve set de cliente_id. Si no hay archivo/hoja válida devuelve set vacío."""
+    pdir = BASE / "01_INPUTS" / "Planes AASS"
+    if not pdir.exists():
+        return set()
+    cand = sorted(pdir.glob("sincargos*.xlsx"), key=lambda f: f.stat().st_mtime, reverse=True)
+    for path in cand:
+        try:
+            xl = pd.ExcelFile(path)
+            hoja = next((s for s in xl.sheet_names
+                         if "fr" in s.lower() and "plan" in s.lower()), None)
+            if hoja is None:
+                continue
+            raw = xl.parse(hoja, header=None)
+            # Header: fila con 'clientes'. Los códigos están en esa columna, filas siguientes.
+            hdr_idx, ccol = None, None
+            for i in range(min(6, len(raw))):
+                for j, x in enumerate(raw.iloc[i].tolist()):
+                    if str(x).strip().lower() == "clientes":
+                        hdr_idx, ccol = i, j
+                        break
+                if hdr_idx is not None:
+                    break
+            if hdr_idx is None:
+                continue
+            cods = pd.to_numeric(raw.iloc[hdr_idx + 1:, ccol], errors="coerce").dropna()
+            out = set(int(c) for c in cods)
+            if out:
+                print(f"  Plan frío (Six Pack Smirnoff ICE) desde: {path.name} ({len(out)} clientes)")
+                return out
+        except Exception as e:
+            print(f"  [AVISO] plan frío {path.name}: {e}")
+    return set()
+
+
 def _calc_escala_actual(plan_as, fact, esc_df):
     """Escala alcanzada = mayor escala cuyo umbral (según plan Gold/Silver/Inicial) es <= facturado."""
     if esc_df is None or esc_df.empty:
@@ -294,8 +406,73 @@ def _calc_escala_actual(plan_as, fact, esc_df):
     return int(validas["escala_num"].max())
 
 
+def _bbdd_desde_sincargos():
+    """Base de clientes Plan AS desde Planes AASS/sincargos*.xlsx cuando falta el
+    Reconocimiento. Provee cliente_id, cliente_nombre, plan_as; el resto en 0.
+    Facturado se recalcula de ventas.csv en generar_planes_as; sc_* se sobreescriben
+    desde sincargos; dcto_plan/cant_cajas/tope no se muestran en el portal."""
+    cols0 = ["total_facturado", "dcto_plan", "cant_cajas", "tope", "cant_cajas_tope",
+             "sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa",
+             "sc_smf_flavours", "sc_total_ganado"]
+    pdir = BASE / "01_INPUTS" / "Planes AASS"
+    cand = sorted(pdir.glob("sincargos*.xlsx"),
+                  key=lambda f: f.stat().st_mtime, reverse=True) if pdir.exists() else []
+    for path in cand:
+        try:
+            df = pd.read_excel(path, sheet_name="Planes AASS", header=0)
+            df.columns = [str(c).strip() for c in df.columns]
+            ccol = next((c for c in df.columns if c.lower().replace("í", "i").replace("�", "")
+                         .strip() in ("codigo", "cdigo", "código", "cod", "cliente")), None)
+            pcol = next((c for c in df.columns if c.strip().lower() == "plan"), None)
+            ncol = next((c for c in df.columns if "raz" in c.lower()), None)
+            if not ccol:
+                continue
+            base = pd.DataFrame()
+            base["cliente_id"] = pd.to_numeric(df[ccol], errors="coerce")
+            base["cliente_nombre"] = df[ncol].astype(str).str.strip() if ncol else ""
+            base["plan_as"] = df[pcol].astype(str).str.strip() if pcol else "Inicial"
+            base = base.dropna(subset=["cliente_id"]).drop_duplicates(subset=["cliente_id"])
+            base["cliente_id"] = base["cliente_id"].astype(int)
+            for c in cols0:
+                base[c] = 0
+            print(f"  [Plan AS] Base desde {path.name} (sin Reconocimiento): {len(base)} clientes")
+            return base.reset_index(drop=True)
+        except Exception as e:
+            print(f"  [AVISO] base sincargos {path.name}: {e}")
+    return pd.DataFrame(columns=["cliente_id", "cliente_nombre", "plan_as"] + cols0)
+
+
+def _aplicar_escala(df):
+    """Calcula escala_actual (provisoria, con el facturado disponible) y escala_max según
+    plan, desde escala_*.xlsx. generar_planes_as recalcula escala_actual con la venta real
+    de ventas.csv (regla 3.10)."""
+    try:
+        esc_df = _cargar_escala_df()
+        if esc_df.empty:
+            raise ValueError("escala vacía")
+        df["escala_actual"] = df.apply(
+            lambda r: _calc_escala_actual(r["plan_as"], r["total_facturado"], esc_df), axis=1)
+        df["escala_max"] = df["plan_as"].str.lower().apply(
+            lambda p: int(esc_df[esc_df["thresh_gold"].notna()]["escala_num"].max()) if "gold" in p
+            else int(esc_df[esc_df["thresh_silver"].notna()]["escala_num"].max()) if "silver" in p
+            else int(esc_df[esc_df["thresh_inicial"].notna()]["escala_num"].max())
+        )
+    except Exception as e:
+        print(f"  Advertencia escala: {e}")
+        df["escala_actual"] = 0
+        df["escala_max"] = 0
+    return df
+
+
 def cargar_planes_as_bbdd():
     p = BASE / "01_INPUTS" / "PLANES_AS" / "Reconocimiento Plan As.xlsx"
+    if not p.exists():
+        # Sin Reconocimiento: base desde Planes AASS/sincargos*.xlsx (fallback operativo).
+        df = _bbdd_desde_sincargos()
+        if df.empty:
+            print("  [AVISO] Plan AS: sin Reconocimiento ni sincargos; dataset vacío.")
+            return df
+        return _aplicar_escala(df)
     raw = pd.read_excel(p, sheet_name="BBDD", header=None)
     # Header real en fila indice 2; datos desde indice 3
     data = raw.iloc[3:].copy()
@@ -326,28 +503,7 @@ def cargar_planes_as_bbdd():
     df["cliente_id"] = df["cliente_id"].astype(int)
     df["cliente_nombre"] = df["cliente_nombre"].astype(str).str.strip()
     df["plan_as"] = df["plan_as"].astype(str).str.strip()
-
-    # Calcular escala_actual desde escala_junio.xlsx (autodetecta el mes; fallback hoja ESCALA)
-    try:
-        esc_df = _cargar_escala_df()
-        if esc_df.empty:
-            raise ValueError("escala vacía")
-
-        # escala_actual provisoria con el facturado del Excel; generar_planes_as la recalcula
-        # con la venta real de ventas.csv (regla 3.10: la venta sale de ventas.csv).
-        df["escala_actual"] = df.apply(
-            lambda r: _calc_escala_actual(r["plan_as"], r["total_facturado"], esc_df), axis=1)
-        df["escala_max"] = df["plan_as"].str.lower().apply(
-            lambda p: int(esc_df[esc_df["thresh_gold"].notna()]["escala_num"].max()) if "gold" in p
-            else int(esc_df[esc_df["thresh_silver"].notna()]["escala_num"].max()) if "silver" in p
-            else int(esc_df[esc_df["thresh_inicial"].notna()]["escala_num"].max())
-        )
-    except Exception as e:
-        print(f"  Advertencia escala: {e}")
-        df["escala_actual"] = 0
-        df["escala_max"] = 0
-
-    return df
+    return _aplicar_escala(df)
 
 
 def cargar_maestro_productos():
@@ -543,6 +699,27 @@ def generar_planes_as(ventas, bbdd, clientes):
         df = df.merge(grp, on="cliente_id", how="left")
         df[prod_col] = df[prod_col].fillna(0)
 
+    # OVERRIDE del DISPONIBLE de sin cargos desde sincargos*.xlsx (fuente mensual curada).
+    # La pantalla de Planes AS (cliente / plan / facturado / escala_actual) NO cambia.
+    # Sólo el bloque de sin cargo (disponible/enviado/pendiente) y el Estado pasan a regirse
+    # por este Excel. Clientes no listados este mes → sin cargos disponibles = 0.
+    # Si el Excel falta o falla, se conserva el disponible calculado por facturación (fail-safe).
+    _SC_COLS = ["sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa", "sc_smf_flavours"]
+    sc_mes = _cargar_sincargos_mes()
+    if sc_mes:
+        for col in _SC_COLS + ["sc_total_ganado"]:
+            if col in df.columns:
+                df[col] = 0
+        for cid, alloc in sc_mes.items():
+            mask = df["cliente_id"] == cid
+            if mask.any():
+                for col in _SC_COLS:
+                    df.loc[mask, col] = alloc.get(col, 0)
+                df.loc[mask, "sc_total_ganado"] = alloc.get("sc_total_ganado", 0)
+        df["sc_origen_disponible"] = "sincargos_mes"
+    else:
+        df["sc_origen_disponible"] = "facturacion"
+
     # sc_pendiente por producto Plan AS
     df["sc_pend_alaris"] = (df["sc_alaris"] - df.get("sc_env_alaris", 0)).clip(lower=0)
     df["sc_pend_alma_mora"] = (df["sc_alma_mora"] - df.get("sc_env_alma_mora", 0)).clip(lower=0)
@@ -551,6 +728,53 @@ def generar_planes_as(ventas, bbdd, clientes):
     df["sc_pend_smf_flavours"] = (df["sc_smf_flavours"] - df.get("sc_env_smf_flavours", 0)).clip(lower=0)
     df["sc_pendiente"] = (df["sc_pend_alaris"] + df["sc_pend_alma_mora"] + df["sc_pend_frizze"]
                           + df["sc_pend_antares_ipa"] + df["sc_pend_smf_flavours"])
+
+    # Estado del cliente: 'enviados' (todo entregado), 'pendiente' (falta algo),
+    # '' (sin sin cargos asignados este mes → la tarjeta no pinta chip de estado).
+    df["sc_estado"] = df.apply(
+        lambda r: "enviados" if (r["sc_total_ganado"] > 0 and r["sc_pendiente"] == 0)
+        else ("pendiente" if r["sc_pendiente"] > 0 else ""), axis=1)
+
+    # ── PLAN FRÍO: 1 Six Pack Smirnoff ICE sin cargo por cliente listado en la hoja 'plan frío'.
+    # Disponible = lista del Excel. Entregado (binario) = el cliente tiene alguna línea 100%
+    # descuento de Smirnoff ICE en ventas.csv (Marca 'Smirnoff Ice Flavours'). NO se confunde con
+    # la marca de escala 'Smirnoff Flavours' (escala 11-12, no alcanzada) ni con Smirnoff vodka.
+    pf_clientes = _cargar_planfrio_mes()
+    _marca_ice = sc["Marca"].astype(str).str.lower()
+    pf_env_ids = set(pd.to_numeric(
+        sc.loc[_marca_ice.str.contains("ice") & _marca_ice.str.contains("smirnoff"), "Cliente"],
+        errors="coerce").dropna().astype(int))
+    df["pf_disponible"] = df["cliente_id"].isin(pf_clientes).astype(int)
+    df["pf_enviado"] = (df["pf_disponible"].eq(1) & df["cliente_id"].isin(pf_env_ids)).astype(int)
+    df["pf_estado"] = df.apply(
+        lambda r: ("entregado" if r["pf_enviado"] else "pendiente") if r["pf_disponible"] else "",
+        axis=1)
+
+    # ── DETALLE de envíos de sin cargo (fecha de cada entrega) → mod_sincargos_envios.csv.
+    # Alimenta la tarjeta desplegable al clickear un sin cargo en el portal. Fecha =
+    # FechaComprobante (regla de facturación). Una fila por cliente × producto × fecha.
+    _PROD_LABEL = {"sc_env_alaris": "Alaris", "sc_env_alma_mora": "Alma Mora",
+                   "sc_env_frizze": "Frizze", "sc_env_antares_ipa": "Antares IPA",
+                   "sc_env_smf_flavours": "Smirnoff Flavours"}
+    det_rows = []
+    if not sc_plan.empty:
+        _f = pd.to_datetime(sc_plan["FechaComprobante"], dayfirst=True, errors="coerce")
+        tmp = sc_plan.assign(_fecha=_f.dt.strftime("%Y-%m-%d")).dropna(subset=["_fecha"])
+        for _, r in tmp.groupby(["Cliente", "_prod_as", "_fecha"])["CantBase"].sum().reset_index().iterrows():
+            det_rows.append({"cliente_id": int(r["Cliente"]), "categoria": "escala",
+                             "producto": _PROD_LABEL.get(r["_prod_as"], r["_prod_as"]),
+                             "fecha": r["_fecha"], "cajas": int(r["CantBase"])})
+    pf_lines = sc[_marca_ice.str.contains("ice") & _marca_ice.str.contains("smirnoff")].copy()
+    if not pf_lines.empty:
+        _f2 = pd.to_datetime(pf_lines["FechaComprobante"], dayfirst=True, errors="coerce")
+        pf_lines = pf_lines.assign(_fecha=_f2.dt.strftime("%Y-%m-%d")).dropna(subset=["_fecha"])
+        for _, r in pf_lines.groupby(["Cliente", "_fecha"])["CantBase"].sum().reset_index().iterrows():
+            if int(r["Cliente"]) in pf_clientes:
+                det_rows.append({"cliente_id": int(r["Cliente"]), "categoria": "plan_frio",
+                                 "producto": "Six Pack Smirnoff ICE",
+                                 "fecha": r["_fecha"], "cajas": int(r["CantBase"])})
+    pd.DataFrame(det_rows, columns=["cliente_id", "categoria", "producto", "fecha", "cajas"]) \
+        .to_csv(OUT / "mod_sincargos_envios.csv", index=False, encoding="utf-8-sig")
 
     # Nombre y dirección desde el maestro clientes.xlsx (el nombre de la BBDD tiene mojibake).
     # Fallback al nombre de la BBDD si el cliente no está en el maestro.
@@ -582,7 +806,8 @@ def generar_planes_as(ventas, bbdd, clientes):
         "sc_total_ganado",
         "sc_env_alaris", "sc_env_alma_mora", "sc_env_frizze", "sc_env_antares_ipa", "sc_env_smf_flavours",
         "sc_pend_alaris", "sc_pend_alma_mora", "sc_pend_frizze", "sc_pend_antares_ipa", "sc_pend_smf_flavours",
-        "sc_cajas_enviadas_total", "sc_pendiente",
+        "sc_cajas_enviadas_total", "sc_pendiente", "sc_estado", "sc_origen_disponible",
+        "pf_disponible", "pf_enviado", "pf_estado",
     ]
     return df[[c for c in cols_out if c in df.columns]]
 

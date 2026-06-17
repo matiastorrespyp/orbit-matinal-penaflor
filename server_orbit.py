@@ -3081,11 +3081,31 @@ def gerencia_innovaciones_total():
 
 
 # ====== PLANES AS — GERENCIA ======
+def _cargar_sincargos_envios():
+    """Detalle de envíos de sin cargo por cliente desde mod_sincargos_envios.csv.
+    Devuelve {cliente_id: [{producto, fecha, cajas, categoria}, ...]} para la tarjeta
+    desplegable del portal (fecha en que se envió cada sin cargo)."""
+    df = read_csv(DATASETS / "mod_sincargos_envios.csv")
+    out = {}
+    if df.empty:
+        return out
+    df["cliente_id"] = pd.to_numeric(df["cliente_id"], errors="coerce")
+    for _, r in df.dropna(subset=["cliente_id"]).iterrows():
+        out.setdefault(int(r["cliente_id"]), []).append({
+            "producto":  str(r.get("producto", "")),
+            "fecha":     str(r.get("fecha", "")),
+            "cajas":     int(pd.to_numeric(r.get("cajas", 0), errors="coerce") or 0),
+            "categoria": str(r.get("categoria", "")),
+        })
+    return out
+
+
 @app.route("/api/gerencia/planes_as")
 def gerencia_planes_as():
     df = read_csv(DATASETS / "mod_planes_as.csv")
     if df.empty:
         return jsonify({"error": "Sin datos"}), 404
+    envios_map = _cargar_sincargos_envios()
     _num_cols = ["total_facturado", "dcto_plan", "cant_cajas", "tope", "escala_actual", "escala_max",
                  "sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa", "sc_smf_flavours",
                  "sc_total_ganado", "sc_cajas_enviadas_total", "sc_pendiente",
@@ -3151,6 +3171,10 @@ def gerencia_planes_as():
             "sc_pend_smf_flavours": _int(row.get("sc_pend_smf_flavours", 0)),
             "sc_enviadas_total": _int(row["sc_cajas_enviadas_total"]),
             "sc_pendiente":    _int(row["sc_pendiente"]),
+            "pf_disponible":   _int(row.get("pf_disponible", 0)),
+            "pf_enviado":      _int(row.get("pf_enviado", 0)),
+            "pf_estado":       str(row.get("pf_estado", "")),
+            "envios":          envios_map.get(cid, []),
         })
     fecha = str(df["fecha_calculo"].iloc[0]) if "fecha_calculo" in df.columns else ""
     return jsonify({
@@ -3935,6 +3959,7 @@ def vendedor_planes_as(vid):
     df = read_csv(DATASETS / "mod_planes_as.csv")
     if df.empty:
         return jsonify({"clientes": []}), 200
+    envios_map = _cargar_sincargos_envios()
     df["vendedor_codigo"] = pd.to_numeric(df["vendedor_codigo"], errors="coerce")
     df = df[df["vendedor_codigo"] == cod]
     _num = ["total_facturado", "dcto_plan", "cant_cajas", "tope", "escala_actual", "escala_max",
@@ -3978,6 +4003,10 @@ def vendedor_planes_as(vid):
             "sc_pend_frizze":      _i(row, "sc_pend_frizze"),
             "sc_pend_antares_ipa": _i(row, "sc_pend_antares_ipa"),
             "sc_pend_smf_flavours":_i(row, "sc_pend_smf_flavours"),
+            "pf_disponible":       _i(row, "pf_disponible"),
+            "pf_enviado":          _i(row, "pf_enviado"),
+            "pf_estado":           str(row.get("pf_estado", "")),
+            "envios":              envios_map.get(int(row["cliente_id"]) if pd.notna(row["cliente_id"]) else -1, []),
         })
     return jsonify({
         "generado_en": _now_ar(),

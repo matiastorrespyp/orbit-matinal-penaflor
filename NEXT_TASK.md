@@ -1,5 +1,25 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-17 - Sin cargos del mes (Planes AS) desde sincargos*.xlsx
+
+### HECHO
+- Motor (`generar_datasets_acum.py`): `_cargar_sincargos_mes()` + override del disponible de sin cargos desde `01_INPUTS/Planes AASS/sincargos*.xlsx`. Recalcula pendiente, agrega `sc_estado`/`sc_origen_disponible`.
+- Portal (`portal.html`): pendiente rojo->amarillo en gerencia y vendedor; Estado "enviados"/"pendiente"/"—"; vendedor con chip de estado y etiqueta "disponible".
+- Validado: reparto helper (30033=4/4/1), override+estado sobre CSV real, node --check JS OK.
+
+### RESUELTO (esta sesion)
+- Sin Reconocimiento: la base Plan AS se reconstruye desde `Planes AASS/sincargos<mes>.xlsx` + `escalas<mes>.xlsx` + ventas.csv. `mod_planes_as.csv` regenerado y validado.
+- Sin cargos escala: disponible del Excel, enviado de ventas.csv, verde/amarillo + Estado.
+- Plan frio AGREGADO: hoja "plan frio" -> 1 Six Pack Smirnoff ICE por cliente; entregado/pendiente por linea 100% desc Marca "Smirnoff Ice Flavours". Visible en gerencia y vendedor.
+- Click en un sin cargo (escala o plan frio) -> tarjeta modal con las FECHAS de envio (mod_sincargos_envios.csv + endpoints adjuntan 'envios'; funcion verSincargo en portal). Validado en vivo.
+- Validado end-to-end con server local 8502 (endpoints 200, datos correctos) y node --check del portal.
+
+### A REVISAR / PENDIENTE (al retomar)
+- **Validacion VISUAL en pantalla** pendiente de confirmacion del usuario (Ctrl+F5 en la pestaña Planes AS, gerencia y cada vendedor).
+- Falta commit + push + deploy a Render.
+- Cada mes el usuario carga `sincargos<mes>.xlsx` y `escalas<mes>.xlsx` en `01_INPUTS/Planes AASS/` (autodetecta por mtime). El motor ya NO depende de `PLANES_AS/Reconocimiento`.
+- Si vuelve a aparecer el Reconocimiento, el motor lo prioriza (el fallback solo entra si falta).
+
 ## Sesion 2026-06-16 - Login dia/noche automatico
 
 ### HECHO

@@ -1,5 +1,30 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-17 - feat(planes_as): sin cargos del mes desde sincargos*.xlsx (verde/amarillo + Estado)
+
+**`generar_datasets_acum.py`** (`_cargar_sincargos_mes`, `generar_planes_as`).
+
+- Nuevo `_cargar_sincargos_mes()`: autodetecta `01_INPUTS/Planes AASS/sincargos*.xlsx` (mensual, por mtime → `sincargosjulio.xlsx` el mes que viene). Lee la hoja **Planes AASS** (código + "Cjas Sin Cargos" + tabla escala ESCALA→LC) y reparte las cajas por la **escala acumulativa** → desglose por marca. Ej validado: cliente 30033 = 9 cajas → 4 Alaris + 4 Alma Mora + 1 Frizze.
+- En `generar_planes_as`: el **disponible** de sin cargos (`sc_alaris/alma_mora/frizze/antares_ipa/smf_flavours/sc_total_ganado`) ahora se **sobreescribe** desde ese Excel (clientes no listados → 0). Se recalcula `sc_pend_*`/`sc_pendiente` y se agrega `sc_estado` (`enviados`/`pendiente`/`""`) y `sc_origen_disponible`.
+- **NO cambia** cliente / plan / facturado / escala_actual (siguen por facturación). **Fail-safe**: si el Excel falta o falla, se conserva el disponible por facturación.
+- **Fallback sin Reconocimiento**: `cargar_planes_as_bbdd()` arma la base (cliente/nombre/plan) desde `Planes AASS/sincargos*.xlsx` cuando falta `PLANES_AS/Reconocimiento Plan As.xlsx`; facturado←ventas.csv, escala←`escala*.xlsx` (ahora también detecta `Planes AASS/escalasjunio.xlsx`). Helpers `_bbdd_desde_sincargos`, `_aplicar_escala`. Validado: 31 clientes, 30033 Silver escala 9/9 = 4 Alaris+4 Alma Mora+1 Frizze.
+- **Plan frío**: nuevo `_cargar_planfrio_mes()` lee la hoja "plan frío" de sincargos*.xlsx (20 clientes, 1 Six Pack Smirnoff ICE c/u). En `generar_planes_as`: `pf_disponible` (lista del Excel), `pf_enviado` (binario: cliente con línea 100% descuento Marca "Smirnoff Ice Flavours" en ventas.csv), `pf_estado` (entregado/pendiente/""). Expuesto en ambos endpoints; portal muestra "Plan frío · Six Pack Smirnoff ICE" verde(entregado)/amarillo(pendiente) en gerencia y vendedor. Validado en vivo: 20 disp, 4 entregados (30063/390/7219/30017).
+- Validado end-to-end con server local 8502: `/api/gerencia/planes_as` y `/api/vendedor/V8/planes_as` 200, sirven facturado/escala/sin cargos/plan frío correctos.
+
+## 2026-06-17 - feat(planes_as): tarjeta con fechas de envío al clickear un sin cargo
+
+**`generar_datasets_acum.py`** (`generar_planes_as`): nuevo dataset `04_DATASETS_ORBIT/mod_sincargos_envios.csv` (cliente_id, categoria escala/plan_frio, producto, fecha=FechaComprobante, cajas) — una fila por cliente×producto×fecha de cada línea 100% descuento.
+
+**`server_orbit.py`** (`_cargar_sincargos_envios`): ambos endpoints planes_as adjuntan `envios: [{producto, fecha, cajas, categoria}]` por cliente.
+
+**`PAV MATINAL PE_A FLOR/portal.html`** (`verSincargo`): los chips de sin cargo (escala y plan frío) son clickeables → tarjeta modal (estilo `emod`) con las fechas de envío y cajas; si no hay envíos, muestra "Sin envíos registrados aún". Validado: 30063 plan frío → 01/06 (6) + 16/06 (24); 30033 pendiente → vacío. PY+JS (node --check) OK, endpoint 200 con `envios`.
+
+**`PAV MATINAL PE_A FLOR/portal.html`** (gerencia `gPlanesAS`, vendedor `vPlanesAS`).
+
+- "Pendiente" pasa de **rojo** (`--bd`) a **amarillo** (`--wn`) en ambos perfiles. "Enviado" sigue verde (`--ok`).
+- **Estado**: "enviados" (verde) cuando se envió todo, "pendiente" (amarillo) cuando falta algo, "—" cuando el cliente no tiene sin cargos asignados este mes. Vendedor: chip de estado en la cabecera del bloque "Sin cargo del plan"; etiqueta "ganado" → "disponible".
+- Validado: `_cargar_sincargos_mes()` (31 clientes, reparto OK), override+pendiente+estado sobre `mod_planes_as.csv` real, `node --check` del JS del portal OK.
+
 ## 2026-06-16 - feat(login): modo día/noche automático por horario argentino
 
 **`PAV MATINAL PE_A FLOR/portal.html`** (`arHour`, `autoLoginMode`, `applyLoginMode`, `toggleMode`, `refreshAutoLoginMode`).

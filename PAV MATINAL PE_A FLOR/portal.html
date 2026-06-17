@@ -2662,6 +2662,30 @@ function editarPlan(id){
 
 function closeModal(){ document.getElementById('emodBg')?.remove(); }
 
+/* Tarjeta desplegable: fechas de envío de un sin cargo (escala o plan frío) */
+function verSincargo(cid, producto){
+  const src=[].concat(D.planes_as_v?.clientes||[], D.planes_as_g?.clientes||[]);
+  const c=src.find(x=>x.cliente_id===cid);
+  const envs=((c&&c.envios)||[]).filter(e=>e.producto===producto)
+                                .sort((a,b)=>a.fecha<b.fecha?-1:1);
+  const fmtF=s=>{const p=(s||'').split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:(s||'');};
+  const filas=envs.length
+    ? envs.map(e=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bord);">
+        <span style="font-size:13px;">📅 ${fmtF(e.fecha)}</span>
+        <span class="chip ok" style="font-size:11px;">${e.cajas} caj. enviadas</span></div>`).join('')
+    : `<div style="color:var(--wn);padding:12px 0;font-size:13px;">⚠ Sin envíos registrados aún para este sin cargo.</div>`;
+  document.getElementById('emodBg')?.remove();
+  const div=document.createElement('div'); div.className='emod-bg open'; div.id='emodBg';
+  div.innerHTML=`<div class="emod-card" style="max-width:380px;">
+    <div class="emod-title">Sin cargo · ${producto}</div>
+    <div style="font-size:12px;color:var(--text3);margin:-10px 0 14px;">${c?c.cliente_nombre:''}${cid?' · #'+cid:''}</div>
+    ${filas}
+    <div class="emod-actions"><button class="g-ghost" onclick="closeModal()">Cerrar</button></div>
+  </div>`;
+  document.body.appendChild(div);
+  div.addEventListener('click',e=>{if(e.target===div) closeModal();});
+}
+
 async function guardarEditPlan(id,esV3){
   const payload={
     venta_esperada: parseFloat(document.getElementById('em_venta')?.value||0),
@@ -2898,14 +2922,22 @@ function gPlanesAS(p){
           ${clientes.map(c=>{
             const col=planCol[c.plan_as]||'var(--text2)';
             const scProds=[
-              {n:'Alaris',    env:c.sc_env_alaris||0,    pend:c.sc_pend_alaris||0},
-              {n:'AlmaMora',  env:c.sc_env_alma_mora||0,  pend:c.sc_pend_alma_mora||0},
-              {n:'Frizze',    env:c.sc_env_frizze||0,     pend:c.sc_pend_frizze||0},
-              {n:'Antares',   env:c.sc_env_antares_ipa||0,pend:c.sc_pend_antares_ipa||0},
-              {n:'SMF',       env:c.sc_env_smf_flavours||0,pend:c.sc_pend_smf_flavours||0},
+              {n:'Alaris',   prod:'Alaris',           env:c.sc_env_alaris||0,    pend:c.sc_pend_alaris||0},
+              {n:'AlmaMora', prod:'Alma Mora',        env:c.sc_env_alma_mora||0,  pend:c.sc_pend_alma_mora||0},
+              {n:'Frizze',   prod:'Frizze',           env:c.sc_env_frizze||0,     pend:c.sc_pend_frizze||0},
+              {n:'Antares',  prod:'Antares IPA',      env:c.sc_env_antares_ipa||0,pend:c.sc_pend_antares_ipa||0},
+              {n:'SMF',      prod:'Smirnoff Flavours',env:c.sc_env_smf_flavours||0,pend:c.sc_pend_smf_flavours||0},
             ].filter(p=>p.env>0||p.pend>0);
-            const scHtml=scProds.map(p=>`<span style="font-size:9px;">${p.n}: `+
-              (p.env?`<span style="color:var(--ok);">✓${p.env}</span> `:'')+(p.pend?`<span style="color:var(--bd);">⚠${p.pend}</span>`:'')+'</span>').join(' · ')||'—';
+            const scHtml=scProds.map(p=>`<span style="font-size:9px;cursor:pointer;" title="Ver fechas de envío" onclick="verSincargo(${c.cliente_id},'${p.prod}')">${p.n}: `+
+              (p.env?`<span style="color:var(--ok);">✓${p.env}</span> `:'')+(p.pend?`<span style="color:var(--wn);">⚠${p.pend}</span>`:'')+'</span>').join(' · ')||'—';
+            const scGan=c.sc_total_ganado||0;
+            const estCell=scGan>0
+              ?(c.sc_pendiente>0?'<span class="chip wn">pendiente</span>':'<span class="chip ok">enviados</span>')
+              :'<span style="color:var(--text3);">—</span>';
+            const pfHtml=c.pf_disponible
+              ?`<div style="margin-top:4px;font-size:9px;color:var(--text3);cursor:pointer;" title="Ver fecha de envío" onclick="verSincargo(${c.cliente_id},'Six Pack Smirnoff ICE')">Plan frío · Six Pack Smirnoff ICE `+
+               `<span style="color:var(--${c.pf_enviado?'ok':'wn'});">${c.pf_enviado?'✓ entregado':'⚠ pendiente'}</span></div>`
+              :'';
             const vLabel=c.vendedor_id&&c.vendedor_nombre?`(${c.vendedor_id} ${c.vendedor_nombre})`:(c.vendedor_id||'');
             const metaRow=[c.cliente_id?`#${c.cliente_id}`:'',c.direccion||'',c.localidad||'',c.dia_visita||''].filter(Boolean).join(' · ');
             return `<tr style="border-bottom:1px solid var(--bord);">
@@ -2916,8 +2948,8 @@ function gPlanesAS(p){
               <td style="padding:7px 6px;"><span style="font-weight:700;color:${col};">${c.plan_as}</span></td>
               <td style="padding:7px 4px;text-align:right;font-family:var(--f-dis);">${fmtARS(c.total_facturado)}</td>
               <td style="padding:7px 4px;text-align:right;font-weight:700;">${c.escala_actual||0} / ${c.escala_max||0}</td>
-              <td style="padding:7px 4px;">${scHtml}</td>
-              <td style="padding:7px 4px;text-align:right;">${c.sc_pendiente>0?'<span class="chip wn">'+c.sc_pendiente+' pend.</span>':'<span class="chip ok">OK</span>'}</td>
+              <td style="padding:7px 4px;">${scHtml}${pfHtml}</td>
+              <td style="padding:7px 4px;text-align:right;">${estCell}</td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -3224,12 +3256,14 @@ function vPlanesAS(){
     const pcol2=pctEsc>=100?'ok':pctEsc>=60?'wn':'bd';
     // Sin cargo por producto: ganado vs enviado vs pendiente
     const scProds=[
-      {nom:'Alaris',    gan:c.sc_alaris||0,     env:c.sc_env_alaris||0,     pend:c.sc_pend_alaris||0},
-      {nom:'Alma Mora', gan:c.sc_alma_mora||0,   env:c.sc_env_alma_mora||0,  pend:c.sc_pend_alma_mora||0},
-      {nom:'Frizze',    gan:c.sc_frizze||0,      env:c.sc_env_frizze||0,     pend:c.sc_pend_frizze||0},
-      {nom:'Antares',   gan:c.sc_antares_ipa||0, env:c.sc_env_antares_ipa||0,pend:c.sc_pend_antares_ipa||0},
-      {nom:'SMF',       gan:c.sc_smf_flavours||0,env:c.sc_env_smf_flavours||0,pend:c.sc_pend_smf_flavours||0},
+      {nom:'Alaris',    prod:'Alaris',           gan:c.sc_alaris||0,     env:c.sc_env_alaris||0,     pend:c.sc_pend_alaris||0},
+      {nom:'Alma Mora', prod:'Alma Mora',        gan:c.sc_alma_mora||0,   env:c.sc_env_alma_mora||0,  pend:c.sc_pend_alma_mora||0},
+      {nom:'Frizze',    prod:'Frizze',           gan:c.sc_frizze||0,      env:c.sc_env_frizze||0,     pend:c.sc_pend_frizze||0},
+      {nom:'Antares',   prod:'Antares IPA',      gan:c.sc_antares_ipa||0, env:c.sc_env_antares_ipa||0,pend:c.sc_pend_antares_ipa||0},
+      {nom:'SMF',       prod:'Smirnoff Flavours',gan:c.sc_smf_flavours||0,env:c.sc_env_smf_flavours||0,pend:c.sc_pend_smf_flavours||0},
     ].filter(p=>p.gan>0);
+    const scGan=c.sc_total_ganado||0, scPend=c.sc_pendiente||0;
+    const estChip=scGan>0?`<span class="chip ${scPend>0?'wn':'ok'}" style="font-size:10px;">${scPend>0?'pendiente':'enviados'}</span>`:'';
     return `<div class="vcli" style="flex-direction:column;align-items:stretch;gap:8px;padding:14px;">
       <div class="row-b">
         <div>
@@ -3247,15 +3281,22 @@ function vPlanesAS(){
         <div class="xs m3" style="color:var(--text3);">${pctEsc}% de la escala máxima alcanzada</div>
       </div>
       ${scProds.length?`<div>
-        <div class="vkl" style="margin-bottom:5px;">Sin cargo del plan</div>
-        ${scProds.map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
-          <span style="font-size:11px;">${p.nom} (ganado: ${p.gan} caj.)</span>
+        <div class="vkl" style="margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;">
+          <span>Sin cargo del plan</span>${estChip}</div>
+        ${scProds.map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;cursor:pointer;" title="Ver fechas de envío" onclick="verSincargo(${c.cliente_id},'${p.prod}')">
+          <span style="font-size:11px;">${p.nom} (disponible: ${p.gan} caj.)</span>
           <div style="display:flex;gap:4px;">
             ${p.env>0?`<span class="chip ok" style="font-size:10px;">✓ ${p.env} enviadas</span>`:''}
-            ${p.pend>0?`<span class="chip bd" style="font-size:10px;">⚠ ${p.pend} pendientes</span>`:''}
-            ${p.pend===0&&p.env>0?'':''}
+            ${p.pend>0?`<span class="chip wn" style="font-size:10px;">⚠ ${p.pend} pendientes</span>`:''}
           </div>
         </div>`).join('')}
+      </div>`:''}
+      ${c.pf_disponible?`<div style="cursor:pointer;" title="Ver fecha de envío" onclick="verSincargo(${c.cliente_id},'Six Pack Smirnoff ICE')">
+        <div class="vkl" style="margin-bottom:5px;">Plan frío</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:11px;">Six Pack Smirnoff ICE</span>
+          <span class="chip ${c.pf_enviado?'ok':'wn'}" style="font-size:10px;">${c.pf_enviado?'✓ entregado':'⚠ pendiente'}</span>
+        </div>
       </div>`:''}
     </div>`;
   }).join('');
