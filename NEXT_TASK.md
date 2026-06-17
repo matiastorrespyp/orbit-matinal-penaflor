@@ -1,5 +1,18 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-17 - Performance carga del portal (Render)
+
+### HECHO (desplegado en Render)
+- gunicorn con threads (gthread x8, 1 worker) -> concurrencia real (35s serie -> 10.9s paralelo).
+- Cache por mtime: _ventas_parsed() (segmento vectorizado), read_csv() (copia al devolver), clientes.xlsx via _clientes_maestro en diagnostico/planes_as.
+- Login muestra el portal con CORE liviano (diagnostico+dashboard+clientes) y carga el resto en 2do plano (loadRole + refreshAfterRole).
+- Tiempo hasta ver el portal: ~20-35s -> ~2s. Validado en Render.
+
+### PENDIENTE / SI QUIEREN MAS VELOCIDAD
+- Piso ~2s por Render starter = 0.5 vCPU. Para bajar: upgrade de plan (mas CPU) o endpoint /bootstrap unico que devuelva el core en 1 request.
+- Optimizar /api/alertas (~3s aun cacheado; corre en 2do plano). Revisar si hace apply fila-por-fila o relee historial.
+- Si Render no toma el startCommand de render.yaml/Procfile (servicio no-blueprint), aplicar los flags --threads 8 --worker-class gthread en el dashboard de Render.
+
 ## Sesion 2026-06-17 - Sin cargos del mes (Planes AS) desde sincargos*.xlsx
 
 ### HECHO

@@ -6,7 +6,13 @@
 
 **`server_orbit.py`**: `_ventas_parsed()` parsea ventas.csv UNA vez por mtime (segmento vectorizado por pares únicos Ramo/Subramo); `_cargar_ventas_mes_actual` y `_cargar_ventas_dia` filtran de ahí. `diagnostico` y `gerencia_planes_as` leen clientes.xlsx vía `_clientes_maestro()` (caché por mtime existente). Local: diagnostico 1.04s→0.13s cacheado, sin cambio de valores (segmentos/cartera idénticos).
 
-**`render.yaml` + `Procfile`**: gunicorn `--threads 8 --worker-class gthread` (sigue 1 worker para SQLite; cada request abre su propia conexión → threads seguros). Los endpoints del login se atienden en paralelo.
+**`render.yaml` + `Procfile`**: gunicorn `--threads 8 --worker-class gthread` (sigue 1 worker para SQLite; cada request abre su propia conexión → threads seguros). Los endpoints del login se atienden en paralelo. Medido en Render: 17 endpoints 35s serie → 10.9s paralelo.
+
+**`server_orbit.py` `read_csv()`**: caché por (ruta, mtime) devolviendo COPIA (los endpoints transforman sin contaminar el caché) → los datasets no se reparsean por request. diagnostico 0.93s→0.06s local.
+
+**`portal.html`**: el login muestra el portal apenas carga el CORE liviano (`loadCore` = diagnostico+dashboard+clientes, ~2s en Render) y trae el resto (`loadRole`: alertas ~3s, planificación, plan-vs-real, datos por rol) en 2do plano con re-render (`refreshAfterRole`). Las funciones de render son null-safe (las tarjetas sin dato aún quedan vacías y se completan al re-render). **Tiempo hasta ver el portal: ~20-35s → ~2s.**
+
+Piso actual ≈ 2s por Render starter (0.5 vCPU). Para bajar más: upgrade de plan (más CPU) o un endpoint /bootstrap único. `alertas` (~3s) quedó pendiente de optimizar (corre en 2do plano).
 
 ## 2026-06-17 - feat(planes_as): sin cargos del mes desde sincargos*.xlsx (verde/amarillo + Estado)
 
