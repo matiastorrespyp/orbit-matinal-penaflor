@@ -459,16 +459,23 @@ def _clasificar_segmento(ramo: str, subsegmento: str) -> str:
         return "TRADICIONAL"
     return "OTROS"
 
-def _cargar_ventas_mes_actual() -> pd.DataFrame:
-    """
-    Lee ventas.csv, filtra al mes calendario actual, ImporteNetoItem > 0,
-    excluye vendedores 2 y 5.
-    Devuelve DataFrame con: cliente_id, vendedor_codigo, segmento_operativo.
-    """
+_VENTAS_PARSED_CACHE = {}
+
+def _ventas_parsed() -> pd.DataFrame:
+    """ventas.csv parseado UNA sola vez por mtime (numérico + segmento vectorizado).
+    Todos los endpoints filtran sobre este DataFrame en vez de releer/reparsear el CSV
+    en cada request — clave para la velocidad del portal en Render (CPU limitada).
+    Columnas: cliente_id, vendedor_codigo, importe_neto, fecha, segmento_operativo."""
     path = INPUTS / "ventas.csv"
     if not path.exists():
         return pd.DataFrame()
-
+    try:
+        key = os.path.getmtime(path)
+    except OSError:
+        key = 0
+    cached = _VENTAS_PARSED_CACHE.get(key)
+    if cached is not None:
+        return cached
     df = pd.DataFrame()
     for enc in ("latin1", "utf-8-sig", "utf-8"):
         try:
@@ -478,81 +485,49 @@ def _cargar_ventas_mes_actual() -> pd.DataFrame:
             break
         except Exception:
             continue
-
-    if df.empty:
-        return pd.DataFrame()
-
     req = {"Cliente", "CodVendedor", "ImporteNetoItem", "FechaComprobante", "Ramo", "Subramo"}
-    if not req.issubset(set(df.columns)):
+    if df.empty or not req.issubset(set(df.columns)):
         return pd.DataFrame()
-
-    df = df.copy()
     df["cliente_id"]      = pd.to_numeric(df["Cliente"], errors="coerce")
     df["vendedor_codigo"] = pd.to_numeric(df["CodVendedor"], errors="coerce")
     df["importe_neto"]    = df["ImporteNetoItem"].apply(_parse_num_ar)
     df["fecha"]           = pd.to_datetime(df["FechaComprobante"], dayfirst=True, errors="coerce")
-    df["segmento_operativo"] = df.apply(
-        lambda r: _clasificar_segmento(str(r.get("Ramo", "")), str(r.get("Subramo", ""))), axis=1
-    )
+    # Segmento vectorizado: clasificar SÓLO las combinaciones únicas (Ramo, Subramo)
+    # y mapear — evita el .apply() fila por fila sobre miles de filas en cada request.
+    rm = df["Ramo"].fillna("").astype(str)
+    sb = df["Subramo"].fillna("").astype(str)
+    seg_map = {par: _clasificar_segmento(par[0], par[1]) for par in set(zip(rm, sb))}
+    df["segmento_operativo"] = [seg_map[(a, b)] for a, b in zip(rm, sb)]
+    _VENTAS_PARSED_CACHE.clear()
+    _VENTAS_PARSED_CACHE[key] = df
+    return df
 
-    hoy       = datetime.now()
+def _cargar_ventas_mes_actual() -> pd.DataFrame:
+    """Ventas del mes calendario actual, ImporteNetoItem > 0, sin vendedores excluidos.
+    Filtra sobre _ventas_parsed() (cacheado). Columnas: cliente_id, vendedor_codigo, segmento_operativo."""
+    df = _ventas_parsed()
+    if df.empty:
+        return pd.DataFrame()
+    hoy = datetime.now()
     mes_inicio = hoy.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
-    df = df[df["fecha"] >= mes_inicio]
-    df = df[df["importe_neto"] > 0]
-    df = df[~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
-    df = df.dropna(subset=["cliente_id", "vendedor_codigo"])
-
-    return df[["cliente_id", "vendedor_codigo", "segmento_operativo"]].copy()
+    d = df[(df["fecha"] >= mes_inicio) & (df["importe_neto"] > 0)
+           & (~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS))]
+    d = d.dropna(subset=["cliente_id", "vendedor_codigo"])
+    return d[["cliente_id", "vendedor_codigo", "segmento_operativo"]].copy()
 
 def _cargar_ventas_dia(fecha_str: str = None):
-    """
-    Lee ventas.csv filtrado para UN día (fecha_str 'YYYY-MM-DD', o el día más reciente si None).
-    Devuelve (DataFrame, fecha_usada_str).
-    Columnas: cliente_id, vendedor_codigo, importe_neto, segmento_operativo.
-    Excluye V2/V5/V20. Aplica regla V3 sin autoservicio en el resultado del llamador.
-    """
-    path = INPUTS / "ventas.csv"
-    if not path.exists():
-        return pd.DataFrame(), ""
-
-    df = pd.DataFrame()
-    for enc in ("latin1", "utf-8-sig", "utf-8"):
-        try:
-            # dtype=str: parseo determinístico en Render (la inferencia de coma decimal
-            # difiere entre versiones de pandas). El importe se convierte con _parse_num_ar.
-            df = pd.read_csv(path, sep=";", encoding=enc, dtype=str, low_memory=False)
-            break
-        except Exception:
-            continue
-
+    """Ventas de UN día (fecha_str 'YYYY-MM-DD', o el más reciente si None).
+    Filtra sobre _ventas_parsed() (cacheado). Excluye V2/V5/V20.
+    Devuelve (DataFrame[cliente_id, vendedor_codigo, importe_neto, segmento_operativo], fecha_usada)."""
+    df = _ventas_parsed()
     if df.empty:
         return pd.DataFrame(), ""
-
-    req = {"Cliente", "CodVendedor", "ImporteNetoItem", "FechaComprobante", "Ramo", "Subramo"}
-    if not req.issubset(set(df.columns)):
-        return pd.DataFrame(), ""
-
-    df = df.copy()
-    df["cliente_id"]         = pd.to_numeric(df["Cliente"], errors="coerce")
-    df["vendedor_codigo"]    = pd.to_numeric(df["CodVendedor"], errors="coerce")
-    df["importe_neto"]       = df["ImporteNetoItem"].apply(_parse_num_ar)
-    df["fecha"]              = pd.to_datetime(df["FechaComprobante"], dayfirst=True, errors="coerce")
-    df["segmento_operativo"] = df.apply(
-        lambda r: _clasificar_segmento(str(r.get("Ramo", "")), str(r.get("Subramo", ""))), axis=1
-    )
-    df = df[~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
+    df = df[(~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)) & (df["importe_neto"] > 0)]
     df = df.dropna(subset=["cliente_id", "vendedor_codigo", "fecha"])
-    df = df[df["importe_neto"] > 0]
-
-    if fecha_str:
-        target = pd.to_datetime(fecha_str).date()
-    else:
-        if df.empty:
-            return pd.DataFrame(), ""
-        target = df["fecha"].dt.date.max()
-
-    df_dia = df[df["fecha"].dt.date == target].copy()
+    if df.empty:
+        return pd.DataFrame(), ""
+    target = pd.to_datetime(fecha_str).date() if fecha_str else df["fecha"].dt.date.max()
+    df_dia = df[df["fecha"].dt.date == target]
     fecha_usada = str(target)
     if df_dia.empty:
         return pd.DataFrame(), fecha_usada
@@ -821,29 +796,20 @@ def diagnostico():
     ]
     cartera_real_total = 0
     cartera_segs_real = {sid: 0 for sid, *_ in seg_ids}
-    cli_path = INPUTS / "clientes.xlsx"
-    if cli_path.exists():
+    # Cartera real desde clientes.xlsx CACHEADO (_clientes_maestro, ya excluye V2/V5/V20).
+    cli_df = _clientes_maestro()
+    if not cli_df.empty:
         try:
-            cli_df = pd.read_excel(cli_path)
-            cli_df.columns = cli_df.columns.str.strip()
-            vcol = next((c for c in cli_df.columns if "cod" in c.lower() and "vend" in c.lower()), None)
-            if vcol is None:
-                vcol = next((c for c in cli_df.columns if "vend" in c.lower()), None)
+            cartera_real_total = len(cli_df)
             ramo_col = next((c for c in cli_df.columns if c.lower() == "ramo"), None)
             sub_col  = next((c for c in cli_df.columns if "subramo" in c.lower() or "subseg" in c.lower()), None)
-            if vcol:
-                cli_df["_vnum"] = pd.to_numeric(cli_df[vcol], errors="coerce")
-                cli_df = cli_df[~cli_df["_vnum"].isin(_VENDEDORES_EXCLUIDOS)]
-                cartera_real_total = len(cli_df)
-                if ramo_col:
-                    cli_df["_seg"] = cli_df.apply(
-                        lambda r: _clasificar_segmento(
-                            str(r.get(ramo_col, "")),
-                            str(r.get(sub_col, "") if sub_col else "")
-                        ), axis=1
-                    )
-                    for sid, *_ in seg_ids:
-                        cartera_segs_real[sid] = int((cli_df["_seg"] == sid).sum())
+            if ramo_col:
+                rm = cli_df[ramo_col].fillna("").astype(str)
+                sb = cli_df[sub_col].fillna("").astype(str) if sub_col else pd.Series([""] * len(cli_df), index=cli_df.index)
+                seg_map = {par: _clasificar_segmento(par[0], par[1]) for par in set(zip(rm, sb))}
+                _seg = pd.Series([seg_map[(a, b)] for a, b in zip(rm, sb)], index=cli_df.index)
+                for sid, *_ in seg_ids:
+                    cartera_segs_real[sid] = int((_seg == sid).sum())
         except Exception:
             pass
     cdia_df = read_csv(DATASETS / "clientes_dia.csv")
@@ -3115,21 +3081,19 @@ def gerencia_planes_as():
         if c in df.columns:
             df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
 
-    # Join con clientes.xlsx para obtener localidad y dia_visita
+    # Join con clientes.xlsx CACHEADO (_clientes_maestro) para localidad y dia_visita
     _cli_info = {}   # cliente_id → {localidad, dia_visita}
     try:
-        cli_path = INPUTS / "clientes.xlsx"
-        if cli_path.exists():
-            cli_xl = pd.read_excel(cli_path, usecols=lambda c: c.strip() in
-                                   ("Codigo","Localidad","DiasVisita","Direccion"))
-            cli_xl.columns = cli_xl.columns.str.strip()
-            cli_xl["Codigo"] = pd.to_numeric(cli_xl["Codigo"], errors="coerce")
-            for _, r in cli_xl.dropna(subset=["Codigo"]).iterrows():
-                _cli_info[int(r["Codigo"])] = {
-                    "localidad":   str(r.get("Localidad", "") or "").strip(),
-                    "dia_visita":  str(r.get("DiasVisita", "") or "").strip(),
-                    "direccion":   str(r.get("Direccion", "") or "").strip(),
-                }
+        cli_xl = _clientes_maestro()
+        if not cli_xl.empty and "Codigo" in cli_xl.columns:
+            for _, r in cli_xl.iterrows():
+                cidx = pd.to_numeric(r.get("Codigo"), errors="coerce")
+                if pd.notna(cidx):
+                    _cli_info[int(cidx)] = {
+                        "localidad":   str(r.get("Localidad", "") or "").strip(),
+                        "dia_visita":  str(r.get("DiasVisita", "") or "").strip(),
+                        "direccion":   str(r.get("Direccion", "") or "").strip(),
+                    }
     except Exception as e:
         print(f"[WARN] planes_as join clientes: {e}")
 

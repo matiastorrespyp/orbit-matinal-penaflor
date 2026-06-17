@@ -1,5 +1,13 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-17 - perf(portal): carga mucho más rápida en Render
+
+**Causa:** gunicorn `--workers 1 --worker-class sync` atendía 1 request a la vez → los ~17 endpoints del login se encolaban (~20-30s). Además cada endpoint reparseaba ventas.csv (con `.apply` fila por fila para segmento) y releía clientes.xlsx.
+
+**`server_orbit.py`**: `_ventas_parsed()` parsea ventas.csv UNA vez por mtime (segmento vectorizado por pares únicos Ramo/Subramo); `_cargar_ventas_mes_actual` y `_cargar_ventas_dia` filtran de ahí. `diagnostico` y `gerencia_planes_as` leen clientes.xlsx vía `_clientes_maestro()` (caché por mtime existente). Local: diagnostico 1.04s→0.13s cacheado, sin cambio de valores (segmentos/cartera idénticos).
+
+**`render.yaml` + `Procfile`**: gunicorn `--threads 8 --worker-class gthread` (sigue 1 worker para SQLite; cada request abre su propia conexión → threads seguros). Los endpoints del login se atienden en paralelo.
+
 ## 2026-06-17 - feat(planes_as): sin cargos del mes desde sincargos*.xlsx (verde/amarillo + Estado)
 
 **`generar_datasets_acum.py`** (`_cargar_sincargos_mes`, `generar_planes_as`).

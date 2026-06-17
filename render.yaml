@@ -13,13 +13,16 @@ services:
     buildCommand: pip install -r requirements.txt
 
     # Start — gunicorn sirve la app Flask
-    # 1 worker = sin conflictos de escritura en SQLite
+    # 1 worker = sin conflictos de escritura en SQLite (cada request abre su propia
+    # conexion); --threads da concurrencia para que los ~17 endpoints del login se
+    # atiendan en paralelo en vez de encolarse de a uno.
     startCommand: >
       gunicorn server_orbit:app
       --bind 0.0.0.0:$PORT
       --timeout 120
       --workers 1
-      --worker-class sync
+      --threads 8
+      --worker-class gthread
 
     # Environment variables
     envVars:
