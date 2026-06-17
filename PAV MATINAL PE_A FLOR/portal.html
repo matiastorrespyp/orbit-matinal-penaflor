@@ -1145,19 +1145,20 @@ function refreshAfterRole(){
    loadRole = el resto (pestañas secundarias), se carga en segundo plano tras showApp
    para que el ingreso sea casi instantáneo. loadAll = ambos (lo usa reloadData). */
 async function loadCore(){
-  // Sólo lo que pinta el dashboard / inicio. El resto va en loadRole (2do plano).
-  const [diag,dash,cli,al] = await Promise.all([
-    safe('/api/diagnostico'), safe('/api/dashboard'),
-    safe('/api/clientes'), safe('/api/alertas')
+  // Sólo lo que pinta el grueso del dashboard / inicio (los más livianos).
+  // alertas (~3s), planificación, plan-vs-real y datos por rol van en loadRole (2do plano).
+  const [diag,dash,cli] = await Promise.all([
+    safe('/api/diagnostico'), safe('/api/dashboard'), safe('/api/clientes')
   ]);
   if(diag){ D.diag=diag; if(diag.dia_operativo) currentDay=diag.dia_operativo.toUpperCase(); }
   if(dash) D.dash=Array.isArray(dash)?dash:[];
   if(cli)  D.cli =Array.isArray(cli) ?cli :[];
-  if(al)   D.al  =Array.isArray(al)  ?al  :[];
 }
 async function loadAll(){ await loadCore(); await loadRole(); }
 async function loadRole(){
-  const [plan,pvr] = await Promise.all([safe('/api/planificacion'), safe('/api/matinal/resumen')]);
+  const [al,plan,pvr] = await Promise.all([
+    safe('/api/alertas'), safe('/api/planificacion'), safe('/api/matinal/resumen')]);
+  if(al)   D.al  =Array.isArray(al)  ?al  :[];
   if(plan) D.plan=Array.isArray(plan)?plan:[];
   if(pvr)  D.pvr =pvr;
   if(userData?.rol==='vendedor'){
