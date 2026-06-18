@@ -4884,8 +4884,21 @@ def vendedor_ruta(vid):
     if cli.empty:
         return jsonify(out), 200
 
-    # ventas.csv (mes vivo): clientes con compra + titulares comprados por cliente
-    bought_clients, tit_cli = set(), {}
+    # Catálogo de innovaciones por segmento (fuente oficial: mod_innovaciones_segmento.csv)
+    inov_seg = read_csv(DATASETS / "mod_innovaciones_segmento.csv")
+    inov_by_seg = {}   # segmento -> {producto_codigo: producto_nombre}
+    if not inov_seg.empty:
+        inov_seg.columns = [c.lstrip("﻿") for c in inov_seg.columns]
+        for _, ir in inov_seg.iterrows():
+            cod_i = pd.to_numeric(ir.get("producto_codigo"), errors="coerce")
+            if pd.isna(cod_i):
+                continue
+            segn = str(ir.get("segmento", "")).upper()
+            inov_by_seg.setdefault(segn, {})[int(cod_i)] = str(ir.get("producto_nombre", "") or int(cod_i))
+    inov_codes = set().union(*[set(d) for d in inov_by_seg.values()]) if inov_by_seg else set()
+
+    # ventas.csv (mes vivo): clientes con compra + titulares e innovaciones compradas por cliente
+    bought_clients, tit_cli, inov_cli = set(), {}, {}
     vpath = INPUTS / "ventas.csv"
     if vpath.exists():
         try:
@@ -4897,6 +4910,10 @@ def vendedor_ruta(vid):
             v["_tit"] = [_ruta_titular(m, a) for m, a in zip(v.get("Marca", ""), v.get("Articulo", ""))]
             for cid, grp in v[v["_tit"].notna()].dropna(subset=["cli"]).groupby("cli"):
                 tit_cli[int(cid)] = set(grp["_tit"])
+            if inov_codes:
+                v["_cod"] = pd.to_numeric(v.get("Codigo"), errors="coerce")
+                for cid, grp in v[v["_cod"].isin(inov_codes)].dropna(subset=["cli"]).groupby("cli"):
+                    inov_cli[int(cid)] = set(grp["_cod"].dropna().astype(int))
         except Exception:
             pass
 
@@ -4911,20 +4928,40 @@ def vendedor_ruta(vid):
         seg = _clasificar_segmento(str(r.get("Ramo", "")), str(r.get(sub_col, "") if sub_col else ""))
         comp = cid in bought_clients
         tb = tit_cli.get(cid, set()) & once_set
+        comp_11 = [t for t in _RUTA_ONCE if t in tb]
         faltan = [t for t in _RUTA_ONCE if t not in tb]
+        # Innovaciones aplicables al segmento del cliente (V3 sin AUTOSERVICIO)
+        seg_u = seg.upper()
+        cat_inov = {} if (vid_norm == "V3" and seg_u == "AUTOSERVICIO") else inov_by_seg.get(seg_u, {})
+        bought_inov = inov_cli.get(cid, set())
+        inov_comp = sorted({cat_inov[c] for c in cat_inov if c in bought_inov})
+        inov_falt = sorted({cat_inov[c] for c in cat_inov if c not in bought_inov})
+        orden_val = pd.to_numeric(r.get("Orden"), errors="coerce")
         clientes.append({
             "cliente_id": cid,
             "cliente_nombre": str(r.get(nombre_col, "") or cid) if nombre_col else str(cid),
             "vendedor_id": vid_norm,
             "dia_visita": dia_req,
             "segmento": seg,
+            "orden": int(orden_val) if pd.notnull(orden_val) else None,
             "estado": "COBERTURA_OK" if comp else "SIN_COMPRA_MES",
             "compra_mes_flag": 1 if comp else 0,
             "once_t_comprados": len(tb),
+            "once_t_total": len(_RUTA_ONCE),
+            "titulares_comprados": comp_11,
             "faltan_11t": len(faltan),
             "titulares_faltantes": faltan,
+            "inov_comprados": inov_comp,
+            "inov_faltantes": inov_falt,
+            "inov_comprados_n": len(inov_comp),
+            "inov_total": len(cat_inov),
         })
-    clientes.sort(key=lambda c: (c["compra_mes_flag"], c["cliente_nombre"]))
+    # Orden de visita (columna Orden de clientes.xlsx). Orden<=0 = sin asignar → al final.
+    def _orden_key(c):
+        o = c["orden"]
+        tiene = o is not None and o > 0
+        return (not tiene, o if tiene else 0, c["cliente_nombre"])
+    clientes.sort(key=_orden_key)
     out["clientes"] = clientes
     out["total"] = len(clientes)
     out["con_compra"] = sum(1 for c in clientes if c["compra_mes_flag"])

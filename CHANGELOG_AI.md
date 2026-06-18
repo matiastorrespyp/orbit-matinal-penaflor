@@ -1,5 +1,18 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-18 - feat(ruta): orden de visita + 11 Titulares e Innovaciones colapsables (verde/amarillo)
+
+**Objetivo:** en la pestaña Ruta del perfil del vendedor, listar los clientes en **orden de visita** y, en vez de mostrar marcas sueltas, dos chips colapsables por cliente: **11 Titulares** y **Innovaciones**; al hacer clic se abre el detalle con las marcas/productos en **verde** (ya comprados) y **amarillo** (aún no).
+
+**`server_orbit.py`** (`/api/vendedor/<vid>/ruta`):
+- Orden de visita: ordena por la columna `Orden` de clientes.xlsx (asc); `Orden<=0` o vacío = sin asignar → al final. Se agrega `orden` a cada cliente.
+- 11 Titulares: además de `titulares_faltantes` ahora devuelve `titulares_comprados` y `once_t_total`.
+- Innovaciones por cliente: catálogo desde `mod_innovaciones_segmento.csv` (por segmento), compras desde ventas.csv (mes vivo, columna `Codigo`). Devuelve `inov_comprados`, `inov_faltantes`, `inov_comprados_n`, `inov_total`. Solo TRAD/AS; V3 sin AUTOSERVICIO.
+
+**`PAV MATINAL PE_A FLOR/portal.html`** (`vRuta` + helpers `vRutaPills`/`vRutaToggle`): cada cliente muestra su nº de orden, estado, y los chips "11 Titulares x/11" e "Innovaciones y/N" (color ok/wn/bd según avance). Clic → pills verde/amarillo. El front respeta el orden del backend (no re-ordena).
+
+Validado vía HTTP: V6 sale 10,20,30,…(orden real); ejemplo cliente con 11T 3/11 (verdes ALMA MORA/FINCA LAS MORAS/LOS ARBOLES, amarillas el resto) e Innovaciones 1/22. V3 sin innovaciones en AS. `node --check` OK.
+
 ## 2026-06-18 - feat(cobertura): drill-down por vendedor + faltantes en tarjeta de cobertura acumulada
 
 **Objetivo:** ver las coberturas logradas por cada vendedor en los segmentos, dentro de la tarjeta "Cobertura acumulada del mes", expandiendo cada segmento para ver el detalle por vendedor y los clientes que aún no lograron cobertura.

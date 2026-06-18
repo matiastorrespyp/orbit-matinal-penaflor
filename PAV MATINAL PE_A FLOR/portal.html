@@ -2322,22 +2322,29 @@ function vRuta(){
     </div>`;
   const todos=mis.slice(0,80);
   if(todos.length){
-    h+=`<div class="sm bold" style="margin:4px 0 9px;">Clientes (${todos.length}) · 11 Titulares faltantes</div>`;
-    h+=todos.map(c=>{
+    h+=`<div class="sm bold" style="margin:4px 0 9px;">Clientes (${todos.length}) · en orden de visita</div>`;
+    h+=todos.map((c,idx)=>{
       const isSC=!c.compra_mes_flag;
-      const comp=c.once_t_comprados||0;
-      const falt=c.titulares_faltantes||[];
-      const cap=falt.slice(0,6);
-      const faltHtml=falt.length?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;">
-        ${cap.map(t=>`<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(255,74,74,.13);color:var(--bad);">${t}</span>`).join('')}
-        ${falt.length>cap.length?`<span style="font-size:10px;padding:2px 6px;color:var(--text3);">+${falt.length-cap.length}</span>`:''}
-      </div>`:`<div style="margin-top:6px;font-size:10px;color:var(--ok);">✓ Tiene los 11 titulares</div>`;
-      return `<div class="vcli">
-        <div class="vcli-dot ${isSC?'bd':'ok'}"></div>
-        <div class="vcli-info" style="flex:1;">
-          <div class="vcli-name">${c.cliente_nombre||c.cliente_id} <span style="font-size:10px;color:var(--text3)">[${c.cliente_id}]</span></div>
-          <div class="vcli-meta">${c.segmento||'–'} · 11 Titulares: <b>${comp}/11</b></div>
-          ${faltHtml}
+      const comp=c.once_t_comprados||0, tot11=c.once_t_total||11;
+      const cl11=comp>=tot11?'ok':comp>0?'wn':'bd';
+      const id11='ruta11-'+c.cliente_id;
+      const tit11=vRutaPills(c.titulares_comprados||[], c.titulares_faltantes||[]);
+      const inN=c.inov_comprados_n||0, inT=c.inov_total||0;
+      const clIn=inT&&inN>=inT?'ok':inN>0?'wn':'bd';
+      const idIn='rutaInov-'+c.cliente_id;
+      const inovPills=vRutaPills(c.inov_comprados||[], c.inov_faltantes||[]);
+      const ordLbl=(c.orden&&c.orden>0)?c.orden:(idx+1);
+      return `<div class="vcli" style="align-items:flex-start;">
+        <div class="vcli-dot ${isSC?'bd':'ok'}" style="margin-top:3px;"></div>
+        <div class="vcli-info" style="flex:1;min-width:0;">
+          <div class="vcli-name"><span style="display:inline-block;min-width:20px;color:var(--mg);font-weight:700;">${ordLbl}.</span> ${c.cliente_nombre||c.cliente_id} <span style="font-size:10px;color:var(--text3)">[${c.cliente_id}]</span></div>
+          <div class="vcli-meta">${c.segmento||'–'}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;">
+            <span class="chip ${cl11}" style="cursor:pointer;font-size:10px;" onclick="vRutaToggle('${id11}')"><span id="${id11}-arr">▸</span> 11 Titulares <b>${comp}/${tot11}</b></span>
+            ${inT?`<span class="chip ${clIn}" style="cursor:pointer;font-size:10px;" onclick="vRutaToggle('${idIn}')"><span id="${idIn}-arr">▸</span> Innovaciones <b>${inN}/${inT}</b></span>`:''}
+          </div>
+          <div id="${id11}" style="display:none;margin-top:7px;">${tit11}</div>
+          ${inT?`<div id="${idIn}" style="display:none;margin-top:7px;">${inovPills}</div>`:''}
         </div>
         <span class="chip ${isSC?'bd':'ok'}" style="flex-shrink:0;">${isSC?'Sin compra':'Con compra'}</span>
       </div>`;}).join('');
@@ -2345,6 +2352,20 @@ function vRuta(){
     h+=`<div class="empty"><div class="eico">📍</div><p>Sin clientes asignados para hoy.</p></div>`;
   }
   document.getElementById('vT-ruta').innerHTML=h;
+}
+/* Pills verde (comprados) / amarillo (faltantes) para la ruta */
+function vRutaPills(comprados, faltantes){
+  const pill=(t,ok)=>`<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:${ok?'rgba(46,204,113,.15)':'rgba(255,193,7,.15)'};color:var(${ok?'--ok':'--wn'});">${ok?'✓ ':''}${t}</span>`;
+  const parts=[...comprados.map(t=>pill(t,true)),...faltantes.map(t=>pill(t,false))];
+  if(!parts.length) return `<div class="xs" style="color:var(--text3);">Sin datos.</div>`;
+  return `<div style="display:flex;flex-wrap:wrap;gap:4px;">${parts.join('')}</div>`;
+}
+function vRutaToggle(id){
+  const e=document.getElementById(id), arr=document.getElementById(id+'-arr');
+  if(!e) return;
+  const open=e.style.display==='none';
+  e.style.display=open?'block':'none';
+  if(arr)arr.textContent=open?'▾':'▸';
 }
 
 /* — KPIs — */

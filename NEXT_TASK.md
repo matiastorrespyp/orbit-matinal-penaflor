@@ -1,5 +1,19 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-18 - Ruta del vendedor: orden de visita + 11T/Innovaciones colapsables
+
+### HECHO (validado en local, pendiente de deploy)
+- `/api/vendedor/<vid>/ruta`: orden por columna `Orden` (Orden<=0 al final); agrega titulares_comprados/once_t_total e innovaciones por cliente (inov_comprados/faltantes/n/total) desde ventas.csv + mod_innovaciones_segmento.csv. V3 sin AS.
+- `portal.html` `vRuta`: clientes en orden de visita; chips colapsables "11 Titulares" e "Innovaciones" con pills verde (comprado) / amarillo (faltante).
+
+### OJO / DATO
+- La columna `Orden` esta poblada al ~60% (V3/V6/V10 casi completos; V7/V9 casi vacios → esos caen al final y se muestran con nº correlativo del render). Si se quiere orden real para todos, hay que cargar `Orden` en clientes.xlsx (fuente ERP).
+- V3 tiene clientes AUTOSERVICIO en su cartera fisica (aparecen en la ruta) pero sin innovaciones AS. Si se quiere excluirlos de la ruta tambien, definirlo.
+
+### PENDIENTE
+- Commit + push a master (Render autodeploy) cuando el usuario apruebe.
+- Validacion visual en el portal (un vendedor con Orden completo, ej V6/V10).
+
 ## Sesion 2026-06-18 - Cobertura por vendedor + faltantes (drill-down)
 
 ### HECHO (validado en local, NO commiteado aun)
