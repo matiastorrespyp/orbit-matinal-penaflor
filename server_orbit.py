@@ -2135,10 +2135,13 @@ def gerencia_ccc_empresa():
 @app.route("/api/gerencia/once_titulares")
 def gerencia_once_titulares():
     """11 Titulares: CCC acumulado vs objetivo CCC.
-    REGLA: se mide con TODO el contenido de ventas_acumulada.csv, sin filtro de mes.
-    El archivo puede abarcar más de 2 meses (no es "bimestral"); CCC = clientes
-    únicos con compra válida por marca titular sobre todo el archivo.
-    Fuente primaria : ventas_acumulada.csv (importeNeto > 0, excluye V2/V5/V20).
+    REGLA (corregida 2026-06-18 contra reporte de la empresa):
+      - Período = TRIMESTRE calendario en curso (ene-mar / abr-jun / jul-sep / oct-dic);
+        en julio arranca de cero. Se filtra por FechaComprobante >= inicio del trimestre.
+      - Solo ventas PEÑAFLOR (Empresa == 'Empresa'); se EXCLUYE P&P LOGISTICA (otro
+        distribuidor) — antes se sumaba e inflaba el CCC ~15-35%.
+      - CCC = clientes únicos con compra válida (neto>0) por marca titular; excluye V2/V5/V20.
+    Fuente primaria : ventas_acumulada.csv.
     Fuente fallback : mod_11_titulares.csv  (tiene_flag = 1).
     Fuente objetivo : objetivo 11T.xlsx."""
 
@@ -2184,8 +2187,17 @@ def gerencia_once_titulares():
             vac = pd.read_csv(vac_path, sep=";", encoding="latin1", low_memory=False)
             vac["ImporteNetoItem"] = pd.to_numeric(
                 vac["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
+            # Solo Peñaflor (excluye P&P Logística), excluye V2/V5/V20, neto>0
+            if "Empresa" in vac.columns:
+                vac = vac[vac["Empresa"].astype(str).str.strip() == "Empresa"]
             vac = vac[~vac["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS)]
             vac = vac[vac["ImporteNetoItem"] > 0]
+            # Período = trimestre calendario en curso (en julio arranca de cero)
+            _f = pd.to_datetime(vac.get("FechaComprobante"), dayfirst=True, errors="coerce")
+            if _f.notna().any():
+                _hoy = datetime.now(_ARG_TZ)
+                _ini_trim = pd.Timestamp(_hoy.year, ((_hoy.month - 1) // 3) * 3 + 1, 1)
+                vac = vac[_f >= _ini_trim]
             vac["marca_upper"] = vac["Marca"].astype(str).str.upper().str.strip()
             vac["marca_objetivo"] = vac["marca_upper"].map(_MARCA_LOOKUP)
             unresolved = vac["marca_objetivo"].isna()
@@ -2318,6 +2330,9 @@ def gerencia_once_titulares_zona():
         vac = pd.read_csv(vac_path, sep=";", encoding="latin1", low_memory=False)
         vac["ImporteNetoItem"] = pd.to_numeric(
             vac["ImporteNetoItem"].astype(str).str.replace(",",".",regex=False), errors="coerce")
+        # Solo Peñaflor (excluye P&P Logística) — igual criterio que /api/gerencia/once_titulares
+        if "Empresa" in vac.columns:
+            vac = vac[vac["Empresa"].astype(str).str.strip() == "Empresa"]
         vac = vac[~vac["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS)]
         vac = vac[vac["ImporteNetoItem"] > 0]
     except Exception as e:
@@ -5905,7 +5920,8 @@ def _cierre_objetivos_avance(files):
 _VACUM_CIERRE_CACHE = {}
 def _leer_ventas_acum_cierre(path):
     """Lee ventas_acumulada_<MMAAAA>.csv del cierre (sep=';', latin1) con caché.
-    Mismo criterio que /api/gerencia/once_titulares: excluye V2/V5/V20 y filtra neto>0."""
+    Mismo criterio que /api/gerencia/once_titulares: solo Peñaflor (Empresa=='Empresa',
+    excluye P&P Logística), excluye V2/V5/V20 y filtra neto>0."""
     try:
         key = (str(path), os.path.getmtime(path))
     except OSError:
@@ -5916,6 +5932,8 @@ def _leer_ventas_acum_cierre(path):
         df.columns = [c.strip() for c in df.columns]
         df["ImporteNetoItem"] = pd.to_numeric(
             df["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
+        if "Empresa" in df.columns:
+            df = df[df["Empresa"].astype(str).str.strip() == "Empresa"]
         cv = pd.to_numeric(df["CodVendedor"], errors="coerce")
         df = df[(~cv.isin(_VENDEDORES_EXCLUIDOS)) & (df["ImporteNetoItem"] > 0)].copy()
         _VACUM_CIERRE_CACHE[key] = df
@@ -5943,12 +5961,15 @@ def _cierre_once_titulares(files):
 
     ccc_map = {}
     # Fuente bimestral (ventas_acumulada) si está; si no, ventas_mes (1 mes). Ambos lectores
-    # ya filtran neto>0 y excluyen V2/V5/V20. SIN filtro de Empresa: P&P Logística son ventas
-    # reales de los vendedores activos (igual criterio que el dashboard /api/gerencia/once_titulares).
+    # ya filtran neto>0, excluyen V2/V5/V20 y SOLO Peñaflor (Empresa=='Empresa', sin P&P
+    # Logística) — igual criterio que el dashboard /api/gerencia/once_titulares.
     src_acum = files.get("ventas_acumulada")
     df = _leer_ventas_acum_cierre(src_acum) if src_acum is not None else _leer_ventas_mes_cacheado(files["ventas_mes"])
     if not df.empty:
         df = df.copy()
+        # Garantizar solo Peñaflor con cualquier fuente (el lector de ventas_mes no filtra Empresa)
+        if "Empresa" in df.columns:
+            df = df[df["Empresa"].astype(str).str.strip() == "Empresa"]
         df["mo"] = df["Marca"].astype(str).str.upper().str.strip().map(_MARCA_LKP_CIERRE)
         for kw, mo in _ART_KW_11T_CIERRE:
             still = df["mo"].isna()

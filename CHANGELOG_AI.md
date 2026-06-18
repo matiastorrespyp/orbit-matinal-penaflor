@@ -1,5 +1,16 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-18 - fix(11T): medir solo Peñaflor (excluir P&P Logística) + período trimestral
+
+**Hallazgo:** los CCC del 11 Titulares estaban ~15-35% por encima del reporte de la empresa. **Causa raíz:** el dashboard sumaba las ventas de **P&P LOGISTICA S.R.L** (otro distribuidor, ~5600 filas en `ventas_acumulada.csv`) además de Peñaflor. Una decisión previa había asumido —erróneamente— que P&P eran ventas de los vendedores activos. NO era problema de segmentos (filtrarlos solo movía ~3%).
+
+**Corrección (todos los puntos del 11T, igual criterio que FARO y el cierre):**
+- `/api/gerencia/once_titulares` y `/api/gerencia/once_titulares_zona`: filtran `Empresa=='Empresa'` (excluye P&P). El acumulado además se acota al **trimestre calendario en curso** (abr-jun ahora; en julio arranca de cero) por FechaComprobante.
+- `generar_datasets_acum.py` `generar_11t_acum`: filtra Peñaflor → `mod_11t_acum.csv` regenerado (per-vendedor 11T del dashboard y perfil vendedor).
+- Cierre (`_leer_ventas_acum_cierre` + `_cierre_once_titulares`): filtra Peñaflor; comentario previo corregido.
+
+**Validación vs reporte empresa:** total 4439 vs 4574 (−3%); por marca casi todas en ±5% (Antares −1.3%, Smirnoff Ice −2.6%, Alma Mora −3%, Alaris −4.4%, Dada +4.7%). Período = TRIMESTRE (abr+may+jun hasta fin de junio), confirmado por el usuario. Quedan 3 marcas con desvío residual mixto (Finca −12%, Trapiche +16%, Gordon's −17%) por mapeo de sub-etiquetas — pendiente de afinar, ya no es error sistemático.
+
 ## 2026-06-18 - fix(V3): alertas solo de clientes Tradicional almacén/despensa/kiosco
 
 **`server_orbit.py`** (`/api/alertas` + helper `_v3_clientes_tradicional`): las alertas de descuento/tope de V3 se filtran a sus clientes Tradicional almacén/despensa/kiosco (las de clientes On Premise/AS/Mayorista no se muestran). Salvaguarda consistente con la regla V3. Nota: hoy las 105 alertas de V3 ya eran todas de su canal → 0 quitadas; el filtro evita fugas futuras. V8 sin cambios.
