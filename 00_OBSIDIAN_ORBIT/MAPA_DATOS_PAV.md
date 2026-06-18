@@ -107,6 +107,28 @@ Trazabilidad completa: fuente real → script generador → dataset intermedio �
 
 ---
 
+### Cobertura acumulada del mes — drill-down por vendedor + faltantes
+*(2026-06-18 — desplegado en Render)*
+
+Tarjeta **"📊 Cobertura acumulada del mes"**. Mide cobertura sobre el período **acumulado** (no el día). Un cliente está *cubierto* si `cant_base_acum >= umbral` del segmento (3 botellas Tradicional, 6 en AS/On Premise/Mayorista). V3 sin AUTOSERVICIO.
+
+| Campo | Fuente | Script | Dataset | Endpoint |
+|-------|--------|--------|---------|----------|
+| cubiertos / cartera / pct_cobertura (agregado por vendedor×segmento) | clientes.xlsx (cartera) + ventas acum (CantBase, ImporteNetoItem>0) | `generar_cobertura_acum()` | `mod_cobertura_acum.csv` | `/api/gerencia/cobertura_acum` (por_vendedor[].segmentos) |
+| **clientes faltantes** (cubierto=0) por vendedor×segmento, con nombre+localidad | mismo `merged` que calcula `cubierto` | `generar_cobertura_acum()` | **`mod_cobertura_acum_detalle.csv`** | `/api/gerencia/cobertura_acum_faltantes?segmento=X` |
+| cobertura propia del vendedor por segmento + faltantes (solo sus datos) | los 2 datasets anteriores | — | — | `/api/vendedor/<vid>/cobertura_acum` |
+
+**Consistencia garantizada:** `sin_cobertura` (agregado) == nº filas del detalle por vendedor×segmento.
+
+**Portal (`portal.html`):**
+- Dashboard gerencia (`gCobSegToggle`/`gCobFaltToggle`): clic en segmento → vendedores (cubiertos/cartera/%) → faltantes. Faltantes con **lazy fetch + caché** (`_cobFaltFetch`, `window.__cobFalt[seg]`); cubiertos/cartera salen de `D.cob_acum.por_vendedor` (ya en cliente).
+- Pantalla Vendedores 360 (`gVendCobToggle`): "Cobertura acumulada por segmento" expandible a faltantes (reusa el mismo fetch/caché).
+- Perfil del vendedor (`vKpis` + `vCobToggle`): tarjeta propia; faltantes vienen embebidos en `D.cob_acum_v` (cargado en `loadRole`, sin fetch extra al expandir).
+
+**Regla de oro:** los faltantes deben salir de la fuente **acumulada** (`mod_cobertura_acum_detalle.csv`), NO de `clientes_dia.cobertura_mes_flag` (ese es mes vivo y daría otro número).
+
+---
+
 ### 11 Titulares
 | Campo | Fuente | Dataset | Endpoint |
 |-------|--------|---------|----------|
