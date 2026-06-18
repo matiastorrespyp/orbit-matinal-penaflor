@@ -421,7 +421,7 @@ def read_csv(path):
         _READ_CSV_CACHE.pop(k, None)
     return df.copy()
 
-_VENDEDORES_EXCLUIDOS = {2, 5, 20}
+_VENDEDORES_EXCLUIDOS = {1, 2, 5, 20}
 _VENDEDORES_ACTIVOS_PLAN = {"V3","V4","V6","V7","V8","V9","V10"}
 
 def _parse_num_ar(valor):

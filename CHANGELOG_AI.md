@@ -1,5 +1,9 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-18 - fix: excluir vendedor 1 (no es de ruta) además de 2/5/20
+
+**`server_orbit.py` + `generar_datasets_acum.py`**: `VENDEDORES_EXCLUIDOS` pasa de `{2,5,20}` a `{1,2,5,20}`. V1 no es vendedor de ruta Peñaflor (activos = 3,4,6,7,8,9,10) y se colaba en el conteo en vivo del 11T (`once_titulares`). Impacto: 11T total 4439→4435 (V1 tenía footprint mínimo); el maestro de clientes no tiene ningún cliente codven=1, así que ningún dataset cambia (no requiere regeneración).
+
 ## 2026-06-18 - fix(11T): medir solo Peñaflor (excluir P&P Logística) + período trimestral
 
 **Hallazgo:** los CCC del 11 Titulares estaban ~15-35% por encima del reporte de la empresa. **Causa raíz:** el dashboard sumaba las ventas de **P&P LOGISTICA S.R.L** (otro distribuidor, ~5600 filas en `ventas_acumulada.csv`) además de Peñaflor. Una decisión previa había asumido —erróneamente— que P&P eran ventas de los vendedores activos. NO era problema de segmentos (filtrarlos solo movía ~3%).

@@ -16,7 +16,7 @@ BASE = Path(__file__).parent
 OUT  = BASE / "04_DATASETS_ORBIT"
 OUT.mkdir(exist_ok=True)
 
-VENDEDORES_EXCLUIDOS = {2, 5, 20}
+VENDEDORES_EXCLUIDOS = {1, 2, 5, 20}
 
 # SubSegmentos que identifican AUTOSERVICIO (fuente autoritativa: clientes.xlsx columna SubSegmento)
 _AS_SUBSEG = {
