@@ -4926,9 +4926,13 @@ def vendedor_ruta(vid):
             continue
         cid = int(r["Codigo"])
         seg = _clasificar_segmento(str(r.get("Ramo", "")), str(r.get(sub_col, "") if sub_col else ""))
-        # V3 (Nadia) no trabaja AUTOSERVICIO ni ON PREMISE: fuera de su ruta
-        if vid_norm == "V3" and seg.upper() in ("AUTOSERVICIO", "ON_PREMISE_VTK"):
-            continue
+        # V3 (Nadia): solo Tradicional almacén/despensa/kiosco. Quedan fuera AS, On Premise
+        # y también los tradicionales que NO son almacén/despensa/kiosco (fiambrería, resto).
+        if vid_norm == "V3":
+            subseg = str(r.get(sub_col, "")).upper() if sub_col else ""
+            es_alm_kio = any(k in subseg for k in ("ALMACEN", "DESPENSA", "KIOSCO"))
+            if seg.upper() != "TRADICIONAL" or not es_alm_kio:
+                continue
         comp = cid in bought_clients
         tb = tit_cli.get(cid, set()) & once_set
         comp_11 = [t for t in _RUTA_ONCE if t in tb]

@@ -1,5 +1,9 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-18 - fix(ruta): V3 solo Tradicional almacén/despensa/kiosco
+
+**`server_orbit.py`** (`/api/vendedor/<vid>/ruta`): la ruta de V3 ahora deja SOLO clientes Tradicional con SubSegmento almacén/despensa/kiosco (whitelist `ALMACEN`/`DESPENSA`/`KIOSCO`). Esto reemplaza el filtro anterior (que solo sacaba AS/On Premise) y además excluye fiambrería, panadería, carnicería, "resto de tradicionales", etc. Validado contra el maestro: quedan 284 de 347 (Almacen/Despensa 234 + Kiosco/Maxikiosco 50); el resto excluido.
+
 ## 2026-06-18 - fix(ruta): V3 sin AUTOSERVICIO ni ON PREMISE en su ruta
 
 **`server_orbit.py`** (`/api/vendedor/<vid>/ruta`): V3 (Nadia) no trabaja AS ni On Premise → se excluyen esos clientes de su ruta física (antes aparecían en la lista). Filtro en el loop: `if vid=="V3" and seg in (AUTOSERVICIO, ON_PREMISE_VTK): continue`. Validado: V3 ruta solo TRADICIONAL (total 55, antes incluía AS/OP); V8 sin cambios.
