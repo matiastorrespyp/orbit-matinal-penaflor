@@ -1405,12 +1405,42 @@ def cliente_ficha(cliente_id):
     })
     return jsonify(_to_native(base))
 
+def _v3_clientes_tradicional():
+    """Set de cliente_id de V3 que son Tradicional almacén/despensa/kiosco (su único canal).
+    Devuelve None si no hay maestro (no filtrar)."""
+    m = _clientes_maestro()
+    if m is None or m.empty:
+        return None
+    sub_col = next((c for c in m.columns if "subseg" in c.lower() or "subramo" in c.lower()), None)
+    v3 = m[m["_vend"] == 3]
+    out = set()
+    for _, r in v3.iterrows():
+        seg = _clasificar_segmento(str(r.get("Ramo", "")), str(r.get(sub_col, "") if sub_col else ""))
+        sub = str(r.get(sub_col, "")).upper() if sub_col else ""
+        if seg == "TRADICIONAL" and any(k in sub for k in ("ALMACEN", "DESPENSA", "KIOSCO")):
+            out.add(int(r["_cliente_id"]))
+    return out
+
+
 @app.route("/api/alertas")
 def alertas():
     # Alertas en vivo desde el catálogo de acciones del mes (acciones_comerciales_<mes>_penaflor.csv):
     #  - descuento: % aplicado supera el tramo máximo de la acción (Plan AS / 11T contemplados).
     #  - tope: cajas/mes por cliente superan el tope mensual de la acción (combinable entre marcas).
-    return jsonify(_alertas_descuento_mes() + _alertas_tope_cajas_mes())
+    data = _alertas_descuento_mes() + _alertas_tope_cajas_mes()
+    # V3 (Nadia) solo Tradicional almacén/despensa/kiosco: descartar alertas de clientes de otros canales
+    v3_ok = _v3_clientes_tradicional()
+    if v3_ok is not None:
+        def _keep(a):
+            es_v3 = str(a.get("vendedor_id") or "").upper() == "V3" or str(a.get("vendedor_codigo")) == "3"
+            if not es_v3:
+                return True
+            try:
+                return int(a.get("cliente_id")) in v3_ok
+            except (TypeError, ValueError):
+                return True
+        data = [a for a in data if _keep(a)]
+    return jsonify(data)
 
 
 # ====== SEGUIMIENTO GERENCIAL DE ALERTAS ======

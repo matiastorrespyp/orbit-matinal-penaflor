@@ -1,5 +1,9 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-18 - fix(V3): alertas solo de clientes Tradicional almacén/despensa/kiosco
+
+**`server_orbit.py`** (`/api/alertas` + helper `_v3_clientes_tradicional`): las alertas de descuento/tope de V3 se filtran a sus clientes Tradicional almacén/despensa/kiosco (las de clientes On Premise/AS/Mayorista no se muestran). Salvaguarda consistente con la regla V3. Nota: hoy las 105 alertas de V3 ya eran todas de su canal → 0 quitadas; el filtro evita fugas futuras. V8 sin cambios.
+
 ## 2026-06-18 - fix(V3): perfil completo solo Tradicional (almacén/despensa/kiosco)
 
 **Objetivo:** que V3 (Nadia) no vea NADA de Autoservicio / On Premise / Mayorista en ningún lado de su perfil. Auditoría de todas las pantallas; corregido en backend (consistente para gerencia y vendedor).
