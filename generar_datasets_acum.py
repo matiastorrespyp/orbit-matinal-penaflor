@@ -547,14 +547,26 @@ def cargar_maestro_productos():
 # ─────────────────────────────────────────────
 
 def generar_cobertura_acum(ventas, clientes):
-    cart = clientes[["Codigo", "codven", "Vendedor", "_seg", "Razon_Social", "Localidad"]].rename(
+    sub_col = next((c for c in clientes.columns if "subseg" in c.lower() or "subramo" in c.lower()), None)
+    cols = ["Codigo", "codven", "Vendedor", "_seg", "Razon_Social", "Localidad"]
+    if sub_col:
+        cols.append(sub_col)
+    cart = clientes[cols].rename(
         columns={"Codigo": "cliente_id", "codven": "vendedor_codigo",
                  "Vendedor": "vendedor_nombre", "_seg": "segmento",
-                 "Razon_Social": "cliente_nombre", "Localidad": "localidad"}
+                 "Razon_Social": "cliente_nombre", "Localidad": "localidad",
+                 **({sub_col: "subseg"} if sub_col else {})}
     ).copy()
     cart = cart[cart["segmento"] != "OTROS"]
-    # V3 no trabaja AUTOSERVICIO
-    cart = cart[~((cart["vendedor_codigo"] == 3) & (cart["segmento"] == "AUTOSERVICIO"))]
+    # V3 (Nadia) solo trabaja Tradicional almacén/despensa/kiosco (no AS, On Premise ni Mayorista)
+    if "subseg" in cart.columns:
+        _subu = cart["subseg"].astype(str).str.upper()
+        _v3_ok = (cart["segmento"] == "TRADICIONAL") & _subu.str.contains("ALMACEN|DESPENSA|KIOSCO", na=False)
+    else:
+        _v3_ok = (cart["segmento"] == "TRADICIONAL")
+    cart = cart[(cart["vendedor_codigo"] != 3) | _v3_ok]
+    if "subseg" in cart.columns:
+        cart = cart.drop(columns=["subseg"])
 
     v = ventas[ventas["ImporteNetoItem"] > 0].copy()
     v_agg = (v.groupby(["Cliente", "CodVendedor"])["CantBase"]

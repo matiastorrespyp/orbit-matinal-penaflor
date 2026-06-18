@@ -619,6 +619,11 @@ def _clientes_por_dia(dia: str) -> pd.DataFrame:
         vcod = int(vcod_raw)
         seg = _clasificar_segmento(str(row.get("Ramo", "")),
                                    str(row.get(sub_col, "") if sub_col else ""))
+        # V3 (Nadia) solo trabaja Tradicional almacén/despensa/kiosco
+        if vcod == 3:
+            _ss = str(row.get(sub_col, "")).upper() if sub_col else ""
+            if seg != "TRADICIONAL" or not any(k in _ss for k in ("ALMACEN", "DESPENSA", "KIOSCO")):
+                continue
         compra_mes = 1 if cid in ccc_ids else 0
         estado = "SIN_COMPRA_MES" if compra_mes == 0 else "COBERTURA_OK"
         rows.append({
@@ -1156,6 +1161,8 @@ def clientes():
     df["impacto_alertas_ars"] = df["importe_mes"].fillna(0)
     df["faltan_11t"] = 11
     df["kernel_accion"] = ""
+    # V3 (Nadia) solo Tradicional (no AS / On Premise / Mayorista)
+    df = df[~((df["vendedor_id"] == "V3") & (df["segmento"].astype(str).str.upper() != "TRADICIONAL"))]
 
     # Enriquecer con última compra desde historial
     try:
@@ -3771,7 +3778,14 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
                 continue  # esta acción no aplica a este vendedor
             codes = {vnum}
             if vnum == 3:
-                seg_use.discard("AUTOSERVICIO")
+                # V3 (Nadia) solo trabaja Tradicional almacén/despensa/kiosco:
+                # descarta AS / On Premise / Mayorista. Si la acción no aplica a
+                # tradicional, no se le muestra; la footprint se restringe a almacén/kiosco.
+                seg_use &= {"TRADICIONAL"}
+                if not seg_use:
+                    continue
+                if sub_allowed is None:
+                    sub_allowed = {"ALMACEN", "KIOSCO"}
 
         def _match(df, sub_allowed=sub_allowed):
             if df.empty:
@@ -5273,8 +5287,12 @@ def vendedor_incentivo_faro(vid):
     obj = _faro_objetivos().get(cod, {c: 0 for c in _FARO_CATS})
     df = _faro_ventas()
     det = _faro_detalle_vendedor(df, cod)
+    es_v3 = (cod == 3)
     categorias = []
     for cat in _FARO_CATS:
+        # V3 no trabaja Autoservicio → solo categorías de canal tradicional
+        if es_v3 and _FARO_CAT_SEG[cat] != "TRADICIONAL":
+            continue
         o = obj.get(cat, 0)
         l = det.get(cat, {}).get("logrado", 0)
         categorias.append({

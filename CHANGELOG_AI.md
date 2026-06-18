@@ -1,5 +1,17 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-18 - fix(V3): perfil completo solo Tradicional (almacén/despensa/kiosco)
+
+**Objetivo:** que V3 (Nadia) no vea NADA de Autoservicio / On Premise / Mayorista en ningún lado de su perfil. Auditoría de todas las pantallas; corregido en backend (consistente para gerencia y vendedor).
+
+- **Acciones comerciales** (`server_orbit.py` `acciones_mes`): para V3 `seg_use &= {TRADICIONAL}` y si la acción no aplica a tradicional **se descarta** (antes seguía apareciendo con 0 clientes); footprint restringido a almacén/kiosco. Resultado: V3 pasa de ~28 a 9 acciones (solo tradicional/almacén/kiosco/todos). V8 sin cambios (28, sigue con AS).
+- **Incentivo FARO** (`vendedor_incentivo_faro`): V3 solo categorías de canal tradicional → queda Alaris + Finca Las Moras; se ocultan Antares y Familia Smirnoff (Autoservicio).
+- **Cobertura acumulada** (`generar_datasets_acum.py` `generar_cobertura_acum`): V3 solo TRADICIONAL almacén/despensa/kiosco (antes traía MAYORISTA y ON_PREMISE). Cartera V3 = 284. Regenerados `mod_cobertura_acum.csv` y `mod_cobertura_acum_detalle.csv`.
+- **Clientes del día** (`/api/clientes` y `_clientes_por_dia`): V3 solo Tradicional almacén/despensa/kiosco (saca los 4 On Premise que aparecían en Inicio/Plan/Clientes).
+- **Pestaña Plan AS** (`portal.html` `showApp`): oculta para V3 (no trabaja Autoservicio; ya venía con 0 clientes).
+
+Validado vía HTTP: acciones/FARO/cobertura/clientes de V3 sin AS/OP/Mayorista; V8 control sin cambios. `node --check` OK.
+
 ## 2026-06-18 - fix(ruta): V3 solo Tradicional almacén/despensa/kiosco
 
 **`server_orbit.py`** (`/api/vendedor/<vid>/ruta`): la ruta de V3 ahora deja SOLO clientes Tradicional con SubSegmento almacén/despensa/kiosco (whitelist `ALMACEN`/`DESPENSA`/`KIOSCO`). Esto reemplaza el filtro anterior (que solo sacaba AS/On Premise) y además excluye fiambrería, panadería, carnicería, "resto de tradicionales", etc. Validado contra el maestro: quedan 284 de 347 (Almacen/Despensa 234 + Kiosco/Maxikiosco 50); el resto excluido.

@@ -999,7 +999,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       <div class="vtab-badge" id="vBadge"></div>
     </div>
     <div class="vtab" onclick="vSw('cliente',this)"><span class="vtab-ico">🔎</span><span>Cliente</span></div>
-    <div class="vtab" onclick="vSw('planes_as',this)"><span class="vtab-ico">🏆</span><span>Plan AS</span></div>
+    <div class="vtab" id="vtab-planesas" onclick="vSw('planes_as',this)"><span class="vtab-ico">🏆</span><span>Plan AS</span></div>
     <div class="vtab" onclick="vSw('faro',this)"><span class="vtab-ico">🌟</span><span>FARO</span></div>
   </nav>
 </div>
@@ -1256,6 +1256,10 @@ function showApp(){
     const h=new Date().getHours();
     document.getElementById('vGreet').textContent=(h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches')+' · '+(userData.nombre||'').split(' ')[0];
     buildVDaySel(diag.dia_operativo);
+    // V3 (Nadia) no trabaja Autoservicio → sin pestaña Plan AS
+    if((userData.vendedor_id||'').toUpperCase()==='V3'){
+      const t=document.getElementById('vtab-planesas'); if(t) t.style.display='none';
+    }
     vRenderAll();
     if(altasN) document.getElementById('vBadge').style.display='block';
   }
