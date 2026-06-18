@@ -1,5 +1,22 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-18 - feat(cobertura): drill-down por vendedor + faltantes en tarjeta de cobertura acumulada
+
+**Objetivo:** ver las coberturas logradas por cada vendedor en los segmentos, dentro de la tarjeta "Cobertura acumulada del mes", expandiendo cada segmento para ver el detalle por vendedor y los clientes que aún no lograron cobertura.
+
+**`generar_datasets_acum.py`** (`generar_cobertura_acum`): además del agregado `mod_cobertura_acum.csv` ahora emite **`mod_cobertura_acum_detalle.csv`** = clientes faltantes (cubierto=0, es decir `cant_base_acum < umbral` en el acumulado) por vendedor × segmento, con nombre y localidad desde `clientes.xlsx`. Mismo `merged` que ya calculaba `cubierto` (no cambia ningún cálculo de cobertura). Validado: `sin_cobertura` del agregado = nº de filas del detalle en las 26 combinaciones vendedor×segmento.
+
+**`server_orbit.py`**: dos endpoints nuevos (+ helper `_cobertura_faltantes_rows`):
+- `GET /api/gerencia/cobertura_acum_faltantes?segmento=X` → faltantes por vendedor para el drill-down de gerencia.
+- `GET /api/vendedor/<vid>/cobertura_acum` → cobertura propia del vendedor por segmento + faltantes (solo sus datos). Respeta V3 sin AUTOSERVICIO.
+
+**`PAV MATINAL PE_A FLOR/portal.html`**:
+- Dashboard gerencia: cada segmento de la tarjeta es clicable → despliega vendedores (cubiertos/cartera/%) y, por vendedor, los clientes faltantes (lazy fetch con caché por segmento).
+- Pantalla Vendedores (360°): cada tarjeta suma "Cobertura acumulada por segmento" expandible a sus faltantes.
+- Perfil propio del vendedor (`vKpis`): nueva tarjeta "Cobertura acumulada del mes" con faltantes por segmento (cargada en `loadRole`).
+
+Validado vía HTTP (server local): portal 200, endpoint gerencia 6 vendedores con faltantes, V9 segmentos con faltantes = sin_cobertura, V3 sin AUTOSERVICIO. `node --check` del script del portal OK.
+
 ## 2026-06-17 - fix(sellout): RTD se abre en RTD + RTD (S) (obj y litros)
 
 **`server_orbit.py`**: en OBJSELLOUT.xlsx, 'rtd' y 'rtd (s)' comparten Grupo PBP 'RTD' → se trataban como categorías separadas (RTD (S) quedaba huérfano). Ahora `_OBJ_CAT_NORM` mapea 'rtd (s)'→RTD y `_cargar_objetivos_sellout` detecta la colisión de Grupo PBP y etiqueta los subgrupos por nombre de categoría → RTD: total 9056, subs {RTD 4028, RTD (S) 5028}. En `_sellout_desde_ventas` se agregó `_cat_raw` (categoría cruda del maestro 04D) y la rama RTD que abre los litros logrados en RTD vs RTD (S). Validado: RTD 619 L (15.4%) + RTD (S) 1946.9 L (38.7%) = 2565.9 L (total 28.3%).

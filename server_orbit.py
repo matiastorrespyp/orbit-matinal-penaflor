@@ -2959,6 +2959,103 @@ def gerencia_cobertura_acum():
     })
 
 
+def _cobertura_faltantes_rows(df, cod=None):
+    """Normaliza mod_cobertura_acum_detalle.csv. Si cod, filtra a ese vendedor.
+    Devuelve dict {(vid, segmento): [clientes faltantes]}."""
+    out = {}
+    if df.empty:
+        return out
+    df.columns = [c.lstrip("﻿") for c in df.columns]
+    df["vendedor_codigo"] = pd.to_numeric(df["vendedor_codigo"], errors="coerce")
+    df = df[~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
+    if cod is not None:
+        df = df[df["vendedor_codigo"] == cod]
+    for _, row in df.iterrows():
+        vid = f"V{int(row['vendedor_codigo'])}" if pd.notnull(row.get("vendedor_codigo")) else "V0"
+        seg = str(row.get("segmento", ""))
+        out.setdefault((vid, seg), []).append({
+            "cliente_id":     int(row["cliente_id"]) if pd.notnull(row.get("cliente_id")) else None,
+            "cliente_nombre": str(row.get("cliente_nombre", "") or ""),
+            "localidad":      str(row.get("localidad", "") or ""),
+            "botellas":       round(float(row.get("cant_base_acum", 0) or 0), 1),
+            "umbral":         int(row.get("umbral", 0) or 0),
+        })
+    return out
+
+
+# ====== GERENCIA: FALTANTES DE COBERTURA POR SEGMENTO (drill-down) ======
+@app.route("/api/gerencia/cobertura_acum_faltantes")
+def gerencia_cobertura_acum_faltantes():
+    """Clientes que aún no lograron cobertura (acumulado) por vendedor, para un segmento.
+    Fuente: mod_cobertura_acum_detalle.csv. Excluye V2, V5, V20."""
+    seg = request.args.get("segmento", "").strip()
+    df = read_csv(DATASETS / "mod_cobertura_acum_detalle.csv")
+    rows = _cobertura_faltantes_rows(df)
+    por_vendedor = {}
+    for (vid, segk), clientes in rows.items():
+        if seg and segk.upper() != seg.upper():
+            continue
+        v = por_vendedor.setdefault(vid, {"vendedor_id": vid, "vendedor_nombre": "", "faltantes": []})
+        v["faltantes"].extend(clientes)
+    # vendedor_nombre desde el primer registro disponible
+    if not df.empty:
+        df.columns = [c.lstrip("﻿") for c in df.columns]
+        for _, r in df.iterrows():
+            vid = f"V{int(r['vendedor_codigo'])}" if pd.notnull(r.get("vendedor_codigo")) else None
+            if vid in por_vendedor and not por_vendedor[vid]["vendedor_nombre"]:
+                por_vendedor[vid]["vendedor_nombre"] = str(r.get("vendedor_nombre", "") or "")
+    res = sorted(por_vendedor.values(),
+                 key=lambda x: int(x["vendedor_id"][1:]) if x["vendedor_id"][1:].isdigit() else 999)
+    return jsonify({
+        "generado_en": _now_ar(),
+        "segmento": seg,
+        "fuente": "mod_cobertura_acum_detalle.csv",
+        "por_vendedor": res,
+    })
+
+
+# ====== VENDEDOR: COBERTURA ACUMULADA PROPIA + FALTANTES ======
+@app.route("/api/vendedor/<vid>/cobertura_acum")
+def vendedor_cobertura_acum(vid):
+    """Cobertura acumulada del mes del vendedor por segmento, con clientes faltantes.
+    Fuente: mod_cobertura_acum.csv (agregado) + mod_cobertura_acum_detalle.csv (faltantes).
+    Solo devuelve datos del propio vendedor (sin exponer a otros)."""
+    try:
+        cod = int(str(vid).upper().replace("V", ""))
+    except ValueError:
+        return jsonify({"error": "vendedor inválido"}), 400
+
+    agg = read_csv(DATASETS / "mod_cobertura_acum.csv")
+    det = read_csv(DATASETS / "mod_cobertura_acum_detalle.csv")
+    falt = _cobertura_faltantes_rows(det, cod=cod)
+
+    fecha = ""
+    segmentos = []
+    if not agg.empty:
+        agg.columns = [c.lstrip("﻿") for c in agg.columns]
+        agg["vendedor_codigo"] = pd.to_numeric(agg["vendedor_codigo"], errors="coerce")
+        a = agg[agg["vendedor_codigo"] == cod].copy()
+        if "fecha_calculo" in a.columns and not a.empty:
+            fecha = str(a["fecha_calculo"].iloc[0])
+        for _, row in a.sort_values("segmento").iterrows():
+            segk = str(row["segmento"])
+            segmentos.append({
+                "segmento":      segk,
+                "cartera":       int(row.get("cartera", 0) or 0),
+                "cubiertos":     int(row.get("cubiertos", 0) or 0),
+                "sin_cobertura": int(row.get("sin_cobertura", 0) or 0),
+                "pct_cobertura": round(float(row.get("pct_cobertura", 0) or 0), 4),
+                "faltantes":     falt.get((f"V{cod}", segk), []),
+            })
+    return jsonify({
+        "generado_en": _now_ar(),
+        "vendedor_id": f"V{cod}",
+        "fecha_calculo": fecha,
+        "fuente": "mod_cobertura_acum.csv",
+        "segmentos": segmentos,
+    })
+
+
 # ====== 11T ACUMULADO ======
 @app.route("/api/gerencia/11t_acum")
 def gerencia_11t_acum():

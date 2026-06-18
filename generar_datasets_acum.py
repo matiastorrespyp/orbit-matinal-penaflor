@@ -547,9 +547,10 @@ def cargar_maestro_productos():
 # ─────────────────────────────────────────────
 
 def generar_cobertura_acum(ventas, clientes):
-    cart = clientes[["Codigo", "codven", "Vendedor", "_seg"]].rename(
+    cart = clientes[["Codigo", "codven", "Vendedor", "_seg", "Razon_Social", "Localidad"]].rename(
         columns={"Codigo": "cliente_id", "codven": "vendedor_codigo",
-                 "Vendedor": "vendedor_nombre", "_seg": "segmento"}
+                 "Vendedor": "vendedor_nombre", "_seg": "segmento",
+                 "Razon_Social": "cliente_nombre", "Localidad": "localidad"}
     ).copy()
     cart = cart[cart["segmento"] != "OTROS"]
     # V3 no trabaja AUTOSERVICIO
@@ -566,15 +567,29 @@ def generar_cobertura_acum(ventas, clientes):
     merged["umbral"] = merged["segmento"].map(UMBRAL).fillna(3)
     merged["cubierto"] = (merged["cant_base_acum"] >= merged["umbral"]).astype(int)
 
+    fecha = datetime.now().strftime("%Y-%m-%d")
     agg = merged.groupby(["vendedor_codigo", "vendedor_nombre", "segmento"]).agg(
         cartera=("cliente_id", "count"),
         cubiertos=("cubierto", "sum"),
     ).reset_index()
     agg["sin_cobertura"] = agg["cartera"] - agg["cubiertos"]
     agg["pct_cobertura"] = (agg["cubiertos"] / agg["cartera"].replace(0, np.nan)).round(4).fillna(0)
-    agg["fecha_calculo"] = datetime.now().strftime("%Y-%m-%d")
+    agg["fecha_calculo"] = fecha
     agg = agg.sort_values(["vendedor_codigo", "segmento"])
-    return agg
+
+    # Detalle de faltantes: clientes en cartera que NO alcanzaron el umbral en el acumulado.
+    # Alimenta el drill-down de la tarjeta de cobertura (gerencia y vendedor).
+    det = merged[merged["cubierto"] == 0].copy()
+    det["fecha_calculo"] = fecha
+    det["cliente_id"] = pd.to_numeric(det["cliente_id"], errors="coerce").astype("Int64")
+    det["cliente_nombre"] = det["cliente_nombre"].fillna("").astype(str)
+    det["localidad"] = det["localidad"].fillna("").astype(str)
+    det["cant_base_acum"] = pd.to_numeric(det["cant_base_acum"], errors="coerce").fillna(0).round(1)
+    det["umbral"] = pd.to_numeric(det["umbral"], errors="coerce").fillna(0).astype(int)
+    det = det.sort_values(["vendedor_codigo", "segmento", "cliente_nombre"])
+    det = det[["fecha_calculo", "vendedor_codigo", "vendedor_nombre", "segmento",
+               "cliente_id", "cliente_nombre", "localidad", "cant_base_acum", "umbral"]]
+    return agg, det
 
 
 # ─────────────────────────────────────────────
@@ -1286,9 +1301,10 @@ def main():
 
     # ── Cobertura ──
     print("\n[1/3] Generando mod_cobertura_acum.csv ...")
-    cob = generar_cobertura_acum(ventas, clientes)
+    cob, cob_det = generar_cobertura_acum(ventas, clientes)
     cob.to_csv(OUT / "mod_cobertura_acum.csv", index=False, encoding="utf-8-sig")
-    print(f"  OK: {len(cob)} filas")
+    cob_det.to_csv(OUT / "mod_cobertura_acum_detalle.csv", index=False, encoding="utf-8-sig")
+    print(f"  OK: {len(cob)} filas (+ {len(cob_det)} faltantes en mod_cobertura_acum_detalle.csv)")
     print(cob[["vendedor_codigo", "segmento", "cartera", "cubiertos", "pct_cobertura"]].to_string(index=False))
 
     # ── 11 Titulares ──
@@ -1370,6 +1386,7 @@ def main():
 
     print("\n[OK] Datasets generados en 04_DATASETS_ORBIT/")
     print("     mod_cobertura_acum.csv")
+    print("     mod_cobertura_acum_detalle.csv")
     print("     mod_11t_acum.csv")
     print("     mod_planes_as.csv")
     print("     mod_innovaciones_segmento.csv")

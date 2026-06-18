@@ -1009,7 +1009,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 
 /* ── estado ── */
 let userData = null, currentDay = null, gFiltro = "", gScreen = "dashboard", gPlanFechaSel = null;
-let D = { diag:{}, dash:[], cli:[], al:[], plan:[], pvr:{}, det:{}, msgs:[], cccEmpresa:{}, onceTit:{}, onceTitDia:{}, inov:null, plan_inov:null, cob_acum:null, t11_acum:null, inov_total:null, planes_as_g:null, planes_as_v:null, acc_vigentes:[], oportInov:null, ruta:null };
+let D = { diag:{}, dash:[], cli:[], al:[], plan:[], pvr:{}, det:{}, msgs:[], cccEmpresa:{}, onceTit:{}, onceTitDia:{}, inov:null, plan_inov:null, cob_acum:null, cob_acum_v:null, t11_acum:null, inov_total:null, planes_as_g:null, planes_as_v:null, acc_vigentes:[], oportInov:null, ruta:null };
 
 const CV = { V3:'#5BDED4', V4:'#F2B544', V6:'#5BC23A', V7:'#9B7BFF', V8:'#4DA3FF', V9:'#FF9D5C', V10:'#FF5D8B' };
 const DAYS = ['LU','MA','MI','JU','VI','SA'];
@@ -1162,7 +1162,7 @@ async function loadRole(){
   if(plan) D.plan=Array.isArray(plan)?plan:[];
   if(pvr)  D.pvr =pvr;
   if(userData?.rol==='vendedor'){
-    const [det,msgs,inov,planInov,plasASV,accV,oportInov,ruta]=await Promise.all([
+    const [det,msgs,inov,planInov,plasASV,accV,oportInov,ruta,cobAcumV]=await Promise.all([
       safe('/api/vendedor/'+userData.vendedor_id),
       safe('/api/mensajes?vendedor_id='+userData.vendedor_id),
       safe('/api/vendedor/'+userData.vendedor_id+'/innovaciones_segmento'),
@@ -1170,7 +1170,8 @@ async function loadRole(){
       safe('/api/vendedor/'+userData.vendedor_id+'/planes_as'),
       safe('/api/vendedor/'+userData.vendedor_id+'/acciones_mes'),
       safe('/api/vendedor/'+userData.vendedor_id+'/oportunidades_innovacion?dia='+(currentDay||'')),
-      safe('/api/vendedor/'+userData.vendedor_id+'/ruta?dia='+(currentDay||''))
+      safe('/api/vendedor/'+userData.vendedor_id+'/ruta?dia='+(currentDay||'')),
+      safe('/api/vendedor/'+userData.vendedor_id+'/cobertura_acum')
     ]);
     if(det)      D.det=det;
     if(msgs)     D.msgs=Array.isArray(msgs)?msgs:[];
@@ -1180,6 +1181,7 @@ async function loadRole(){
     if(oportInov) D.oportInov=oportInov;
     if(ruta)     D.ruta=ruta;
     if(accV)     D.acc_mes_v=accV;
+    if(cobAcumV) D.cob_acum_v=cobAcumV;
   }
   if(userData?.rol==='gerencia'){
     const [cccEmp,onceTit,onceTitDia,inov,cobAcum,t11Acum,inovTot,plasAS,sellLitros,accRank,dormidos]=await Promise.all([
@@ -1452,11 +1454,13 @@ function gDashboard(p){
       <div class="card-hd"><span class="card-title">📊 Cobertura acumulada del mes</span><span class="chip">${D.cob_acum?.fecha_calculo||''}</span></div>
       <div class="card-body">
         ${segsAcum.map(s=>{const pct=s.cartera?Math.round(s.cubiertos/s.cartera*100):0,cl=pct>=80?'ok':pct>=50?'wn':'bd';
+          const sid='gcobseg-'+s.seg.replace(/[^A-Z0-9]/gi,'');
           return `<div class="srow">
-            <div class="srow-hd"><span class="srow-name">${s.seg}</span><span class="chip ${cl}">${pct}%</span></div>
+            <div class="srow-hd" style="cursor:pointer;" onclick="gCobSegToggle('${s.seg}','${sid}')"><span class="srow-name"><span id="${sid}-arr">▸</span> ${s.seg}</span><span class="chip ${cl}">${pct}%</span></div>
             <div class="bar" style="height:5px;"><div class="bar-f ${cl}" style="width:${pct}%"></div></div>
-            <div class="xs m3 mt4">${s.cubiertos} cubiertos de ${s.cartera} cartera · <b style="color:var(--bd)">${s.sin_cobertura} aún sin comprar</b></div>
-          </div>`;}).join('')}
+            <div class="xs m3 mt4">${s.cubiertos} cubiertos de ${s.cartera} cartera · <b style="color:var(--bd)">${s.sin_cobertura} aún sin comprar</b> · <span style="color:var(--mg)">ver por vendedor</span></div>
+          </div>
+          <div id="${sid}" style="display:none;padding:2px 0 10px;"></div>`;}).join('')}
       </div>
     </div>`;
   }
@@ -1761,6 +1765,19 @@ function gVendedores(p){
   grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:13px;';
   grid.innerHTML=filt.map((v,i)=>{
     const k=v.kpis||{},av=k.tendencia_pct??0,cl=pcol(av),col=CV[v.vendedor_id]||'#888';
+    const cobV=(D.cob_acum?.por_vendedor||[]).find(x=>x.vendedor_id===v.vendedor_id);
+    const cobHtml=cobV&&(cobV.segmentos||[]).length?`<div style="margin-top:10px;border-top:1px solid var(--bd3);padding-top:8px;">
+        <div class="xs m3 mb6" style="font-weight:600;">📊 Cobertura acumulada por segmento</div>
+        ${cobV.segmentos.slice().sort((a,b)=>a.segmento.localeCompare(b.segmento)).map(s=>{const p=s.cartera?Math.round(s.cubiertos/s.cartera*100):0,c2=p>=80?'ok':p>=50?'wn':'bd';
+          const fid='gvcob-'+v.vendedor_id+'-'+s.segmento.replace(/[^A-Z0-9]/gi,'');
+          return `<div style="padding:3px 0;">
+            <div class="row-b" style="cursor:pointer;" onclick="gVendCobToggle('${v.vendedor_id}','${s.segmento}','${fid}')">
+              <span style="font-size:11px;"><span id="${fid}-arr">▸</span> ${s.segmento}</span>
+              <span class="chip ${c2}" style="font-size:9px;">${s.cubiertos}/${s.cartera} · ${p}%</span>
+            </div>
+            <div id="${fid}" style="display:none;margin-top:4px;max-height:170px;overflow:auto;"></div>
+          </div>`;}).join('')}
+      </div>`:'';
     return `<div class="card">
       <div class="card-hd">
         <div class="row gap10">
@@ -1778,9 +1795,74 @@ function gVendedores(p){
           <div><div class="xs m3">Plan.${currentDay||'–'}</div><b>${k.clientes_total||0}</b></div>
           <div><div class="xs m3">SC Día</div><b style="color:var(--bd)">${k.clientes_pendientes||0}</b></div>
         </div>
+        ${cobHtml}
       </div>
     </div>`;}).join('');
   p.appendChild(grid);
+}
+
+/* ── Cobertura acumulada: drill-down por segmento (gerencia) ── */
+function _cobFaltCache(){ window.__cobFalt=window.__cobFalt||{}; return window.__cobFalt; }
+async function _cobFaltFetch(seg){
+  const cache=_cobFaltCache();
+  if(cache[seg]) return cache[seg];
+  try{
+    const r=await fetch('/api/gerencia/cobertura_acum_faltantes?segmento='+encodeURIComponent(seg));
+    if(!r.ok) return {};
+    const j=await r.json(); const map={};
+    (j.por_vendedor||[]).forEach(v=>map[v.vendedor_id]=v.faltantes||[]);
+    cache[seg]=map; return map;
+  }catch(e){ return {}; }
+}
+function _faltRows(fl){
+  if(!fl||!fl.length) return `<div class="xs m3" style="color:var(--ok)">Todos cubiertos ✓</div>`;
+  return fl.map(c=>`<div class="row-b" style="padding:2px 0;font-size:11px;color:var(--text3);border-top:1px solid var(--bd3);">
+    <span>${c.cliente_nombre||('#'+c.cliente_id)}${c.localidad?' · '+c.localidad:''}</span>
+    <span style="color:var(--bd);white-space:nowrap;">${c.botellas}/${c.umbral} bot</span></div>`).join('');
+}
+async function gCobSegToggle(seg,divId){
+  const el=document.getElementById(divId), arr=document.getElementById(divId+'-arr');
+  if(!el) return;
+  if(el.style.display!=='none'){ el.style.display='none'; if(arr)arr.textContent='▸'; return; }
+  el.style.display='block'; if(arr)arr.textContent='▾';
+  if(el.dataset.loaded) return;
+  el.dataset.loaded='1';
+  el.innerHTML=`<div class="xs m3" style="padding:4px 0;">Cargando detalle…</div>`;
+  const vends=(D.cob_acum?.por_vendedor||[]).map(v=>{
+    const sg=(v.segmentos||[]).find(x=>x.segmento===seg);
+    return sg?{vid:v.vendedor_id,nombre:v.vendedor_nombre,...sg}:null;
+  }).filter(Boolean).sort((a,b)=>(parseInt(a.vid.slice(1))||0)-(parseInt(b.vid.slice(1))||0));
+  const falt=await _cobFaltFetch(seg);
+  el.innerHTML=vends.length?vends.map(v=>{
+    const pct=v.cartera?Math.round(v.cubiertos/v.cartera*100):0,cl=pct>=80?'ok':pct>=50?'wn':'bd';
+    const fid=divId+'-'+v.vid;
+    return `<div style="border-top:1px solid var(--bd3);padding:6px 0;">
+      <div class="row-b" style="cursor:pointer;" onclick="gCobFaltToggle('${fid}')">
+        <span style="font-size:12px;"><b style="color:${CV[v.vid]||'var(--text2)'}">${v.vid}</b> ${v.nombre||''}</span>
+        <span class="chip ${cl}" style="font-size:10px;">${v.cubiertos}/${v.cartera} · ${pct}%</span>
+      </div>
+      <div id="${fid}" style="display:none;margin-top:5px;max-height:180px;overflow:auto;">${_faltRows(falt[v.vid])}</div>
+    </div>`;
+  }).join(''):`<div class="xs m3">Sin datos para ${seg}</div>`;
+}
+function gCobFaltToggle(id){const e=document.getElementById(id);if(e)e.style.display=e.style.display==='none'?'block':'none';}
+async function gVendCobToggle(vid,seg,divId){
+  const el=document.getElementById(divId), arr=document.getElementById(divId+'-arr');
+  if(!el) return;
+  if(el.style.display!=='none'){ el.style.display='none'; if(arr)arr.textContent='▸'; return; }
+  el.style.display='block'; if(arr)arr.textContent='▾';
+  if(el.dataset.loaded) return;
+  el.dataset.loaded='1';
+  el.innerHTML=`<div class="xs m3">Cargando…</div>`;
+  const falt=await _cobFaltFetch(seg);
+  el.innerHTML=_faltRows(falt[vid]);
+}
+function vCobToggle(id){
+  const e=document.getElementById(id), arr=document.getElementById(id+'-arr');
+  if(!e) return;
+  const open=e.style.display==='none';
+  e.style.display=open?'block':'none';
+  if(arr)arr.textContent=open?'▾':'▸';
 }
 
 /* — Clientes — */
@@ -2293,6 +2375,23 @@ function vKpis(){
         </div>
       </div>
     </div>`;
+  // Cobertura acumulada del mes por segmento (vendedor) — clic en segmento despliega faltantes
+  const cobv=D.cob_acum_v;
+  if(cobv && (cobv.segmentos||[]).length){
+    h+=`<div class="card">
+      <div class="card-hd"><span class="card-title">📊 Cobertura acumulada del mes</span><span class="chip">${cobv.fecha_calculo||''}</span></div>
+      <div class="card-body">
+        ${cobv.segmentos.slice().sort((a,b)=>a.segmento.localeCompare(b.segmento)).map(s=>{const pct=s.cartera?Math.round(s.cubiertos/s.cartera*100):0,cl=pct>=80?'ok':pct>=50?'wn':'bd';
+          const fid='vmcob-'+s.segmento.replace(/[^A-Z0-9]/gi,'');
+          return `<div class="srow">
+            <div class="srow-hd" style="cursor:pointer;" onclick="vCobToggle('${fid}')"><span class="srow-name"><span id="${fid}-arr">▸</span> ${s.segmento}</span><span class="chip ${cl}">${pct}%</span></div>
+            <div class="bar" style="height:5px;"><div class="bar-f ${cl}" style="width:${pct}%"></div></div>
+            <div class="xs m3 mt4">${s.cubiertos} cubiertos de ${s.cartera} · <b style="color:var(--bd)">${s.sin_cobertura} sin cobertura</b></div>
+            <div id="${fid}" style="display:none;margin-top:5px;max-height:200px;overflow:auto;">${_faltRows(s.faltantes)}</div>
+          </div>`;}).join('')}
+      </div>
+    </div>`;
+  }
   if(tits.length){
     const diaLbl=tits[0]?.dia_zona||'';
     h+=`<div class="card">

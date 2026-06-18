@@ -1,5 +1,16 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-18 - Cobertura por vendedor + faltantes (drill-down)
+
+### HECHO (validado en local, NO commiteado aun)
+- `generar_datasets_acum.py`: nuevo `mod_cobertura_acum_detalle.csv` (faltantes por vendedor x segmento) desde el mismo merge de cobertura. Consistencia sin_cobertura == filas detalle OK.
+- `server_orbit.py`: `/api/gerencia/cobertura_acum_faltantes?segmento=` y `/api/vendedor/<vid>/cobertura_acum`. V3 sin AUTOSERVICIO respetado.
+- `portal.html`: drill-down por segmento en dashboard gerencia, cobertura por segmento en pantalla Vendedores 360, y tarjeta nueva en el perfil propio del vendedor.
+
+### PENDIENTE
+- Commit (pedir aprobacion). Incluir `mod_cobertura_acum_detalle.csv` en el commit para que Render lo tenga (el endpoint lo lee). Confirmar que el flujo de cierre/regeneracion lo deja siempre fresco (main() ya lo emite).
+- Validacion visual del usuario en el portal (gerencia y un vendedor real).
+
 ## Sesion 2026-06-17 - Performance carga del portal (Render)
 
 ### HECHO (desplegado en Render)
