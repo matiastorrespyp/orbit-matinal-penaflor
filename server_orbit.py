@@ -4926,6 +4926,9 @@ def vendedor_ruta(vid):
             continue
         cid = int(r["Codigo"])
         seg = _clasificar_segmento(str(r.get("Ramo", "")), str(r.get(sub_col, "") if sub_col else ""))
+        # V3 (Nadia) no trabaja AUTOSERVICIO ni ON PREMISE: fuera de su ruta
+        if vid_norm == "V3" and seg.upper() in ("AUTOSERVICIO", "ON_PREMISE_VTK"):
+            continue
         comp = cid in bought_clients
         tb = tit_cli.get(cid, set()) & once_set
         comp_11 = [t for t in _RUTA_ONCE if t in tb]

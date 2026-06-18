@@ -1,5 +1,9 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-18 - fix(ruta): V3 sin AUTOSERVICIO ni ON PREMISE en su ruta
+
+**`server_orbit.py`** (`/api/vendedor/<vid>/ruta`): V3 (Nadia) no trabaja AS ni On Premise → se excluyen esos clientes de su ruta física (antes aparecían en la lista). Filtro en el loop: `if vid=="V3" and seg in (AUTOSERVICIO, ON_PREMISE_VTK): continue`. Validado: V3 ruta solo TRADICIONAL (total 55, antes incluía AS/OP); V8 sin cambios.
+
 ## 2026-06-18 - feat(ruta): orden de visita + 11 Titulares e Innovaciones colapsables (verde/amarillo)
 
 **Objetivo:** en la pestaña Ruta del perfil del vendedor, listar los clientes en **orden de visita** y, en vez de mostrar marcas sueltas, dos chips colapsables por cliente: **11 Titulares** y **Innovaciones**; al hacer clic se abre el detalle con las marcas/productos en **verde** (ya comprados) y **amarillo** (aún no).
