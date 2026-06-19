@@ -1,5 +1,13 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-19 - fix(innovaciones): medir solo Peñaflor (excluir P&P Logística) en ambos perfiles
+
+Mismo criterio que el 11T. Las innovaciones contaban compras de **P&P Logística** de clientes Peñaflor.
+- `generar_datasets_acum.py` `generar_innovaciones_segmento` y `generar_innovaciones_plan_as`: filtran `Empresa=='Empresa'`. Regenerados `mod_innovaciones_segmento.csv` y `mod_innovaciones_plan_as.csv`.
+- `server_orbit.py` `/api/vendedor/<id>/oportunidades_innovacion`: filtra `Empresa=='Empresa'` (lee ventas_acumulada en vivo).
+- Afecta gerencia (innovaciones_segmento, innovaciones_total) y vendedor (innovaciones_segmento, plan_innovaciones, oportunidades) — todos leen los datasets regenerados.
+- Impacto: total clientes_compraron 149→111 (−25%, salieron las compras P&P). Endpoints validados.
+
 ## 2026-06-19 - fix(11T): aplicar el criterio correcto en las demás lecturas (zona y ruta)
 
 Extiende el fix del 11T a todas las tarjetas/perfil para que lean igual que la tarjeta principal:

@@ -889,8 +889,10 @@ def generar_innovaciones_segmento(ventas, clientes):
     # V3 sin AUTOSERVICIO
     cart = cart[~((cart["vendedor_codigo"] == 3) & (cart["segmento"] == "AUTOSERVICIO"))]
 
-    # Ventas de productos innovación
+    # Ventas de productos innovación (solo Peñaflor, excluye P&P Logística)
     v = ventas[ventas["ImporteNetoItem"] > 0].copy()
+    if "Empresa" in v.columns:
+        v = v[v["Empresa"].astype(str).str.strip() == "Empresa"]
     v["_cod"] = pd.to_numeric(v["Codigo"], errors="coerce")
     v_inov = v[v["_cod"].isin(INOV_PRODUCTOS.keys()) &
                v["CodVendedor"].isin(VENDEDORES_ACTIVOS_INOV)].copy()
@@ -935,6 +937,8 @@ def generar_innovaciones_plan_as(ventas, bbdd):
     PENDIENTE_STOCK = "Antares P770|Antares P330"
 
     v = ventas[ventas["ImporteNetoItem"] > 0].copy()
+    if "Empresa" in v.columns:  # solo Peñaflor, excluye P&P Logística
+        v = v[v["Empresa"].astype(str).str.strip() == "Empresa"]
     v["_cod"] = pd.to_numeric(v["Codigo"], errors="coerce")
     v_inov = v[v["_cod"].isin(INOV_PRODUCTOS.keys())].copy()
 

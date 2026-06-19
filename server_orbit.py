@@ -5079,6 +5079,8 @@ def vendedor_oportunidades_innovacion(vid):
     except Exception:
         return jsonify(vacio), 200
     vac["imp"] = pd.to_numeric(vac["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
+    if "Empresa" in vac.columns:  # solo Peñaflor, excluye P&P Logística
+        vac = vac[vac["Empresa"].astype(str).str.strip() == "Empresa"]
     vac = vac[(vac["imp"] > 0) & (vac["CodVendedor"].astype(str).apply(clean_code) == cn)]
     if vac.empty:
         return jsonify(vacio), 200
