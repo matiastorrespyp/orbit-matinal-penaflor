@@ -1,5 +1,12 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-19 - fix(11T): aplicar el criterio correcto en las demás lecturas (zona y ruta)
+
+Extiende el fix del 11T a todas las tarjetas/perfil para que lean igual que la tarjeta principal:
+- **Tarjeta "11T CCC zona del día"** (`once_titulares_zona`): además del filtro Peñaflor (ya agregado), ahora acota al **trimestre calendario en curso** por FechaComprobante (antes contaba sobre toda la acumulada).
+- **11T de la Ruta del vendedor** (`vendedor_ruta`, ventas.csv mes vivo): `ventas.csv` también mezclaba **P&P Logística** y usaba `[2,5,20]` hardcodeado. Ahora filtra `Empresa=='Empresa'` y usa `_VENDEDORES_EXCLUIDOS` ({1,2,5,20}).
+- Per-vendedor (`mod_11t_acum` → dashboard "11T ✓" y perfil vendedor) ya quedó correcto en commits previos (Peñaflor + V1 excluido). Verificado: zona JU 11 marcas, V8 8/11 cumplidos, ruta V8 OK.
+
 ## 2026-06-18 - fix: excluir vendedor 1 (no es de ruta) además de 2/5/20
 
 **`server_orbit.py` + `generar_datasets_acum.py`**: `VENDEDORES_EXCLUIDOS` pasa de `{2,5,20}` a `{1,2,5,20}`. V1 no es vendedor de ruta Peñaflor (activos = 3,4,6,7,8,9,10) y se colaba en el conteo en vivo del 11T (`once_titulares`). Impacto: 11T total 4439→4435 (V1 tenía footprint mínimo); el maestro de clientes no tiene ningún cliente codven=1, así que ningún dataset cambia (no requiere regeneración).

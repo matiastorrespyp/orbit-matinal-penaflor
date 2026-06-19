@@ -2335,6 +2335,12 @@ def gerencia_once_titulares_zona():
             vac = vac[vac["Empresa"].astype(str).str.strip() == "Empresa"]
         vac = vac[~vac["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS)]
         vac = vac[vac["ImporteNetoItem"] > 0]
+        # Período = trimestre calendario en curso (en julio arranca de cero)
+        _f = pd.to_datetime(vac.get("FechaComprobante"), dayfirst=True, errors="coerce")
+        if _f.notna().any():
+            _hoy = datetime.now(_ARG_TZ)
+            _ini_trim = pd.Timestamp(_hoy.year, ((_hoy.month - 1) // 3) * 3 + 1, 1)
+            vac = vac[_f >= _ini_trim]
     except Exception as e:
         return jsonify({"error": str(e), "marcas": [], "dia": dia_raw}), 200
 
@@ -4963,7 +4969,10 @@ def vendedor_ruta(vid):
         try:
             v = pd.read_csv(vpath, sep=";", encoding="latin1", engine="python")
             v["imp"] = pd.to_numeric(v["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
-            v = v[(v["imp"] > 0) & (~v["CodVendedor"].isin([2, 5, 20]))]
+            # Solo Peñaflor (excluye P&P Logística) y vendedores no de ruta (V1/V2/V5/V20)
+            if "Empresa" in v.columns:
+                v = v[v["Empresa"].astype(str).str.strip() == "Empresa"]
+            v = v[(v["imp"] > 0) & (~v["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS))]
             v["cli"] = pd.to_numeric(v["Cliente"], errors="coerce")
             bought_clients = set(v["cli"].dropna().astype(int))
             v["_tit"] = [_ruta_titular(m, a) for m, a in zip(v.get("Marca", ""), v.get("Articulo", ""))]
