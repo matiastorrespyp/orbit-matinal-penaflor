@@ -2286,7 +2286,7 @@ function vFaro(){
         </div>`).join(''); }
       h+=`</div>`;
     });
-    h+=`<div class="xs" style="color:var(--text3);padding:4px 2px 20px;">Regla FARO: Familia Smirnoff 700cc en Autoservicio; Antares en Autoservicio con XPA y Lager 330/660 doble; Alaris/Finca Las Moras en Almacen/Despensa/Kiosco. Fuente: ${j.fuente||'ventas_acumulada.csv'} (${j.periodo||'mayo-junio'}).</div>`;
+    h+=`<div class="xs" style="color:var(--text3);padding:4px 2px 20px;">Regla FARO: Familia Smirnoff 700cc en Autoservicio; Antares en Autoservicio 1 cob. por cliente (no por variedad), 2 si compro XPA o Lager botella; Alaris/Finca Las Moras en Almacen/Despensa/Kiosco. Fuente: ${j.fuente||'ventas_acumulada.csv'} (${j.periodo||'mayo-junio'}).</div>`;
     cont.innerHTML=h;
   }).catch(e=>{ cont.innerHTML=`<div class="vsh">🌟 Incentivo Club FARO</div><div style="color:var(--bd);padding:16px;">Error: ${e.message}</div>`; });
 }

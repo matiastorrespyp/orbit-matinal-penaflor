@@ -1,5 +1,15 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-19 - fix(FARO): Antares logrado por cliente (no por variedad)
+
+**Incentivo Club FARO**, categoría **Antares (Autoservicio)**. El `logrado` contaba el peso **por cada SKU/variedad** con ≥6 botellas (`sku_ok["w"].sum()`), inflando el número: V4 mostraba **6/8** pero el detalle tenía solo **2 clientes** (cli 100: IPA+Caravana+XPA = 1+1+2=4; cli 370: Lager lata+Scotch = 1+1=2).
+
+**Regla correcta (confirmada por el usuario):** la cobertura es **por cliente**, no por variedad. Un cliente con ≥6 botellas de Antares en autoservicio suma **1**; si entre sus compras hay **XPA o Lager en botella** (peso 2) suma **2**. Máximo 2 por cliente.
+
+- `server_orbit.py` `_faro_detalle_vendedor`: la rama `antares` ahora calcula `logrado = Σ peso_cliente` sobre `cubiertos` (clientes con total Antares ≥ umbral), `peso_cliente = 2 si el cliente compró algún SKU XPA/Lager-botella, si no 1`. `compradores` pasa a ser **una fila por cliente** (con su peso), no por SKU.
+- Validado: V4 Antares **3/8** (cli 100 peso 2 + cli 370 peso 1), 2 clientes. Todos los vendedores quedan con `logrado ≤ 2×clientes` (V6 4, V8 9, V9 10, V10 11).
+- Textos de regla actualizados (header del módulo + leyenda del portal vendedor). alaris_flm y smirnoff no cambian (ya eran 1 por cliente).
+
 ## 2026-06-19 - fix(sellout): RTD (S) ya no se filtra en RTD + drill-down marca→varietal
 
 **Sell Out por categoría** (tarjeta gerencia, `/api/gerencia/sellout_litros`).

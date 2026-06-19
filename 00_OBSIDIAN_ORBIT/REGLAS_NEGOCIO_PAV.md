@@ -175,6 +175,22 @@ Los spirits (códigos 30xxx de Diageo/P&P) **sí están** en el maestro 04D con 
 
 ---
 
+## Incentivo Club FARO
+
+**Objetivos:** `01_INPUTS/incentivo_club_faro*.xlsx` (por vendedor + supervisores). **Logrado y no-compradores:** `ventas_acumulada.csv` filtrado a **mayo + junio**, solo Peñaflor (`Empresa=='Empresa'`), excluyendo V2/V5/V20. Código: `_faro_ventas()` + `_faro_detalle_vendedor()` en `server_orbit.py`. Endpoints `/api/gerencia/incentivo_faro` y `/api/vendedor/<id>/incentivo_faro`.
+
+3 categorías:
+
+| Categoría | Canal | Umbral | Cómo se cuenta el logrado |
+|---|---|---|---|
+| **Alaris + Finca Las Moras** (incl. Paz de FLM) | Tradicional | 3 bot | 1 cobertura por cliente que alcanza el umbral |
+| **Antares** | Autoservicio | 6 bot | **1 por cliente** (≥6 bot total); **2** si entre sus compras hay XPA o Lager en **botella** |
+| **Familia Smirnoff** (botella 700cc, excluye Ice/RTD) | Autoservicio | 6 bot | 1 cobertura por cliente que alcanza el umbral |
+
+> **Antares = por CLIENTE, NO por variedad (regla confirmada 2026-06-19).** Si un cliente compró Antares suma **1**; si esa Antares es **XPA** o **Lager en botella** (cod 60021/60022, formatos 330/660) suma **2**. **Máximo 2 por cliente** — NO se suma una cobertura extra por cada variedad comprada. Antes el cálculo sumaba el peso por cada SKU ≥6 botellas e inflaba (p.ej. V4: 6/8 con solo 2 clientes → corregido a 3/8). **Ojo:** "ANTARES LAGER LATA 6X473" es **lata** → peso 1, NO dobla.
+
+---
+
 ## Alertas, Acciones Comerciales y Planes AS — fuentes
 
 | Indicador | Fuente ventas | Fuente complementaria | Período |

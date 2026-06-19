@@ -1,8 +1,15 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
-## Sesion 2026-06-19 - Sell Out: fix RTD (S) + drill-down varietal
+## Sesion 2026-06-19 - Incentivo FARO: Antares por cliente
 
-### HECHO (validado en local)
+### HECHO (validado + pusheado a Render)
+- `server_orbit.py` `_faro_detalle_vendedor` rama `antares`: logrado = Σ peso por **cliente** (1, o 2 si compró XPA/Lager-botella), no por variedad. Antes inflaba sumando peso por cada SKU ≥6 bot. V4 6/8 → **3/8** (2 clientes). `compradores` = 1 fila por cliente.
+- `portal.html`: leyenda de regla FARO actualizada (Antares 1 cob/cliente, 2 si XPA/Lager botella).
+- Docs: CHANGELOG, bitácora 2026-06-19, REGLAS_NEGOCIO_PAV (nueva sección Incentivo Club FARO).
+
+## Sesion 2026-06-19 - Sell Out: fix RTD (S) + drill-down varietal + Faltan/TOTAL
+
+### HECHO (validado + pusheado a Render — commit 83b84df)
 - `09_CONFIG/maestro_04D_productos.csv`: +2 productos faltantes — `35108` SMF BC RUBYORANGE → RTD (S); `14620` FRIZZE MANXANA → RTD. Resuelve el leak de una venta RTD (S) que caía en RTD regular.
 - `server_orbit.py` `_marcas_de_grupo`: agrega `varietales:[{nombre,litros}]` por Articulo.
 - `portal.html`: tarjeta Sell Out — marcas clickeables que abren litros por varietal (`_soMarcas`/`soMExp`).

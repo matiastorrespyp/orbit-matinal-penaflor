@@ -5151,7 +5151,7 @@ def vendedor_oportunidades_innovacion(vid):
 # Avance (logrado) y no-compradores: ventas_acumulada.csv filtrado a mayo+junio.
 # Segmento por Ramo+Subramo de la venta (Autoservicio = autoservicio + autoservicio tradicional).
 #   alaris_flm → Tradicional, umbral 3 botellas, 1 CCC/cliente (Marca ALARIS/FINCA LAS MORAS/PAZ DE FLM)
-#   antares    → Autoservicio, umbral 6, por SKU; XPA y Lager 330/660 suman doble
+#   antares    → Autoservicio, umbral 6, 1 cob/cliente (no por variedad); 2 si compró XPA o Lager 330/660
 #   smirnoff   → Autoservicio, umbral 6, 1 CCC/cliente (familia Smirnoff botella 700cc, excluye RTD/Ice)
 _FARO_SUP_MAP = {"Esteban": [3, 4, 6, 8, 10], "Raul": [7, 9]}
 _FARO_CATS = ("alaris_flm", "antares", "smirnoff")
@@ -5239,9 +5239,10 @@ def _faro_ventas():
 
 def _faro_detalle_vendedor(df, cod):
     """Por categoría: {logrado, no_compradores:[...]} para un vendedor (CodVendedor=cod).
-    Logrado: alaris_flm/smirnoff = 1 CCC por cliente que alcanza el umbral; antares = suma por
-    SKU (XPA/Lager doble) sobre SKUs con ≥6 botellas. No-compradores = clientes del canal a los
-    que el vendedor vendió en el bimestre y NO cubrieron la marca (con botellas compradas <umbral o 0)."""
+    Logrado: alaris_flm/smirnoff = 1 CCC por cliente que alcanza el umbral; antares = por
+    CLIENTE (no por variedad) — 1 por cliente con ≥6 botellas de Antares, 2 si entre sus
+    compras hay XPA o Lager en botella. No-compradores = clientes del canal a los que el
+    vendedor vendió en el bimestre y NO cubrieron la marca (botellas compradas <umbral o 0)."""
     out = {}
     dv = df[df["_vend"] == cod] if not df.empty else df
     for cat in _FARO_CATS:
@@ -5263,23 +5264,17 @@ def _faro_detalle_vendedor(df, cod):
                 "peso":           1,
             }
         if cat == "antares":
-            sku = marca.groupby(["_cli", "Articulo"]).agg(
-                cant=("_cant", "sum"), w=("_w", "first"),
-                nom=("_clinom", "first"), loc=("_loc", "first")
-            ).reset_index()
-            sku_ok = sku[sku["cant"] >= um].copy()
-            logrado = int(sku_ok["w"].sum())
-            ach_ids = set(sku_ok["_cli"].astype(int))  # clientes con al menos un SKU cubierto
-            compradores = []
-            for _, sr in sku_ok.sort_values(["_cli", "Articulo"]).iterrows():
-                compradores.append({
-                    "cliente": int(sr["_cli"]),
-                    "razon_social": str(sr["nom"]).strip()[:45],
-                    "localidad": str(sr["loc"]).strip()[:25],
-                    "articulo": str(sr["Articulo"]).strip()[:55],
-                    "botellas_marca": round(float(sr["cant"]), 1),
-                    "peso": int(sr["w"]),
-                })
+            # Cobertura por CLIENTE, no por variedad: un cliente con >= umbral botellas de
+            # Antares (total) en autoservicio suma 1 cobertura; si entre sus compras hay
+            # XPA o Lager en botella (peso 2), la cobertura vale 2. Máximo 2 por cliente —
+            # no se suma una cobertura extra por cada variedad comprada.
+            cli_w2 = set(marca.loc[marca["_w"] == 2, "_cli"].dropna().astype(int))
+            _peso_cli = lambda cid: 2 if int(cid) in cli_w2 else 1
+            ach_ids = cubiertos
+            logrado = sum(_peso_cli(c) for c in cubiertos)
+            compradores = sorted(
+                ({**_cli_row(c), "peso": _peso_cli(c)} for c in cubiertos),
+                key=lambda x: (-x["peso"], -x["botellas_marca"], x["cliente"]))
         else:
             logrado = len(cubiertos)
             ach_ids = cubiertos
