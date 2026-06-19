@@ -4515,13 +4515,27 @@ def _sellout_desde_ventas(df_raw: pd.DataFrame) -> list:
 
 
 def _marcas_de_grupo(sg: pd.DataFrame) -> list:
-    """Devuelve lista [{marca, litros}] ordenada desc. Usa _linea (Linea Comercial del maestro 04D); fallback Marca."""
+    """Devuelve lista [{marca, litros, varietales:[{nombre, litros}]}] ordenada desc.
+    Marca   = _linea (Linea Comercial del maestro 04D); fallback Marca.
+    Varietales = desglose por Articulo (SKU) dentro de la marca, ordenado desc."""
     col = "_linea" if "_linea" in sg.columns else ("Marca" if "Marca" in sg.columns else None)
     if col is None:
         return []
-    return [{"marca": str(mk), "litros": round(float(mv), 1)}
-            for mk, mv in sg.groupby(col)["litros"].sum()
-            .sort_values(ascending=False).items() if mv > 0 and str(mk).strip()]
+    art_col = "Articulo" if "Articulo" in sg.columns else None
+    out = []
+    for mk, sub in sg.groupby(col):
+        mv = round(float(sub["litros"].sum()), 1)
+        if mv <= 0 or not str(mk).strip():
+            continue
+        varietales = []
+        if art_col:
+            for av, lv in (sub.groupby(art_col)["litros"].sum()
+                           .sort_values(ascending=False).items()):
+                if lv > 0 and str(av).strip():
+                    varietales.append({"nombre": str(av).strip(), "litros": round(float(lv), 1)})
+        out.append({"marca": str(mk), "litros": mv, "varietales": varietales})
+    out.sort(key=lambda x: x["litros"], reverse=True)
+    return out
 
 
 def _preparar_df_ventas(src_path) -> pd.DataFrame:

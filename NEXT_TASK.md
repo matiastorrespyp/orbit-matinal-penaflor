@@ -1,5 +1,18 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-19 - Sell Out: fix RTD (S) + drill-down varietal
+
+### HECHO (validado en local)
+- `09_CONFIG/maestro_04D_productos.csv`: +2 productos faltantes — `35108` SMF BC RUBYORANGE → RTD (S); `14620` FRIZZE MANXANA → RTD. Resuelve el leak de una venta RTD (S) que caía en RTD regular.
+- `server_orbit.py` `_marcas_de_grupo`: agrega `varietales:[{nombre,litros}]` por Articulo.
+- `portal.html`: tarjeta Sell Out — marcas clickeables que abren litros por varietal (`_soMarcas`/`soMExp`).
+
+### PENDIENTE
+- Commit + push a master (Render autodeploy) cuando el usuario apruebe.
+- Validación visual en el portal (abrir RTD → RTD (S) debe mostrar SMF BC; click en marca → varietales).
+- OPCIONAL: el xlsx maestro (`01_INPUTS/04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx`, fuente de `mod_sellout_categoria.csv` que genera `generar_datasets_acum.py`) tampoco tiene 35108/14620 → quedan fuera de ESA tarjeta (la otra, `sellout_categoria`). El portal en vivo usa el CSV (ya corregido); evaluar si vale cargarlos también al xlsx.
+
+
 ## Sesion 2026-06-18 - Ruta del vendedor: orden de visita + 11T/Innovaciones colapsables
 
 ### HECHO (validado en local, pendiente de deploy)

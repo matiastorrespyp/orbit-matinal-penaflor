@@ -145,6 +145,8 @@ Los spirits (códigos 30xxx de Diageo/P&P) **sí están** en el maestro 04D con 
 | RTD (S) / RTD | RTD |
 | Spirits (Bodega: Whisky / Whisky Maltas / Gin / Ron / Vodka / Licores / Bourbon) | SPIRITS |
 
+> **RTD vs RTD (S) (2026-06-19):** son categorías distintas (RTD = base vino, Frizze / Dada Tinto de Verano; RTD (S) = base spirits, Smirnoff Ice / Gordon's / SMF Bitter Citric). En la tarjeta se anidan bajo la madre "RTD" porque `OBJSELLOUT.xlsx` les da un Total combinado (9.056 L = rtd 4.028 + rtd (s) 5.028). El **sub-split** RTD vs RTD (S) usa la `Categoria` cruda del maestro 04D. **Ojo:** un SKU que NO esté en el maestro entra a RTD sólo por `Rubro` y, sin subtipo, cae por defecto en RTD regular. Por eso se cargaron al maestro `35108` (SMF BC → RTD (S)) y `14620` (Frizze Manxana → RTD). Mantener el maestro completo evita este leak.
+
 ### Mapa Segmento 04D → Sub-bucket VDA
 
 | Segmento maestro | Sub-bucket |
@@ -155,6 +157,10 @@ Los spirits (códigos 30xxx de Diageo/P&P) **sí están** en el maestro 04D con 
 | Medio / Vinos de Mesa | Medio |
 | Nacional | Spirits Nacionales |
 | Importados | Spirits Importados |
+
+> **Finca Las Moras "FFL" (Fair For Life), cod `74721`/`74722` = `Alto` a propósito (2026-06-19).** Es la línea premium; el resto de Finca Las Moras es `Medio Alto`. Confirmado por el usuario: NO reclasificar.
+>
+> **Tarjeta Sell Out (UI):** cada categoría/subcategoría muestra columna **Faltan (L)** = `max(objetivo − real, 0)` y hay **fila TOTAL** al pie (suma Real / Objetivo / Faltan + avance). Las marcas abren con 1 click más el desglose por **varietal** (SKU) en litros (`_marcas_de_grupo` → `varietales`).
 
 ### Objetivos sell out (hardcoded de imagen obj sell out.jpeg)
 

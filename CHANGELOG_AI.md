@@ -1,5 +1,13 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-19 - fix(sellout): RTD (S) ya no se filtra en RTD + drill-down marca→varietal
+
+**Sell Out por categoría** (tarjeta gerencia, `/api/gerencia/sellout_litros`).
+
+1. **Fix leak RTD/RTD (S):** una venta de Smirnoff Bitter Citric (RTD (S)) caía dentro de la subcategoría RTD regular. **Causa raíz:** el split RTD vs RTD (S) confía en la `Categoria` del maestro 04D, pero 2 productos no estaban cargados en `09_CONFIG/maestro_04D_productos.csv` y entraban a RTD solo por el Rubro del ERP, sin subtipo → caían por defecto en RTD regular. Se agregaron al maestro con su clasificación real (confirmada por el usuario): `35108` SMF BC RUBYORANGE → **RTD (S)**; `14620` FRIZZE MANXANA → **RTD** (Frizze es base vino; el Rubro del ERP lo etiquetaba mal como RTD (S)). No se tocó la lógica del split. Validado: 0 ventas RTD (S) en RTD regular; RTD (S) ahora 2171 L con SMF BC incluido.
+   - Nota: la marca **FINCA LAS MORAS FFL** (Fair For Life, cod 74721/74722) queda en segmento **Alto** a propósito (confirmado por el usuario) — es la línea premium, no es error.
+2. **Drill-down marca → varietal:** `server_orbit.py` `_marcas_de_grupo` ahora devuelve `varietales:[{nombre, litros}]` (desglose por Articulo/SKU dentro de cada marca). `portal.html`: las marcas de la tarjeta Sell Out son clickeables (helper `_soMarcas` + estado `soMExp`) y abren los litros por varietal vendido. No cambia identidad visual.
+
 ## 2026-06-19 - fix(innovaciones): medir solo Peñaflor (excluir P&P Logística) en ambos perfiles
 
 Mismo criterio que el 11T. Las innovaciones contaban compras de **P&P Logística** de clientes Peñaflor.
