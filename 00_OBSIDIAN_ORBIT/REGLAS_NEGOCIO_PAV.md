@@ -10,18 +10,23 @@ Fuente de verdad para cálculos comerciales. Toda lógica en scripts, endpoints 
 V3, V4, V6, V7, V8, V9, V10
 
 ### Excluidos — siempre
-V2, V5 y V20 se excluyen de **todos** los reportes, filtros, sumas y denominadores.
-- En `ventas.csv`: filtrar `CodVendedor not in {2, 5, 20}`.
-- En `clientes.xlsx`: filtrar `CodVendedor not in {2, 5, 20}`.
-- En datasets intermedios: verificar que no incluyan filas de V2/V5/V20.
-- **V20 = DEPOSITO**: venta directa de depósito, no es vendedor de ruta Peñaflor. Aparece en fuentes ERP crudas con ramos `CASH&CARRY`, `AWAY FROM HOME`, `Empleados`, `MAYORISTAS`.
+V1, V2, V5 y V20 se excluyen de **todos** los reportes, filtros, sumas y denominadores. `_VENDEDORES_EXCLUIDOS = {1, 2, 5, 20}` (server) y `VENDEDORES_EXCLUIDOS = {1,2,5,20}` (generador).
+- En `ventas.csv` / `ventas_acumulada.csv`: filtrar `CodVendedor not in {1, 2, 5, 20}`.
+- En `clientes.xlsx`: filtrar `CodVendedor not in {1, 2, 5, 20}`.
+- **V20 = DEPOSITO**: venta directa de depósito, no es vendedor de ruta. **V1**: no es vendedor de ruta (agregado 2026-06-18; se colaba en el 11T en vivo).
 
-### V3 — Nadia Gambino
-- No trabaja el canal Autoservicio **ni On Premise / Vinoteca** (regla agregada 2026-06-12).
-- `ccc_autoservicio = 0` y `ccc_onpremise = 0` en todos los endpoints y datasets (CCC mes, CCC día, Plan vs Real, cobertura, cierre mensual y planificación POST/PATCH).
-- `trabaja_autoservicio = false` y `trabaja_onpremise = false` en los endpoints; el portal **oculta** esas casillas en la vista del vendedor para V3.
-- Excluir Autoservicio y On Premise de objetivos, cobertura y 11 Titulares para V3.
-- Si un segmento de V3 figura como Autoservicio u On Premise en ventas.csv, igualmente contar como 0 en sus métricas.
+### EMPRESA — solo Peñaflor (regla agregada 2026-06-18)
+`ventas.csv` y `ventas_acumulada.csv` MEZCLAN dos distribuidores en la columna `Empresa`: `'Empresa'` (Peñaflor, ~60%) y `'P&P LOGISTICA S.R.L'` (~40%). **Todos los KPIs de Peñaflor deben filtrar `Empresa == 'Empresa'`** y excluir P&P. No filtrarlo infla los conteos ~15-35% (fue la causa raíz del sobreconteo del 11T). FARO, cierre, 11T (card/zona/ruta/generador) ya lo aplican.
+
+### V3 — Nadia Gambino — SOLO Tradicional almacén/despensa/kiosco
+V3 trabaja **únicamente** el canal Tradicional, subsegmentos **Almacén / Despensa / Kiosco** (NO Autoservicio, NO On Premise/Vinoteca, NO Mayorista, NI tradicionales que no sean almacén/despensa/kiosco como fiambrería/panadería). Aplica a **TODO su perfil** (ampliado 2026-06-18):
+- CCC (mes/día), cobertura, 11T, objetivos, Plan vs Real, planificación: AS=0 y On Premise=0; cobertura acumulada solo TRADICIONAL almacén/despensa/kiosco.
+- **Ruta** (`/api/vendedor/V3/ruta`): whitelist por SubSegmento ALMACEN/DESPENSA/KIOSCO.
+- **Clientes** (`/api/clientes` + `_clientes_por_dia`): sin clientes no-tradicionales.
+- **Acciones comerciales**: solo acciones que aplican a tradicional almacén/kiosco; las de AS/OP/Mayorista/Vinoteca no se le muestran.
+- **Incentivo FARO**: solo categoría tradicional (Alaris+FLM); ocultas Antares y Familia Smirnoff (AS).
+- **Alertas**: solo de clientes Tradicional almacén/despensa/kiosco.
+- **Portal**: pestaña "Plan AS" oculta para V3; casillas AS/On Premise ocultas en "CCC por Segmento".
 
 ---
 
@@ -73,19 +78,26 @@ V2, V5 y V20 se excluyen de **todos** los reportes, filtros, sumas y denominador
 - Etiquetar siempre como "Marcas 11T cubiertas" o "Impactos 11T", nunca como "Clientes".
 - `once_titulares_total` = cantidad de combinaciones cliente-marca objetivo (no = cantidad de clientes).
 
-### Regla de fuente y período — OBLIGATORIA
+### Regla de fuente y período — OBLIGATORIA (corregida 2026-06-18 vs reporte empresa)
 
-**Fuente:** `01_INPUTS/ventas_acumuladas.csv` — siempre el archivo completo, **sin filtro de fecha**.
+**Fuente:** `01_INPUTS/ventas_acumulada.csv`.
 
-**Por qué:** el indicador 11T es acumulado del período comercial completo (no del mes calendario). El archivo ventas_acumuladas abarca todo el período vigente (ej: marzo–mayo). Filtrar por mes da números incorrectos y distintos al dashboard.
+**Filtros obligatorios:**
+1. `Empresa == 'Empresa'` → solo Peñaflor, EXCLUIR P&P Logística (era el sobreconteo ~15-35%).
+2. Excluir `CodVendedor in {1,2,5,20}`.
+3. **Período = TRIMESTRE calendario en curso** (ene-mar / abr-jun / jul-sep / oct-dic). Arranca de cero al cambiar de trimestre (en julio → solo jul en adelante). En el vivo se filtra `FechaComprobante >= inicio del trimestre`.
+4. CCC = clientes únicos (neto>0) por marca titular (nunique de Cliente).
+
+**Por qué trimestre:** confirmado por el usuario el 2026-06-18. (Antes esta regla decía "archivo completo sin filtro de fecha" / "bimestral" — ambos incorrectos.)
 
 **Nunca usar:**
-- `ventas.csv` para 11T (es operación diaria/mes vivo, no acumulado completo del período)
-- `ventas_mes.csv` para 11T (es cierre congelado, no el acumulado del período comercial)
-- `mod_11t_acum.csv` como fuente de CCC (tiene 18 marcas mezcladas, no solo las 11 con objetivo)
-- Filtro de fecha sobre ventas_acumuladas para 11T
+- `ventas_mes.csv` como única fuente de 11T del vivo (es 1 mes).
+- Sumar P&P Logística ni V1/V20.
+- `producto activos.xlsx` como única fuente de mapeo marca→artículo (está incompleto, faltan ~140 artículos vendidos reales).
 
 **Fuente de objetivos:** `01_INPUTS/objetivo 11T.xlsx` (hoja con columnas: Linea comercial, Objetivo).
+
+**Residual sin reconciliar (dejado así 2026-06-18):** tras los filtros, el total queda −3% vs la empresa (8/11 marcas ±5%). Finca Las Moras (−12%), Trapiche Reserva (+16%) y Gordon's (−17%) difieren por cómo la empresa agrupa artículos puntuales; no es error sistemático nuestro. Cerrarlo requiere su detalle cliente-nivel.
 
 **Las 11 marcas con objetivo** (únicas que se reportan):
 Alma Mora · Trapiche Reserva · Finca Las Moras · Alaris · Don David · Dada · Smirnoff Flavours · Los Arboles · Antares · Smirnoff Ice · Gordon's Flavours
@@ -197,7 +209,7 @@ Nunca presentar un KPI sin especificar a qué período corresponde.
 | Día / Ayer | Último día operativo | `ventas.csv` |
 | Mes (seguimiento vivo) | Mes calendario en curso | `ventas.csv` |
 | Cierre mes (congelado) | Mes cerrado definitivo | `ventas_mes.csv` |
-| Período 11T (completo) | Acumulado comercial vigente | `ventas_acumuladas.csv` (sin filtro de fecha) |
+| Período 11T (trimestre) | Trimestre calendario en curso (abr-jun…) | `ventas_acumulada.csv` filtrado a Peñaflor + trimestre |
 | Objetivos / Acumulado / Rechazos | Período ERP | `resultado.xlsx` |
 | Zona Vi | Día de visita viernes | `clientes_dia.csv` |
 | Cartera total | Maestro estático | `clientes.xlsx` |

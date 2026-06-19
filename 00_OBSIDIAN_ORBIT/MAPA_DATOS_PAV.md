@@ -129,17 +129,43 @@ Tarjeta **"📊 Cobertura acumulada del mes"**. Mide cobertura sobre el período
 
 ---
 
+### Ruta del vendedor (perfil vendedor → pestaña Ruta)
+*(2026-06-18)*
+
+`/api/vendedor/<id>/ruta` (fuente: clientes.xlsx + ventas.csv mes vivo + mod_innovaciones_segmento.csv):
+- **Orden de visita**: clientes ordenados por la columna `Orden` de clientes.xlsx (asc); `Orden<=0`/vacío van al final. `Orden` está poblado ~60% (V3/V6/V10 casi completos, V7/V9 casi vacíos).
+- **11 Titulares por cliente**: `titulares_comprados` + `titulares_faltantes` (de ventas.csv mes vivo, Peñaflor, sin V1/V2/V5/V20). En el portal: chip colapsable "11 Titulares x/11" → pills verde (comprado) / amarillo (faltante).
+- **Innovaciones por cliente**: catálogo desde `mod_innovaciones_segmento.csv` (por segmento), compras desde ventas.csv por `Codigo`. Chip colapsable "Innovaciones y/N" verde/amarillo. Solo TRAD/AS; V3 sin AS.
+- V3: ruta filtrada a Tradicional almacén/despensa/kiosco (ver [[REGLAS_NEGOCIO_PAV]]).
+
+---
+
 ### 11 Titulares
-| Campo | Fuente | Dataset | Endpoint |
-|-------|--------|---------|----------|
-| once_titulares_cumplidos | mod_11_titulares.tiene_flag (sum) | mod_11_titulares.csv | /api/dashboard → kpis.once_titulares_cumplidos |
-| once_titulares_total | mod_11_titulares (count filas por vendedor) | mod_11_titulares.csv | /api/dashboard → kpis.once_titulares_total |
-| **CCC por marca (gerencia/cierre)** | **ventas_acumuladas.csv COMPLETO** | **sin filtro fecha** | **/api/gerencia/once_titulares** |
+*(Auditoría y corrección 2026-06-18/19 — desplegado en Render)*
 
-**Advertencia:** `once_titulares_total` para V3 = 11 marcas × 42 clientes Vi = 462 combinaciones. No es un conteo de clientes.
+**REGLA DE MEDICIÓN (corregida contra el reporte oficial de la empresa):**
+1. **Solo Peñaflor** → `Empresa == 'Empresa'`. Se EXCLUYE `P&P LOGISTICA S.R.L`. `ventas_acumulada.csv` y `ventas.csv` MEZCLAN ambos distribuidores (~60% Peñaflor / ~40% P&P). **Contar P&P era el error**: inflaba el CCC ~15-35%.
+2. **Solo vendedores de ruta** → excluir `V1, V2, V5, V20` (`_VENDEDORES_EXCLUIDOS = {1,2,5,20}`). V20 = depósito; V1 no es de ruta.
+3. **Período = TRIMESTRE calendario en curso** (ene-mar / abr-jun / jul-sep / oct-dic), arranca de cero al cambiar de trimestre. En el vivo se filtra por `FechaComprobante >= inicio del trimestre`.
+4. **CCC = clientes únicos** con compra válida (neto>0) por marca titular (nunique de Cliente).
 
-**REGLA CRÍTICA — fuente para CCC 11T:**
-El endpoint `/api/gerencia/once_titulares` y el bloque 11T del cierre de mes leen `ventas_acumuladas.csv` **sin filtro de fecha**. El indicador es acumulado del período comercial completo. Filtrar por mes calendario da valores incorrectos y distintos al dashboard. Validado 2026-06-01.
+**Todos los puntos de lectura del 11T (deben usar el mismo criterio):**
+
+| Tarjeta / vista | Endpoint / fuente | Estado |
+|---|---|---|
+| Dashboard "11T · CCC vs Objetivo" | `/api/gerencia/once_titulares` ← ventas_acumulada.csv | ✓ Peñaflor + trimestre + V1 |
+| Dashboard "11T · CCC zona del día" | `/api/gerencia/once_titulares_zona` ← ventas_acumulada.csv | ✓ Peñaflor + trimestre + V1 |
+| Dashboard per-vendedor "11T ✓" | kpis.once_titulares_cumplidos ← `mod_11t_acum.csv` | ✓ Peñaflor (generador) + V1 |
+| Gerencia 11T acum | `/api/gerencia/11t_acum` ← `mod_11t_acum.csv` | ✓ |
+| Perfil vendedor "11 Titulares · clientes vendidos" | `/api/vendedor/<id>` → titulares11 ← `mod_11t_acum.csv` | ✓ |
+| Ruta del vendedor "11 Titulares x/11" | `/api/vendedor/<id>/ruta` ← ventas.csv (mes vivo) | ✓ Peñaflor + V1 |
+| Cierre de mes 11T | `_cierre_once_titulares` ← ventas_acumulada_<MMAAAA>.csv | ✓ Peñaflor |
+
+`mod_11t_acum.csv` lo genera `generar_11t_acum` (cobertura con mínimo de botellas por cartera, métrica distinta del nunique de la tarjeta) y filtra Peñaflor.
+
+**Validación vs reporte empresa (trimestre abr-jun):** total 4435 vs 4574 (−3%); 8/11 marcas en ±5% (Antares −1.3%, Smirnoff Ice −2.6%, Alma Mora −3%, Alaris −4.4%, Dada +4.7%).
+
+**Residual NO reconciliado (decisión: dejar así):** Finca Las Moras −12%, Trapiche Reserva +16%, Gordon's −17%. Se descartó con datos que sea P&P, depósito (V20, +1 cli) o segmentos. `01_INPUTS/producto activos.xlsx` (mapeo oficial artículo→Línea Comercial) confirma que el mapeo de ORBIT es correcto y además **está incompleto** (faltan ~140 artículos vendidos reales: ALARIS D.Cosecha, DADA Lata, LOS ARBOLES Bco Dulce, ANTARES latas…), por eso NO se reemplazó el mapeo por código. Cerrar esas 3 marcas requeriría el detalle cliente-nivel de la empresa.
 
 ---
 
