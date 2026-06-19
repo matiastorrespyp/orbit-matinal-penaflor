@@ -16,7 +16,7 @@ V1, V2, V5 y V20 se excluyen de **todos** los reportes, filtros, sumas y denomin
 - **V20 = DEPOSITO**: venta directa de depósito, no es vendedor de ruta. **V1**: no es vendedor de ruta (agregado 2026-06-18; se colaba en el 11T en vivo).
 
 ### EMPRESA — solo Peñaflor (regla agregada 2026-06-18)
-`ventas.csv` y `ventas_acumulada.csv` MEZCLAN dos distribuidores en la columna `Empresa`: `'Empresa'` (Peñaflor, ~60%) y `'P&P LOGISTICA S.R.L'` (~40%). **Todos los KPIs de Peñaflor deben filtrar `Empresa == 'Empresa'`** y excluir P&P. No filtrarlo infla los conteos ~15-35% (fue la causa raíz del sobreconteo del 11T). FARO, cierre, 11T (card/zona/ruta/generador) ya lo aplican.
+`ventas.csv` y `ventas_acumulada.csv` MEZCLAN dos distribuidores en la columna `Empresa`: `'Empresa'` (Peñaflor, ~60%) y `'P&P LOGISTICA S.R.L'` (~40%). **Todos los KPIs de Peñaflor deben filtrar `Empresa == 'Empresa'`** y excluir P&P. No filtrarlo infla los conteos ~15-35% (fue la causa raíz del sobreconteo del 11T). Ya lo aplican: FARO, cierre, 11T (card/zona/ruta/generador) e **Innovaciones** (segmento + plan AS + oportunidades, ambos perfiles; impacto −25% en clientes_compraron).
 
 ### V3 — Nadia Gambino — SOLO Tradicional almacén/despensa/kiosco
 V3 trabaja **únicamente** el canal Tradicional, subsegmentos **Almacén / Despensa / Kiosco** (NO Autoservicio, NO On Premise/Vinoteca, NO Mayorista, NI tradicionales que no sean almacén/despensa/kiosco como fiambrería/panadería). Aplica a **TODO su perfil** (ampliado 2026-06-18):
