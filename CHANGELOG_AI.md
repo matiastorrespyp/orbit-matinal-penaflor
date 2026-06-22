@@ -1,5 +1,15 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-22 - fix(plan frío): excluir latas Smirnoff BC del sin-cargo enviado
+
+**Planes AS** (ambos perfiles). El "enviado" de **Plan Frío** (Six Pack Smirnoff ICE sin cargo) se detectaba por **Marca** (`contains('ice') & contains('smirnoff')`). Las latas **Smirnoff BC** (Bitter Citric, COD 35108/35109) tienen `Marca='Smirnoff Ice Flavours'` en el ERP pero **NO son plan frío** — pertenecen a una acción comercial del mes. Resultado: 4 clientes (30063, 390, 7219, 30017) figuraban como plan frío **entregado** sin haberlo recibido.
+
+**Regla correcta (confirmada por el usuario):** el plan frío se paga **solo con Smirnoff ICE en lata**. Las latas BC quedan afuera.
+
+- `generar_datasets_acum.py` `generar_planes_as`: la detección de plan frío pasa de **Marca** a **Articulo** — `Articulo` con `ICE` + (`SMIRNOFF`|`SMF`). Las BC dicen `BC` y NO `ICE`, así que se excluyen; también se excluye Smirnoff botella 700 (escala, no Ice). Aplica al `pf_enviado` y al detalle `mod_sincargos_envios.csv`.
+- Regenerados `mod_planes_as.csv` y `mod_sincargos_envios.csv` desde `ventas.csv`. **Validado:** `pf_enviado` pasa de {30063,390,7219,30017} (todos por BC) a **{2410}** (compró SMF ICE RED BERRIE lata al 100%, plan frío real). 31 clientes, sin pérdidas.
+- El server solo lee `pf_disponible/pf_enviado/pf_estado` del CSV (gerencia + vendedor), así que ambos perfiles quedan corregidos al regenerar.
+
 ## 2026-06-19 - fix(FARO): Antares logrado por cliente (no por variedad)
 
 **Incentivo Club FARO**, categoría **Antares (Autoservicio)**. El `logrado` contaba el peso **por cada SKU/variedad** con ≥6 botellas (`sku_ok["w"].sum()`), inflando el número: V4 mostraba **6/8** pero el detalle tenía solo **2 clientes** (cli 100: IPA+Caravana+XPA = 1+1+2=4; cli 370: Lager lata+Scotch = 1+1=2).

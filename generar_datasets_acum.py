@@ -793,13 +793,18 @@ def generar_planes_as(ventas, bbdd, clientes):
 
     # ── PLAN FRÍO: 1 Six Pack Smirnoff ICE sin cargo por cliente listado en la hoja 'plan frío'.
     # Disponible = lista del Excel. Entregado (binario) = el cliente tiene alguna línea 100%
-    # descuento de Smirnoff ICE en ventas.csv (Marca 'Smirnoff Ice Flavours'). NO se confunde con
-    # la marca de escala 'Smirnoff Flavours' (escala 11-12, no alcanzada) ni con Smirnoff vodka.
+    # descuento de Smirnoff ICE EN LATA en ventas.csv. Se detecta por ARTICULO, no por Marca:
+    # las latas Smirnoff BC (Bitter Citric, COD 35108/35109) tienen Marca='Smirnoff Ice Flavours'
+    # en el ERP pero NO son plan frío — pertenecen a una acción comercial del mes. Su Articulo
+    # dice 'BC' y NO 'ICE', así que filtrar por Articulo con 'ICE' + (SMIRNOFF/SMF) las excluye.
+    # Tampoco se confunde con la escala 'Smirnoff Flavours' (botella) ni con Smirnoff vodka.
     pf_clientes = _cargar_planfrio_mes()
-    _marca_ice = sc["Marca"].astype(str).str.lower()
+    _art_sc = sc["Articulo"].astype(str).str.upper()
+    _es_ice = (_art_sc.str.contains("ICE", regex=False, na=False)
+               & (_art_sc.str.contains("SMIRNOFF", regex=False, na=False)
+                  | _art_sc.str.contains("SMF", regex=False, na=False)))
     pf_env_ids = set(pd.to_numeric(
-        sc.loc[_marca_ice.str.contains("ice") & _marca_ice.str.contains("smirnoff"), "Cliente"],
-        errors="coerce").dropna().astype(int))
+        sc.loc[_es_ice, "Cliente"], errors="coerce").dropna().astype(int))
     df["pf_disponible"] = df["cliente_id"].isin(pf_clientes).astype(int)
     df["pf_enviado"] = (df["pf_disponible"].eq(1) & df["cliente_id"].isin(pf_env_ids)).astype(int)
     df["pf_estado"] = df.apply(
@@ -820,7 +825,7 @@ def generar_planes_as(ventas, bbdd, clientes):
             det_rows.append({"cliente_id": int(r["Cliente"]), "categoria": "escala",
                              "producto": _PROD_LABEL.get(r["_prod_as"], r["_prod_as"]),
                              "fecha": r["_fecha"], "cajas": int(r["CantBase"])})
-    pf_lines = sc[_marca_ice.str.contains("ice") & _marca_ice.str.contains("smirnoff")].copy()
+    pf_lines = sc[_es_ice].copy()
     if not pf_lines.empty:
         _f2 = pd.to_datetime(pf_lines["FechaComprobante"], dayfirst=True, errors="coerce")
         pf_lines = pf_lines.assign(_fecha=_f2.dt.strftime("%Y-%m-%d")).dropna(subset=["_fecha"])

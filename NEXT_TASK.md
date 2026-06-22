@@ -1,5 +1,15 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-22 - Plan Frío: excluir latas Smirnoff BC
+
+### HECHO (validado + pusheado a Render)
+- `generar_datasets_acum.py` `generar_planes_as`: detección de plan frío por **Articulo** (ICE + SMIRNOFF/SMF), no por Marca. Las latas BC (Bitter Citric, COD 35108/35109, Marca='Smirnoff Ice Flavours' en ERP) ya NO cuentan como enviado — son de una acción comercial.
+- Regenerados `mod_planes_as.csv` + `mod_sincargos_envios.csv`. pf_enviado {30063,390,7219,30017}→{2410}.
+- Docs: CHANGELOG, bitácora 2026-06-22, REGLAS_NEGOCIO_PAV (Plan Frío).
+
+### OJO
+- Al regenerar `mod_planes_as.csv` se refresca todo el dataset desde la `ventas.csv` actual (facturado/escala/fecha_calculo cambian, no solo plan frío). Es el flujo normal de regeneración.
+
 ## Sesion 2026-06-19 - Incentivo FARO: Antares por cliente
 
 ### HECHO (validado + pusheado a Render)

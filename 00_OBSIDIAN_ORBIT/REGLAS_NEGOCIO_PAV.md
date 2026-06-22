@@ -205,6 +205,12 @@ Los spirits (códigos 30xxx de Diageo/P&P) **sí están** en el maestro 04D con 
 - Indicadores de **cierre/mes congelado** → `ventas_mes.csv`.
 - Nunca usar `ventas.csv` para cierres ni planes (no es cierre congelado).
 
+### Plan Frío (Planes AS)
+
+Plan frío = **1 Six Pack de Smirnoff ICE en lata SIN CARGO** por cliente listado en la hoja `plan frío` de `sincargos<mes>.xlsx`. El "entregado" se detecta en `ventas.csv` por una línea 100% descuento del producto, **mirando el `Articulo`, NO la `Marca`**.
+
+> **Las latas Smirnoff BC (Bitter Citric, COD 35108/35109) NO son plan frío** — pertenecen a una acción comercial del mes. En el ERP tienen `Marca='Smirnoff Ice Flavours'` (engañoso), pero su `Articulo` dice **"BC"**, no **"ICE"**. La detección filtra `Articulo` con `ICE` + (`SMIRNOFF`|`SMF`), así que las BC y la botella Smirnoff 700 (escala) quedan afuera. Antes se detectaba por Marca e inflaba el "entregado" (regla corregida 2026-06-22). Código: `generar_planes_as` en `generar_datasets_acum.py` → `mod_planes_as.csv` (`pf_enviado`/`pf_estado`) + `mod_sincargos_envios.csv`.
+
 ---
 
 ## Segmentos — clasificación
