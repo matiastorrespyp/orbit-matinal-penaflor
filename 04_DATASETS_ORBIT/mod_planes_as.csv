@@ -1,7 +1,7 @@
 ﻿fecha_calculo,cliente_id,cliente_nombre,direccion,vendedor_codigo,vendedor_nombre,plan_as,escala_actual,escala_max,total_facturado,dcto_plan,cant_cajas,tope,cant_cajas_tope,sc_alaris,sc_alma_mora,sc_frizze,sc_antares_ipa,sc_smf_flavours,sc_total_ganado,sc_env_alaris,sc_env_alma_mora,sc_env_frizze,sc_env_antares_ipa,sc_env_smf_flavours,sc_pend_alaris,sc_pend_alma_mora,sc_pend_frizze,sc_pend_antares_ipa,sc_pend_smf_flavours,sc_cajas_enviadas_total,sc_pendiente,sc_estado,sc_origen_disponible,pf_disponible,pf_enviado,pf_estado
-2026-06-23,30013,YBAÑEZ ALICIA RAQUEL ,9 DE SEPTIEMBRE 2179,8,ALVAREZ VANESA  KAFF,Inicial,5,5,1886113.0699999998,0,0,0,0,4,0,0,0,0,4,0.0,0.0,0.0,0.0,0.0,4.0,0.0,0.0,0.0,0.0,0.0,4.0,pendiente,sincargos_mes,1,0,pendiente
+2026-06-23,30013,YBAÑEZ ALICIA RAQUEL ,9 DE SEPTIEMBRE 2179,8,ALVAREZ VANESA  KAFF,Inicial,5,5,2249320.35,0,0,0,0,4,0,0,0,0,4,24.0,0.0,0.0,0.0,6.0,0.0,0.0,0.0,0.0,0.0,30.0,0.0,enviados,sincargos_mes,1,1,entregado
 2026-06-23,30014,ALICIA RAQUEL YBAÑEZ,SAENZ PEÑA 770,8,ALVAREZ VANESA  KAFF,Inicial,4,5,1394635.53,0,0,0,0,4,0,0,0,0,4,0.0,0.0,0.0,0.0,0.0,4.0,0.0,0.0,0.0,0.0,0.0,4.0,pendiente,sincargos_mes,1,0,pendiente
-2026-06-23,30033,MARTINICH VIVIANA RITA ,URQUIZA 962,8,ALVAREZ VANESA  KAFF,Silver,9,9,3430786.49,0,0,0,0,4,4,1,0,0,9,0.0,0.0,0.0,0.0,0.0,4.0,4.0,1.0,0.0,0.0,0.0,9.0,pendiente,sincargos_mes,1,0,pendiente
+2026-06-23,30033,MARTINICH VIVIANA RITA ,URQUIZA 962,8,ALVAREZ VANESA  KAFF,Silver,9,9,4190487.1,0,0,0,0,4,4,1,0,0,9,22.0,24.0,6.0,0.0,6.0,0.0,0.0,0.0,0.0,0.0,58.0,0.0,enviados,sincargos_mes,1,1,entregado
 2026-06-23,2410,SOCIEDAD COSMOPOLITA DE SOCORROS  MUTUOS,SAN MARTIN 231,10,ORTEGA MILAGROS DESIREE,Inicial,5,5,3180795.06,0,0,0,0,4,1,0,0,0,5,24.0,6.0,0.0,0.0,6.0,0.0,0.0,0.0,0.0,0.0,36.0,0.0,enviados,sincargos_mes,1,1,entregado
 2026-06-23,370,HUANG WEIZHEN,SAN MARTIN 1025,4,GRIBAUDO ANGEL,Inicial,0,5,204490.21,0,0,0,0,1,0,0,0,0,1,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,1.0,pendiente,sincargos_mes,0,0,
 2026-06-23,172,GIORDANA ENELE GERMAN,25 DE MAYO ESQ 1 DE MAYO 0,8,ALVAREZ VANESA  KAFF,Silver,6,9,1420251.4200000002,0,0,0,0,2,0,0,0,0,2,0.0,0.0,0.0,0.0,0.0,2.0,0.0,0.0,0.0,0.0,0.0,2.0,pendiente,sincargos_mes,1,0,pendiente
@@ -10,7 +10,7 @@
 2026-06-23,30063,YINGYING CHEN (SUP. SAN VICENTE),MANUEL BELGRANO 370,8,ALVAREZ VANESA  KAFF,Inicial,4,5,1082172.31,0,0,0,0,4,1,0,0,0,5,24.0,6.0,0.0,0.0,6.0,0.0,0.0,0.0,0.0,0.0,66.0,0.0,enviados,sincargos_mes,1,1,entregado
 2026-06-23,309,CONIGLIO FERRERO Y MARSILLOU MARTEK S.R.L.,AV. DE LA UNIVERSIDAD 1973,8,ALVAREZ VANESA  KAFF,Inicial,0,5,213764.43,0,0,0,0,4,1,0,0,0,5,0.0,0.0,0.0,0.0,0.0,4.0,1.0,0.0,0.0,0.0,0.0,5.0,pendiente,sincargos_mes,1,0,pendiente
 2026-06-23,538,ZHAO JIAHUI,9 DE SEPTIEMBRE 359,8,ALVAREZ VANESA  KAFF,Inicial,0,5,243078.8,0,0,0,0,4,1,0,0,0,5,0.0,0.0,0.0,0.0,0.0,4.0,1.0,0.0,0.0,0.0,0.0,5.0,pendiente,sincargos_mes,1,0,pendiente
-2026-06-23,519,WENZHI LI,BV. ROCA 2950,8,ALVAREZ VANESA  KAFF,Inicial,2,5,688329.79,0,0,0,0,4,1,0,0,0,5,0.0,0.0,0.0,0.0,0.0,4.0,1.0,0.0,0.0,0.0,0.0,5.0,pendiente,sincargos_mes,1,0,pendiente
+2026-06-23,519,WENZHI LI,BV. ROCA 2950,8,ALVAREZ VANESA  KAFF,Inicial,3,5,933639.52,0,0,0,0,4,1,0,0,0,5,24.0,6.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,30.0,0.0,enviados,sincargos_mes,1,0,pendiente
 2026-06-23,596,YBAÑEZ ALICIA RAQUEL,LAS MALVINAS 1232,8,ALVAREZ VANESA  KAFF,Inicial,1,5,338398.87,0,0,0,0,1,0,0,0,0,1,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,1.0,pendiente,sincargos_mes,1,0,pendiente
 2026-06-23,390,MIRANDA SEBASTIAN LEONARDO,INDEPENDENCIA 1211,8,ALVAREZ VANESA  KAFF,Inicial,0,5,116329.09,0,0,0,0,4,1,0,0,0,5,0.0,0.0,0.0,0.0,0.0,4.0,1.0,0.0,0.0,0.0,6.0,5.0,pendiente,sincargos_mes,1,0,pendiente
 2026-06-23,30006,ZHENZHEN WU,SALTA 2353,8,ALVAREZ VANESA  KAFF,Inicial,4,5,1390871.97,0,0,0,0,4,1,0,0,0,5,24.0,6.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,30.0,0.0,enviados,sincargos_mes,0,0,
@@ -24,9 +24,9 @@
 2026-06-23,1089,CHEN MIN,RUTA 14 0,9,SANCHEZ FERNANDO JAVIER,Inicial,5,5,1746849.96,0,0,0,0,4,1,0,0,0,5,0.0,0.0,0.0,0.0,0.0,4.0,1.0,0.0,0.0,0.0,0.0,5.0,pendiente,sincargos_mes,0,0,
 2026-06-23,2353,HONG CINTHIA,COLON 150,10,ORTEGA MILAGROS DESIREE,Silver,9,9,2982372.54,0,0,0,0,4,3,0,0,0,7,24.0,24.0,6.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,54.0,0.0,enviados,sincargos_mes,0,0,
 2026-06-23,2357,HECTOR IVAN HERNANDEZ,BELGRANO 601,10,ORTEGA MILAGROS DESIREE,Silver,3,9,597847.54,0,0,0,0,4,4,1,0,0,9,0.0,0.0,0.0,0.0,0.0,4.0,4.0,1.0,0.0,0.0,0.0,9.0,pendiente,sincargos_mes,1,0,pendiente
-2026-06-23,7219,YUMEI HUANG ,CORDOBA 859,8,ALVAREZ VANESA  KAFF,Inicial,0,5,200560.09,0,0,0,0,4,1,0,0,0,5,0.0,0.0,0.0,0.0,0.0,4.0,1.0,0.0,0.0,0.0,6.0,5.0,pendiente,sincargos_mes,1,0,pendiente
-2026-06-23,30011,CHUN JIN ZHANG,CASEROS 1024,8,ALVAREZ VANESA  KAFF,Inicial,5,5,1656141.96,0,0,0,0,4,1,0,0,0,5,0.0,0.0,0.0,0.0,0.0,4.0,1.0,0.0,0.0,0.0,0.0,5.0,pendiente,sincargos_mes,1,0,pendiente
+2026-06-23,7219,YUMEI HUANG ,CORDOBA 859,8,ALVAREZ VANESA  KAFF,Inicial,1,5,290238.96,0,0,0,0,4,1,0,0,0,5,24.0,6.0,0.0,0.0,6.0,0.0,0.0,0.0,0.0,0.0,42.0,0.0,enviados,sincargos_mes,1,1,entregado
+2026-06-23,30011,CHUN JIN ZHANG,CASEROS 1024,8,ALVAREZ VANESA  KAFF,Inicial,5,5,1776067.52,0,0,0,0,4,1,0,0,0,5,24.0,6.0,0.0,0.0,6.0,0.0,0.0,0.0,0.0,0.0,36.0,0.0,enviados,sincargos_mes,1,1,entregado
 2026-06-23,30044,YAQIN XU,LINIERS 183,8,ALVAREZ VANESA  KAFF,Silver,6,9,1330781.9100000001,0,0,0,0,4,4,1,0,0,9,0.0,0.0,0.0,0.0,0.0,4.0,4.0,1.0,0.0,0.0,0.0,9.0,pendiente,sincargos_mes,0,0,
-2026-06-23,30017,WANG ZHENJIE,URQUIZA 1055,8,ALVAREZ VANESA  KAFF,Inicial,3,5,891801.47,0,0,0,0,4,1,0,0,0,5,0.0,0.0,0.0,0.0,0.0,4.0,1.0,0.0,0.0,0.0,6.0,5.0,pendiente,sincargos_mes,1,0,pendiente
+2026-06-23,30017,WANG ZHENJIE,URQUIZA 1055,8,ALVAREZ VANESA  KAFF,Inicial,3,5,976363.5800000001,0,0,0,0,4,1,0,0,0,5,24.0,6.0,0.0,0.0,6.0,0.0,0.0,0.0,0.0,0.0,60.0,0.0,enviados,sincargos_mes,1,1,entregado
 2026-06-23,769,PEREYRA PABLO NICOLAS,ruta provincial 14 0,9,SANCHEZ FERNANDO JAVIER,Inicial,5,5,1754196.99,0,0,0,0,4,1,0,0,0,5,0.0,0.0,0.0,0.0,0.0,4.0,1.0,0.0,0.0,0.0,0.0,5.0,pendiente,sincargos_mes,0,0,
 2026-06-23,1093,RAMIREZ LUISINA AINELEN,LIBERTADOR URQUIZA 0,9,SANCHEZ FERNANDO JAVIER,Inicial,5,5,2163254.54,0,0,0,0,4,1,0,0,0,5,0.0,0.0,0.0,0.0,0.0,4.0,1.0,0.0,0.0,0.0,0.0,5.0,pendiente,sincargos_mes,0,0,
