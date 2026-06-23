@@ -8,9 +8,14 @@
 - Se elimino el `pull --rebase` posterior al commit para evitar rebase con index/working tree sucios.
 - La salida `LISTO` queda reservada para push exitoso; ante fallo de commit/push o ausencia de cambios informa que Render NO fue actualizado.
 
+### HECHO - Cierre de MES blindado (no commiteado ni pusheado aun)
+- `CIERRE_MES_ORBIT.bat` ahora aplica el mismo patron que el diario: preflight Git (bloquea codigo/config fuera de rutas operativas), pull --rebase al inicio solo con repo limpio, segundo guard tras `git add "cierres mes/"`, y se elimino el `pull --rebase` posterior al commit.
+- Adaptacion propia del mensual: "sin cambios nuevos" no se trata como error (re-cerrar un mes ya cerrado es valido) -> sale por `:fin_ok` (exit 0).
+- Validado en estatico: CRLF + UTF-8 sin BOM, `git diff --check` limpio, todos los `goto` resuelven a labels existentes, guard detecta el `.bat` como cambio funcional.
+
 ### PENDIENTE
-- Validar en el proximo cierre real: repo limpio -> pull inicial OK -> regeneracion OK -> commit operativo -> push OK -> Render actualizado.
-- Revisar `CIERRE_MES_ORBIT.bat`: tiene el mismo patron historico de generar/commit y luego `pull --rebase`; conviene blindarlo en una tarea separada para no mezclar flujo diario y mensual.
+- Validar en el proximo cierre REAL (diario): repo limpio -> pull inicial OK -> regeneracion OK -> commit operativo -> push OK -> Render actualizado.
+- Validar en el proximo cierre de MES real: repo limpio -> pull inicial -> `cerrar_mes.py` OK -> commit de `cierres mes/` -> push -> Render.
 
 ## Sesion 2026-06-23 - Innovaciones: destrabar cierre (A) + nueva medición por subcanal (B)
 

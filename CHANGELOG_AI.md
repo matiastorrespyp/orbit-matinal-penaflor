@@ -1,5 +1,15 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-23 - fix(cierre): blindar flujo Git del cierre de MES (mismo patron que el diario)
+
+- `CIERRE_MES_ORBIT.bat`: agrega preflight Git antes de generar el cierre. Si hay cambios funcionales (codigo `.py`, `.bat`, `portal.html`, config) fuera de las rutas operativas permitidas, aborta antes de ejecutar `tools/cerrar_mes.py`.
+- `CIERRE_MES_ORBIT.bat`: allowlist operativo del mes = `01_INPUTS/{cierres mes, resultado.xlsx, ventas.csv, ventas_mes.csv, ventas_acumulada.csv, clientes.xlsx, ventas-clubfaro.csv, objetivo 11T.xlsx, INNOVACIONES, Planes AASS, PLANES_AS, ACCIONES COMERCIALES}`, `02_HISTORY`, `04_DATASETS_ORBIT`.
+- `CIERRE_MES_ORBIT.bat`: agrega `git pull --rebase origin master` al inicio, solo con repositorio 100%% limpio; con inputs operativos ya cargados omite el pull (no rebasa sobre working tree sucio).
+- `CIERRE_MES_ORBIT.bat`: tras `git add "01_INPUTS/cierres mes/"`, segundo guard que aborta a `:fin_error` si quedan cambios fuera del allowlist. No usa `git reset --hard` ni `git clean`.
+- `CIERRE_MES_ORBIT.bat`: elimina el `pull --rebase` posterior al commit. `LISTO` solo tras push exitoso; ante fallo de commit/push informa que Render NO fue actualizado. Exit codes explicitos (`exit /b 1` en error, `exit /b 0` en exito).
+- Diferencia deliberada vs diario: "sin cambios nuevos" en el mensual NO es error (re-ejecutar un mes ya cerrado es valido; `cerrar_mes.py` no pisa nada y devuelve 0), por eso va a `:fin_ok`.
+- Archivo regrabado en CRLF, UTF-8 sin BOM (consistente con `.gitattributes` `eol=crlf`).
+
 ## 2026-06-23 - fix(cierre): blindar flujo Git del cierre diario
 
 - `CIERRE_DIA_ORBIT.bat`: agrega preflight Git antes de validar/regenerar datos. Si hay cambios unstaged, staged o archivos nuevos no versionados, aborta antes de tocar `01_INPUTS`, `02_HISTORY` o datasets.
