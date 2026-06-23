@@ -2474,21 +2474,22 @@ function vKpis(){
       </div>
     </div>`;
   }
-  // — INOV-4: Innovaciones vendedor — agrupado por producto (combina segmentos)
+  // — INOV-4: Innovaciones vendedor — por producto, desglose por subcanal (verde compraron / rojo no) —
   const inov=D.inov||{};
   const iProds=inov.productos||[];
   const esV3=(userData?.vendedor_id||'').toUpperCase()==='V3';
-  // Filtrar AS si es V3, luego agrupar por producto_nombre
-  const iProdsFilt=iProds.filter(pr=>!(esV3&&(pr.segmento||'').toUpperCase()==='AUTOSERVICIO'));
-  const iByProd={}, iCartUsed={};
+  const SUBCANAL_LBL_V={AUTOSERVICIO:'Autoservicio',ALMACEN:'Almacén',KIOSCO:'Kiosco',ON_PREMISE:'On Premise',MAYORISTA:'Mayorista'};
+  const SUBCANAL_ORD_V=['AUTOSERVICIO','ALMACEN','KIOSCO','ON_PREMISE','MAYORISTA'];
+  // V3 solo Tradicional (Almacén/Kiosco) — filtro defensivo
+  const iProdsFilt=iProds.filter(pr=>!(esV3&&!['ALMACEN','KIOSCO'].includes((pr.segmento||'').toUpperCase())));
+  const iByProd={};
   iProdsFilt.forEach(pr=>{
-    const k=pr.producto_nombre, seg=pr.segmento;
-    if(!iByProd[k]) iByProd[k]={nombre:k,cartera:0,compraron:0,segs:[],faltantes:[]};
-    iByProd[k].compraron+=(pr.clientes_compraron||0);
-    const segKey=seg+'__'+k;
-    if(!iCartUsed[segKey]){ iCartUsed[segKey]=true; iByProd[k].cartera+=(pr.clientes_cartera||0); }
-    if(!iByProd[k].segs.includes(seg)) iByProd[k].segs.push(seg);
-    iByProd[k].faltantes.push(...(pr.clientes_faltantes||[]).slice(0,3));
+    const k=pr.producto_nombre, seg=(pr.segmento||'').toUpperCase();
+    if(!iByProd[k]) iByProd[k]={nombre:k,cartera:0,compraron:0,sub:{}};
+    const car=pr.clientes_cartera||0, com=pr.clientes_compraron||0;
+    iByProd[k].compraron+=com;
+    iByProd[k].cartera+=car;
+    iByProd[k].sub[seg]={cartera:car,compraron:com,no:Math.max(car-com,0)};
   });
   const iProdsAgr=Object.values(iByProd).sort((a,b)=>b.compraron-a.compraron);
   if(iProdsAgr.length && !inov.advertencia){
@@ -2502,15 +2503,19 @@ function vKpis(){
     iProdsAgr.forEach(pr=>{
       const pct=pr.cartera?Math.round(pr.compraron/pr.cartera*100):0;
       const cl=pct>=50?'ok':pct>=25?'wn':'bd';
+      const subHtml=SUBCANAL_ORD_V.filter(s=>pr.sub[s]&&pr.sub[s].cartera>0).map(s=>{
+        const o=pr.sub[s];
+        return `<div style="flex:1;min-width:84px;background:var(--surf2);border-radius:7px;padding:5px 8px;">
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px;">${SUBCANAL_LBL_V[s]||s}</div>
+          <div style="font-size:13px;font-variant-numeric:tabular-nums;"><b style="color:var(--ok);">${o.compraron}</b><span style="color:var(--text3);"> / </span><b style="color:var(--bd);">${o.no}</b></div>
+        </div>`;
+      }).join('');
       h+=`<div style="padding:9px 14px;border-bottom:1px solid var(--bord);">
-        <div class="row-b" style="margin-bottom:3px;">
+        <div class="row-b" style="margin-bottom:5px;">
           <b style="font-size:12px;">${pr.nombre}</b>
-          <span class="chip ${cl}" style="font-size:11px;">${pct}%</span>
+          <span class="chip ${cl}" style="font-size:11px;" title="${pr.compraron} de ${pr.cartera} clientes">${pct}%</span>
         </div>
-        <div style="font-size:11px;color:var(--text3);margin-bottom:5px;">
-          <b style="color:var(--text2);">${pr.compraron}</b> de ${pr.cartera} clientes
-        </div>
-        <div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${clamp(pct,0,100)}%"></div></div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">${subHtml}</div>
       </div>`;
     });
     h+=`</div></div>`;
@@ -3013,17 +3018,18 @@ function gInnovaciones(p){
     html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">📦</div><p>Sin datos de innovaciones disponibles.</p></div></div></div>`;
     p.innerHTML=html; return;
   }
-  // Agrupar por producto: sumar compraron y tomar la cartera del primer segmento
-  // (la cartera total es igual para todos los productos del mismo segmento, se suma una sola vez por segmento)
-  const byProd={}, cartSegUsed={};
+  // Subcanales: etiqueta amigable + orden de display fijo
+  const SUBCANAL_LBL={AUTOSERVICIO:'Autoservicio',ALMACEN:'Almacén',KIOSCO:'Kiosco',ON_PREMISE:'On Premise',MAYORISTA:'Mayorista'};
+  const SUBCANAL_ORD=['AUTOSERVICIO','ALMACEN','KIOSCO','ON_PREMISE','MAYORISTA'];
+  // Agrupar por producto guardando el desglose por subcanal (compraron / no compraron)
+  const byProd={};
   dat.por_producto.forEach(r=>{
     const k=r.producto_nombre, seg=r.segmento;
-    if(!byProd[k]) byProd[k]={nombre:k,cartera:0,compraron:0,segs:[]};
-    byProd[k].compraron+=r.compraron_total;
-    // La cartera de cada segmento se suma solo la primera vez que aparece
-    const segKey=seg+'__'+k;
-    if(!cartSegUsed[segKey]){ cartSegUsed[segKey]=true; byProd[k].cartera+=r.cartera_total; }
-    if(!byProd[k].segs.includes(seg)) byProd[k].segs.push(seg);
+    if(!byProd[k]) byProd[k]={nombre:k,cartera:0,compraron:0,sub:{}};
+    const car=r.cartera_total||0, com=r.compraron_total||0;
+    byProd[k].compraron+=com;
+    byProd[k].cartera+=car;                 // cada subcanal aparece 1 vez por producto
+    byProd[k].sub[seg]={cartera:car,compraron:com,no:Math.max(car-com,0)};
   });
   // compraron_dia: el servidor calcula 1 valor por producto_codigo (mismo en TRAD y AS).
   // Usamos producto_codigo como clave para evitar doble suma; mapeamos después a nombre.
@@ -3053,25 +3059,32 @@ function gInnovaciones(p){
   </div>`;
   // Lista de productos
   html+=`<div class="card">
-    <div class="card-hd"><span class="card-title">Cobertura por Producto</span><span class="chip">${prods.length} innovaciones</span></div>
+    <div class="card-hd">
+      <span class="card-title">Cobertura por Producto y Subcanal</span>
+      <span class="xs" style="color:var(--text3);"><b style="color:var(--ok);">verde</b> compraron · <b style="color:var(--bd);">rojo</b> no compraron</span>
+    </div>
     <div class="card-body nop">
       ${prods.map(prod=>{
         const pct=prod.cartera?Math.round(prod.compraron/prod.cartera*100):0;
         const col=pct>=50?'ok':pct>=25?'wn':'bd';
-        const segStr=prod.segs.join(' + ');
         const nDia=diaMap[prod.nombre]||0;
         const diaCol=nDia>0?'ok':'';
-        return `<div style="padding:10px 14px;border-bottom:1px solid var(--bord);">
-          <div class="row-b" style="margin-bottom:4px;">
+        const subHtml=SUBCANAL_ORD.filter(s=>prod.sub[s]&&prod.sub[s].cartera>0).map(s=>{
+          const o=prod.sub[s];
+          return `<div style="flex:1;min-width:92px;background:var(--surf2);border-radius:7px;padding:6px 9px;">
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px;">${SUBCANAL_LBL[s]||s}</div>
+            <div style="font-size:14px;font-variant-numeric:tabular-nums;"><b style="color:var(--ok);">${o.compraron}</b><span style="color:var(--text3);"> / </span><b style="color:var(--bd);">${o.no}</b></div>
+          </div>`;
+        }).join('');
+        return `<div style="padding:11px 14px;border-bottom:1px solid var(--bord);">
+          <div class="row-b" style="margin-bottom:7px;">
             <span style="font-weight:600;font-size:13px;">${prod.nombre}</span>
-            <span class="chip ${diaCol}" style="font-size:12px;" title="Compraron ${diaLabel||'hoy'}">${nDia} <span style="font-size:10px;opacity:.75;">${diaLabel||'hoy'}</span></span>
+            <span style="display:flex;gap:6px;align-items:center;">
+              <span class="chip ${col}" style="font-size:11px;" title="${prod.compraron} de ${prod.cartera} clientes">${pct}%</span>
+              <span class="chip ${diaCol}" style="font-size:11px;" title="Compraron ${diaLabel||'hoy'}">${nDia} <span style="font-size:10px;opacity:.75;">${diaLabel||'hoy'}</span></span>
+            </span>
           </div>
-          <div style="font-size:11px;color:var(--text3);margin-bottom:6px;">
-            <b style="color:var(--text2);">${prod.compraron}</b> compraron
-            <span style="color:var(--bord);">·</span> ${prod.cartera} cartera
-            <span style="color:var(--bord);">·</span> <span style="color:var(--text4);">${segStr}</span>
-          </div>
-          <div class="bar" style="height:5px;"><div class="bar-f ${col}" style="width:${clamp(pct,0,100)}%"></div></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">${subHtml}</div>
         </div>`;
       }).join('')}
     </div>

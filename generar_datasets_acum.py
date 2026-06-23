@@ -59,6 +59,19 @@ def _clasificar(ramo: str, subseg: str) -> str:
         return "TRADICIONAL"
     return "OTROS"
 
+def _clasificar_subcanal(ramo: str, subseg: str) -> str:
+    """Subcanal fino para Innovaciones (5 grupos: AUTOSERVICIO, ALMACEN, KIOSCO,
+    ON_PREMISE, MAYORISTA). Deriva de _clasificar() y parte TRADICIONAL en KIOSCO
+    (kiosco/maxikiosco) vs ALMACEN (resto de tradicionales — decisión usuario 2026-06-23).
+    Agrega de vuelta exacto a _seg: ALMACEN + KIOSCO == TRADICIONAL."""
+    base = _clasificar(ramo, subseg)
+    if base == "TRADICIONAL":
+        s = str(subseg).upper(); r = str(ramo).upper()
+        if "KIOSC" in s or "KIOSK" in s or "KIOSC" in r or "KIOSK" in r:
+            return "KIOSCO"
+        return "ALMACEN"
+    return base
+
 UMBRAL = {
     "AUTOSERVICIO": 6,
     "TRADICIONAL":  3,
@@ -253,6 +266,9 @@ def cargar_clientes():
     sub_col = next((c for c in df.columns if "subseg" in c.lower() or "subramo" in c.lower()), None)
     df["_seg"] = df.apply(
         lambda r: _clasificar(str(r.get("Ramo", "")), str(r.get(sub_col, "") if sub_col else "")), axis=1
+    )
+    df["_subcanal"] = df.apply(
+        lambda r: _clasificar_subcanal(str(r.get("Ramo", "")), str(r.get(sub_col, "") if sub_col else "")), axis=1
     )
     return df
 
@@ -879,20 +895,23 @@ def generar_planes_as(ventas, bbdd, clientes):
 
 def generar_innovaciones_segmento(ventas, clientes):
     """
-    CCC de 17 productos innovación por vendedor × segmento (TRADICIONAL + AUTOSERVICIO).
-    Fuente: ventas.csv (MES VIVO). V3 no AUTOSERVICIO.
+    CCC de los productos innovación (lista de Innovaciones.xlsx) por vendedor × SUBCANAL.
+    Subcanales (5): AUTOSERVICIO, ALMACEN, KIOSCO, ON_PREMISE, MAYORISTA.
+    Fuente: ventas.csv (MES VIVO), solo Peñaflor (excluye P&P Logística).
+    V3 solo Tradicional (ALMACEN + KIOSCO): sin AS, Mayorista ni On Premise.
+    El CSV mantiene la columna 'segmento' (ahora con el subcanal) por compat con el portal.
     """
-    SEGMENTOS = ["TRADICIONAL", "AUTOSERVICIO"]
+    SUBCANALES = ["AUTOSERVICIO", "ALMACEN", "KIOSCO", "ON_PREMISE", "MAYORISTA"]
 
-    # Cartera por vendedor × segmento
-    cart = clientes[["Codigo", "codven", "Vendedor", "_seg"]].rename(
+    # Cartera por vendedor × subcanal
+    cart = clientes[["Codigo", "codven", "Vendedor", "_subcanal"]].rename(
         columns={"Codigo": "cliente_id", "codven": "vendedor_codigo",
-                 "Vendedor": "vendedor_nombre", "_seg": "segmento"}
+                 "Vendedor": "vendedor_nombre", "_subcanal": "segmento"}
     ).copy()
-    cart = cart[cart["segmento"].isin(SEGMENTOS)]
+    cart = cart[cart["segmento"].isin(SUBCANALES)]
     cart = cart[cart["vendedor_codigo"].isin(VENDEDORES_ACTIVOS_INOV)]
-    # V3 sin AUTOSERVICIO
-    cart = cart[~((cart["vendedor_codigo"] == 3) & (cart["segmento"] == "AUTOSERVICIO"))]
+    # V3 solo Tradicional (Almacén + Kiosco)
+    cart = cart[~((cart["vendedor_codigo"] == 3) & (~cart["segmento"].isin(["ALMACEN", "KIOSCO"])))]
 
     # Ventas de productos innovación (solo Peñaflor, excluye P&P Logística)
     v = ventas[ventas["ImporteNetoItem"] > 0].copy()
@@ -906,7 +925,7 @@ def generar_innovaciones_segmento(ventas, clientes):
     filas = []
     for vend_cod, grp_vend in cart.groupby("vendedor_codigo"):
         vend_nombre = grp_vend["vendedor_nombre"].iloc[0]
-        for seg in SEGMENTOS:
+        for seg in SUBCANALES:
             grp_seg = grp_vend[grp_vend["segmento"] == seg]
             if grp_seg.empty:
                 continue
@@ -926,6 +945,7 @@ def generar_innovaciones_segmento(ventas, clientes):
                     "producto_nombre": nombre,
                     "clientes_cartera": len(cartera_ids),
                     "clientes_compraron": len(compraron_ids),
+                    "clientes_no_compraron": len(faltantes),
                     "pct_cobertura": round(len(compraron_ids) / len(cartera_ids), 4) if cartera_ids else 0.0,
                     "clientes_faltantes": "|".join(str(x) for x in faltantes),
                 })
