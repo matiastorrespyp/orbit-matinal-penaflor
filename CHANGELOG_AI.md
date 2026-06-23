@@ -1,5 +1,20 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-23 - fix(cierre): abortar el cierre si la regeneracion falla (no publicar datasets viejos)
+
+**Bug latente desde el 17/06:** el motor venía crasheando en TODAS las corridas desde el 17/06 19:20 (8 cierres) por el tema `Cuadro Inov` (ver entrada siguiente). Pasó desapercibido porque `CIERRE_DIA_ORBIT.bat` no chequeaba el código de salida de la regeneración — solo verificaba `if exist mod_volumen_vendedor.csv`, que existía **viejo (17/06)**. Resultado: el cierre decía "OK" en falso y hacía commit + push igual, publicando a Render `ventas.csv`/`resultado.xlsx` nuevos pero **datasets congelados del 17/06** (CCC, 11T, innovaciones, cobertura, sell out, volumen y los snapshots del real del día). El historial de snapshots saltaba directo del 17/06 al 22/06.
+
+- `CIERRE_DIA_ORBIT.bat`: tras `call REGENERAR_DATOS_ORBIT.bat`, reemplazado el chequeo `if exist ...csv` por `if errorlevel 1` → si la regeneración falla, **ABORTA** con cartel rojo y `exit /b 1` (NO commit, NO push). `REGENERAR_DATOS_ORBIT.bat` ya devolvía `exit /b 1` en cada fallo; el problema era solo que el cierre no lo miraba. Archivo mantiene CRLF.
+- **Validado:** patrón `call`→`exit /b 1`→`if errorlevel 1` probado en cmd (caso falla = aborta; caso OK = continúa).
+
+## 2026-06-23 - fix(cierre): Innovaciones.xlsx sin hoja 'Cuadro Inov' no aborta el motor
+
+**Causa del cierre que "no actualizaba nada":** el cierre del 23/06 abortó en el paso 5/8 (motor legacy). Se reemplazó `01_INPUTS/INNOVACIONES/Innovaciones.xlsx` por un archivo con una sola hoja `innovaciones` (lista plana de 22 productos), pero `generar_mod_innovaciones_plan_as` hacía `read_excel(sheet_name="Cuadro Inov", header=4)` y crasheaba con `ValueError: Worksheet named 'Cuadro Inov' not found`, deteniendo toda la regeneración → sin datasets, sin commit, sin push (Render quedó en 22/06).
+
+- `legacy/orbit_matinal_v42.py` `generar_mod_innovaciones_plan_as`: antes de leer la hoja, verifica `pd.ExcelFile(...).sheet_names`. Si no existe `Cuadro Inov` (o el Excel no se puede leer), loguea WARN y devuelve `DataFrame()` vacío en lugar de abortar. El resto del cierre sigue normal.
+- **Validado:** `REGENERAR_DATOS_ORBIT.bat` corre completo (log `regenerar_datos_20260623_085554.log`): WARN registrado, `mod_innovaciones_plan_as` 0 filas, todos los datasets regenerados a 2026-06-23. La tarjeta de Innovaciones del portal no se ve afectada (usa `mod_innovaciones_segmento.csv`).
+- Parte A de un cambio mayor. **Pendiente Parte B** (NEXT_TASK): nueva medición de Innovaciones por producto × subcanal (Autoservicio/Almacén/Kiosco/On Premise/Mayorista), compraron vs no compraron.
+
 ## 2026-06-22 - fix(plan frío): excluir latas Smirnoff BC del sin-cargo enviado
 
 **Planes AS** (ambos perfiles). El "enviado" de **Plan Frío** (Six Pack Smirnoff ICE sin cargo) se detectaba por **Marca** (`contains('ice') & contains('smirnoff')`). Las latas **Smirnoff BC** (Bitter Citric, COD 35108/35109) tienen `Marca='Smirnoff Ice Flavours'` en el ERP pero **NO son plan frío** — pertenecen a una acción comercial del mes. Resultado: 4 clientes (30063, 390, 7219, 30017) figuraban como plan frío **entregado** sin haberlo recibido.

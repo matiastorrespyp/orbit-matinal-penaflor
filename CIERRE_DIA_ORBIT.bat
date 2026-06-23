@@ -47,14 +47,18 @@ echo.
 call "%ROOT%\REGENERAR_DATOS_ORBIT.bat"
 
 echo.
-if exist "%ROOT%\04_DATASETS_ORBIT\mod_volumen_vendedor.csv" (
-    echo OK: Datasets regenerados correctamente.
-) else (
-    echo AVISO: mod_volumen_vendedor.csv no encontrado.
-    echo La regeneracion pudo haber fallado. Revisar 99_LOGS_ORBIT.
-    echo Presione cualquier tecla para continuar de todas formas...
-    pause >nul
+if errorlevel 1 (
+    echo ============================================================
+    echo ERROR: La regeneracion de datasets FALLO.
+    echo Los datos NO se publicaron. NO se hace commit ni push.
+    echo Render se queda con los datos anteriores ^(no avanza el dia^).
+    echo Revisar el ultimo log en 99_LOGS_ORBIT y reintentar el cierre.
+    echo ============================================================
+    echo.
+    pause
+    exit /b 1
 )
+echo OK: Datasets regenerados correctamente.
 
 echo.
 echo ============================================================

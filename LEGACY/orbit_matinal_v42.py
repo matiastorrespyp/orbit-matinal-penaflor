@@ -608,6 +608,18 @@ def generar_mod_innovaciones_plan_as(ventas_validas, clientes, fecha_ejecucion):
     if not os.path.exists(INPUT_INNOVACIONES):
         return pd.DataFrame()
 
+    # La matriz Plan AS depende de la hoja "Cuadro Inov" (28 clientes x productos).
+    # Si el Excel de Innovaciones no la trae (p.ej. archivo con solo la lista de
+    # productos), se omite este dataset en vez de abortar todo el cierre.
+    try:
+        hojas = pd.ExcelFile(INPUT_INNOVACIONES).sheet_names
+    except Exception as e:
+        print(f"[WARN] No se pudo leer {INPUT_INNOVACIONES}: {e}. Se omite mod_innovaciones_plan_as.")
+        return pd.DataFrame()
+    if "Cuadro Inov" not in hojas:
+        print(f"[WARN] {INPUT_INNOVACIONES} no tiene la hoja 'Cuadro Inov' (hojas: {hojas}). Se omite mod_innovaciones_plan_as.")
+        return pd.DataFrame()
+
     df_inov = pd.read_excel(INPUT_INNOVACIONES, sheet_name="Cuadro Inov", header=4)
     df_inov = df_inov[pd.to_numeric(df_inov["Cod C"], errors="coerce").notna()].copy()
     df_inov["cliente_id"] = pd.to_numeric(df_inov["Cod C"], errors="coerce").astype(int)

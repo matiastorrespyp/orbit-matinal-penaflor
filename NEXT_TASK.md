@@ -1,5 +1,31 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-23 - Innovaciones: destrabar cierre (A) + nueva medición por subcanal (B)
+
+### HECHO — Parte A (validado, NO pusheado aún)
+- `legacy/orbit_matinal_v42.py` `generar_mod_innovaciones_plan_as`: tolera Excel sin hoja `Cuadro Inov` (WARN + DataFrame vacío) en vez de abortar el cierre. Causa del "no actualizó nada" del 23/06.
+- Datasets regenerados a 2026-06-23 vía `REGENERAR_DATOS_ORBIT.bat` (OK).
+- `CIERRE_DIA_ORBIT.bat`: ahora ABORTA si la regeneración falla (`if errorlevel 1` en vez de `if exist ...csv`). Antes publicaba datasets viejos en silencio — el motor crasheaba desde el 17/06 (8 cierres) y nadie se enteraba. Validado en cmd.
+
+### OJO — datos de Render quedaron desfasados 17/06→22/06
+- Entre el 17/06 y el 22/06 Render recibió ventas/resultado nuevos pero datasets del 17/06. Recién la corrida del 23/06 08:58 los puso al día (data del 22/06). Las tarjetas históricas de esos días mostraban números del 17.
+
+### PENDIENTE — cerrar el día
+- Falta correr `CIERRE_DIA_ORBIT.bat` (commit + push a Render). Antes, el usuario decide si pega un `ventas.csv` nuevo del día (hoy sigue el del 22/06 17:23).
+
+### PENDIENTE — Parte B (nueva medición de Innovaciones, aprobada por el usuario)
+Medir por **producto × subcanal**: cuántos clientes compraron (verde) y cuántos NO (rojo), por cada subcanal.
+- **Productos:** leer los 22 desde `Innovaciones.xlsx` (no hardcodear `_INOV2_PRODUCTOS`; los 7 nuevos: 14620, 42337, 60020, 60021, 60022, 74882, 74884). `_acc_innovaciones_codigos` en server ya lee el archivo nuevo bien (sheet 0, header=None).
+- **Subcanales (5)** desde `SubSegmento`:
+  - Autoservicio = Autoservicio Tradicional + AUTOSERVICIO + Cadena Regional + CADENAS REGIONALES (SAR) + Large Format + Proximity
+  - **Almacén** = Almacen/Despensa + ALMACENES + **tradicionales no-kiosco** (Carniceria/Granja, Fiambreria, Panaderia, Casa de Pastas, Verduleria, Heladeria, Resto de Tradicionales) ← decisión del usuario
+  - Kiosco = Kiosco/Maxikiosco + Kiosco - 365 + KIOSKO
+  - On Premise = Resto de On Premise + Vinoteca(s) + ON PREMISE(/NOCHE/DIA) + Bar/Restaurant + RESTAURANT(/CON BARRA) + BAR + Estacion de Servicio* + Eventos + Canchas/Instituciones/Colegios/Centros
+  - Mayorista = Mayoristas + MAYORISTAS + Mayorista Regionales + CASH&CARRY
+  - Empleados → excluir
+- **Reglas:** vendedores activos V3,V4,V6,V7,V8,V9,V10; excluir V2/V5/V20; **V3 solo Tradicional** (Almacén+Kiosco; sin AS/Mayorista/On Premise).
+- Reconstruir `generar_mod_innovaciones_segmento` (5 subcanales + productos del archivo) y actualizar endpoints `innovaciones_segmento`/`innovaciones_total` + tarjeta en `portal.html` (verde compraron / rojo no compraron por subcanal).
+
 ## Sesion 2026-06-22 - Plan Frío: excluir latas Smirnoff BC
 
 ### HECHO (validado + pusheado a Render)
