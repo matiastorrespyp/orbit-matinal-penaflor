@@ -1,17 +1,19 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
-## Sesion 2026-06-23 - Cierre diario: blindaje Git
+## Sesion 2026-06-23 - Blindaje Git de los cierres (AMBOS .bat HECHO)
 
-### HECHO (no commiteado ni pusheado por esta tarea)
-- `CIERRE_DIA_ORBIT.bat` ahora exige repo limpio antes de regenerar y hace `git pull --rebase origin master` al inicio.
-- El commit operativo agrega solo rutas permitidas: inputs diarios, historial operativo, datasets CSV del portal y acciones comerciales importadas.
-- Se elimino el `pull --rebase` posterior al commit para evitar rebase con index/working tree sucios.
-- La salida `LISTO` queda reservada para push exitoso; ante fallo de commit/push o ausencia de cambios informa que Render NO fue actualizado.
+### HECHO - AMBOS .bat blindados, commiteados y pusheados
+- [x] `CIERRE_DIA_ORBIT.bat` blindado (commit `7a8e060`, en `origin/master`).
+- [x] `CIERRE_MES_ORBIT.bat` blindado con el mismo patron (commit `4732259`, en `origin/master`).
 
-### HECHO - Cierre de MES blindado (no commiteado ni pusheado aun)
-- `CIERRE_MES_ORBIT.bat` ahora aplica el mismo patron que el diario: preflight Git (bloquea codigo/config fuera de rutas operativas), pull --rebase al inicio solo con repo limpio, segundo guard tras `git add "cierres mes/"`, y se elimino el `pull --rebase` posterior al commit.
-- Adaptacion propia del mensual: "sin cambios nuevos" no se trata como error (re-cerrar un mes ya cerrado es valido) -> sale por `:fin_ok` (exit 0).
-- Validado en estatico: CRLF + UTF-8 sin BOM, `git diff --check` limpio, todos los `goto` resuelven a labels existentes, guard detecta el `.bat` como cambio funcional.
+Patron comun aplicado a los dos:
+- Preflight Git: aborta si hay cambios funcionales (`.py`/`.bat`/`portal.html`/config) fuera de las rutas operativas permitidas.
+- `git pull --rebase origin master` al inicio, solo con repo 100% limpio; con inputs operativos cargados omite el pull.
+- Segundo guard tras el `git add` operativo: aborta a `:fin_error` si queda algo fuera del allowlist. No usa `git reset --hard` ni `git clean`.
+- Se elimino el `pull --rebase` posterior al commit. `LISTO` solo tras push exitoso; exit codes explicitos (`exit /b 1` error / `exit /b 0` ok).
+- Ambos en CRLF garantizado por `.gitattributes` (`*.bat text eol=crlf`): `git ls-files --eol` -> `w/crlf` en working tree.
+
+Diferencia del mensual: "sin cambios nuevos" NO es error (re-cerrar un mes ya cerrado es valido, `cerrar_mes.py` devuelve 0) -> sale por `:fin_ok`.
 
 ### PENDIENTE
 - Validar en el proximo cierre REAL (diario): repo limpio -> pull inicial OK -> regeneracion OK -> commit operativo -> push OK -> Render actualizado.
