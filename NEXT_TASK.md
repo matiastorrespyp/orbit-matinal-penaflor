@@ -1,5 +1,17 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-23 - Cierre diario: blindaje Git
+
+### HECHO (no commiteado ni pusheado por esta tarea)
+- `CIERRE_DIA_ORBIT.bat` ahora exige repo limpio antes de regenerar y hace `git pull --rebase origin master` al inicio.
+- El commit operativo agrega solo rutas permitidas: inputs diarios, historial operativo, datasets CSV del portal y acciones comerciales importadas.
+- Se elimino el `pull --rebase` posterior al commit para evitar rebase con index/working tree sucios.
+- La salida `LISTO` queda reservada para push exitoso; ante fallo de commit/push o ausencia de cambios informa que Render NO fue actualizado.
+
+### PENDIENTE
+- Validar en el proximo cierre real: repo limpio -> pull inicial OK -> regeneracion OK -> commit operativo -> push OK -> Render actualizado.
+- Revisar `CIERRE_MES_ORBIT.bat`: tiene el mismo patron historico de generar/commit y luego `pull --rebase`; conviene blindarlo en una tarea separada para no mezclar flujo diario y mensual.
+
 ## Sesion 2026-06-23 - Innovaciones: destrabar cierre (A) + nueva medición por subcanal (B)
 
 ### HECHO — Parte A (validado, NO pusheado aún)
@@ -1229,4 +1241,3 @@ Se oculta automáticamente si no hay datos. Commit `c3f7813`.
 4. Al dia siguiente, actualizar `ventas.csv`, ejecutar `CIERRE_DIA_ORBIT.bat` y verificar en Render que Plan vs Real muestra el cierre de la fecha anterior aunque ya existan planes nuevos.
 5. Validar en la solapa Planificacion que el selector "Matinal YYYY-MM-DD" trae todos los vendedores de la fecha elegida.
 6. Si Render rechaza `plan: starter` o `disk` por configuracion de cuenta, corregir el servicio desde el dashboard de Render antes de reintentar deploy.
-

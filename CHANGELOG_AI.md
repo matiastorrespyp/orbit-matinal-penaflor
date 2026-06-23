@@ -1,5 +1,14 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-23 - fix(cierre): blindar flujo Git del cierre diario
+
+- `CIERRE_DIA_ORBIT.bat`: agrega preflight Git antes de validar/regenerar datos. Si hay cambios unstaged, staged o archivos nuevos no versionados, aborta antes de tocar `01_INPUTS`, `02_HISTORY` o datasets.
+- `CIERRE_DIA_ORBIT.bat`: mueve `git pull --rebase origin master` al inicio del cierre, con repositorio limpio y antes de ejecutar `REGENERAR_DATOS_ORBIT.bat`.
+- `CIERRE_DIA_ORBIT.bat`: mueve la sincronizacion de planes desde Render antes de regenerar datasets; si falla, aborta sin dejar datos operativos regenerados a medias.
+- `CIERRE_DIA_ORBIT.bat`: reemplaza `git add "04_DATASETS_ORBIT/"` por una lista explicita de datasets operativos permitidos y mantiene inputs/historiales operativos puntuales.
+- `CIERRE_DIA_ORBIT.bat`: despues del `git add`, aborta si quedan cambios fuera del allowlist o archivos nuevos no permitidos. No descarta cambios, no usa `git reset --hard` ni `git clean`.
+- `CIERRE_DIA_ORBIT.bat`: elimina el `pull --rebase` posterior al commit. El cierre solo muestra `LISTO` si `git push origin master` termino correctamente; si no hay cambios, falla el commit o falla el push, muestra que Render NO fue actualizado.
+
 ## 2026-06-23 - fix(cierre): abortar el cierre si la regeneracion falla (no publicar datasets viejos)
 
 **Bug latente desde el 17/06:** el motor venía crasheando en TODAS las corridas desde el 17/06 19:20 (8 cierres) por el tema `Cuadro Inov` (ver entrada siguiente). Pasó desapercibido porque `CIERRE_DIA_ORBIT.bat` no chequeaba el código de salida de la regeneración — solo verificaba `if exist mod_volumen_vendedor.csv`, que existía **viejo (17/06)**. Resultado: el cierre decía "OK" en falso y hacía commit + push igual, publicando a Render `ventas.csv`/`resultado.xlsx` nuevos pero **datasets congelados del 17/06** (CCC, 11T, innovaciones, cobertura, sell out, volumen y los snapshots del real del día). El historial de snapshots saltaba directo del 17/06 al 22/06.
@@ -2643,5 +2652,3 @@ __pycache__/
 - `CIERRE_DIA_ORBIT.bat`: deja de levantar/abrir portal local y publica el cierre hacia Render.
 - `render.yaml`: agrega disco persistente `orbit-data` y variables `ORBIT_DB_PATH` / `ORBIT_PLAN_BACKUP_DIR`.
 - `portal.html`: Planificacion gerencial incorpora selector de fecha de matinal para revisar planes historicos por dia.
-
-
