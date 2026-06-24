@@ -21,6 +21,10 @@
 2353,escala,Alaris,2026-06-01,24
 2353,escala,Alma Mora,2026-06-01,24
 2353,escala,Frizze,2026-06-01,6
+2357,escala,Alaris,2026-06-24,24
+2357,escala,Alma Mora,2026-06-24,24
+2357,escala,Frizze,2026-06-24,6
+2357,escala,Smirnoff Flavours,2026-06-24,6
 2410,escala,Alaris,2026-06-19,24
 2410,escala,Alma Mora,2026-06-19,6
 2410,escala,Smirnoff Flavours,2026-06-19,6
@@ -34,6 +38,8 @@
 30011,escala,Smirnoff Flavours,2026-06-23,6
 30013,escala,Alaris,2026-06-23,24
 30013,escala,Smirnoff Flavours,2026-06-23,6
+30014,escala,Alaris,2026-06-24,24
+30014,escala,Smirnoff Flavours,2026-06-24,6
 30017,escala,Alaris,2026-06-23,24
 30017,escala,Alma Mora,2026-06-23,6
 30017,escala,Smirnoff Flavours,2026-06-23,6
@@ -41,14 +47,20 @@
 30033,escala,Alma Mora,2026-06-23,24
 30033,escala,Frizze,2026-06-23,6
 30033,escala,Smirnoff Flavours,2026-06-23,6
+30044,escala,Alaris,2026-06-24,24
+30044,escala,Alma Mora,2026-06-24,24
+30044,escala,Frizze,2026-06-24,6
+30044,escala,Smirnoff Flavours,2026-06-24,6
 30063,escala,Alaris,2026-06-22,24
 30063,escala,Alma Mora,2026-06-22,6
 30063,escala,Smirnoff Flavours,2026-06-22,6
 1006,plan_frio,Six Pack Smirnoff ICE,2026-06-22,6
+2357,plan_frio,Six Pack Smirnoff ICE,2026-06-24,6
 2410,plan_frio,Six Pack Smirnoff ICE,2026-06-19,6
 7219,plan_frio,Six Pack Smirnoff ICE,2026-06-23,6
 30011,plan_frio,Six Pack Smirnoff ICE,2026-06-23,6
 30013,plan_frio,Six Pack Smirnoff ICE,2026-06-23,6
+30014,plan_frio,Six Pack Smirnoff ICE,2026-06-24,6
 30017,plan_frio,Six Pack Smirnoff ICE,2026-06-23,6
 30033,plan_frio,Six Pack Smirnoff ICE,2026-06-23,6
 30063,plan_frio,Six Pack Smirnoff ICE,2026-06-22,6
