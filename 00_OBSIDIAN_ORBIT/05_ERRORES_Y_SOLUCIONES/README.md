@@ -84,3 +84,16 @@ Registro de errores ya diagnosticados, con causa raíz y solución aplicada o pe
 **Solución aplicada:** (1) `/api/gerencia/cierres_historicos` extendido de forma aditiva/solo-lectura con `empresa`, `ranking` completo y `ganadores` por categoría (lee `cierre_mensual_resumen.json` y `ranking_vendedores_mes.json`). (2) `portal.html`: pantalla "Cierre de Mes" 100% histórica, eliminada la vista dinámica y todo consumo de `/api/gerencia/cierre_mes`.  
 **Commit:** b097300  
 **Estado:** ✅ Resuelto y validado en Render. Regla: cierres oficiales = solo artefactos versionados, sin recalcular (ver `08_ARQUITECTURA/README.md`).
+
+---
+
+## ERR-009 — Acciones Comerciales (gerencia) daba HTTP 500 en Render por timeout del worker
+
+**Detectado:** 2026-06-23  
+**Síntoma:** La pantalla de Acciones Comerciales no cargaba en gerencia. `/api/gerencia/acciones_mes` → **HTTP 500 a los ~30,9s** en Render; `/api/vendedor/<id>/acciones_mes` → 200 (10s). En local: 200 en 5,2s, tipos nativos OK (no era bug de lógica ni de serialización).  
+**Causa raíz:** La vista gerencia (sin filtro) corre las **28 acciones sobre toda la venta** y tardaba **>30s** en el Render de 0.5 vCPU. El **timeout default de gunicorn (30s)** mataba el worker; como nunca completaba, el payload **nunca se cacheaba** (`_ACC_MES_CACHE`) → 500 permanente. La vendedor (datos filtrados, ~10s) sí entraba. Descartado OOM: el dataset son 2.787 filas / 2,5 MB. El cuello: `_match` evaluaba el predicado de producto con `sub.apply(..., axis=1)` **fila por fila** (62.510 llamadas, ~5s local).  
+**Solución aplicada:** (1) `_match` evalúa `pred()` **una vez por combinación única** de `(_cat,_linea,_art,_marca,_cod)` y mapea a las filas (resultado idéntico, 5,2s→3,86s local). (2) Hilo daemon `_warm_caches()` que precalienta el payload gerencia al arranque (el boot no tiene timeout HTTP) → la 1ª request del gerente cae en caché.  
+**Pendiente operativo:** El **Start Command en el dashboard de Render está vacío** y el servicio **no es Blueprint** → ignora `render.yaml`/`Procfile` y usa el default de gunicorn (timeout 30s). Setear a mano:  
+`gunicorn server_orbit:app --bind 0.0.0.0:$PORT --timeout 120 --workers 1 --threads 8 --worker-class gthread`  
+**Commits:** `c8bd8d8` (código). **Estado:** ✅ Resuelto y validado en vivo (200, 0.6-1.7s). ⏳ Falta blindar el `--timeout 120` en el dashboard.  
+**Lección:** un endpoint pesado que **no cachea porque time-outea** falla siempre; en Render verificar el Start Command efectivo (si está vacío y no hay Blueprint, NO se aplican `render.yaml`/`Procfile`). Diagnóstico rápido: si el 500 llega a ~30s exactos → es el timeout del worker, no un exception.
