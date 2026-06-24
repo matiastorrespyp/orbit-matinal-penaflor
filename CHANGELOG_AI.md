@@ -1,5 +1,13 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-23 - fix(acciones): vista gerencia daba HTTP 500 en Render (timeout del worker)
+
+- Sintoma: la pantalla de Acciones Comerciales no cargaba en gerencia. `/api/gerencia/acciones_mes` devolvia HTTP 500 a los ~30,9s en Render; `/api/vendedor/<id>/acciones_mes` devolvia 200 (10s). Local: 200 en 5,2s, tipos nativos OK. => No era bug de logica ni serializacion: la vista gerencia (sin filtro, 28 acciones sobre toda la venta) superaba el timeout default de gunicorn (30s) en el Render de 0.5 vCPU, el worker moria y como nunca completaba NUNCA cacheaba => 500 permanente. Descartado OObM (dataset 2.787 filas, 2,5 MB). El commit anterior (dedup de litros) fue la gota que la paso de ~25s a >30s.
+- Causa raiz del costo: `_match` evaluaba el predicado de producto con `sub.apply(..., axis=1)` fila por fila (62.510 llamadas, ~5s).
+- `server_orbit.py` (`_match` dentro de `_acciones_mes_payload_uncached`): `pred()` depende SOLO de `(_cat,_linea,_art,_marca,_cod)`; ahora se evalua una vez por combinacion unica y se mapea a cada fila. Resultado IDENTICO (validado: totales.litros=20.775,3; ACJ26-007 13.358,8/360; ACJ26-002 4.955,1/445; ACJ26-021 4.894,0/441), tiempo 5,2s -> 3,86s local.
+- `server_orbit.py` (startup): hilo daemon `_warm_caches()` que precalienta `_acciones_mes_payload(None)` al arranque (el boot no tiene timeout HTTP). Asi la primera request del gerente cae en cache. No bloquea arranque ni request; fallo de warmup es no-fatal. Import de `threading`.
+- Validacion local: import dispara warmup; `/api/gerencia/acciones_mes` 200 (2da llamada 0,016s por cache); `/api/vendedor/V4/acciones_mes` 200; serializa OK; `py_compile` OK.
+
 ## 2026-06-23 - feat(acciones): detalle de clientes agrupado por vendedor + revision de tarjetas
 
 - `PAV MATINAL PE_A FLOR/portal.html` (`accShowDetalle`): al hacer clic en "clientes" / "nuevos" de una tarjeta, el detalle ahora se agrupa por vendedor. Cada grupo tiene encabezado (V# · nombre) con subtotal de importe, descuento, litros y cantidad de clientes; debajo, las filas de clientes de ese vendedor. Se reemplazo la columna "Vendedor" (redundante) por "Lineas" (cantidad de lineas de factura que matchearon). Aplica a vista gerencia y vendedor (ambas usan la misma funcion). El chip de cabecera ahora informa "N clientes · M vend.".

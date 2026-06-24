@@ -12,7 +12,7 @@ def _now_ar():
     """Hora actual en Argentina (UTC-3) como string 'YYYY-MM-DD HH:MM:SS'."""
     return datetime.now(_ARG_TZ).strftime("%Y-%m-%d %H:%M:%S")
 
-import os, shutil, csv as _csv
+import os, shutil, csv as _csv, threading
 app = Flask(__name__, static_folder=None)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0   # sin cache en portal.html
 
@@ -3856,7 +3856,18 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
             if not m.any():
                 return df.iloc[0:0]
             sub = df[m]
-            keep = sub.apply(lambda x: pred(x["_cat"], x["_linea"], x["_art"], x["_marca"], x["_cod"]), axis=1)
+            # pred() depende SOLO de (_cat,_linea,_art,_marca,_cod): se evalúa una vez por
+            # combinación única y se mapea a cada fila. Evita el apply fila-por-fila (~5s en
+            # la vista gerencia, que en Render 0.5 vCPU supera el timeout del worker y daba
+            # 500). Resultado idéntico, mucho más rápido.
+            keys = list(zip(sub["_cat"], sub["_linea"], sub["_art"], sub["_marca"], sub["_cod"]))
+            predcache = {}
+            keep_vals = []
+            for k in keys:
+                if k not in predcache:
+                    predcache[k] = bool(pred(*k))
+                keep_vals.append(predcache[k])
+            keep = pd.Series(keep_vals, index=sub.index, dtype=bool)
             sub = sub[keep]
             if requiere_plan_as:
                 sub = sub[pd.to_numeric(sub["_cli"], errors="coerce").isin(plan_as_clientes)]
@@ -6545,6 +6556,23 @@ backup_orbit_db()         # 1. copia orbit.db antes de cualquier cambio
 init_db()                 # 2. crea/migra tablas
 restore_planificacion_if_empty()  # 3. recupera desde CSV si la tabla quedó vacía
 export_planificacion_csv()        # 4. actualiza CSV de seguridad con estado actual
+
+
+def _warm_caches():
+    """Precalienta en background el payload pesado de Acciones Comerciales (vista
+    gerencia, sin filtro). En Render (0.5 vCPU) ese cómputo puede acercarse al timeout
+    del worker; al calcularlo en un hilo al arranque (sin timeout HTTP) queda cacheado
+    y la primera request del gerente cae en caché. No bloquea el arranque ni el request."""
+    try:
+        _acciones_mes_payload(None)
+    except Exception as e:  # nunca tumbar el arranque por el warmup
+        try:
+            print(f"[ORBIT] warmup acciones_mes fallo (no fatal): {e}")
+        except Exception:
+            pass
+
+
+threading.Thread(target=_warm_caches, name="orbit-warmup", daemon=True).start()
 
 if __name__ == "__main__":
     print("\n===== ORBIT SERVER v3 =====")

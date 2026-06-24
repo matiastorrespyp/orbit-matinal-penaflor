@@ -12,9 +12,13 @@
 - [x] Detalle de clientes por tarjeta agrupado por vendedor, con subtotal por vendedor (importe/dto/litros/cli) + columna "Lineas". `portal.html` `accShowDetalle`. Vista gerencia y vendedor.
 - [x] Revision de las 28 tarjetas: numeros coherentes (ver CHANGELOG). Inversion = valorDescuento real (no IVA).
 
+### HECHO (fix 500 Render)
+- [x] `/api/gerencia/acciones_mes` daba 500 en Render por timeout de gunicorn (30s); la vista gerencia tardaba >30s y nunca cacheaba. Optimizado `_match` (pred por combinacion unica, no fila-por-fila) + warmup en hilo al arranque. Validado local 200 + cache.
+
 ### PENDIENTE
-- [ ] Commitear `server_orbit.py` + `portal.html` (pidiendo aprobacion) y pushear para que Render lo tome.
-- [ ] Verificar visualmente en el portal: KPI "Litros bajo acciones" ~20.775 L; clic en clientes de una tarjeta => agrupado por vendedor.
+- [ ] Verificar EN VIVO tras deploy: `curl https://orbit-matinal-penaflor.onrender.com/api/gerencia/acciones_mes` => 200 (no 500). Y que la pantalla cargue.
+- [ ] REVISAR config Render: el timeout efectivo parece ser 30s (gunicorn default) aunque Procfile/render.yaml dicen `--timeout 120`. Probable override en el start command del dashboard de Render. Subir a 120 ahi da margen extra.
+- [ ] Verificar visualmente: KPI "Litros bajo acciones" ~20.775 L; clic en clientes de una tarjeta => agrupado por vendedor.
 - [ ] CATALOGO (con negocio): ACJ26-018 ≡ ACJ26-019 (mismo set Alma Mora On Premise); ACJ26-020 y ACJ26-025 con 0 clientes. Revisar definicion de reglas.
 - [ ] (Opcional) Mostrar % cobertura: litros bajo acciones / sell out total.
 
