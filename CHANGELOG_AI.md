@@ -1,5 +1,11 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-23 - feat(acciones): detalle por tarjeta en acordeon de 2 niveles (resumen vendedor -> clientes)
+
+- Pedido: al desplegar los clientes de una tarjeta, mostrar primero un RESUMEN por vendedor (con nro de clientes y subtotales) y poder hacer clic en un vendedor para ver sus clientes.
+- `PAV MATINAL PE_A FLOR/portal.html` (`accShowDetalle`): el detalle ahora arranca COLAPSADO mostrando una fila-resumen por vendedor (V# · nombre · N cli. · $importe · $dto · litros). Las filas de clientes quedan ocultas (`display:none`) hasta que se hace clic en el vendedor. Nueva funcion `accTogVend(scope,gi)` que despliega/colapsa las filas `.accv-gN` y voltea el caret ▸/▾. Encabezado de tabla: "Vendedor / Cliente" + nota "clic en un vendedor para ver sus clientes". Aplica a vista gerencia y vendedor.
+- Sin cambio de backend (los datos por cliente y vendedor ya venian en `clientes_detalle`). Validado: `node --check` del script del portal OK.
+
 ## 2026-06-23 - fix(acciones): vista gerencia daba HTTP 500 en Render (timeout del worker)
 
 - Sintoma: la pantalla de Acciones Comerciales no cargaba en gerencia. `/api/gerencia/acciones_mes` devolvia HTTP 500 a los ~30,9s en Render; `/api/vendedor/<id>/acciones_mes` devolvia 200 (10s). Local: 200 en 5,2s, tipos nativos OK. => No era bug de logica ni serializacion: la vista gerencia (sin filtro, 28 acciones sobre toda la venta) superaba el timeout default de gunicorn (30s) en el Render de 0.5 vCPU, el worker moria y como nunca completaba NUNCA cacheaba => 500 permanente. Descartado OObM (dataset 2.787 filas, 2,5 MB). El commit anterior (dedup de litros) fue la gota que la paso de ~25s a >30s.

@@ -2690,14 +2690,17 @@ function accShowDetalle(scope,id,kind){
     const na=parseInt(String(a.vid).replace(/\D/g,''))||999, nb=parseInt(String(b.vid).replace(/\D/g,''))||999;
     return na-nb||String(a.vid).localeCompare(String(b.vid));
   });
-  const bodyHtml=ordG.map(g=>{
-    const head=`<tr style="background:var(--surf2);">
-      <td colspan="3" style="padding:6px 9px;font-weight:800;font-size:11px;">${esc(g.vid)} · <span style="color:var(--text2)">${esc(g.vnom||'–')}</span></td>
+  // Acordeón de 2 niveles: primero el RESUMEN por vendedor (clickeable, con nº de
+  // clientes y subtotales); al hacer clic se despliegan/colapsan los clientes de ese
+  // vendedor (filas ocultas por defecto). Toggle vía accTogVend().
+  const bodyHtml=ordG.map((g,gi)=>{
+    const head=`<tr class="accv-head-${gi}" style="cursor:pointer;background:var(--surf2);" onclick="accTogVend('${scope}',${gi})">
+      <td colspan="3" style="padding:7px 9px;font-weight:800;font-size:11px;"><span class="accv-caret-${gi}" style="display:inline-block;width:12px;color:var(--mg);">▸</span>${esc(g.vid)} · <span style="color:var(--text2)">${esc(g.vnom||'–')}</span> <span class="chip info" style="font-size:9px;">${g.rows.length} cli.</span></td>
       <td style="text-align:right;font-variant-numeric:tabular-nums;font-size:11px;color:var(--text3);">$${fmt(g.importe)}</td>
       <td style="text-align:right;font-variant-numeric:tabular-nums;font-size:11px;color:var(--text3);">$${fmt(g.desc)}</td>
-      <td colspan="2" style="text-align:right;font-variant-numeric:tabular-nums;font-size:11px;color:var(--text3);">${fmt(g.litros)} L · ${g.rows.length} cli.</td></tr>`;
-    const rows=g.rows.map(c=>`<tr>
-        <td><span style="font-size:10px;color:var(--text3)">#${esc(c.cliente_id)}</span> ${esc(c.cliente_nombre)}${c.nuevo?` <span class="chip ok" style="font-size:8px;">nuevo</span>`:''}</td>
+      <td colspan="2" style="text-align:right;font-variant-numeric:tabular-nums;font-size:11px;color:var(--text3);">${fmt(g.litros)} L</td></tr>`;
+    const rows=g.rows.map(c=>`<tr class="accv-g${gi}" style="display:none;">
+        <td style="padding-left:20px;"><span style="font-size:10px;color:var(--text3)">#${esc(c.cliente_id)}</span> ${esc(c.cliente_nombre)}${c.nuevo?` <span class="chip ok" style="font-size:8px;">nuevo</span>`:''}</td>
         <td style="font-size:11px;color:var(--text3);">${esc(c.direccion||'–')}${c.localidad?` · ${esc(c.localidad)}`:''}</td>
         <td style="text-align:right;font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums;">${esc(c.lineas||'')}</td>
         <td style="text-align:right;font-variant-numeric:tabular-nums;">$${fmt(c.importe_neto)}</td>
@@ -2713,11 +2716,23 @@ function accShowDetalle(scope,id,kind){
       <span style="display:flex;gap:6px;align-items:center;"><span class="chip ${kind==='nuevos'?'ok':'info'}">${list.length} clientes · ${ordG.length} vend.</span>
       <span class="chip" style="cursor:pointer;" onclick="var d=document.getElementById('${scope==='v'?'acc-v-detalle':'acc-g-detalle'}');d.innerHTML='';d.dataset.k='';">✕</span></span>
     </div>
-    <div class="card-body nop">${list.length?`<table class="tbl" style="font-size:12px;">
-      <thead><tr><th>Cliente</th><th>Dirección</th><th style="text-align:right">Líneas</th><th style="text-align:right">Venta neta</th><th style="text-align:right">Dto.</th><th style="text-align:right">Litros</th><th style="text-align:right">Últ. compra</th></tr></thead>
+    <div class="card-body nop">${list.length?`<div style="font-size:10px;color:var(--text3);padding:6px 9px 0;">Resumen por vendedor · clic en un vendedor para ver sus clientes</div><table class="tbl" style="font-size:12px;">
+      <thead><tr><th>Vendedor / Cliente</th><th>Dirección</th><th style="text-align:right">Líneas</th><th style="text-align:right">Venta neta</th><th style="text-align:right">Dto.</th><th style="text-align:right">Litros</th><th style="text-align:right">Últ. compra</th></tr></thead>
       <tbody>${bodyHtml}</tbody></table>`:`<div class="empty" style="padding:18px;text-align:center;color:var(--text3);"><p>Sin ${title} para esta acción.</p></div>`}</div>
   </div>`;
   cont.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// Despliega/colapsa los clientes de un vendedor dentro del detalle de una acción.
+function accTogVend(scope,gi){
+  const cont=document.getElementById(scope==='v'?'acc-v-detalle':'acc-g-detalle');
+  if(!cont) return;
+  const rows=cont.querySelectorAll('.accv-g'+gi);
+  if(!rows.length) return;
+  const show=rows[0].style.display==='none';
+  rows.forEach(r=>{ r.style.display=show?'':'none'; });
+  const car=cont.querySelector('.accv-caret-'+gi);
+  if(car) car.textContent=show?'▾':'▸';
 }
 
 /* ════ PLAN VS REAL (gerencia) ════ */

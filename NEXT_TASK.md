@@ -15,7 +15,11 @@
 ### HECHO (fix 500 Render)
 - [x] `/api/gerencia/acciones_mes` daba 500 en Render por timeout de gunicorn (30s); la vista gerencia tardaba >30s y nunca cacheaba. Optimizado `_match` (pred por combinacion unica, no fila-por-fila) + warmup en hilo al arranque. Validado local 200 + cache.
 
+### HECHO (acordeon detalle)
+- [x] Detalle por tarjeta en acordeon: resumen por vendedor (colapsado) + clic para ver clientes de ese vendedor. `portal.html` `accShowDetalle` + `accTogVend`.
+
 ### PENDIENTE
+- [ ] Verificar visualmente: clic en clientes de una tarjeta => lista de vendedores con nro de clientes; clic en un vendedor => se abren sus clientes.
 - [ ] Verificar EN VIVO tras deploy: `curl https://orbit-matinal-penaflor.onrender.com/api/gerencia/acciones_mes` => 200 (no 500). Y que la pantalla cargue.
 - [ ] REVISAR config Render: el timeout efectivo parece ser 30s (gunicorn default) aunque Procfile/render.yaml dicen `--timeout 120`. Probable override en el start command del dashboard de Render. Subir a 120 ahi da margen extra.
 - [ ] Verificar visualmente: KPI "Litros bajo acciones" ~20.775 L; clic en clientes de una tarjeta => agrupado por vendedor.
