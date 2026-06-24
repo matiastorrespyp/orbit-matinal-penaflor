@@ -2677,23 +2677,45 @@ function accShowDetalle(scope,id,kind){
   const fmt=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
   const title=kind==='nuevos'?'clientes nuevos':'clientes que compraron';
   const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  cont.innerHTML=`<div class="card" style="border:1px solid var(--mg);">
-    <div class="card-hd">
-      <span class="card-title">${id} · ${title}</span>
-      <span style="display:flex;gap:6px;align-items:center;"><span class="chip ${kind==='nuevos'?'ok':'info'}">${list.length} clientes</span>
-      <span class="chip" style="cursor:pointer;" onclick="var d=document.getElementById('${scope==='v'?'acc-v-detalle':'acc-g-detalle'}');d.innerHTML='';d.dataset.k='';">✕</span></span>
-    </div>
-    <div class="card-body nop">${list.length?`<table class="tbl" style="font-size:12px;">
-      <thead><tr><th>Cliente</th><th>Dirección</th><th>Vendedor</th><th style="text-align:right">Venta neta</th><th style="text-align:right">Dto.</th><th style="text-align:right">Litros</th><th style="text-align:right">Últ. compra</th></tr></thead>
-      <tbody>${list.map(c=>`<tr>
-        <td><span style="font-size:10px;color:var(--text3)">#${esc(c.cliente_id)}</span> ${esc(c.cliente_nombre)}</td>
+  // Agrupar clientes por vendedor (con subtotal por vendedor). Cada cliente ya trae
+  // vendedor_id / vendedor_nombre desde el backend (_detalle_clientes).
+  const groups={};
+  list.forEach(c=>{
+    const k=c.vendedor_id||'—';
+    const g=groups[k]||(groups[k]={vid:k,vnom:c.vendedor_nombre||'',rows:[],litros:0,importe:0,desc:0});
+    g.rows.push(c); g.litros+=Number(c.litros)||0; g.importe+=Number(c.importe_neto)||0; g.desc+=Number(c.descuento_pesos)||0;
+    if(!g.vnom&&c.vendedor_nombre) g.vnom=c.vendedor_nombre;
+  });
+  const ordG=Object.values(groups).sort((a,b)=>{
+    const na=parseInt(String(a.vid).replace(/\D/g,''))||999, nb=parseInt(String(b.vid).replace(/\D/g,''))||999;
+    return na-nb||String(a.vid).localeCompare(String(b.vid));
+  });
+  const bodyHtml=ordG.map(g=>{
+    const head=`<tr style="background:var(--surf2);">
+      <td colspan="3" style="padding:6px 9px;font-weight:800;font-size:11px;">${esc(g.vid)} · <span style="color:var(--text2)">${esc(g.vnom||'–')}</span></td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;font-size:11px;color:var(--text3);">$${fmt(g.importe)}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;font-size:11px;color:var(--text3);">$${fmt(g.desc)}</td>
+      <td colspan="2" style="text-align:right;font-variant-numeric:tabular-nums;font-size:11px;color:var(--text3);">${fmt(g.litros)} L · ${g.rows.length} cli.</td></tr>`;
+    const rows=g.rows.map(c=>`<tr>
+        <td><span style="font-size:10px;color:var(--text3)">#${esc(c.cliente_id)}</span> ${esc(c.cliente_nombre)}${c.nuevo?` <span class="chip ok" style="font-size:8px;">nuevo</span>`:''}</td>
         <td style="font-size:11px;color:var(--text3);">${esc(c.direccion||'–')}${c.localidad?` · ${esc(c.localidad)}`:''}</td>
-        <td style="font-size:11px;">${esc(c.vendedor_id||'')} · <span style="color:var(--text3)">${esc(c.vendedor_nombre||'–')}</span></td>
+        <td style="text-align:right;font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums;">${esc(c.lineas||'')}</td>
         <td style="text-align:right;font-variant-numeric:tabular-nums;">$${fmt(c.importe_neto)}</td>
         <td style="text-align:right;font-variant-numeric:tabular-nums;">$${fmt(c.descuento_pesos)}</td>
         <td style="text-align:right;font-variant-numeric:tabular-nums;">${fmt(c.litros)}</td>
         <td style="text-align:right;font-size:11px;color:var(--text3);">${esc(c.fecha_ultima||'–')}</td>
-      </tr>`).join('')}</tbody></table>`:`<div class="empty" style="padding:18px;text-align:center;color:var(--text3);"><p>Sin ${title} para esta acción.</p></div>`}</div>
+      </tr>`).join('');
+    return head+rows;
+  }).join('');
+  cont.innerHTML=`<div class="card" style="border:1px solid var(--mg);">
+    <div class="card-hd">
+      <span class="card-title">${id} · ${title}</span>
+      <span style="display:flex;gap:6px;align-items:center;"><span class="chip ${kind==='nuevos'?'ok':'info'}">${list.length} clientes · ${ordG.length} vend.</span>
+      <span class="chip" style="cursor:pointer;" onclick="var d=document.getElementById('${scope==='v'?'acc-v-detalle':'acc-g-detalle'}');d.innerHTML='';d.dataset.k='';">✕</span></span>
+    </div>
+    <div class="card-body nop">${list.length?`<table class="tbl" style="font-size:12px;">
+      <thead><tr><th>Cliente</th><th>Dirección</th><th style="text-align:right">Líneas</th><th style="text-align:right">Venta neta</th><th style="text-align:right">Dto.</th><th style="text-align:right">Litros</th><th style="text-align:right">Últ. compra</th></tr></thead>
+      <tbody>${bodyHtml}</tbody></table>`:`<div class="empty" style="padding:18px;text-align:center;color:var(--text3);"><p>Sin ${title} para esta acción.</p></div>`}</div>
   </div>`;
   cont.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -3175,10 +3197,14 @@ function gAccionesComerciales(p){
     html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">💰</div><p>Sin acciones para ${mesNom}.</p></div></div></div>`;
     p.innerHTML=html; return;
   }
-  const totInv=acc.reduce((s,a)=>s+(a.inversion_pesos||0),0);
-  const totL=acc.reduce((s,a)=>s+(a.litros||0),0);
-  const totCli=acc.reduce((s,a)=>s+(a.clientes_alcanzados||0),0);
-  const totNue=acc.reduce((s,a)=>s+(a.clientes_nuevos||0),0);
+  // Totales deduplicados (union de líneas) desde el backend: una misma venta matchea
+  // varias acciones y NO debe contarse más de una vez. Fallback al reduce sólo si
+  // el payload viejo no trae 'totales'.
+  const T=dat.totales||{};
+  const totInv=T.inversion_pesos!=null?T.inversion_pesos:acc.reduce((s,a)=>s+(a.inversion_pesos||0),0);
+  const totL  =T.litros!=null?T.litros:acc.reduce((s,a)=>s+(a.litros||0),0);
+  const totCli=T.clientes_alcanzados!=null?T.clientes_alcanzados:acc.reduce((s,a)=>s+(a.clientes_alcanzados||0),0);
+  const totNue=T.clientes_nuevos!=null?T.clientes_nuevos:acc.reduce((s,a)=>s+(a.clientes_nuevos||0),0);
   html+=`<div class="krow" style="margin-bottom:16px;">
     <div class="kcard info"><div class="kl">Inversión total</div><div class="kv" style="font-size:18px;">$${fmtARS(totInv)}</div></div>
     <div class="kcard ok"><div class="kl">Litros bajo acciones</div><div class="kv" style="font-size:18px;">${fmtL(totL)} L</div></div>

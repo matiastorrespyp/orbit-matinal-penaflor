@@ -1,5 +1,23 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-23 - fix(acciones): doble conteo de litros bajo acciones (HECHO, sin commitear)
+
+### HECHO
+- [x] Causa raiz: el portal sumaba `litros` de cada accion por separado; una misma linea matchea varias acciones (canal + Planes AASS + 11T + Innovaciones) -> doble/triple conteo. Daba 57.146 L > sell out total 28.635 L (imposible).
+- [x] `server_orbit.py` (`_acciones_mes_payload_uncached`): bloque `totales` deduplicado por union de lineas (`matched_idx`/`prev_idx`). Calculo por accion intacto.
+- [x] `portal.html` (`gAccionesComerciales`): KPIs de encabezado usan `dat.totales`, fallback a `reduce`.
+- [x] Validado endpoint: totales.litros = 20.775,3 L < 28.634,7 sell out. Status 200, serializa OK.
+
+### HECHO (continuacion)
+- [x] Detalle de clientes por tarjeta agrupado por vendedor, con subtotal por vendedor (importe/dto/litros/cli) + columna "Lineas". `portal.html` `accShowDetalle`. Vista gerencia y vendedor.
+- [x] Revision de las 28 tarjetas: numeros coherentes (ver CHANGELOG). Inversion = valorDescuento real (no IVA).
+
+### PENDIENTE
+- [ ] Commitear `server_orbit.py` + `portal.html` (pidiendo aprobacion) y pushear para que Render lo tome.
+- [ ] Verificar visualmente en el portal: KPI "Litros bajo acciones" ~20.775 L; clic en clientes de una tarjeta => agrupado por vendedor.
+- [ ] CATALOGO (con negocio): ACJ26-018 ≡ ACJ26-019 (mismo set Alma Mora On Premise); ACJ26-020 y ACJ26-025 con 0 clientes. Revisar definicion de reglas.
+- [ ] (Opcional) Mostrar % cobertura: litros bajo acciones / sell out total.
+
 ## Sesion 2026-06-23 - Blindaje Git de los cierres (AMBOS .bat HECHO)
 
 ### HECHO - AMBOS .bat blindados, commiteados y pusheados

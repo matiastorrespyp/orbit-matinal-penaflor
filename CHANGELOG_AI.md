@@ -1,5 +1,18 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-23 - feat(acciones): detalle de clientes agrupado por vendedor + revision de tarjetas
+
+- `PAV MATINAL PE_A FLOR/portal.html` (`accShowDetalle`): al hacer clic en "clientes" / "nuevos" de una tarjeta, el detalle ahora se agrupa por vendedor. Cada grupo tiene encabezado (V# · nombre) con subtotal de importe, descuento, litros y cantidad de clientes; debajo, las filas de clientes de ese vendedor. Se reemplazo la columna "Vendedor" (redundante) por "Lineas" (cantidad de lineas de factura que matchearon). Aplica a vista gerencia y vendedor (ambas usan la misma funcion). El chip de cabecera ahora informa "N clientes · M vend.".
+- Datos ya disponibles: `_detalle_clientes` (backend) ya devolvia `vendedor_id` / `vendedor_nombre` por cliente; las 2.139 filas del detalle tienen vendedor poblado (0 sin asignar). No hubo cambio de backend.
+- Revision de las 28 tarjetas: litros/clientes/inversion coherentes. Inversion por accion varia entre ~11,6% y ~17,3% del importe (NO es ratio constante => es valorDescuento real, no IVA). Observaciones de CATALOGO (no son bugs de codigo): ACJ26-018 y ACJ26-019 devuelven el mismo set (6 clientes, 183 L identicos) por solaparse en Alma Mora On Premise; ACJ26-020 y ACJ26-025 dan 0 clientes (sin ventas que matcheen aun). Revisar definicion de esas reglas con negocio.
+
+## 2026-06-23 - fix(acciones): total "Litros bajo acciones" sin doble conteo entre acciones
+
+- Sintoma: el portal (gerencia) mostraba ~54.451 L (en este snapshot 57.146 L) "bajo acciones", imposible porque supera el sell out total del mes (~28.635 L). Causa raiz: el frontend totalizaba `acc.reduce(litros)` sumando los litros de cada accion por separado; una misma linea de venta matchea varias acciones (canal + Planes AASS + 11 Titulares + Innovaciones) y se contaba 2-4 veces.
+- `server_orbit.py` (`_acciones_mes_payload_uncached`): acumula la UNION de indices de lineas que caen bajo al menos una accion (`matched_idx`) y del mes anterior (`prev_idx`). Agrega bloque `totales` deduplicado: `litros`, `importe_neto`, `inversion_pesos`, `clientes_alcanzados`, `clientes_nuevos`, `clientes_con_descuento`. El calculo por accion NO se modifica (cada tarjeta sigue mostrando sus litros correctos; el solape entre acciones es esperado).
+- `PAV MATINAL PE_A FLOR/portal.html` (`gAccionesComerciales`): los 4 KPIs del encabezado (Inversion total, Litros bajo acciones, Clientes alcanzados, Clientes nuevos) usan `dat.totales`; fallback al `reduce` solo si el payload viejo no trae `totales`.
+- Validacion: `/api/gerencia/acciones_mes` → totales.litros = 20.775,3 L (antes 57.146,7 por suma) < sell out total 28.634,7 L (coherente). Status 200, tipos nativos serializables (jsonify OK en Render). Vista vendedor `/api/vendedor/V4/acciones_mes` tambien devuelve `totales`.
+
 ## 2026-06-23 - fix(cierre): blindar flujo Git del cierre de MES (mismo patron que el diario)
 
 - `CIERRE_MES_ORBIT.bat`: agrega preflight Git antes de generar el cierre. Si hay cambios funcionales (codigo `.py`, `.bat`, `portal.html`, config) fuera de las rutas operativas permitidas, aborta antes de ejecutar `tools/cerrar_mes.py`.

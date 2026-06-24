@@ -3803,6 +3803,11 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
         return rows
 
     acciones = []
+    # Union de líneas de venta que caen bajo AL MENOS una acción (dedup por índice de
+    # fila). El total NO es la suma de litros por acción: una misma línea matchea varias
+    # acciones (canal + Plan AASS + 11 Titulares + Innovaciones) y se contaría 2-4 veces.
+    matched_idx = set()
+    prev_idx = set()
     for r in reglas:
         vends_raw = str(r.get("vendedores_aplica", "")).upper()
         if "TODOS" in vends_raw:
@@ -3860,9 +3865,11 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
         # Footprint comercial = ventas netas que matchean la accion.
         # La inversion se calcula aparte con descuento real (valorDescuento > 0).
         cur = _match(v_act)
+        matched_idx |= set(cur.index)
         cur_desc = cur[cur["_desc"] > 0]
         clientes_act = set(cur["_cli"].dropna().astype(int))
         prev = _match(v_ant)
+        prev_idx |= set(prev.index)
         clientes_ant = set(prev["_cli"].dropna().astype(int))
         nuevos = clientes_act - clientes_ant
         clientes_desc = set(cur_desc["_cli"].dropna().astype(int))
@@ -3896,8 +3903,22 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
             "nota_calculo": "clientes desde ventas.csv con ImporteNetoItem > 0; inversion desde valorDescuento x CantBase",
         })
 
+    # Totales reales = sobre la UNION de líneas (sin doble conteo entre acciones).
+    uni = v_act.loc[v_act.index.isin(matched_idx)] if matched_idx else v_act.iloc[0:0]
+    uni_desc = uni[uni["_desc"] > 0]
+    uni_prev = v_ant.loc[v_ant.index.isin(prev_idx)] if prev_idx else v_ant.iloc[0:0]
+    cli_act_union = set(uni["_cli"].dropna().astype(int))
+    cli_ant_union = set(uni_prev["_cli"].dropna().astype(int))
+    totales = {
+        "litros":                 round(float(uni["_litros"].sum()), 1),
+        "importe_neto":           round(float(uni["_imp_neto"].sum()), 0),
+        "inversion_pesos":        round(float(uni_desc["_desc"].sum()), 0),
+        "clientes_alcanzados":    int(len(cli_act_union)),
+        "clientes_nuevos":        int(len(cli_act_union - cli_ant_union)),
+        "clientes_con_descuento": int(uni_desc["_cli"].dropna().astype(int).nunique()),
+    }
     return {"mes": mes, "fuente": fuente, "periodo": str(per_actual),
-            "generado_en": _now_ar(), "acciones": acciones}
+            "generado_en": _now_ar(), "acciones": acciones, "totales": totales}
 
 
 def _alertas_descuento_mes():
