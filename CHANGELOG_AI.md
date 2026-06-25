@@ -1,5 +1,12 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-25 - perf(11T): vectorizar el match del motor legacy (motor 338s -> 32s)
+
+- Contexto: tras reparar `producto activos.xlsx`, el motor legacy completaba pero tardaba 338 s, dominado por la sección "11 TITULARES".
+- Causa del costo: `LEGACY/orbit_matinal_v42.py` (~1367-1381) evaluaba el match con `marcas_mes.apply(..., axis=1)` fila por fila, por cada (cliente × marca objetivo) → O(N×M×K). Crecía con los datos del mes/trimestre.
+- Cambio: las condiciones `cliente_id`/`vendedor_codigo` se pre-filtran UNA vez por cliente con el mismo operador `==` vectorizado (`sub_cli = marcas_mes[(==cid) & (==vc)]`), preservando el manejo de NaN (`NaN==NaN` → False → sub vacío). `match_marca_objetivo` corre solo sobre las marcas que ese cliente compró en el mes. Mismo patrón que el fix de `_match` del 23/06.
+- Validación: `mod_11_titulares` comparado celda a celda contra la corrida previa (loop original) sobre los mismos inputs → **IDÉNTICO** (5910 filas × 17 cols; suma botellas 4805; suma importe 23.311.235,13; tiene_flag=1 en 190). `ast.parse` OK. Motor: **338 s → 32 s** (≈10×).
+
 ## 2026-06-25 - fix(cierre): el cierre del día "se colgaba" en el PASO 1 (motor legacy) por un xlsx inflado
 
 - Síntoma: `CIERRE_DIA_ORBIT.bat` quedaba trabado en `[5/8] Ejecutando motor legacy`. Los logs `regenerar_datos_*.log` del 25/06 (18:21 y 18:32) pesaban 976 bytes y se cortaban justo en esa línea, sin output posterior. El 23 y 24/06 los logs pesaban 23 KB y completaban. NO era el `.bat`.

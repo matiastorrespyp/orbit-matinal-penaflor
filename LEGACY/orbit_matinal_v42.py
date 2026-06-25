@@ -1365,20 +1365,32 @@ def main():
     )
 
     filas_11t = []
+    # PERF: antes el match del 11T se evaluaba con marcas_mes.apply(axis=1) fila por
+    # fila por cada (cliente x marca objetivo) -> O(N x M x K). Con los datos del mes
+    # crecidos (fin de trimestre) el motor se colgaba. Las condiciones cliente_id /
+    # vendedor_codigo se pre-filtran UNA vez por cliente (mismo operador ==, mismo
+    # manejo de NaN: NaN == NaN da False -> sub vacio) y match_marca_objetivo solo
+    # corre sobre las marcas que ese cliente compro en el mes. Salida identica.
     for _, row in clientes_dia.iterrows():
         segmento_cli = row["segmento_11t"]
         lista_marcas = MAP_11T_FINE.get(segmento_cli, MAP_11T_FINE["OTROS"])
 
+        sub_cli = marcas_mes.loc[
+            (marcas_mes["cliente_id"] == row["cliente_id"]) &
+            (marcas_mes["vendedor_codigo"] == row["vendedor_codigo"])
+        ]
+
         for marca_obj in lista_marcas:
-            mask = marcas_mes.apply(
-                lambda x: (
-                    x["cliente_id"] == row["cliente_id"] and
-                    x["vendedor_codigo"] == row["vendedor_codigo"] and
-                    match_marca_objetivo(x["marca_final"], x["articulo_final"], marca_obj)
-                ),
-                axis=1
-            )
-            match = marcas_mes.loc[mask].copy()
+            if len(sub_cli) > 0:
+                mask = sub_cli.apply(
+                    lambda x: match_marca_objetivo(
+                        x["marca_final"], x["articulo_final"], marca_obj
+                    ),
+                    axis=1
+                )
+                match = sub_cli.loc[mask]
+            else:
+                match = sub_cli
 
             tiene_flag = 1 if len(match) > 0 else 0
             botellas_m = float(match["botellas_mes"].sum()) if len(match) > 0 else 0.0
