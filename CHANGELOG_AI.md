@@ -1,5 +1,14 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-25 - fix(cierre): el cierre del día "se colgaba" en el PASO 1 (motor legacy) por un xlsx inflado
+
+- Síntoma: `CIERRE_DIA_ORBIT.bat` quedaba trabado en `[5/8] Ejecutando motor legacy`. Los logs `regenerar_datos_*.log` del 25/06 (18:21 y 18:32) pesaban 976 bytes y se cortaban justo en esa línea, sin output posterior. El 23 y 24/06 los logs pesaban 23 KB y completaban. NO era el `.bat`.
+- Diagnóstico (faulthandler sobre `test_legacy_run.py`): el motor se colgaba en `legacy/orbit_matinal_v42.py` → `cargar_productos()` (línea 898) → `pd.read_excel` → openpyxl parseando XML.
+- Causa raíz: `01_INPUTS/producto activos.xlsx` (input gitignored, maestro de productos) estaba **inflado a 19,2 MB**. Tenía solo **260 filas reales** pero el "rango usado" llegaba hasta la fila **1.048.527** (casi el límite de Excel); el resto eran ~1.048.000 filas vacías fantasma. `pd.read_excel` recorría TODAS esas filas → minutos por lectura (solo iterarlas en read_only tardaba 87 s).
+- Arreglo (sin tocar código): se reparó el archivo dejando solo el rango real. Backup del original en `99_BACKUPS_ORBIT/producto_activos_bloated/producto activos_BLOATED_2026-06-25_1910.xlsx.bak` (gitignored, no frena el cierre). Resultado: **19,2 MB → 17,8 KB**; `pd.read_excel` 0,08 s. Equivalencia validada celda a celda contra el original: idéntico salvo 15 celdas de ruido de punto flotante (`0.47300000000000003` → `0.473`, litros/caja de botellas 473 ml — numéricamente iguales). `cargar_productos()` devuelve los mismos 19 productos.
+- Validación end-to-end: `py test_legacy_run.py` ahora **completa en 338 s (exit 0)** donde antes quedaba colgado >540 s. `git status` quedó limpio fuera de rutas operativas (el `FUNC_PEND` del cierre pasa).
+- Bottleneck secundario detectado (NO arreglado, no rompe el cierre): la sección "11 TITULARES" (`orbit_matinal_v42.py:~1367-1381`) tiene un doble loop con `marcas_mes.apply(..., axis=1)` row-wise por cada (cliente × marca objetivo) → O(N×M×K). Crece con los datos del mes y domina los 338 s. Se puede vectorizar pre-filtrando `marcas_mes` por (cliente_id, vendedor_codigo) una sola vez (mismo patrón que el fix de `_match` del 23/06), preservando salida. Ver NEXT_TASK.
+
 ## 2026-06-24 - fix(plan-vs-real): gerencia anclaba en el día anterior tras el cierre
 
 - Síntoma: en gerencia, Plan vs Real seguía mostrando el día previo aunque ya se había hecho el cierre del día. El gerente quería ver plan de esta mañana (24) vs real de hoy (24), y mantenerlo hasta el próximo cierre.

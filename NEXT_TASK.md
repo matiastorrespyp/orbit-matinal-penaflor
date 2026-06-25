@@ -1,5 +1,15 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-25 - fix(cierre): xlsx inflado colgaba el PASO 1 del cierre (HECHO)
+
+### HECHO
+- [x] Causa raíz: `01_INPUTS/producto activos.xlsx` inflado a 19,2 MB (260 filas reales, rango usado hasta fila 1.048.527). `cargar_productos()` del motor legacy tardaba minutos leyéndolo → el cierre parecía colgado en `[5/8]`.
+- [x] Reparado el archivo (solo rango real): 19,2 MB → 17,8 KB. Backup del original en `99_BACKUPS_ORBIT/producto_activos_bloated/`. Equivalencia validada (idéntico salvo ruido de float en col litros). Motor legacy completa en 338 s (antes colgado).
+
+### PENDIENTE (opcional, mejora de performance — NO bloquea el cierre)
+- [ ] Optimizar la sección "11 TITULARES" en `legacy/orbit_matinal_v42.py:~1367-1381`: el doble loop `for cliente / for marca_obj` con `marcas_mes.apply(..., axis=1)` row-wise es O(N×M×K) y domina los 338 s del motor (empeora a fin de mes/trimestre). Vectorizar pre-agrupando `marcas_mes` por (cliente_id, vendedor_codigo) una vez y aplicando `match_marca_objetivo` solo sobre el subconjunto del cliente. Mismo patrón que el fix de `_match` (CHANGELOG 23/06). DEBE validarse salida idéntica (comparar `mod_11_titulares.csv` / `mod_11t_acum.csv`) — toca el motor core, requiere cuidado.
+- [ ] Recordatorio operativo: si en el futuro `producto activos.xlsx` vuelve a exportarse de Gescom inflado (>1 MB para ~260 productos), el cierre se volverá a ralentizar. Reexportar limpio o re-aplicar la reparación.
+
 ## Sesion 2026-06-24 - fix(plan-vs-real): ancla en último día cerrado (HECHO, sin commitear)
 
 ### HECHO
