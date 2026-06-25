@@ -97,3 +97,20 @@ Registro de errores ya diagnosticados, con causa raíz y solución aplicada o pe
 `gunicorn server_orbit:app --bind 0.0.0.0:$PORT --timeout 120 --workers 1 --threads 8 --worker-class gthread`  
 **Commits:** `c8bd8d8` (código). **Estado:** ✅ Resuelto y validado en vivo (200, 0.6-1.7s). ⏳ Falta blindar el `--timeout 120` en el dashboard.  
 **Lección:** un endpoint pesado que **no cachea porque time-outea** falla siempre; en Render verificar el Start Command efectivo (si está vacío y no hay Blueprint, NO se aplican `render.yaml`/`Procfile`). Diagnóstico rápido: si el 500 llega a ~30s exactos → es el timeout del worker, no un exception.
+
+---
+
+## ERR-010 — El Cierre del Día "se colgaba" en el PASO 1 (motor legacy)
+
+**Detectado:** 2026-06-25  
+**Síntoma:** `CIERRE_DIA_ORBIT.bat` quedaba trabado en `[5/8] Ejecutando motor legacy`, sin avanzar. Los logs `99_LOGS_ORBIT/regenerar_datos_*.log` del día pesaban ~976 bytes y se cortaban justo en esa línea (los días que sí completaban pesaban ~23 KB). **No era el `.bat`** (estructura, CRLF y `FUNC_PEND` estaban bien).  
+**Diagnóstico:** correr el motor con `py -u test_legacy_run.py` + `faulthandler.dump_traceback_later(30, repeat=True)`. El volcado mostró el cuelgue exacto en `LEGACY/orbit_matinal_v42.py` → `cargar_productos()` (línea ~898) → `pd.read_excel` → openpyxl parseando XML. (Cero output con `-u` = se cuelga **antes** del primer print, no es buffering.)  
+**Causa raíz (2 cuellos):**  
+  1. **`01_INPUTS/producto activos.xlsx` inflado a 19,2 MB.** Tenía solo **260 filas reales** pero el "rango usado" de Excel llegaba hasta la fila **1.048.527** (~1 millón de filas vacías fantasma, típico de un export sucio de Gescom). `pd.read_excel` recorría TODAS → minutos por lectura (solo iterarlas en read_only tardaba 87s).  
+  2. Pasado eso, la sección **"11 TITULARES"** (`~1367-1381`) evaluaba el match con `marcas_mes.apply(..., axis=1)` **fila por fila** por cada (cliente × marca objetivo) → O(N×M×K). Crecía con los datos del mes/trimestre y dominaba el tiempo.  
+**Solución aplicada:**  
+  1. Reparado el archivo dejando solo el rango real: **19,2 MB → 17,8 KB**, lectura 0,08s. Backup del original en `99_BACKUPS_ORBIT/producto_activos_bloated/` (gitignored → no frena el cierre). Equivalencia validada celda a celda (idéntico salvo ruido de float inocuo en litros).  
+  2. Vectorizado el 11T: pre-filtra `marcas_mes` por `(cliente_id, vendedor_codigo)` una vez por cliente (mismo `==`, mismo NaN→False) y `match_marca_objetivo` corre solo sobre el subconjunto del cliente. `mod_11_titulares` validado **idéntico** (5910×17, sumas iguales). **Motor 338s → 32s.**  
+**Commits:** `095c9df` (perf 11T) + reparación del xlsx (archivo gitignored, no commiteable).  
+**Estado:** ✅ Resuelto. El cierre corre completo y rápido.  
+**Prevención / lección:** si `producto activos.xlsx` vuelve a pesar **>1 MB para ~260 productos**, está inflado y volverá a ralentizar el cierre → reexportarlo limpio de Gescom (o re-reparar el rango usado). Regla general: cualquier `.xlsx` de input que de golpe pese de más probablemente arrastra filas/columnas fantasma; openpyxl lee TODO el rango usado. Diagnóstico de cuelgues del motor: `faulthandler` + `py -u`.
