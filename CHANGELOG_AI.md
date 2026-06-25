@@ -1,5 +1,13 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-24 - fix(plan-vs-real): gerencia anclaba en el día anterior tras el cierre
+
+- Síntoma: en gerencia, Plan vs Real seguía mostrando el día previo aunque ya se había hecho el cierre del día. El gerente quería ver plan de esta mañana (24) vs real de hoy (24), y mantenerlo hasta el próximo cierre.
+- Causa raíz: la pantalla llama a `/api/matinal/resumen` sin `modo`, por lo que usa el modo "cierre", que anclaba la fecha del plan con `fecha < today_ar`. Eso EXCLUYE siempre el plan de hoy, así que tras cerrar el 24 (snapshot 24 ya presente en `02_HISTORY/acumulado_resultado_historico.csv`) seguía eligiendo el plan del 23.
+- `server_orbit.py` (`matinal_resumen`, modo "cierre"): el ancla pasa a ser el ÚLTIMO día con cierre hecho = última fecha de snapshot que devuelve `_real_dia_resultado()`. Se elige el plan más reciente con `fecha <= last_snap` (dentro del cutoff de 10 días). Antes del cierre del día → sigue mostrando el último día cerrado (sin regresión); después del cierre del 24 → muestra plan(24) vs real(24) y se mantiene hasta que el cierre del 25 agregue su snapshot.
+- Validación local: con los datos actuales, ancla nueva = 2026-06-24 (antes 2026-06-23); real del día = acumulado(24) − acumulado(23) por vendedor (V8=1.698.023,54; V10=209.062,53; V3=188.022,38). `ast.parse` OK. Sin cambios de frontend ni en otros modos ("actual"/"ultimo"/"plan" intactos).
+- Pendiente: desplegar a Render (push) para que el gerente lo vea en producción.
+
 ## 2026-06-23 - feat(acciones): detalle por tarjeta en acordeon de 2 niveles (resumen vendedor -> clientes)
 
 - Pedido: al desplegar los clientes de una tarjeta, mostrar primero un RESUMEN por vendedor (con nro de clientes y subtotales) y poder hacer clic en un vendedor para ver sus clientes.

@@ -1,5 +1,15 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-24 - fix(plan-vs-real): ancla en último día cerrado (HECHO, sin commitear)
+
+### HECHO
+- [x] Causa raiz: gerencia Plan vs Real usaba modo "cierre" con `fecha < today_ar`, excluyendo el plan de hoy aun despues del cierre -> mostraba el dia anterior.
+- [x] `server_orbit.py` (`matinal_resumen`, modo "cierre"): ancla = ultimo snapshot de `_real_dia_resultado()` (ultimo dia cerrado); plan mas reciente con `fecha <= last_snap`. Mantiene plan(hoy) vs real(hoy) hasta el proximo cierre.
+- [x] Validado local: ancla 2026-06-24 (antes 23); real = acum(24)-acum(23). `ast.parse` OK.
+
+### PENDIENTE
+- [ ] Push a Render para que el gerente lo vea en produccion (validar tiempo/200 segun [[feedback_render_deploy_validacion]]).
+
 ## Sesion 2026-06-23 - fix(acciones): doble conteo de litros bajo acciones (HECHO, sin commitear)
 
 ### HECHO

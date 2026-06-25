@@ -1983,9 +1983,15 @@ def matinal_resumen():
                 (cutoff,)
             ).fetchone()
         else:
+            # modo "cierre": anclar en el ÚLTIMO día con cierre hecho (último snapshot
+            # disponible), no en `fecha < hoy`. El cierre del día agrega el snapshot de
+            # hoy a acumulado_resultado_historico.csv; recién entonces Plan vs Real debe
+            # mostrar plan(hoy) vs real(hoy), y mantenerlo hasta el próximo cierre.
+            _, last_snap, _ = _real_dia_resultado()
+            anchor = last_snap or (datetime.now(_ARG_TZ) - timedelta(days=1)).strftime("%Y-%m-%d")
             row = conn.execute(
-                "SELECT fecha FROM planificacion WHERE fecha < ? AND fecha >= ? ORDER BY fecha DESC LIMIT 1",
-                (today_ar, cutoff)
+                "SELECT fecha FROM planificacion WHERE fecha <= ? AND fecha >= ? ORDER BY fecha DESC LIMIT 1",
+                (anchor, cutoff)
             ).fetchone()
             if not row:
                 row = conn.execute(
