@@ -1,5 +1,15 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-29 - feat(FARO): premios (millas) en ambos perfiles + métrica Antares por SKU
+
+- Pedido: mostrar en Club FARO (vendedor y gerencia, incl. supervisores) los premios que va alcanzando cada uno según Real vs Objetivo; y corregir la métrica del Real de Antares (cada cobertura suma 1, XPA/Porrón 330/Porrón 660 suman doble; ej: 1 Lager lata + 1 XPA = 3).
+- Input `01_INPUTS/incentivo_club_faro .xlsx`: fila "PREMIOS" → Alaris+FLM 2000 millas, Antares 1000, Familia Smirnoff 1000. Regla Antares (fila 17): "Cada SKU suma 1 CCC, pero XPA y Lager botella suman doble".
+- **Métrica Antares** (decisión usuario: por SKU SIN umbral): antes era por cliente con tope 2 (≥6 botellas). Ahora cada SKU distinto de Antares que el cliente compró suma 1, y XPA / Lager Porrón 330 / Lager Botella 660 (códigos **60020 / 60021 / 60022**) suman 2, **sin tope por cliente**. `server_orbit.py`: `_FARO_ANTARES_DOBLE`, `_w` por código, rama antares de `_faro_detalle_vendedor` con `drop_duplicates(["_cli","_cod"])` + suma de `_w`; `cubiertos` = clientes con ≥1 SKU (no ≥6 botellas).
+- **Premios**: `_faro_premios()` parsea la fila PREMIOS (regex, fallback a defaults). Endpoints `incentivo_faro` (gerencia + vendedor) devuelven `premio_millas`+`alcanzado` por categoría, `millas_alcanzadas`/`millas_posibles` por vendedor y supervisor, y `premios` global. Categoría alcanzada = logrado≥objetivo (objetivo>0); posibles solo cuenta categorías con objetivo>0 (V3 = 2000, no 4000).
+- **Frontend** (`portal.html`): `vFaro` (vendedor) → banner "🎟 Millas que vas ganando" + badge 🎟 por categoría con borde verde al alcanzar. `gIncentivoFaro` (gerencia) → premio por categoría en el encabezado, badge 🎟 en cada celda alcanzada, columna "🎟 Millas ganadas/posibles" en vendedores y supervisores. Textos de regla actualizados.
+- Validación (datos reales): premios parseados OK; Antares por SKU (V10 30/7, V8 19/10, V4 9/8…); millas — V4/V8/V10 4000/4000, V3 2000/2000, V6/V9 1000/4000, V7 0/4000; supervisores Esteban 4000/4000, Raúl 1000/4000. `py_compile` OK, portal `node --check` OK, render Playwright de ambos perfiles sin errores de consola.
+- Pendiente: deploy a Render (el xlsx con espacio ya está versionado). Nota: los objetivos de Antares quedaron calibrados al criterio viejo → con el nuevo conteo por SKU el logrado los supera holgadamente (esperable).
+
 ## 2026-06-29 - feat(gerencia): incluir V20 "Depósito" como línea aparte en Sell Out / 11T / Innovaciones / Cobertura
 
 - Pedido: el sell out de gerencia mostraba 41.609 L y el proveedor reportaba 47.480 L. Diagnóstico contra datos reales: la diferencia es el vendedor **V20 = Depósito / venta directa** (~7.055 L en el sell out de las 6 categorías), concentrado en 3 mayoristas (BELTRAMO/DUTTO, CAREGLIO, ANSELMI) + cuentas chicas internas. ORBIT lo excluía por la regla histórica `{1,2,5,20}`. El usuario pidió sumarlo, siempre identificado como "V20 Depósito".

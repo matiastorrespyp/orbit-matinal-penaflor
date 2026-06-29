@@ -1,5 +1,16 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-29 - feat(FARO): premios (millas) + métrica Antares por SKU (HECHO, sin commitear)
+
+### HECHO
+- [x] Premios (millas) del xlsx en ambos perfiles: badge 🎟 por categoría al alcanzar (logrado≥objetivo) + total millas ganadas/posibles por vendedor y supervisor. Alaris+FLM 2000, Antares 1000, Smirnoff 1000.
+- [x] Métrica Antares corregida a **por SKU sin umbral** (cada SKU =1; XPA/Porrón330/660 [60020/61/62] =2, sin tope por cliente). Antes era por cliente con tope 2.
+- [x] Validado (datos reales + Playwright ambos perfiles, sin errores de consola). Ver CHANGELOG_AI 2026-06-29.
+
+### PENDIENTE
+- [ ] Deploy a Render (junto con V20 Depósito si no se pushó aún).
+- [ ] Aviso al usuario: los objetivos de Antares del xlsx estaban calibrados al criterio viejo → con el conteo por SKU el logrado los supera holgadamente. Revisar si quieren recalibrar objetivos.
+
 ## Sesion 2026-06-29 - feat(gerencia): V20 "Depósito" como línea aparte (HECHO, sin commitear)
 
 ### HECHO
