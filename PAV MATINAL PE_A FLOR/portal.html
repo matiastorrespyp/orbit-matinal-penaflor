@@ -2341,7 +2341,7 @@ function vInicio(){
   let oportTop='';
   const oi=D.oportInov;
   if(oi && oi.clientes && oi.clientes.length){
-    const NICK={3:'Nadia',4:'Ángel',6:'Andre',7:'Agus',8:'Pitu',9:'Fer'};
+    const NICK={3:'Nadia',4:'Ángel',6:'Andre',7:'Agus',8:'Pitu',9:'Fer',10:'Mili'};
     const codn=parseInt((userData.vendedor_id||'').replace(/\D/g,''))||0;
     const nombre=NICK[codn]||((userData.nombre||oi.vendedor_nombre||'').trim().split(' ')[0])||'';
     const cli3=oi.clientes.slice(0,3);
