@@ -1,5 +1,13 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-29 - feat(gerencia): Sell Out agrupa toda la venta de la empresa (incluye V20) vs objetivo
+
+- Pedido (cambio de criterio): el objetivo de Sell Out es de la EMPRESA, independiente del vendedor que vende. La tarjeta debe estar unificada y AGRUPAR toda la venta (ruta + V20 Depósito) contra el objetivo, no mostrar V20 como bloque aparte sin objetivo.
+- `server_orbit.py` (`gerencia_sellout_litros`): ahora calcula `_sellout_desde_ventas(df)` sobre el df completo con V20 incluido (`incluir_deposito=True`), en vez de `_sellout_con_deposito` que separaba ruta vs depósito. Devuelve `categorias` (real ya incluye V20 en cada categoría, avance vs objetivo de empresa), `total_litros` e `incluye_deposito:true`. Ya no devuelve `deposito`/`total_ruta`/`total_deposito`/`total_general`.
+- `PAV MATINAL PE_A FLOR/portal.html` (`_renderSoDash`): se eliminó el bloque de filas separadas de V20; queda una sola tabla con el TOTAL agrupado y una nota "📦 Incluye V20 Depósito (venta directa). El objetivo de Sell Out es de la empresa...". El drill-down por categoría/objetivos sigue intacto.
+- Nota de alcance: este criterio (V20 agrupado vs objetivo) aplica al **Sell Out del dashboard de gerencia**. El cierre de mes y los demás bloques (11T, innovaciones, cobertura) siguen mostrando V20 como línea aparte; no se tocaron.
+- Validación: `/api/gerencia/sellout_litros` (server 8502 reiniciado) → `total_litros` 55.345,4 L, `incluye_deposito:true`. Categorías con V20 incluido: VINOS DEL AÑO 21.459,0 L (126,1%), SPIRITS 21.357,2 L (125,5%), RTD 10.407,7 L (114,9%), VINOS DE GUARDA 560,2 L (68,6%), CHAMPAÑA 1.072,8 L (143,6%), CERVEZA ARTESANAL 488,5 L (114,9%). `python -c ast.parse` OK.
+
 ## 2026-06-29 - feat(gerencia): Sell Out unificado en una sola tarjeta (ruta + V20 Depósito)
 
 - Pedido: en el dashboard de gerencia, unificar el Sell Out en una sola tarjeta aperturable por objetivos (como veníamos trabajando) y sumarle la venta del V20 Depósito a esa misma tarjeta.

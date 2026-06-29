@@ -1798,31 +1798,11 @@ function gDashboard(p){
         </td>
         <td style="text-align:right;color:var(--text3)">–</td>
       </tr>`;
-      // ── Depósito V20 (venta directa) — dentro de la MISMA tarjeta, sin objetivo;
-      //    concilia con el proveedor (total ruta + depósito). ──
-      const dep=(D.sellout_litros?.deposito||[]).filter(c=>(c.litros||0)>0);
-      const totDep=D.sellout_litros?.total_deposito||0;
-      const totGen=D.sellout_litros?.total_general||(totReal+totDep);
-      if(dep.length){
-        sH+=`<tr><td colspan="6" style="padding:9px 12px 3px;border-top:1px dashed var(--bd3);font-size:11px;font-weight:600;color:var(--text2);">📦 V20 Depósito · venta directa (sin objetivo) — ${fmtL(totDep)} L</td></tr>`;
-        dep.slice().sort((a,b)=>(b.litros||0)-(a.litros||0)).forEach(c=>{
-          sH+=`<tr>
-            <td><b>${c.categoria}</b></td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums">${fmtL(c.litros)} L</td>
-            <td style="text-align:right;color:var(--text3)">–</td>
-            <td style="text-align:right;color:var(--text3)">–</td>
-            <td style="text-align:right;color:var(--text3)">–</td>
-            <td style="text-align:right;color:var(--text3)">${c.clientes}</td></tr>`;
-        });
-        sH+=`<tr style="border-top:2px solid var(--bd3);background:rgba(255,255,255,.03);font-weight:700;">
-          <td><b>Total ruta + depósito</b></td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums">${fmtL(totGen)} L</td>
-          <td style="text-align:right;color:var(--text3)">–</td>
-          <td style="text-align:right;color:var(--text3)">–</td>
-          <td style="text-align:right;color:var(--text3)">–</td>
-          <td style="text-align:right;color:var(--text3)">–</td></tr>`;
-      }
-      sH+=`</tbody></table></div></div>`;
+      sH+=`</tbody></table>`;
+      // El Sell Out agrupa TODA la venta de la empresa (incluye V20 Depósito, venta
+      // directa). El objetivo es de la empresa, independiente del vendedor que vende.
+      sH+=`<div style="font-size:9px;color:var(--text3);padding:5px 12px 7px;">📦 Incluye V20 Depósito (venta directa). El objetivo de Sell Out es de la empresa: agrupa toda la venta, independiente del vendedor.</div>`;
+      sH+=`</div></div>`;
       soCont.innerHTML=sH;
     }
     window._soTogDash=function(ci){soExp.has(ci)?soExp.delete(ci):soExp.add(ci);_renderSoDash();};

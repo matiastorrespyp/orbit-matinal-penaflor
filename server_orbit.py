@@ -4763,18 +4763,23 @@ def _sellout_con_deposito(df_full) -> dict:
 @app.route("/api/gerencia/sellout_litros")
 def gerencia_sellout_litros():
     """Sellout en litros vs objetivos. Fuente: ventas.csv × maestro_04D_productos.csv.
-    Ruta = 7 vendedores activos (categorías con objetivo, igual que siempre).
-    Depósito (V20 / venta directa) = bloque aparte SIN objetivo/avance; el total general
-    (ruta + depósito) concilia con el reporte del proveedor."""
+    El objetivo de Sell Out es de la EMPRESA (independiente del vendedor): se agrupa TODA
+    la venta —ruta (7 activos) + V20 Depósito (venta directa)— y se mide contra el objetivo.
+    Por eso se incluye V20 en cada categoría; el total concilia con el reporte del proveedor."""
     src = INPUTS / "ventas.csv"
     if not src.exists():
         return jsonify({"error": "ventas.csv no encontrado en 01_INPUTS"}), 404
-    df = _preparar_df_ventas(src, incluir_deposito=True)
+    df = _preparar_df_ventas(src, incluir_deposito=True)  # incluye V20: objetivo de empresa
     if df.empty:
         return jsonify({"error": "No se pudo leer ventas.csv"}), 500
-    so = _sellout_con_deposito(df)
-    so["generado_en"] = _now_ar()
-    so["fuente"] = "ventas.csv + maestro_04D_productos.csv"
+    categorias = _sellout_desde_ventas(df)               # agrupa ruta + V20 vs objetivo
+    so = {
+        "categorias":      categorias,
+        "total_litros":    round(sum(float(c["litros"]) for c in categorias), 1),
+        "incluye_deposito": True,
+        "generado_en":     _now_ar(),
+        "fuente":          "ventas.csv (incl. V20 Depósito) + maestro_04D_productos.csv",
+    }
     return jsonify(so)
 
 
