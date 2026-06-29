@@ -21,8 +21,16 @@ Primero precisión de datos, después diseño.
 ## Reglas comerciales Peñaflor
 
 - Vendedores activos Peñaflor: V3, V4, V6, V7, V8, V9, V10.
-- Excluir siempre V2, V5 y V20 de todos los reportes Peñaflor.
+- Excluir siempre V2 y V5 de todos los reportes Peñaflor.
 - V20 = DEPOSITO / venta directa / no es vendedor de ruta Peñaflor.
+  - V20 sigue EXCLUIDO de todas las métricas con objetivo: avance vs objetivo,
+    Incentivo Club FARO, Planes AS, dashboard de vendedores. No tiene cartera asignada
+    en el maestro de clientes ni login propio.
+  - V20 SÍ se muestra en gerencia como línea aparte "V20 Depósito" (solo logrado, sin
+    objetivo) en Sell Out (total ruta + depósito concilia con el proveedor), 11T (CCC
+    aparte por titular), Innovaciones y Cobertura (clientes/botellas informativo).
+  - Para los bloques depósito NO se filtra por Empresa: el depósito factura parte de su
+    venta directa vía P&P Logística pero es la misma entidad física V20.
 - V3 es Nadia Gambino.
 - V3 no trabaja Autoservicios.
 - No calcular objetivos, penalizaciones ni métricas de Autoservicio para V3.

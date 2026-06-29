@@ -1508,10 +1508,11 @@ function gDashboard(p){
       if(chipEl) chipEl.textContent=marcas.length+' marcas';
       if(!marcas.length){ bodyEl.innerHTML=`<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">Sin datos — ejecute el pipeline de ventas acumuladas</div>`; return; }
       const fuente=data.fuente||'';
+      const depTot=data.ccc_deposito_total||0;
       bodyEl.innerHTML=`<table class="tbl">
-        <thead><tr><th>Marca</th><th style="text-align:right">CCC</th><th style="text-align:right">Objetivo</th><th style="text-align:right">Avance</th><th style="min-width:80px"></th></tr></thead>
+        <thead><tr><th>Marca</th><th style="text-align:right">CCC</th><th style="text-align:right">Objetivo</th><th style="text-align:right">Avance</th><th style="text-align:right" title="CCC del Depósito V20 (venta directa) — aparte, no suma al objetivo de ruta">Dep.V20</th><th style="min-width:80px"></th></tr></thead>
         <tbody>${marcas.map(m=>{
-          const ccc=m.ccc||0,obj=m.objetivo_ccc||0,pctObj=m.pct_objetivo;
+          const ccc=m.ccc||0,obj=m.objetivo_ccc||0,pctObj=m.pct_objetivo,dep=m.ccc_deposito||0;
           const pctBar=obj?Math.min(Math.round(ccc/obj*100),100):0;
           const cl=pctBar>=80?'ok':pctBar>=50?'wn':'bd';
           return `<tr>
@@ -1519,10 +1520,11 @@ function gDashboard(p){
             <td style="text-align:right;font-size:12px;">${ccc.toLocaleString('es-AR')}</td>
             <td style="text-align:right;font-size:12px;color:var(--text3);">${obj||'–'}</td>
             <td style="text-align:right;"><span class="chip ${cl}" style="font-size:9px;">${pctObj!=null?pctObj+'%':'–'}</span></td>
+            <td style="text-align:right;font-size:12px;color:var(--text3);font-variant-numeric:tabular-nums;">${dep?('+'+dep):'–'}</td>
             <td><div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${pctBar}%"></div></div></td>
           </tr>`;}).join('')}
         </tbody>
-      </table>${fuente?`<div style="font-size:9px;color:var(--text3);padding:4px 12px 6px;">Fuente: ${fuente}</div>`:''}`;
+      </table>${depTot?`<div style="font-size:10px;color:var(--text3);padding:2px 12px 0;">📦 Dep.V20 = CCC del depósito (venta directa), informativo aparte. Total ${depTot} clientes-marca.</div>`:''}${fuente?`<div style="font-size:9px;color:var(--text3);padding:4px 12px 6px;">Fuente: ${fuente}</div>`:''}`;
     }catch(e){
       if(bodyEl) bodyEl.innerHTML=`<div style="padding:16px;color:var(--bd);font-size:12px;">Error: ${e.message}</div>`;
     }
@@ -1797,6 +1799,27 @@ function gDashboard(p){
         <td style="text-align:right;color:var(--text3)">–</td>
       </tr>`;
       sH+=`</tbody></table></div></div>`;
+      // ── Sub-card Depósito V20 (venta directa) — sin objetivo; concilia con el proveedor ──
+      const dep=(D.sellout_litros?.deposito||[]).filter(c=>(c.litros||0)>0);
+      const totDep=D.sellout_litros?.total_deposito||0;
+      const totGen=D.sellout_litros?.total_general||(totReal+totDep);
+      if(dep.length){
+        sH+=`<div class="card" style="margin-top:12px;"><div class="card-hd">
+          <span class="card-title">📦 V20 Depósito · venta directa (sin objetivo)</span>
+          <span class="chip">${fmtL(totDep)} L</span>
+        </div><div class="card-body nop"><table class="tbl">
+          <thead><tr><th>Categoría</th><th style="text-align:right">Real (L)</th><th style="text-align:right">Clientes</th></tr></thead><tbody>`;
+        dep.slice().sort((a,b)=>(b.litros||0)-(a.litros||0)).forEach(c=>{
+          sH+=`<tr><td><b>${c.categoria}</b></td>
+            <td style="text-align:right;font-variant-numeric:tabular-nums">${fmtL(c.litros)} L</td>
+            <td style="text-align:right;color:var(--text3)">${c.clientes}</td></tr>`;
+        });
+        sH+=`<tr style="border-top:2px solid var(--bd3);background:rgba(255,255,255,.03);font-weight:700;">
+          <td><b>Total ruta + depósito</b></td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums">${fmtL(totGen)} L</td>
+          <td style="text-align:right;color:var(--text3)">–</td></tr>`;
+        sH+=`</tbody></table></div></div>`;
+      }
       soCont.innerHTML=sH;
     }
     window._soTogDash=function(ci){soExp.has(ci)?soExp.delete(ci):soExp.add(ci);_renderSoDash();};
@@ -1807,7 +1830,12 @@ function gDashboard(p){
 /* — Vendedores — */
 function gVendedores(p){
   const filt=gFiltro ? D.dash.filter(v=>v.vendedor_id===gFiltro) : D.dash;
-  p.innerHTML=`<div class="gph"><div><div class="gph-title">Vendedores Peñaflor</div><div class="gph-sub">Vista 360° · ${filt.length} vendedores</div></div></div>`;
+  const cobDep=D.cob_acum?.deposito;
+  const depBanner=cobDep?`<div class="card" style="margin-bottom:13px;padding:10px 16px;border-left:3px solid var(--orbit-magenta);">
+    <span style="font-weight:600;font-size:12px;">📦 V20 Depósito · venta directa</span>
+    <span class="xs" style="color:var(--text3);margin-left:8px;">${cobDep.clientes} clientes · ${Number(cobDep.botellas||0).toLocaleString('es-AR',{maximumFractionDigits:0})} botellas (informativo, sin cartera asignada)</span>
+  </div>`:'';
+  p.innerHTML=`<div class="gph"><div><div class="gph-title">Vendedores Peñaflor</div><div class="gph-sub">Vista 360° · ${filt.length} vendedores</div></div></div>${depBanner}`;
   const grid=document.createElement('div');
   grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:13px;';
   grid.innerHTML=filt.map((v,i)=>{
@@ -3126,6 +3154,21 @@ function gInnovaciones(p){
       }).join('')}
     </div>
   </div>`;
+  // ── Depósito V20 (venta directa): CCC de innovación logrado, aparte ──
+  const dep=(dat.deposito||[]).filter(x=>(x.clientes_compraron||0)>0)
+              .sort((a,b)=>b.clientes_compraron-a.clientes_compraron);
+  if(dep.length){
+    html+=`<div class="card" style="margin-top:12px;">
+      <div class="card-hd"><span class="card-title">📦 V20 Depósito · innovaciones (venta directa)</span>
+        <span class="xs" style="color:var(--text3);">clientes que compraron · informativo, sin cartera</span></div>
+      <div class="card-body nop">
+        ${dep.map(x=>`<div class="row-b" style="padding:9px 14px;border-bottom:1px solid var(--bord);">
+          <span style="font-weight:600;font-size:13px;">${x.producto_nombre}</span>
+          <span class="chip ok" style="font-size:11px;">${x.clientes_compraron} clientes</span>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }
   p.innerHTML=html;
 }
 
@@ -3755,6 +3798,29 @@ function gCierreMes(p){
                   <td style="text-align:right">${al!=null?`<span class="chip ${avc(al)}" style="font-size:9px;">${al}%</span>`:'<span style="color:var(--text3)">–</span>'}</td>
                   <td style="text-align:right;color:var(--text3)">${fmtNum(ct.clientes)}</td>
                 </tr>`;}).join('')}</tbody>
+              </table>
+            </div></div>`;
+        }
+        // ── Depósito V20 (congelado) — venta directa, sin objetivo ──
+        const soDep=((c.sellout||{}).deposito||[]).filter(x=>(x.litros||0)>0)
+                      .sort((a,b)=>(b.litros||0)-(a.litros||0));
+        if(soDep.length){
+          const soGen=(c.sellout||{}).total_general, soDepTot=(c.sellout||{}).total_deposito;
+          h+=`<div class="card" style="margin-top:12px;">
+            <div class="card-hd"><span class="card-title">📦 V20 Depósito · venta directa (sin objetivo)</span><span class="chip">${fmtNum(soDepTot)} L</span></div>
+            <div class="card-body nop">
+              <table class="tbl" style="font-size:11px;">
+                <thead><tr><th>Categoría</th><th style="text-align:right">Litros</th><th style="text-align:right">Clientes</th></tr></thead>
+                <tbody>${soDep.map(ct=>`<tr>
+                  <td style="font-weight:600">${ct.categoria}</td>
+                  <td style="text-align:right">${fmtNum(ct.litros)} L</td>
+                  <td style="text-align:right;color:var(--text3)">${fmtNum(ct.clientes)}</td>
+                </tr>`).join('')}
+                <tr style="border-top:2px solid var(--bd3);font-weight:700;">
+                  <td>Total ruta + depósito</td>
+                  <td style="text-align:right">${fmtNum(soGen)} L</td>
+                  <td style="text-align:right;color:var(--text3)">–</td>
+                </tr></tbody>
               </table>
             </div></div>`;
         }

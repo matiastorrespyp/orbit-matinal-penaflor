@@ -1,5 +1,17 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-29 - feat(gerencia): V20 "Depósito" como línea aparte (HECHO, sin commitear)
+
+### HECHO
+- [x] Sell Out gerencia incluye V20 Depósito: `total_ruta` (41.609, sin cambios) + `total_deposito` (7.055) = `total_general` (48.664, concilia con proveedor 47.480). Sub-card "📦 V20 Depósito" en el portal.
+- [x] 11T: `ccc_deposito` por marca + `ccc_deposito_total` (72); columna "Dep.V20". Innovaciones y Cobertura: bloque `deposito` informativo. Todo solo-logrado, sin objetivo/faltantes (V20 no tiene cartera en el maestro).
+- [x] V20 sigue EXCLUIDO de avance/objetivo, FARO, Planes AS, dashboard (decisión usuario). No se tocó `_VENDEDORES_EXCLUIDOS` global. Bloques depósito NO filtran por Empresa (depósito factura parte vía P&P Logística pero es la misma entidad V20).
+- [x] Validado contra datos reales (server local). `py_compile` OK, portal `node --check` OK. Ver CHANGELOG_AI 2026-06-29.
+- [x] **Paridad en el cierre de mes** (HECHO): helper `_sellout_con_deposito()` compartido; `_leer_ventas_mes_csv(incluir_deposito=)` + `_leer_ventas_mes_cacheado(incluir_deposito=)` (bandera en la clave de caché, no contamina CCC/once_titulares/ranking del cierre). Bloque depósito en `gerencia_cierre_mes` (vivo) y `_cierre_extras_versionado` (histórico). Sub-card "📦 V20 Depósito" en la pantalla Cierre de Mes. Validado: cierre `total_ruta=47.565`, `total_deposito=12.324`, `total_general=59.890` (ventas_mes.csv = mes congelado completo).
+
+### PENDIENTE
+- [ ] Push a Render (validar serialización nativa y tiempo según [[feedback_render_deploy_validacion]]).
+
 ## Sesion 2026-06-25 - fix(cierre): xlsx inflado colgaba el PASO 1 del cierre (HECHO)
 
 ### HECHO

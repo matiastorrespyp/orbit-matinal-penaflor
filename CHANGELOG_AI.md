@@ -1,5 +1,22 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-29 - feat(gerencia): incluir V20 "Depósito" como línea aparte en Sell Out / 11T / Innovaciones / Cobertura
+
+- Pedido: el sell out de gerencia mostraba 41.609 L y el proveedor reportaba 47.480 L. Diagnóstico contra datos reales: la diferencia es el vendedor **V20 = Depósito / venta directa** (~7.055 L en el sell out de las 6 categorías), concentrado en 3 mayoristas (BELTRAMO/DUTTO, CAREGLIO, ANSELMI) + cuentas chicas internas. ORBIT lo excluía por la regla histórica `{1,2,5,20}`. El usuario pidió sumarlo, siempre identificado como "V20 Depósito".
+- Decisiones (confirmadas con el usuario): (1) **línea aparte** "V20 Depósito" con solo logrado, **sin % de cobertura ni faltantes** (el depósito tiene **0 clientes en el maestro** → no hay cartera/denominador); (2) las métricas con objetivo (avance vs objetivo, Incentivo FARO, Planes AS, dashboard de vendedores) **quedan sin V20**; (3) **solo en gerencia**, sin login propio.
+- Principio: NO se tocó la exclusión global `_VENDEDORES_EXCLUIDOS = {1,2,5,20}` (eso filtraría V20 hacia métricas con objetivo). El depósito se computa por separado (`CodVendedor==20`) y se adjunta como bloque `deposito` en cada endpoint de gerencia.
+- `server_orbit.py`:
+  - `_preparar_df_ventas(src, incluir_deposito=False)`: nuevo flag que conserva V20.
+  - `_df_deposito_ventas()`: helper nuevo, V20 de ventas.csv (mes vivo). **NO filtra por Empresa**: el depósito factura parte de su venta directa vía P&P Logística pero es la misma entidad física V20 (mismo criterio que el sell out y la conciliación con el proveedor).
+  - `gerencia_sellout_litros`: computa ruta (6 cat. con objetivo, **idéntico a antes**) y depósito (mismas cat., sin objetivo/avance). Respuesta nueva: `deposito`, `total_ruta`, `total_deposito`, `total_general`.
+  - `once_titulares`: conserva V20 (`Empresa=='Empresa' | CodVendedor==20`), calcula `ccc_dep_map` aparte. Respuesta: `ccc_deposito` por marca + `ccc_deposito_total`. Objetivos/avance de ruta intactos.
+  - `gerencia_innovaciones_total` y `gerencia_innovaciones_segmento`: bloque `deposito` = CCC de innovación logrado por producto (V20, clientes únicos).
+  - `gerencia_cobertura_acum`: bloque `deposito` = clientes/botellas del depósito (informativo, sin %).
+- `PAV MATINAL PE_A FLOR/portal.html`: sub-card "📦 V20 Depósito" bajo el sell out (con total ruta+depósito); columna "Dep.V20" en la tabla 11T; card "V20 Depósito · innovaciones"; banner depósito en la pantalla Vendedores. Sin librerías nuevas; tokens de color y `tabular-nums` respetados.
+- Validación (server local, datos reales): sell out `total_ruta=41.609` (sin cambios), `total_deposito=7.055`, `total_general=48.664` (concilia con el proveedor 47.480; el ~1,2k de margen es conversión/período). 11T `ccc_deposito_total=72`, CCC y objetivos de ruta **idénticos** a antes (ALMA MORA 913, DADA 643…). Innovaciones depósito 4 productos. Cobertura depósito 15 clientes / 9.637 botellas. FARO/Planes AS/dashboard sin V20 (verificado). `py_compile` OK; JS del portal `node --check` OK. Validación visual (Playwright, login gerencia): dashboard, vendedores e innovaciones renderizan el depósito sin errores de consola.
+- **Paridad en el cierre de mes (misma sesión):** helper compartido `_sellout_con_deposito(df_full)` (separa ruta con objetivo del depósito sin objetivo). `_leer_ventas_mes_csv(src, incluir_deposito=False)` y `_leer_ventas_mes_cacheado(path, incluir_deposito=False)` — la bandera entra en la **clave de caché** para no contaminar la variante sin-V20 que usan CCC/once_titulares/ranking del cierre. Bloque depósito agregado en `gerencia_cierre_mes` (cierre vivo) y `_cierre_extras_versionado` (cierre histórico). Sub-card "📦 V20 Depósito" en la pantalla Cierre de Mes (`portal.html`, bloque del cierre congelado). Validado: cierre `total_ruta=47.565`, `total_deposito=12.324`, `total_general=59.890` (ventas_mes.csv = mes congelado completo, mayor que el vivo); endpoints `cierre_mes` y `cierres_historicos` ambos con bloque depósito; render del portal OK sin errores. **Detalle operativo:** `pkill -f` no mata los python detached en Git-Bash/Windows → quedaban servers viejos sirviendo código previo; matar con `taskkill`/`Stop-Process` por CommandLine.
+- Pendiente (NEXT_TASK): deploy a Render.
+
 ## 2026-06-25 - perf(11T): vectorizar el match del motor legacy (motor 338s -> 32s)
 
 - Contexto: tras reparar `producto activos.xlsx`, el motor legacy completaba pero tardaba 338 s, dominado por la sección "11 TITULARES".

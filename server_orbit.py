@@ -2184,6 +2184,7 @@ def gerencia_once_titulares():
     ]
 
     ccc_map = {}
+    ccc_dep_map = {}   # CCC del Depósito (V20), bloque aparte sin objetivo
     fuente = ""
 
     # ── Fuente primaria: ventas_acumulada.csv ──
@@ -2193,10 +2194,13 @@ def gerencia_once_titulares():
             vac = pd.read_csv(vac_path, sep=";", encoding="latin1", low_memory=False)
             vac["ImporteNetoItem"] = pd.to_numeric(
                 vac["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
-            # Solo Peñaflor (excluye P&P Logística), excluye V2/V5/V20, neto>0
+            # Ruta: solo Peñaflor (excluye P&P Logística), excluye V1/V2/V5, neto>0.
+            # V20 (Depósito) se CONSERVA aunque facture vía P&P, para su CCC aparte
+            # (mismo criterio que el sell out / conciliación con el proveedor).
             if "Empresa" in vac.columns:
-                vac = vac[vac["Empresa"].astype(str).str.strip() == "Empresa"]
-            vac = vac[~vac["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS)]
+                vac = vac[(vac["Empresa"].astype(str).str.strip() == "Empresa")
+                          | (vac["CodVendedor"] == 20)]
+            vac = vac[~vac["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS - {20})]
             vac = vac[vac["ImporteNetoItem"] > 0]
             # Período = trimestre calendario en curso (en julio arranca de cero)
             _f = pd.to_datetime(vac.get("FechaComprobante"), dayfirst=True, errors="coerce")
@@ -2214,9 +2218,13 @@ def gerencia_once_titulares():
                         break
                     hits = vac.loc[still, "Articulo"].astype(str).str.upper().str.contains(kw, regex=False, na=False)
                     vac.loc[still & hits, "marca_objetivo"] = mo
-            ccc_map = (vac[vac["marca_objetivo"].notna()]
+            _es_dep = vac["CodVendedor"] == 20
+            ccc_map = (vac[~_es_dep & vac["marca_objetivo"].notna()]
                        .groupby("marca_objetivo")["Cliente"]
                        .nunique().to_dict())
+            ccc_dep_map = (vac[_es_dep & vac["marca_objetivo"].notna()]
+                           .groupby("marca_objetivo")["Cliente"]
+                           .nunique().to_dict())
             fuente = "ventas_acumulada.csv"
         except Exception:
             ccc_map = {}
@@ -2267,16 +2275,20 @@ def gerencia_once_titulares():
     # ── Resultado: por marca, ordenado por CCC desc ──
     marcas = []
     for marca_obj in sorted(obj_map.keys(), key=lambda x: ccc_map.get(x, 0), reverse=True):
-        ccc = ccc_map.get(marca_obj, 0)
+        ccc = int(ccc_map.get(marca_obj, 0))
         obj = obj_map[marca_obj]
         pct = round(ccc / obj * 100, 1) if obj else None
-        marcas.append({"marca": marca_obj, "ccc": ccc, "objetivo_ccc": obj, "pct_objetivo": pct})
+        # Depósito (V20): CCC logrado aparte; no suma al objetivo ni al avance de ruta.
+        ccc_dep = int(ccc_dep_map.get(marca_obj, 0))
+        marcas.append({"marca": marca_obj, "ccc": ccc, "objetivo_ccc": obj,
+                       "pct_objetivo": pct, "ccc_deposito": ccc_dep})
 
     return jsonify({
         "generado_en": _now_ar(),
         "fuente": fuente,
         "total_marcas": len(marcas),
         "marcas": marcas,
+        "ccc_deposito_total": int(sum(ccc_dep_map.values())),
     })
 
 
@@ -2781,12 +2793,33 @@ def gerencia_innovaciones_segmento():
         productos.sort(key=lambda x: (x["segmento"], x["producto_codigo"]))
         por_vendedor.append({"vendedor_id": f"V{cod_int}", "vendedor_nombre": nombre, "productos": productos})
     por_vendedor.sort(key=lambda x: x["vendedor_id"])
+
+    # ── Depósito (V20): CCC de innovación LOGRADO, aparte (sin cartera ni faltantes) ──
+    deposito = []
+    try:
+        cods = df[["producto_codigo", "producto_nombre"]].drop_duplicates()
+        cod2nom = {int(c): str(n) for c, n in zip(cods["producto_codigo"], cods["producto_nombre"])
+                   if pd.notnull(c)}
+        vd = _df_deposito_ventas()
+        if cod2nom and not vd.empty:
+            vd = vd.copy()
+            vd["_cod"] = pd.to_numeric(vd["Codigo"], errors="coerce")
+            for pc, nom in sorted(cod2nom.items()):
+                sub = vd[vd["_cod"] == pc]
+                cc = int(sub["Cliente"].nunique()) if not sub.empty else 0
+                if cc > 0:
+                    deposito.append({"producto_codigo": pc, "producto_nombre": nom,
+                                     "clientes_compraron": cc})
+    except Exception:
+        deposito = []
+
     return jsonify({
         "generado_en": _now_ar(),
         "fuente": "mod_innovaciones_segmento.csv",
         "fecha_ejecucion": fecha_ej,
         "resumen_empresa": resumen_empresa,
         "por_vendedor": por_vendedor,
+        "deposito": deposito,
     })
 
 
@@ -3015,11 +3048,26 @@ def gerencia_cobertura_acum():
             "sin_cobertura": int(row["sin_cobertura"]),
             "pct_cobertura": round(float(row["pct_cobertura"]), 4),
         })
+    # ── Depósito (V20): informativo, clientes/botellas con compra (sin cartera ni %) ──
+    deposito = None
+    try:
+        vd = _df_deposito_ventas()
+        if not vd.empty:
+            deposito = {
+                "vendedor_id": "V20",
+                "vendedor_nombre": "Depósito (venta directa)",
+                "clientes": int(vd["Cliente"].nunique()),
+                "botellas": round(float(vd["CantBase"].sum()), 1),
+            }
+    except Exception:
+        deposito = None
+
     return jsonify({
         "generado_en": _now_ar(),
         "fecha_calculo": fecha,
         "fuente": "mod_cobertura_acum.csv",
         "por_vendedor": list(por_vendedor.values()),
+        "deposito": deposito,
     })
 
 
@@ -3216,12 +3264,32 @@ def gerencia_innovaciones_total():
                 "clientes_cartera", "clientes_compraron", "pct_cobertura"]].copy()
     por_v["vendedor_id"] = "V" + por_v["vendedor_codigo"].astype(int).astype(str)
     fecha = str(df["fecha_ejecucion"].iloc[0]) if "fecha_ejecucion" in df.columns else ""
+
+    # ── Depósito (V20): CCC de innovación LOGRADO, aparte (sin cartera ni faltantes) ──
+    deposito = []
+    try:
+        cod2nom = {int(c): str(n) for c, n in zip(df["producto_codigo"], df["producto_nombre"])
+                   if pd.notnull(c)}
+        vd = _df_deposito_ventas()
+        if cod2nom and not vd.empty:
+            vd = vd.copy()
+            vd["_cod"] = pd.to_numeric(vd["Codigo"], errors="coerce")
+            for pc, nom in sorted(cod2nom.items()):
+                sub = vd[vd["_cod"] == pc]
+                cc = int(sub["Cliente"].nunique()) if not sub.empty else 0
+                if cc > 0:
+                    deposito.append({"producto_codigo": pc, "producto_nombre": nom,
+                                     "clientes_compraron": cc})
+    except Exception:
+        deposito = []
+
     return jsonify({
         "generado_en": _now_ar(),
         "fecha_ejecucion": fecha,
         "fuente": "mod_innovaciones_segmento.csv",
         "dia": dia_param or None,
         "por_producto": records,
+        "deposito": deposito,
         "por_vendedor": por_v[["vendedor_id", "vendedor_nombre", "segmento",
                                 "producto_codigo", "producto_nombre",
                                 "clientes_cartera", "clientes_compraron"]].to_dict("records"),
@@ -4576,8 +4644,10 @@ def _marcas_de_grupo(sg: pd.DataFrame) -> list:
     return out
 
 
-def _preparar_df_ventas(src_path) -> pd.DataFrame:
-    """Lee ventas.csv, parsea columnas numéricas, excluye V2/V5/V20, filtra importe > 0.
+def _preparar_df_ventas(src_path, incluir_deposito=False) -> pd.DataFrame:
+    """Lee ventas.csv, parsea columnas numéricas, excluye V2/V5 (+V20 salvo incluir_deposito),
+    filtra importe > 0.
+    incluir_deposito=True conserva V20 (Depósito / venta directa) para separarlo aguas abajo.
     sep=";" explícito: sep=None/engine=python sniffea mal el separador en Linux (Render)
     → columnas desalineadas, ImporteNetoItem=0, se pierden filas (mismo patrón que diagnóstico)."""
     df = None
@@ -4603,15 +4673,43 @@ def _preparar_df_ventas(src_path) -> pd.DataFrame:
                               .str.replace(",", ".", regex=False)
                               .pipe(pd.to_numeric, errors="coerce")
                               .fillna(0))
-    df = df[~df["CodVendedor"].isin({2, 5, 20}) & (df["ImporteNetoItem"] > 0)].copy()
+    _excl = {2, 5} if incluir_deposito else {2, 5, 20}
+    df = df[~df["CodVendedor"].isin(_excl) & (df["ImporteNetoItem"] > 0)].copy()
     return df
 
 
-def _leer_ventas_mes_csv(src_path) -> pd.DataFrame:
+_DEPOSITO_VENTAS_CACHE = {}
+def _df_deposito_ventas() -> pd.DataFrame:
+    """ventas.csv (mes vivo) SOLO Depósito V20 (venta directa), neto>0.
+    Alimenta los bloques 'depósito' aparte de gerencia (innovaciones, cobertura).
+    NO filtra por Empresa: el depósito factura parte de su venta directa vía
+    P&P Logística, pero es la misma entidad física V20 (igual criterio que el sell out
+    y la conciliación con el proveedor).
+    Cacheado por mtime de ventas.csv: lo invocan 2 endpoints por carga de gerencia y
+    en Render (0.5 vCPU) releer el CSV de 3MB cada vez pesa."""
+    src = INPUTS / "ventas.csv"
+    if not src.exists():
+        return pd.DataFrame()
+    try:
+        key = src.stat().st_mtime
+    except OSError:
+        key = 0
+    cached = _DEPOSITO_VENTAS_CACHE.get("df")
+    if cached is not None and _DEPOSITO_VENTAS_CACHE.get("key") == key:
+        return cached
+    vd = _preparar_df_ventas(src, incluir_deposito=True)
+    vd = vd if vd.empty else vd[vd["CodVendedor"] == 20].copy()
+    _DEPOSITO_VENTAS_CACHE.clear()
+    _DEPOSITO_VENTAS_CACHE.update({"key": key, "df": vd})
+    return vd
+
+
+def _leer_ventas_mes_csv(src_path, incluir_deposito=False) -> pd.DataFrame:
     """Lee ventas_mes.csv robusto para Windows (CRLF) y Linux (LF).
     - sep=',' + quotechar='"' + engine='python' + dtype=str evita que el motor C
       de pandas deje comillas residuales en campos como "6620,94" al leer en Linux.
-    - strip('"') elimina cualquier comilla residual antes de la conversión numérica."""
+    - strip('"') elimina cualquier comilla residual antes de la conversión numérica.
+    incluir_deposito=True conserva V20 (Depósito) para separarlo aguas abajo (sell out cierre)."""
     df = None
     for enc in ("utf-8-sig", "latin-1", "windows-1252"):
         try:
@@ -4633,26 +4731,51 @@ def _leer_ventas_mes_csv(src_path) -> pd.DataFrame:
                                .str.replace(",", ".", regex=False)
                                .pipe(pd.to_numeric, errors="coerce")
                                .fillna(0))
-    df = df[~df["CodVendedor"].isin({2, 5, 20}) & (df["ImporteNetoItem"] > 0)].copy()
+    _excl = {2, 5} if incluir_deposito else {2, 5, 20}
+    df = df[~df["CodVendedor"].isin(_excl) & (df["ImporteNetoItem"] > 0)].copy()
     return df
 
+
+def _sellout_con_deposito(df_full) -> dict:
+    """Dado un df de ventas con V20 conservado, separa ruta (6 cat. con objetivo) y
+    Depósito V20 (mismas cat., SIN objetivo/avance). Devuelve el dict de sell out con
+    `categorias`, `deposito`, `total_ruta`, `total_deposito`, `total_general`.
+    Usado por el sell out vivo y por el del cierre de mes (paridad)."""
+    df_ruta = df_full[df_full["CodVendedor"] != 20]
+    df_dep  = df_full[df_full["CodVendedor"] == 20]
+    categorias = _sellout_desde_ventas(df_ruta)
+    deposito   = _sellout_desde_ventas(df_dep) if not df_dep.empty else []
+    for c in deposito:
+        c["objetivo"], c["alcance_pct"] = None, None
+        for s in c.get("subcategorias", []):
+            s["objetivo"], s["alcance_pct"] = None, None
+    total_ruta     = round(sum(float(c["litros"]) for c in categorias), 1)
+    total_deposito = round(sum(float(c["litros"]) for c in deposito), 1)
+    return {
+        "categorias":     categorias,
+        "deposito":       deposito,
+        "total_ruta":     total_ruta,
+        "total_deposito": total_deposito,
+        "total_general":  round(total_ruta + total_deposito, 1),
+    }
 
 
 @app.route("/api/gerencia/sellout_litros")
 def gerencia_sellout_litros():
-    """Sellout en litros vs objetivos. Fuente: ventas.csv × maestro_04D_productos.csv."""
+    """Sellout en litros vs objetivos. Fuente: ventas.csv × maestro_04D_productos.csv.
+    Ruta = 7 vendedores activos (categorías con objetivo, igual que siempre).
+    Depósito (V20 / venta directa) = bloque aparte SIN objetivo/avance; el total general
+    (ruta + depósito) concilia con el reporte del proveedor."""
     src = INPUTS / "ventas.csv"
     if not src.exists():
         return jsonify({"error": "ventas.csv no encontrado en 01_INPUTS"}), 404
-    df = _preparar_df_ventas(src)
+    df = _preparar_df_ventas(src, incluir_deposito=True)
     if df.empty:
         return jsonify({"error": "No se pudo leer ventas.csv"}), 500
-    resultado = _sellout_desde_ventas(df)
-    return jsonify({
-        "generado_en": _now_ar(),
-        "fuente":      "ventas.csv + maestro_04D_productos.csv",
-        "categorias":  resultado,
-    })
+    so = _sellout_con_deposito(df)
+    so["generado_en"] = _now_ar()
+    so["fuente"] = "ventas.csv + maestro_04D_productos.csv"
+    return jsonify(so)
 
 
 # ====== ACCIONES COMERCIALES RANKING ======
@@ -5710,15 +5833,17 @@ def gerencia_cierre_mes():
         sellout["disponible"] = False
         sellout["error"] = "ventas_mes.csv no encontrado en 01_INPUTS"
     else:
-        # Leer ventas_mes.csv con lector específico (sep=',' explícito, no sep=None)
-        so_df = _leer_ventas_mes_csv(so_src)
+        # Leer ventas_mes.csv con lector específico (sep=',' explícito, no sep=None).
+        # incluir_deposito=True: conserva V20 para separar ruta vs Depósito (paridad con el vivo).
+        so_df = _leer_ventas_mes_csv(so_src, incluir_deposito=True)
         sellout["filas_ventas_mes"] = len(so_df)
         if so_df.empty:
-            sellout["error"] = "ventas_mes.csv sin filas válidas (importe>0, excl V2/V5/V20)"
+            sellout["error"] = "ventas_mes.csv sin filas válidas (importe>0, excl V2/V5)"
         else:
-            # Mismo cruce ventas × maestro 04D que generó auditoria_sellout_cierre_mes.csv
+            # Mismo cruce ventas × maestro 04D que generó auditoria_sellout_cierre_mes.csv,
+            # más el bloque Depósito V20 aparte (sin objetivo).
             try:
-                sellout["categorias"] = _sellout_desde_ventas(so_df)
+                sellout.update(_sellout_con_deposito(so_df))
             except Exception as _e:
                 sellout["error"] = str(_e)
 
@@ -5834,16 +5959,18 @@ _OBJ_ALIAS_11T_CIERRE = {
 
 
 _VENTAS_MES_CACHE = {}
-def _leer_ventas_mes_cacheado(path):
+def _leer_ventas_mes_cacheado(path, incluir_deposito=False):
     """Lee ventas_mes versionado con caché (archivos del cierre = inmutables, clave path+mtime).
-    Evita releer el CSV (3MB, parser python) varias veces por request → era la causa de los ~31s."""
+    Evita releer el CSV (3MB, parser python) varias veces por request → era la causa de los ~31s.
+    incluir_deposito entra en la clave de caché: la variante con V20 (sell out) no contamina
+    la variante sin V20 que usan CCC/once_titulares/ranking del cierre."""
     try:
-        key = (str(path), os.path.getmtime(path))
+        key = (str(path), os.path.getmtime(path), incluir_deposito)
     except OSError:
-        key = (str(path), 0)
+        key = (str(path), 0, incluir_deposito)
     df = _VENTAS_MES_CACHE.get(key)
     if df is None:
-        df = _leer_ventas_mes_csv(path)
+        df = _leer_ventas_mes_csv(path, incluir_deposito=incluir_deposito)
         _VENTAS_MES_CACHE[key] = df
     return df
 
@@ -6151,14 +6278,15 @@ def _cierre_extras_versionado(files):
     reutilizando el motor oficial. Catálogos compartidos: 04D, Innovaciones.xlsx, vendedores.
     Devuelve todo casteado a tipos nativos (jsonify-safe)."""
     out = {}
-    # Sell-Out
+    # Sell-Out (con Depósito V20 aparte, paridad con el sell out vivo)
     try:
-        so_df = _leer_ventas_mes_cacheado(files["ventas_mes"])
+        so_df = _leer_ventas_mes_cacheado(files["ventas_mes"], incluir_deposito=True)
         out["sellout"] = {
             "fuente": files["ventas_mes"].name,
             "filas_ventas_mes": int(len(so_df)),
-            "categorias": _sellout_desde_ventas(so_df) if not so_df.empty else [],
         }
+        out["sellout"].update(_sellout_con_deposito(so_df) if not so_df.empty
+                              else {"categorias": [], "deposito": []})
     except Exception as e:
         out["sellout"] = {"error": str(e), "categorias": []}
 
