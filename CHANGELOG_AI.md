@@ -1,5 +1,12 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-29 - feat(gerencia): Sell Out unificado en una sola tarjeta (ruta + V20 Depósito)
+
+- Pedido: en el dashboard de gerencia, unificar el Sell Out en una sola tarjeta aperturable por objetivos (como veníamos trabajando) y sumarle la venta del V20 Depósito a esa misma tarjeta.
+- `PAV MATINAL PE_A FLOR/portal.html` (`_renderSoDash`): el bloque del Depósito V20 dejó de ser una segunda `<div class="card">` aparte. Ahora se renderiza dentro de la MISMA tabla/tarjeta de Sell Out, como filas extra debajo del TOTAL de ruta: una fila separadora "📦 V20 Depósito · venta directa (sin objetivo) — <L>", las categorías del depósito (sin objetivo/faltan/avance, columnas con "–") y la fila final "Total ruta + depósito". El drill-down por categoría/objetivos de la ruta queda intacto.
+- Regla de negocio respetada (V20 solo logrado, sin objetivo): el depósito sigue sin objetivo ni avance, solo cambia de presentación (misma tarjeta en vez de tarjeta aparte). No se tocó el backend.
+- Validación: `/api/gerencia/sellout_litros` (server 8502) → 6 categorías ruta, 6 categorías depósito, total_ruta 44.262,9 L, total_deposito 11.082,6 L, total_general 55.345,5 L. La tarjeta única muestra ruta + TOTAL ruta, luego depósito y "Total ruta + depósito" 55.345,5 L.
+
 ## 2026-06-29 - feat(vendedor): tarjeta "Oportunidad del día" arriba de todo + mensaje amigable
 
 - Pedido: en el perfil del vendedor, mover la tarjeta de Oportunidad del día (innovaciones) ARRIBA DE TODO (lo primero al entrar) y reescribir el mensaje en tono amigable con el nombre del vendedor.
