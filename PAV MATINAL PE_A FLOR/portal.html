@@ -2337,7 +2337,28 @@ function vInicio(){
   const falta=Math.max(0,obj-acum), av=d.tendencia_pct??vk.tendencia_pct??0, cl=pcol(av);
   const hoy=new Date(), fecha=hoy.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
   const opors=(D.cli||[]).filter(c=>(c.vendedor_id||'').toUpperCase()===(userData.vendedor_id||'').toUpperCase()&&(c.estado||'').toLowerCase().includes('sin')).slice(0,3);
-  let h=`
+  // Oportunidad del día (innovaciones): va ARRIBA DE TODO para que sea lo primero al entrar.
+  let oportTop='';
+  const oi=D.oportInov;
+  if(oi && oi.clientes && oi.clientes.length){
+    const NICK={3:'Nadia',4:'Ángel',6:'Andre',7:'Agus',8:'Pitu',9:'Fer'};
+    const codn=parseInt((userData.vendedor_id||'').replace(/\D/g,''))||0;
+    const nombre=NICK[codn]||((userData.nombre||oi.vendedor_nombre||'').trim().split(' ')[0])||'';
+    const cli3=oi.clientes.slice(0,3);
+    const cliChips=cli3.map(c=>`<span style="display:inline-block;background:rgba(255,255,255,.2);border-radius:9px;padding:4px 10px;margin:3px 4px 0 0;font-weight:700;font-size:12.5px;">👤 ${c.cliente_nombre}</span>`).join('');
+    const inovChips=oi.innovaciones.map(m=>`<span style="display:inline-block;background:#fff;color:#9c1458;border-radius:9px;padding:4px 10px;margin:3px 4px 0 0;font-weight:800;font-size:11.5px;">🍷 ${m}</span>`).join('');
+    oportTop=`<div style="margin:0 0 14px;border-radius:18px;padding:17px;background:linear-gradient(135deg,#E2147A 0%,#B0125F 55%,#6d0f3e 100%);box-shadow:0 8px 22px rgba(226,20,122,.4);color:#fff;position:relative;overflow:hidden;">
+      <div style="position:absolute;right:-18px;top:-20px;font-size:96px;opacity:.12;pointer-events:none;">🚀</div>
+      <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:.92;">🚀 Oportunidad del día · Innovaciones</div>
+      <div style="font-size:14.5px;line-height:1.5;margin:9px 0 11px;font-weight:600;position:relative;">
+        Buenos días <b style="text-decoration:underline;">${nombre}</b>, te propongo hoy venderles a estos <b>${cli3.length}</b> clientes estas innovaciones que aún no compraron. ¡Tú puedes hacerlo! 💪
+      </div>
+      <div style="margin-bottom:11px;position:relative;">${cliChips}</div>
+      <div style="font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;opacity:.85;margin-bottom:3px;position:relative;">Marcas para ofrecer</div>
+      <div style="position:relative;">${inovChips}</div>
+    </div>`;
+  }
+  let h=oportTop+`
     <div class="vhdr">
       <div class="vhdr-name">${userData.nombre||''}</div>
       <div class="vhdr-date">${fecha} · Zona del día: <b style="color:var(--mg)">${currentDay||diag.dia_operativo||'–'}</b></div>
@@ -2361,22 +2382,7 @@ function vInicio(){
     <div class="vkcard wn"><div class="vkl">Sin compra</div><div class="vkv">${vk.clientes_pendientes||0}</div><div class="vkh">Sin compra del mes</div></div>
     <div class="vkcard mg"><div class="vkl">Clientes Vi</div><div class="vkv">${vk.clientes_total||0}</div><div class="vkh">Zona ${currentDay||'–'}</div></div>
   </div>`;
-  const oi=D.oportInov;
-  if(oi && oi.clientes && oi.clientes.length){
-    const nombre=userData.nombre||oi.vendedor_nombre||'';
-    const cliChips=oi.clientes.map(c=>`<span style="display:inline-block;background:rgba(255,255,255,.2);border-radius:9px;padding:4px 10px;margin:3px 4px 0 0;font-weight:700;font-size:12.5px;">👤 ${c.cliente_nombre}</span>`).join('');
-    const inovChips=oi.innovaciones.map(m=>`<span style="display:inline-block;background:#fff;color:#9c1458;border-radius:9px;padding:4px 10px;margin:3px 4px 0 0;font-weight:800;font-size:11.5px;">🍷 ${m}</span>`).join('');
-    h+=`<div style="margin:6px 0 14px;border-radius:18px;padding:17px;background:linear-gradient(135deg,#E2147A 0%,#B0125F 55%,#6d0f3e 100%);box-shadow:0 8px 22px rgba(226,20,122,.4);color:#fff;position:relative;overflow:hidden;">
-      <div style="position:absolute;right:-18px;top:-20px;font-size:96px;opacity:.12;pointer-events:none;">🚀</div>
-      <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:.92;">🚀 Oportunidad del día · Innovaciones</div>
-      <div style="font-size:14.5px;line-height:1.5;margin:9px 0 11px;font-weight:600;position:relative;">
-        Hoy <b style="text-decoration:underline;">${nombre}</b>, andá a venderles innovaciones a estos <b>${oi.clientes.length}</b> clientes que el mes pasado compraron —igual que este mes— ¡pero todavía no se llevaron estas marcas! 👇
-      </div>
-      <div style="margin-bottom:11px;position:relative;">${cliChips}</div>
-      <div style="font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;opacity:.85;margin-bottom:3px;position:relative;">Marcas para ofrecer</div>
-      <div style="position:relative;">${inovChips}</div>
-    </div>`;
-  } else if(opors.length){
+  if(!oportTop && opors.length){
     h+=`<div class="sm bold" style="margin:2px 0 9px;">🎯 Oportunidades del día</div>`;
     h+=opors.map(c=>`<div class="vopor">
       <div class="vopor-lbl">Recuperar cliente</div>

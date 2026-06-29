@@ -1,5 +1,12 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-29 - feat(vendedor): tarjeta "Oportunidad del día" arriba de todo + mensaje amigable
+
+- Pedido: en el perfil del vendedor, mover la tarjeta de Oportunidad del día (innovaciones) ARRIBA DE TODO (lo primero al entrar) y reescribir el mensaje en tono amigable con el nombre del vendedor.
+- `PAV MATINAL PE_A FLOR/portal.html` (`vInicio`): la tarjeta de innovaciones se construye en `oportTop` y se antepone (`let h=oportTop+...`), por encima del header con el nombre y los KPIs. El bloque viejo (después de los KPIs) se reemplazó por el fallback "Recuperar cliente" (`if(!oportTop && opors.length)`), que sigue en su lugar cuando no hay oportunidad de innovaciones.
+- Mensaje nuevo: "Buenos días <nombre>, te propongo hoy venderles a estos 3 clientes estas innovaciones que aún no compraron. ¡Tú puedes hacerlo! 💪". Nombre por apodo según código de vendedor (`NICK`): V3 Nadia, V4 Ángel, V6 Andre, V7 Agus, V8 Pitu, V9 Fer; fallback al primer nombre para el resto (V10 → "Milagros", sin apodo dado). Clientes capados a 3 (`slice(0,3)`).
+- Validación: render Playwright del inicio del vendedor (V8=Pitu) con la tarjeta arriba y el mensaje nuevo, sin errores de consola. `node --check` OK. (La tarjeta aparece tras `refreshAfterRole→vRenderAll`, fase 2 del login; en fase 1 sin oportInov se muestra el fallback, comportamiento de carga existente.)
+
 ## 2026-06-29 - feat(FARO): premios (millas) en ambos perfiles + métrica Antares por SKU
 
 - Pedido: mostrar en Club FARO (vendedor y gerencia, incl. supervisores) los premios que va alcanzando cada uno según Real vs Objetivo; y corregir la métrica del Real de Antares (cada cobertura suma 1, XPA/Porrón 330/Porrón 660 suman doble; ej: 1 Lager lata + 1 XPA = 3).
