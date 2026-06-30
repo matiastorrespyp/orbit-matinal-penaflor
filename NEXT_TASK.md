@@ -1,5 +1,14 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-30 - feat(gerencia): Innovaciones con total de cobertura del mes (HECHO, sin commitear)
+
+### HECHO
+- [x] Control del dato de Innovaciones gerencia: dataset y endpoint correctos (22 productos, cartera 2031, cobertura mes 0–43). `pct_cobertura` del CSV es fracción pero nadie la usa (todos recalculan) → se deja.
+- [x] `gInnovaciones` (portal.html): chip "<n> mes" (total cobertura acumulada del mes = `prod.compraron`) a la derecha de cada innovación, junto al % y al total del día. Solo frontend, sin reinicio de server.
+
+### PENDIENTE
+- [ ] Verlo en el portal vivo (server 8502 / Render cuando el usuario lo pida): recargar pantalla Innovaciones y confirmar los 3 chips (% · mes · día).
+
 ## Sesion 2026-06-30 - feat(gerencia): Clientes incluye Depósito (codven=1) (HECHO, sin commitear)
 
 ### HECHO

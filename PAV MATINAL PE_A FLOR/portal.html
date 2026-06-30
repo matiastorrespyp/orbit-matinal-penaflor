@@ -3144,7 +3144,7 @@ function gInnovaciones(p){
           <div class="row-b" style="margin-bottom:7px;">
             <span style="font-weight:600;font-size:13px;">${prod.nombre}</span>
             <span style="display:flex;gap:6px;align-items:center;">
-              <span class="chip ${col}" style="font-size:11px;" title="${prod.compraron} de ${prod.cartera} clientes">${pct}%</span>
+              <span class="chip" style="font-size:11px;" title="Cobertura acumulada del mes — ${prod.compraron} de ${prod.cartera} clientes">${prod.compraron} <span style="font-size:10px;opacity:.75;">mes</span></span>
               <span class="chip ${diaCol}" style="font-size:11px;" title="Compraron ${diaLabel||'hoy'}">${nDia} <span style="font-size:10px;opacity:.75;">${diaLabel||'hoy'}</span></span>
             </span>
           </div>

@@ -1,5 +1,13 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-30 - feat(gerencia): innovaciones muestran el total de cobertura acumulada del mes por innovación
+
+- Pedido: en gerencia → pantalla de Innovaciones, controlar que el dato esté correcto y agregar —junto al total del día que ya está a la derecha de cada innovación— el total de cobertura acumulada del mes (cantidad absoluta de clientes que la compraron).
+- Control del dato (sin cambios de código): el dataset `mod_innovaciones_segmento.csv` se genera bien (`clientes_compraron` = clientes de la cartera con ImporteNeto>0 sobre la innovación en el mes vivo, solo Peñaflor, sin doble conteo entre vendedores/subcanales). El server (`gerencia_innovaciones_total`) recalcula `pct` y agrega `compraron_total` por producto correctamente. Reconcilia: 22 productos, cartera 2031, cobertura mes 0–43 clientes (top: CAZADOR MALBEC 43, Antares XPA 33, Frizze Manxana 31). La columna `pct_cobertura` del CSV está como fracción (0.0041) pero NINGÚN consumidor la usa: todos recalculan `compraron/cartera`, así que no afecta — se deja como está (fuera de alcance).
+- `PAV MATINAL PE_A FLOR/portal.html` (`gInnovaciones`): a la derecha de cada innovación se agrega un chip "<n> mes" con `prod.compraron` (total mensual = suma de los subcanales, que el portal ya calculaba en `byProd` para el %). Queda: **total mes · total día**, con el mismo estilo del chip del día. No se tocó el backend.
+- Ajuste posterior (mismo día): el usuario pidió quitar el % de cobertura, solo quieren los dos totales. Se eliminó el chip "<pct>%" de la fila; `pct` se sigue calculando internamente (orden de la lista + tooltip del chip mes) pero no se muestra.
+- Validación: `GET /api/gerencia/innovaciones_total?dia=Ma` (server 8502) → HTTP 200; `compraron_total` por producto×segmento coincide con el agregado del dataset; el portal suma por `producto_nombre`. Sin reinicio del server (cambio solo de frontend).
+
 ## 2026-06-30 - feat(gerencia): pantalla de Clientes incluye el Depósito (codven=1)
 
 - Pedido: en gerencia → pantalla de Clientes poder seleccionar TODOS los clientes, incluidos los del depósito. En `clientes.xlsx` el depósito figura como `codven=1` (no 20).
