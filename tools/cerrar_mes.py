@@ -115,6 +115,9 @@ def main():
         (INPUTS / "resultado.xlsx",                 f"resultado_mes_{mmaaaa}.xlsx",      True),
         (INPUTS / "ventas_mes.csv",                 f"ventas_mes_{mmaaaa}.csv",          True),
         (INPUTS / "objetivo 11T.xlsx",              f"objetivo 11T_{mmaaaa}.xlsx",       True),
+        # 11T es trimestral: su fuente es la acumulada (sin filtro de fecha). Opcional: si falta,
+        # el portal cae a ventas_mes (1 mes) para el 11T.
+        (INPUTS / "ventas_acumulada.csv",           f"ventas_acumulada_{mmaaaa}.csv",    False),
         (acc,                                       f"acciones_{mmaaaa}.csv",            False),
         (PLANES_AS / "Reconocimiento Plan As.xlsx", f"reconocimiento_{mmaaaa}.xlsx",     False),
         (esc,                                       f"escala_{mmaaaa}.xlsx",             False),

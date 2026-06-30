@@ -1,5 +1,20 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-30 - fix(cierre): cierre de mes corre de verdad + portal lo descubre por carpeta (HECHO local, sin commitear)
+
+### HECHO
+- [x] Diagnóstico: el cierre detectaba mayo (ventas_mes.csv viejo) y no hacía nada; además el .bat nunca alimentaba el listado del portal (07_CIERRES_MENSUALES). El selector de mes ya existía (portal.html:3689), faltaban cierres para que apareciera.
+- [x] `tools/preparar_ventas_mes.py` (NUEVO): regenera ventas_mes.csv desde ventas.csv (`;`/latin1 → `,`/utf-8, FechaComprobante ISO, 58 cols). Backup del previo.
+- [x] `CIERRE_MES_ORBIT.bat`: corre el prep antes de versionar (solo modo automático sin args); rama "nada nuevo" ahora es `:fin_nada` (no más "LISTO" engañoso). CRLF normalizado.
+- [x] `tools/cerrar_mes.py`: versiona también ventas_acumulada_<MMAAAA>.csv (11T trimestral).
+- [x] `server_orbit.py`: `gerencia_cierres_historicos` descubre cierres desde `01_INPUTS/cierres mes/` (no solo el índice 07) + `_cierre_manifest_versionado`. Validado por test_client: total_cierres=2 (junio + mayo), junio reconstruido OK.
+- [x] Cierre de JUNIO generado en local: `01_INPUTS/cierres mes/*_062026.*` (5 archivos).
+
+### PENDIENTE
+- [ ] PUBLICAR a Render: el cierre local está hecho pero NO commiteado/pusheado. Cuando el usuario dé OK, correr `CIERRE_MES_ORBIT.bat` (ya hace commit+push de `cierres mes/`) o commitear a mano `01_INPUTS/cierres mes/*_062026.*`. Verificar el selector en gerencia → Cierre de Mes (debe mostrar 2026-06 y 2026-05).
+- [ ] Innovaciones del cierre versionado dan 0 productos (mayo también) — revisar `_cierre_extras_versionado`/`_gcm._inov_detalle` (matching de códigos Innovaciones.xlsx). Preexistente, no parte de este pedido.
+- [ ] Acciones Comerciales de junio salen vacías: registrar el catálogo de reglas del mes en `_ACC_REGLAS_POR_MMAAAA` (hoy solo "052026"). FASE 2b.
+
 ## Sesion 2026-06-30 - feat(gerencia): Innovaciones con total de cobertura del mes (HECHO, sin commitear)
 
 ### HECHO

@@ -1,5 +1,18 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-30 - fix(cierre): el cierre de mes ahora corre de verdad y cada mes aparece en gerencia con selector
+
+- Síntoma: el usuario ejecutó `CIERRE_MES_ORBIT.bat` y "no hizo el cierre". Quería verlo en gerencia → Cierre de Mes con un selector para ir pasando entre meses.
+- Causa raíz 1 (no cerraba): el `.bat` autodetecta el mes a cerrar leyendo la fecha máx de `01_INPUTS/ventas_mes.csv`, pero ese archivo quedó en MAYO (máx 2026-05-30). El cierre detectó 05/2026, vio que ya existía y no hizo nada — y encima terminaba con "LISTO" (exit 0). `ventas.csv` (vivo) sí tenía junio completo (6101 filas), con las mismas 58 columnas que `ventas_mes.csv` (solo cambia `;`/latin1 → `,`/utf-8 y FechaComprobante → ISO).
+- Causa raíz 2 (no se veía en gerencia): el `.bat` solo corría `cerrar_mes.py` (versiona el trío en `01_INPUTS/cierres mes/`), pero el portal listaba los cierres desde `07_CIERRES_MENSUALES/index_cierres_mensuales.json`, que solo lo escribe `generar_cierre_mensual.py` — y el `.bat` nunca lo llamaba. Por eso solo figuraba mayo y el selector (que YA existe en `portal.html:3689`, aparece con >1 cierre) no crecía.
+- Decisión del usuario: (1) el portal descubre los cierres directo de `01_INPUTS/cierres mes/` (FASE 2b); (2) el cierre genera `ventas_mes.csv` desde `ventas.csv`.
+- `tools/preparar_ventas_mes.py` (NUEVO): re-codifica `ventas.csv` (`;`/latin1) → `ventas_mes.csv` (`,`/utf-8-sig), normaliza FechaComprobante a ISO, preserva las 58 columnas como str (sin floats fantasma). Backup del ventas_mes previo en `99_BACKUPS_ORBIT/`.
+- `CIERRE_MES_ORBIT.bat`: (a) antes de versionar, regenera `ventas_mes.csv` desde `ventas.csv` (solo en modo automático sin argumentos; con mes manual NO se toca); (b) la rama "no hay nada para publicar" ya no dice "LISTO" — va a `:fin_nada` con mensaje claro ("este mes ya estaba cerrado, usá MMAAAA --force"). Normalizado a CRLF.
+- `tools/cerrar_mes.py`: se agregó `ventas_acumulada.csv` → `ventas_acumulada_<MMAAAA>.csv` al plan (opcional) para que el 11T trimestral del cierre quede versionado.
+- `server_orbit.py` (`gerencia_cierres_historicos` + nuevo `_cierre_manifest_versionado`): además del índice 07, descubre los períodos presentes en `01_INPUTS/cierres mes/` (`ventas_mes_*.csv`) que no estén en el índice y los arma 100% desde el cierre versionado (manifest mínimo reconstruido con el motor oficial + objetivos/avance + 11T + sell-out + ranking). Mayo (que está en el índice 07) no se duplica.
+- Validación: `preparar_ventas_mes.py` → ventas_mes.csv = junio (6101 filas). `cerrar_mes.py` → 5 archivos versionados en `cierres mes/` (incl. ventas_acumulada_062026.csv). `app.test_client().get('/api/gerencia/cierres_historicos')` → HTTP 200, `total_cierres=2`: **2026-06** (filas 5960, avance empresa 111,99%, 11T ccc 5280/3552, sell-out 6 cat, ranking 7 vend) y **2026-05** intacto. El selector de mes ahora muestra ambos. `py_compile` OK en los 3 .py.
+- Pendiente (preexistente, fuera de alcance): innovaciones del cierre versionado dan 0 productos (mayo también); acciones de junio quedan vacías porque `_ACC_REGLAS_POR_MMAAAA` solo registra mayo. NO publicado a Render (sin commit/push) — a la espera del OK del usuario.
+
 ## 2026-06-30 - feat(gerencia): innovaciones muestran el total de cobertura acumulada del mes por innovación
 
 - Pedido: en gerencia → pantalla de Innovaciones, controlar que el dato esté correcto y agregar —junto al total del día que ya está a la derecha de cada innovación— el total de cobertura acumulada del mes (cantidad absoluta de clientes que la compraron).

@@ -66,6 +66,26 @@ echo Si necesitas sincronizar con GitHub, hacelo antes de cargar los inputs.
 :pull_ok
 echo.
 
+REM -- Refrescar ventas_mes.csv (cierre congelado) desde ventas.csv vivo. Sin esto, el cierre
+REM    autodetecta el mes anterior (si ventas_mes quedo viejo) y "no hace nada". Solo en modo
+REM    automatico (sin argumentos); si se fuerza un mes manual NO se toca ventas_mes.csv.
+if "%~1"=="" (
+    echo Preparando ventas_mes.csv del mes desde ventas.csv vivo...
+    python "%ROOT%\tools\preparar_ventas_mes.py"
+    if errorlevel 1 (
+        echo ============================================================
+        echo ERROR: no se pudo preparar ventas_mes.csv desde ventas.csv.
+        echo No se cerro el mes. Revisar 01_INPUTS\ventas.csv.
+        echo ============================================================
+        pause
+        exit /b 1
+    )
+) else (
+    echo Modo manual ^(argumento "%~1"^): NO se regenera ventas_mes.csv.
+    echo Se usara el 01_INPUTS\ventas_mes.csv que ya esta cargado.
+)
+echo.
+
 echo Generando/versionando los archivos del mes en 01_INPUTS\cierres mes\ ...
 echo (toma las fuentes que dejaste en 01_INPUTS y las copia con sufijo _MMAAAA)
 echo.
@@ -112,9 +132,7 @@ if defined FUERA_ALLOW (
 
 git diff --cached --quiet
 if not errorlevel 1 (
-    echo No hay archivos nuevos del cierre para publicar.
-    echo Render ya tiene la version mas reciente; este cierre no publico nada nuevo.
-    goto fin_ok
+    goto fin_nada
 )
 
 git commit -m "cierre mes: archivos versionados (%FECHA_COMMIT%)"
@@ -152,6 +170,21 @@ echo.
 
 pause
 exit /b 1
+
+:fin_nada
+
+echo.
+echo ============================================================
+echo NADA NUEVO QUE CERRAR
+echo Este mes ya estaba cerrado (los archivos del cierre ya existen).
+echo No se genero ni publico nada nuevo. Render queda igual.
+echo Si querias re-generar este mes pisando con las fuentes actuales,
+echo ejecuta:  CIERRE_MES_ORBIT.bat MMAAAA --force   (ej: 062026 --force)
+echo ============================================================
+echo.
+
+pause
+exit /b 0
 
 :fin_ok
 

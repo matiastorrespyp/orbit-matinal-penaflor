@@ -6494,6 +6494,31 @@ def _cierre_acciones_versionado(files):
                        "fuente": files["ventas_mes"].name, "catalogo": reglas_name})
 
 
+def _cierre_manifest_versionado(files):
+    """Manifest minimo para cierres descubiertos por carpeta (01_INPUTS/cierres mes/) que NO
+    tienen carpeta en 07_CIERRES_MENSUALES/. Reusa el motor oficial para filas/fechas/
+    vendedores/V3, mismo criterio que generar_cierre_mensual.py (activos, V3 solo trad)."""
+    gcm = _gcm()
+    src = files["ventas_mes"]
+    df  = _gcm_leer_ventas_cacheado(src)
+    excl = sorted(gcm._raw_codigos(src) - gcm.VENDEDORES_ACTIVOS)
+    fmin = df["FechaComprobante"].min() if not df.empty else None
+    fmax = df["FechaComprobante"].max() if not df.empty else None
+    vdet = sorted(int(x) for x in df["CodVendedor"].unique()) if not df.empty else []
+    v3   = df[df["CodVendedor"] == 3] if not df.empty else df
+    v3ok = bool((v3["segmento"] == "TRADICIONAL").all()) if not v3.empty else True
+    return {
+        "filas_leidas":             int(len(df)),
+        "fecha_min":                fmin.strftime("%Y-%m-%d") if pd.notna(fmin) else None,
+        "fecha_max":                fmax.strftime("%Y-%m-%d") if pd.notna(fmax) else None,
+        "vendedores_detectados":    [f"V{c}" for c in vdet],
+        "vendedores_excluidos_csv": [f"V{c}" for c in excl],
+        "v3_solo_tradicional_pass": v3ok,
+        "fuente_ventas":            "01_INPUTS/cierres mes/" + src.name,
+        "estado":                   "PASS",
+    }
+
+
 # ====== CIERRES HISTORICOS ======
 @app.route("/api/gerencia/cierres_historicos")
 def gerencia_cierres_historicos():
@@ -6503,22 +6528,47 @@ def gerencia_cierres_historicos():
     cierres_dir = BASE / "07_CIERRES_MENSUALES"
     idx_path    = cierres_dir / "index_cierres_mensuales.json"
 
-    if not idx_path.exists():
-        return jsonify({"cierres": [], "estado": "SIN_CIERRES",
-                        "nota": "07_CIERRES_MENSUALES/index_cierres_mensuales.json no encontrado"})
+    indice = []
+    if idx_path.exists():
+        try:
+            with open(idx_path, encoding="utf-8") as f:
+                indice = json.load(f)
+        except Exception as e:
+            return jsonify({"cierres": [], "estado": "ERROR",
+                            "error": "No se pudo leer el indice: " + str(e)}), 500
 
-    try:
-        with open(idx_path, encoding="utf-8") as f:
-            indice = json.load(f)
-    except Exception as e:
-        return jsonify({"cierres": [], "estado": "ERROR",
-                        "error": "No se pudo leer el indice: " + str(e)}), 500
+    # Descubrir cierres versionados por carpeta (01_INPUTS/cierres mes/) que NO esten en el
+    # indice 07. Asi cada cierre que genera CIERRE_MES_ORBIT.bat aparece solo y el selector de
+    # mes del portal crece con cada mes, sin depender de 07_CIERRES_MENSUALES/.
+    periodos_idx = {str(e.get("periodo", "")) for e in indice}
+    for vm in sorted(CIERRES_MES_DIR.glob("ventas_mes_*.csv")):
+        mmaaaa = vm.stem.replace("ventas_mes_", "")
+        if len(mmaaaa) != 6 or not mmaaaa.isdigit():
+            continue
+        periodo = f"{mmaaaa[2:]}-{mmaaaa[:2]}"
+        if periodo in periodos_idx:
+            continue
+        try:
+            ts = datetime.fromtimestamp(vm.stat().st_mtime).strftime("%Y-%m-%dT%H:%M:%S-03:00")
+        except Exception:
+            ts = ""
+        indice.append({"periodo": periodo, "version": "version_001", "carpeta": "",
+                       "timestamp_argentina": ts, "estado": "PASS", "_versionado_only": True})
+
+    if not indice:
+        return jsonify({"cierres": [], "estado": "SIN_CIERRES",
+                        "nota": "No hay cierres en 07_CIERRES_MENSUALES/ ni en 01_INPUTS/cierres mes/"})
 
     cierres = []
     for entrada in indice:
         periodo  = entrada.get("periodo", "")
         version  = entrada.get("version", "")
-        carpeta  = cierres_dir.parent / Path(entrada.get("carpeta", "").replace("\\", "/"))
+        vonly    = bool(entrada.get("_versionado_only"))
+        # Cierres descubiertos por carpeta no tienen carpeta en 07_CIERRES_MENSUALES/: apuntamos
+        # a una ruta inexistente para que las lecturas legacy (.exists()) den False sin romper;
+        # el manifest y los bloques se reconstruyen desde el cierre versionado mas abajo.
+        carpeta  = (cierres_dir / periodo / "__versionado__") if vonly \
+                   else (cierres_dir.parent / Path(entrada.get("carpeta", "").replace("\\", "/")))
         ts_ar    = entrada.get("timestamp_argentina", "")
         estado   = entrada.get("estado", "")
 
@@ -6689,6 +6739,13 @@ def gerencia_cierres_historicos():
         # (fuente única y versionada), sustituyendo a los artefactos congelados.
         _files = _cierre_archivos_mes(periodo)
         if _files:
+            # Manifest: para cierres descubiertos por carpeta (sin 07/) se reconstruye desde el
+            # ventas_mes versionado; para los del indice 07 se respeta el manifest.json legacy.
+            if cierre["manifest"] is None:
+                try:
+                    cierre["manifest"] = _cierre_manifest_versionado(_files)
+                except Exception as e:
+                    cierre["warn"].append("manifest versionado: " + str(e))
             try:
                 oa = _cierre_objetivos_avance(_files)
                 cierre["objetivos_avance"] = oa
@@ -6735,6 +6792,12 @@ def gerencia_cierres_historicos():
                     cierre["acciones_comerciales"] = _acc
             except Exception as e:
                 cierre["warn"].append("recálculo cierre versionado (acciones): " + str(e))
+
+        # Cierres descubiertos por carpeta no tienen artefactos 07/: descartar el ruido legacy
+        # ("no encontrado"/"no legible"); ya se reconstruyo todo desde el cierre versionado.
+        if vonly:
+            cierre["warn"] = [w for w in cierre["warn"]
+                              if "no encontrado" not in w and "no legible" not in w]
 
         if not cierre["warn"]:
             cierre.pop("warn")
