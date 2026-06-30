@@ -3902,7 +3902,7 @@ function gCierreMes(p){
           <div class="card-body">
             <div style="display:flex;flex-wrap:wrap;gap:10px;">
               ${gcard('General','🏆',g.general,o=>'Score total <b style="color:var(--text)">'+o.score_total+'</b>')}
-              ${gcard('Volumen / Dinero','💰',g.volumen_dinero,o=>fmtM(o.metrica))}
+              ${gcard('Volumen · alcance objetivo','💰',g.volumen_dinero,o=>(o.base==='alcance_objetivo'?(o.metrica!=null?Number(o.metrica).toFixed(1)+'% del objetivo':'– alcance'):fmtM(o.metrica)))}
               ${gcard('11 Titulares','🏅',g.once_titulares,o=>fmtNum(o.metrica)+' clientes 11T')}
               ${gcard('Innovaciones','🚀',g.innovaciones,o=>fmtNum(o.metrica)+' clientes innov.')}
             </div>

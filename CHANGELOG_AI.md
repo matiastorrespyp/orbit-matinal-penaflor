@@ -1,5 +1,14 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-30 - feat(cierre): 'mejor vendedor en volumen' se determina por alcance del objetivo mensual
+
+- Pedido: cambiar la forma de determinar el mejor vendedor en volumen en el Cierre de Mes; que sea por el ALCANCE DE SU OBJETIVO MENSUAL (avance % = acumulado/objetivo), no por litros+dinero vendidos.
+- Decisión del usuario (alcance del cambio): SOLO el ganador de Volumen. El score general / 'mejor general' NO se toca (sigue litros+dinero 40% + 11T 30% + Innov 30%).
+- `server_orbit.py` (`_cierre_ranking_payload`): nuevo parámetro `avance_map` (codigo→avance_pct). Si viene, re-rankea la dimensión volumen por alcance de objetivo (desc), rehace la etiqueta MEJOR_VOLUMEN_DINERO y el ganador de volumen pasa a tener `metrica`=alcance% + `base`="alcance_objetivo". No modifica `_ranking` ni el score general. La lista de ranking ahora también expone `alcance_objetivo_pct` por vendedor.
+- `server_orbit.py` (endpoint cierres_historicos): arma `avance_map` desde `cierre["objetivos_avance"]` (ya calculado) y lo pasa a `_cierre_ranking_payload`.
+- `PAV MATINAL PE_A FLOR/portal.html` (`gCierreMes`): la tarjeta de ganadores pasa de "Volumen / Dinero ($)" a "Volumen · alcance objetivo" y muestra el % del objetivo (ej. "181,8% del objetivo").
+- Validación (test_client): cierre 2026-06 → mejor en volumen V4 GRIBAUDO ANGEL 181,79% (antes V8 por dinero); mejor general sigue V8 ALVAREZ VANESA (score 100, intacto). 2026-05 → mejor en volumen V3 NADIA GAMBINO 144,93%. Recálculo en vivo, aplica a todos los cierres. `py_compile` OK.
+
 ## 2026-06-30 - fix(cierre): Sell Out incluye depósito (V20) y ranking de Innovaciones deja de marcar 0 clientes
 
 - Pedido: en el Cierre de Mes (gerencia), (1) la tarjeta de Sell Out debe estar completa incluyendo la venta de depósito (V20); (2) el ranking marca una "mejor vendedora en innovaciones" pero abajo dice 0 clientes — revisarlo.

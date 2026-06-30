@@ -13,6 +13,7 @@
 ### HECHO (continuación)
 - [x] Sell Out del cierre ahora incluye V20 Depósito en cada categoría vs objetivo de empresa (total + desglose informativo) — espejo del dashboard. `_cierre_extras_versionado`.
 - [x] Innovaciones del cierre ya NO dan 0: se usa `_gda().INOV_PRODUCTOS` (22 productos) en vez del parser viejo `_leer_innovaciones`. Corrige detalle + ranking (V8 ALVAREZ VANESA 115 clientes, antes 0).
+- [x] Mejor en VOLUMEN del cierre ahora por alcance del objetivo mensual (no litros+dinero), solo ese ganador; score general intacto. `_cierre_ranking_payload(avance_map)`. Junio→V4 181,8%, mayo→V3 144,9%.
 
 ### PENDIENTE
 - [ ] Acciones Comerciales de junio salen vacías: registrar el catálogo de reglas del mes en `_ACC_REGLAS_POR_MMAAAA` (hoy solo "052026"). FASE 2b.

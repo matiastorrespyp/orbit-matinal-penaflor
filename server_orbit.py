@@ -6296,8 +6296,30 @@ def _gcm_leer_ventas_cacheado(path):
     return df
 
 
-def _cierre_ranking_payload(rank):
-    """Transforma la lista de ranking en {ranking_top3, ranking, ganadores} para el portal."""
+def _cierre_ranking_payload(rank, avance_map=None):
+    """Transforma la lista de ranking en {ranking_top3, ranking, ganadores} para el portal.
+    Si avance_map (codigo_str -> avance_pct) viene dado, el 'mejor en VOLUMEN' se determina por
+    ALCANCE DEL OBJETIVO MENSUAL (avance vs objetivo), NO por litros+dinero. Solo cambia esa
+    dimensión y su etiqueta; el score general y el resto del ranking quedan intactos."""
+    rank = [dict(r) for r in rank]  # copia: no mutar el input cacheado
+
+    if avance_map:
+        def _av(r):
+            v = avance_map.get(str(r.get("vendedor_codigo", "")).lstrip("Vv"))
+            return float(v) if v is not None else -1.0
+        for r in rank:
+            a = _av(r)
+            r["alcance_objetivo_pct"] = a if a >= 0 else None
+        # Re-rankear la dimensión volumen por alcance de objetivo (desc) y rehacer su etiqueta.
+        for i, r in enumerate(sorted(rank, key=lambda r: -_av(r))):
+            r["ranking_volumen_dinero"] = i + 1
+        for r in rank:
+            etiq = [e for e in str(r.get("etiqueta_destacada", "")).split("|")
+                    if e and e != "MEJOR_VOLUMEN_DINERO"]
+            if r.get("ranking_volumen_dinero") == 1:
+                etiq.append("MEJOR_VOLUMEN_DINERO")
+            r["etiqueta_destacada"] = "|".join(etiq)
+
     top3 = sorted(rank, key=lambda r: r.get("ranking_general", 99))[:3]
     ranking_top3 = [{
         "ranking_general":       r.get("ranking_general"),
@@ -6315,6 +6337,7 @@ def _cierre_ranking_payload(rank):
         "litros_vendidos":        r.get("litros_vendidos"),
         "clientes_11_titulares":  r.get("clientes_11_titulares"),
         "clientes_innovaciones":  r.get("clientes_innovaciones"),
+        "alcance_objetivo_pct":   r.get("alcance_objetivo_pct"),
         "score_total":            r.get("score_total"),
         "ranking_general":        r.get("ranking_general"),
         "ranking_volumen_dinero": r.get("ranking_volumen_dinero"),
@@ -6331,9 +6354,13 @@ def _cierre_ranking_payload(rank):
                         "score_total": r.get("score_total"),
                         "metrica": r.get(metrica)}
         return None
+    # Ganador de volumen: si hay avance_map, la métrica es el alcance del objetivo (%), no $.
+    gan_vol = _ganador("ranking_volumen_dinero", "alcance_objetivo_pct" if avance_map else "dinero_vendido")
+    if gan_vol is not None:
+        gan_vol["base"] = "alcance_objetivo" if avance_map else "dinero_vendido"
     ganadores = {
         "general":        _ganador("ranking_general",        "score_total"),
-        "volumen_dinero": _ganador("ranking_volumen_dinero", "dinero_vendido"),
+        "volumen_dinero": gan_vol,
         "once_titulares": _ganador("ranking_11_titulares",   "clientes_11_titulares"),
         "innovaciones":   _ganador("ranking_innovaciones",   "clientes_innovaciones"),
     }
@@ -6795,7 +6822,12 @@ def gerencia_cierres_historicos():
                 if _ex.get("innovaciones") is not None:
                     cierre["innovaciones"] = _ex["innovaciones"]
                 if _ex.get("ranking"):
-                    _rk = _cierre_ranking_payload(_ex["ranking"])
+                    # Mejor en VOLUMEN = mayor alcance del objetivo mensual (avance vs objetivo),
+                    # no litros+dinero. avance_map desde objetivos_avance ya calculado arriba.
+                    _oa = cierre.get("objetivos_avance") or {}
+                    _avance_map = {str(v.get("codigo")): v.get("avance_pct")
+                                   for v in _oa.get("vendedores", []) if v.get("codigo") is not None}
+                    _rk = _cierre_ranking_payload(_ex["ranking"], _avance_map or None)
                     cierre["ranking_top3"] = _rk["ranking_top3"]
                     cierre["ranking"]      = _rk["ranking"]
                     cierre["ganadores"]    = _rk["ganadores"]
