@@ -10,10 +10,13 @@
 - [x] `server_orbit.py`: `gerencia_cierres_historicos` descubre cierres desde `01_INPUTS/cierres mes/` (no solo el índice 07) + `_cierre_manifest_versionado`. Validado por test_client: total_cierres=2 (junio + mayo), junio reconstruido OK.
 - [x] Cierre de JUNIO generado en local: `01_INPUTS/cierres mes/*_062026.*` (5 archivos).
 
+### HECHO (continuación)
+- [x] Sell Out del cierre ahora incluye V20 Depósito en cada categoría vs objetivo de empresa (total + desglose informativo) — espejo del dashboard. `_cierre_extras_versionado`.
+- [x] Innovaciones del cierre ya NO dan 0: se usa `_gda().INOV_PRODUCTOS` (22 productos) en vez del parser viejo `_leer_innovaciones`. Corrige detalle + ranking (V8 ALVAREZ VANESA 115 clientes, antes 0).
+
 ### PENDIENTE
-- [ ] PUBLICAR a Render: el cierre local está hecho pero NO commiteado/pusheado. Cuando el usuario dé OK, correr `CIERRE_MES_ORBIT.bat` (ya hace commit+push de `cierres mes/`) o commitear a mano `01_INPUTS/cierres mes/*_062026.*`. Verificar el selector en gerencia → Cierre de Mes (debe mostrar 2026-06 y 2026-05).
-- [ ] Innovaciones del cierre versionado dan 0 productos (mayo también) — revisar `_cierre_extras_versionado`/`_gcm._inov_detalle` (matching de códigos Innovaciones.xlsx). Preexistente, no parte de este pedido.
 - [ ] Acciones Comerciales de junio salen vacías: registrar el catálogo de reglas del mes en `_ACC_REGLAS_POR_MMAAAA` (hoy solo "052026"). FASE 2b.
+- [ ] Verificar en Render (gerencia → Cierre de Mes, mes 2026-06): tarjeta Sell Out con total incluido depósito + ranking con clientes de innovaciones reales.
 
 ## Sesion 2026-06-30 - feat(gerencia): Innovaciones con total de cobertura del mes (HECHO, sin commitear)
 

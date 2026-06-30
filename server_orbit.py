@@ -6345,15 +6345,31 @@ def _cierre_extras_versionado(files):
     reutilizando el motor oficial. Catálogos compartidos: 04D, Innovaciones.xlsx, vendedores.
     Devuelve todo casteado a tipos nativos (jsonify-safe)."""
     out = {}
-    # Sell-Out (con Depósito V20 aparte, paridad con el sell out vivo)
+    # Sell-Out: TODA la venta agrupada (ruta + V20 Depósito) vs objetivo de EMPRESA, igual
+    # criterio que el sell out vivo (/api/gerencia/sellout_litros). categorias ya incluye V20;
+    # `deposito` queda como desglose informativo (ya está sumado en categorias).
     try:
         so_df = _leer_ventas_mes_cacheado(files["ventas_mes"], incluir_deposito=True)
-        out["sellout"] = {
-            "fuente": files["ventas_mes"].name,
-            "filas_ventas_mes": int(len(so_df)),
-        }
-        out["sellout"].update(_sellout_con_deposito(so_df) if not so_df.empty
-                              else {"categorias": [], "deposito": []})
+        if so_df.empty:
+            out["sellout"] = {"fuente": files["ventas_mes"].name, "filas_ventas_mes": 0,
+                              "categorias": [], "deposito": [], "incluye_deposito": True}
+        else:
+            categorias = _sellout_desde_ventas(so_df)             # ruta + V20 vs objetivo
+            dep_df = so_df[so_df["CodVendedor"] == 20]
+            deposito = _sellout_desde_ventas(dep_df) if not dep_df.empty else []
+            for c in deposito:                                    # depósito: sin objetivo propio
+                c["objetivo"], c["alcance_pct"] = None, None
+                for sub in c.get("subcategorias", []):
+                    sub["objetivo"], sub["alcance_pct"] = None, None
+            out["sellout"] = {
+                "fuente": files["ventas_mes"].name,
+                "filas_ventas_mes": int(len(so_df)),
+                "categorias":       categorias,
+                "total_litros":     round(sum(float(c["litros"]) for c in categorias), 1),
+                "incluye_deposito": True,
+                "deposito":         deposito,
+                "total_deposito":   round(sum(float(c["litros"]) for c in deposito), 1),
+            }
     except Exception as e:
         out["sellout"] = {"error": str(e), "categorias": []}
 
@@ -6362,7 +6378,10 @@ def _cierre_extras_versionado(files):
         gcm = _gcm()
         df = _gcm_leer_ventas_cacheado(files["ventas_mes"])
         vn = gcm._leer_vendedores(CONFIG / "vendedores_activos.csv")
-        cod_inov = gcm._leer_innovaciones(INPUTS / "INNOVACIONES" / "Innovaciones.xlsx")
+        # Códigos de innovación desde el loader oficial (mismo que el dashboard: formato
+        # "CODIGO - NOMBRE", 22 productos). El parser viejo gcm._leer_innovaciones quedó en 0
+        # al cambiar el formato del xlsx → ranking marcaba "mejor innovaciones" con 0 clientes.
+        cod_inov = set(_gda().INOV_PRODUCTOS.keys())
 
         ccc_mes = int(df["Cliente"].nunique()) if not df.empty else 0
         prod = {}

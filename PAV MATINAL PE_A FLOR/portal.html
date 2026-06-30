@@ -3789,8 +3789,9 @@ function gCierreMes(p){
               </table>
             </div></div>`;
         }
-        // ── Sell Out (congelado) ──
+        // ── Sell Out (congelado) — toda la venta (ruta + V20 Depósito) vs objetivo de empresa ──
         if(so.length){
+          const soTot=(c.sellout||{}).total_litros, soDepTot=(c.sellout||{}).total_deposito;
           h+=`<div class="card" style="margin-top:14px;">
             <div class="card-hd"><span class="card-title">📦 Sell Out · Litros vs Objetivo</span><span class="chip">${so.length} categorías</span></div>
             <div class="card-body nop">
@@ -3802,30 +3803,32 @@ function gCierreMes(p){
                   <td style="text-align:right;color:var(--text3)">${ct.objetivo?fmtNum(ct.objetivo)+' L':'–'}</td>
                   <td style="text-align:right">${al!=null?`<span class="chip ${avc(al)}" style="font-size:9px;">${al}%</span>`:'<span style="color:var(--text3)">–</span>'}</td>
                   <td style="text-align:right;color:var(--text3)">${fmtNum(ct.clientes)}</td>
-                </tr>`;}).join('')}</tbody>
+                </tr>`;}).join('')}
+                ${soTot!=null?`<tr style="border-top:2px solid var(--bd3);font-weight:700;">
+                  <td>Total (ruta + depósito)</td>
+                  <td style="text-align:right">${fmtNum(soTot)} L</td>
+                  <td colspan="3" style="text-align:right;color:var(--text3);font-weight:400;font-size:10px;">incluye V20 Depósito${soDepTot!=null?' · '+fmtNum(soDepTot)+' L':''}</td>
+                </tr>`:''}</tbody>
               </table>
+              <div style="font-size:10px;color:var(--text3);padding:8px 14px;">📦 Incluye V20 Depósito (venta directa). El objetivo de Sell Out es de la empresa: se agrupa toda la venta (ruta + depósito) contra el objetivo.</div>
             </div></div>`;
         }
-        // ── Depósito V20 (congelado) — venta directa, sin objetivo ──
+        // ── Desglose V20 Depósito (informativo — YA incluido en el total de Sell Out de arriba) ──
         const soDep=((c.sellout||{}).deposito||[]).filter(x=>(x.litros||0)>0)
                       .sort((a,b)=>(b.litros||0)-(a.litros||0));
         if(soDep.length){
-          const soGen=(c.sellout||{}).total_general, soDepTot=(c.sellout||{}).total_deposito;
+          const soDepTot=(c.sellout||{}).total_deposito;
           h+=`<div class="card" style="margin-top:12px;">
-            <div class="card-hd"><span class="card-title">📦 V20 Depósito · venta directa (sin objetivo)</span><span class="chip">${fmtNum(soDepTot)} L</span></div>
+            <div class="card-hd"><span class="card-title">📦 Del cual · V20 Depósito (venta directa)</span><span class="chip">${fmtNum(soDepTot)} L</span></div>
             <div class="card-body nop">
+              <div style="font-size:10px;color:var(--text3);padding:8px 14px 0;">Ya está sumado en el total de Sell Out de arriba. Desglose del depósito (venta directa, sin objetivo propio).</div>
               <table class="tbl" style="font-size:11px;">
                 <thead><tr><th>Categoría</th><th style="text-align:right">Litros</th><th style="text-align:right">Clientes</th></tr></thead>
                 <tbody>${soDep.map(ct=>`<tr>
                   <td style="font-weight:600">${ct.categoria}</td>
                   <td style="text-align:right">${fmtNum(ct.litros)} L</td>
                   <td style="text-align:right;color:var(--text3)">${fmtNum(ct.clientes)}</td>
-                </tr>`).join('')}
-                <tr style="border-top:2px solid var(--bd3);font-weight:700;">
-                  <td>Total ruta + depósito</td>
-                  <td style="text-align:right">${fmtNum(soGen)} L</td>
-                  <td style="text-align:right;color:var(--text3)">–</td>
-                </tr></tbody>
+                </tr>`).join('')}</tbody>
               </table>
             </div></div>`;
         }

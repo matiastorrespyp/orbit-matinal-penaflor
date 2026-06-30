@@ -1,5 +1,16 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-30 - fix(cierre): Sell Out incluye depósito (V20) y ranking de Innovaciones deja de marcar 0 clientes
+
+- Pedido: en el Cierre de Mes (gerencia), (1) la tarjeta de Sell Out debe estar completa incluyendo la venta de depósito (V20); (2) el ranking marca una "mejor vendedora en innovaciones" pero abajo dice 0 clientes — revisarlo.
+- Causa Sell Out: el cierre mostraba `categorias` solo de ruta (vs objetivo) y V20 como bloque aparte. El dashboard ya se había unificado (29/06) agrupando V20 dentro de cada categoría vs objetivo de empresa; el cierre quedó con el criterio viejo.
+- Causa Innovaciones/ranking: `_cierre_extras_versionado` tomaba los códigos de innovación con `gcm._leer_innovaciones` (parser viejo que busca el patrón "000000" en las primeras filas del xlsx). El formato de `Innovaciones.xlsx` cambió a "CODIGO - NOMBRE" → ese parser devolvía **0 códigos** → `_inov_por_vend`/`_inov_detalle` daban 0, pero `_ranking` igual asignaba la etiqueta MEJOR_INNOVACIONES a alguien con 0 clientes.
+- `server_orbit.py` (`_cierre_extras_versionado`):
+  - Sell Out: ahora `categorias = _sellout_desde_ventas(so_df)` con V20 incluido (igual que `/api/gerencia/sellout_litros`); agrega `total_litros`, `incluye_deposito:true` y conserva `deposito`/`total_deposito` como desglose informativo (ya sumado en categorias). Ya NO usa `_sellout_con_deposito` (que separaba ruta vs depósito).
+  - Innovaciones: `cod_inov = set(_gda().INOV_PRODUCTOS.keys())` (loader oficial, 22 productos, mismo que el dashboard) en vez del parser viejo. Esto corrige el detalle de innovaciones Y el ranking (clientes_innovaciones reales).
+- `PAV MATINAL PE_A FLOR/portal.html` (`gCierreMes`): la tarjeta de Sell Out muestra el TOTAL (ruta + depósito) con nota "Incluye V20 Depósito… objetivo de empresa"; el bloque V20 pasó de "Total ruta + depósito" a "Del cual · V20 Depósito (desglose informativo, ya incluido arriba)".
+- Validación (test_client, cierre 2026-06): Sell Out total 56.356,1 L (depósito 11.087 L); categorías con V20 incluido (VINOS DEL AÑO 21.855 L=128,4%, SPIRITS 21.942 L=128,9%, RTD 10.424 L=115,1%, CHAMPAÑA 1.079 L=144,5%, VINOS DE GUARDA 567 L=69,4%, CERVEZA ART. 488 L=114,9%). Innovaciones 19 productos (CAZADOR MALBEC 76, DADA LATA 48, FRIZZE MANXANA 47…). Ranking innovaciones: V8 ALVAREZ VANESA con 115 clientes (antes 0). Recálculo en vivo (no se regeneran archivos del cierre); aplica también a mayo. `py_compile` OK.
+
 ## 2026-06-30 - fix(cierre): el cierre de mes ahora corre de verdad y cada mes aparece en gerencia con selector
 
 - Síntoma: el usuario ejecutó `CIERRE_MES_ORBIT.bat` y "no hizo el cierre". Quería verlo en gerencia → Cierre de Mes con un selector para ir pasando entre meses.
