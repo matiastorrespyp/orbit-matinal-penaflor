@@ -1,5 +1,16 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-30 - feat(cierre): Acciones Comerciales de junio en el cierre (catálogo versionado, esquema nuevo)
+
+- Pedido: registrar el catálogo de reglas de acciones de junio (las Acciones del cierre de junio salían vacías).
+- Diagnóstico: el cierre usaba `_cierre_acciones_versionado` (esquema MAYO: `canal/categoria/accion_grupo` + `_REGLA_CAT_MAP`), pero la fuente real de junio (`01_INPUTS/ACCIONES COMERCIALES/2026-06/...csv`) está en el esquema NUEVO (`canal_aplica/segmento_cliente_aplica/tipo_regla/productos_marcas`, con Planes AASS, 11T, innovaciones, bonificaciones). Forzar junio al esquema mayo habría perdido la mayoría de las acciones. El motor LIVE (`_acciones_mes_payload`) ya entiende el esquema nuevo.
+- Decisión: en vez de hand-craftear un catálogo mayo-schema (infiel), el cierre computa junio con los **helpers oficiales** del motor live, sobre el **ventas_mes congelado** + el **catálogo versionado** que `cerrar_mes.py` ya copia (`01_INPUTS/cierres mes/acciones_<MMAAAA>.csv`). Durable y sin registrar mes a mes.
+- `server_orbit.py`:
+  - Refactor (extract-method): `_acc_preparar_from_df(df)` (cómputo de columnas de acciones, sin I/O) + `_acc_preparar_ventas(nombre)` (lee ventas.csv vivo) + nuevo `_acc_preparar_ventas_mes_versionado(path)` (lee el ventas_mes congelado del cierre, coma/utf-8). Motor live intacto.
+  - Nueva `_cierre_acciones_junio_schema(files, reglas)`: matching con `_acc_seg_canon`/`_acc_subseg_filtro`/`_acc_product_pred` (mismos del live), inversión = valorDescuento×CantBase, totales sobre la unión de líneas (sin doble conteo), gate Plan AS. Devuelve {resumen, detalle} con el shape que ya renderiza el portal.
+  - `_cierre_acciones_versionado`: si no hay catálogo mayo-schema registrado para el mmaaaa, usa el catálogo versionado del cierre (esquema nuevo) → `_cierre_acciones_junio_schema`. Mayo (registrado) sigue por el path mayo.
+- Validación (test_client): cierre 2026-06 → 26 acciones, inversión total **36.131.409** = idéntica a `/api/gerencia/acciones_mes` (motor live), clientes 929. Detalle correcto (SPIRITS 29,4M, Petit Mayoristas 25,5M, Planes AASS, 11T AS, Drop VDA TRAD 791 clientes). Mayo intacto (14 acciones, 14,97M). Motor live de acciones sin cambios (28 acciones, 36,1M). `py_compile` OK.
+
 ## 2026-06-30 - feat(cierre): Sell Out con drill-down (categoría → subcategoría → marcas) y baja de la tarjeta V20 Depósito
 
 - Pedido: en el Cierre de Mes, (1) poder aperturar la tarjeta de Sell Out por sus categorías y marcas; (2) sacar del informe la tarjeta "Del cual · V20 Depósito".

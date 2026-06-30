@@ -3711,30 +3711,13 @@ def _acc_product_pred(rule, all_lineas):
 
 
 _ACC_VENTAS_CACHE = {}
-def _acc_preparar_ventas(nombre="ventas.csv"):
-    """Ventas preparadas para acciones/alertas. Columnas calc: _cli,_vend,_cat,_linea,
-    _seg,_litros,_desc,_imp_neto,_mes (Period), _fcomp, _fcarga.
-    Por defecto lee ventas.csv (MES VIVO). ventas_acumulada.csv (mayo+junio) solo para
-    el comparativo de 'clientes nuevos' del mes anterior; NO usar para alertas."""
-    p = INPUTS / nombre
-    if not p.exists():
-        return pd.DataFrame()
-    try:
-        key = (nombre, os.path.getmtime(p))
-    except OSError:
-        key = (nombre, 0)
-    cached = _ACC_VENTAS_CACHE.get(key)
-    if cached is not None:
-        return cached
-    df = None
-    for enc in ("latin1", "utf-8-sig", "windows-1252"):
-        try:
-            df = pd.read_csv(p, sep=";", encoding=enc, dtype=str, low_memory=False)
-            break
-        except (UnicodeDecodeError, ValueError):
-            continue
+def _acc_preparar_from_df(df):
+    """Computa las columnas de acciones/alertas (_cli,_vend,_cat,_linea,_seg,_subseg,
+    _litros,_desc,_pct,_imp_neto,_cant,_mes,_fcomp,...) a partir de un df crudo de ventas
+    (cualquier fuente: ventas.csv viva o ventas_mes versionado del cierre). Sin caché ni I/O."""
     if df is None or df.empty:
         return pd.DataFrame()
+    df = df.copy()
     df.columns = [c.strip() for c in df.columns]
     if "Empresa" in df.columns:
         df = df[df["Empresa"].astype(str).str.strip() == "Empresa"]
@@ -3780,9 +3763,55 @@ def _acc_preparar_ventas(nombre="ventas.csv"):
     out["_fcarga"] = (pd.to_datetime(df.get("FechaCarga"), dayfirst=True, errors="coerce")
                       .dt.strftime("%d/%m/%Y").fillna(""))
     out = out[(out["_imp_neto"] > 0) & (~out["_vend"].isin(_VENDEDORES_EXCLUIDOS))]
+    return out
+
+
+def _acc_preparar_ventas(nombre="ventas.csv"):
+    """Ventas preparadas para acciones/alertas desde 01_INPUTS/<nombre> (sep=';', mes vivo).
+    Por defecto ventas.csv. ventas_acumulada.csv solo para el comparativo de 'clientes nuevos'."""
+    p = INPUTS / nombre
+    if not p.exists():
+        return pd.DataFrame()
+    try:
+        key = (nombre, os.path.getmtime(p))
+    except OSError:
+        key = (nombre, 0)
+    cached = _ACC_VENTAS_CACHE.get(key)
+    if cached is not None:
+        return cached
+    df = None
+    for enc in ("latin1", "utf-8-sig", "windows-1252"):
+        try:
+            df = pd.read_csv(p, sep=";", encoding=enc, dtype=str, low_memory=False)
+            break
+        except (UnicodeDecodeError, ValueError):
+            continue
+    out = _acc_preparar_from_df(df)
     # cachear por (archivo, mtime); purgar mtimes viejos del mismo archivo
     for k in [k for k in _ACC_VENTAS_CACHE if k[0] == nombre]:
         _ACC_VENTAS_CACHE.pop(k, None)
+    _ACC_VENTAS_CACHE[key] = out
+    return out
+
+
+def _acc_preparar_ventas_mes_versionado(path):
+    """Igual que _acc_preparar_ventas pero sobre el ventas_mes CONGELADO del cierre
+    (01_INPUTS/cierres mes/ventas_mes_<MMAAAA>.csv, sep=',', utf-8-sig). Cacheado por path+mtime."""
+    try:
+        key = ("cierre:" + str(path), os.path.getmtime(path))
+    except OSError:
+        key = ("cierre:" + str(path), 0)
+    cached = _ACC_VENTAS_CACHE.get(key)
+    if cached is not None:
+        return cached
+    df = None
+    for enc in ("utf-8-sig", "latin1", "windows-1252"):
+        try:
+            df = pd.read_csv(path, sep=",", quotechar='"', engine="python", dtype=str, encoding=enc)
+            break
+        except (UnicodeDecodeError, ValueError):
+            continue
+    out = _acc_preparar_from_df(df)
     _ACC_VENTAS_CACHE[key] = out
     return out
 
@@ -6448,9 +6477,94 @@ def _cierre_extras_versionado(files):
     return _to_native(out)
 
 
-# Catálogo de reglas de acciones por período. FASE 2b: versionar por mes en el cierre.
-# Por ahora el único cierre (mayo) usa el catálogo de mayo en 09_CONFIG.
+# Catálogo de reglas de acciones por período (esquema MAYO, en 09_CONFIG). Mayo usa este path.
+# Junio en adelante: el catálogo viaja versionado en 01_INPUTS/cierres mes/acciones_<MMAAAA>.csv
+# (esquema nuevo ACCIONES COMERCIALES) y lo procesa _cierre_acciones_junio_schema.
 _ACC_REGLAS_POR_MMAAAA = {"052026": "reglas_acciones_mayo_2026_orbit.csv"}
+
+
+def _cierre_acciones_junio_schema(files, reglas):
+    """Acciones del cierre con el catálogo en esquema NUEVO (ACCIONES COMERCIALES/<mes>/,
+    p.ej. junio 2026: canal_aplica/segmento_cliente_aplica/tipo_regla/productos_marcas).
+    Reúsa el matching del motor live (_acc_seg_canon/_acc_subseg_filtro/_acc_product_pred)
+    sobre el ventas_mes CONGELADO del cierre. Inversión = valorDescuento × CantBase.
+    Totales sobre la UNIÓN de líneas (sin doble conteo entre acciones). Devuelve
+    {resumen, detalle} jsonify-safe, o None si no hay ventas/catálogo."""
+    v = _acc_preparar_ventas_mes_versionado(files["ventas_mes"])
+    if v.empty or not reglas:
+        return None
+    all_lineas = set(l for l in v["_linea"].dropna().unique() if l and l != "NAN")
+    plan_as_clientes = _acc_plan_as_clientes()
+
+    def _match(r):
+        vends_raw = str(r.get("vendedores_aplica", "")).upper()
+        if "TODOS" in vends_raw:
+            codes = {3, 4, 6, 7, 8, 9, 10}
+        else:
+            codes = {int(_re.sub(r"\D", "", x)) for x in _re.findall(r"V\s*\d+", vends_raw)} & {3, 4, 6, 7, 8, 9, 10}
+        seg_set = _acc_seg_canon(r.get("segmento_cliente_aplica"), r.get("canal_aplica"))
+        sub_allowed = _acc_subseg_filtro(r.get("segmento_cliente_aplica"), r.get("canal_aplica"))
+        pred = _acc_product_pred(r, all_lineas)
+        regla_txt = _acc_norm(" ".join(str(r.get(k, "")) for k in
+                                       ("categoria", "canal_aplica", "segmento_cliente_aplica")))
+        requiere_plan_as = "PLANES AASS" in regla_txt or "PLAN AASS" in regla_txt
+        m = v["_vend"].isin(codes) & v["_seg"].isin(seg_set)
+        if sub_allowed is not None:
+            is_trad = v["_seg"].astype(str).str.upper().eq("TRADICIONAL")
+            sub_ok = v["_subseg"].apply(lambda s: any(tok in s for tok in sub_allowed))
+            m = m & (~is_trad | sub_ok)
+        sub = v[m]
+        if sub.empty:
+            return sub
+        keys = list(zip(sub["_cat"], sub["_linea"], sub["_art"], sub["_marca"], sub["_cod"]))
+        predcache, keep = {}, []
+        for k in keys:
+            if k not in predcache:
+                predcache[k] = bool(pred(*k))
+            keep.append(predcache[k])
+        sub = sub[pd.Series(keep, index=sub.index, dtype=bool)]
+        if requiere_plan_as:
+            sub = sub[pd.to_numeric(sub["_cli"], errors="coerce").isin(plan_as_clientes)]
+        return sub
+
+    detalle, matched_idx, cli_union = [], set(), set()
+    for r in reglas:
+        cur = _match(r)
+        if cur.empty:
+            continue
+        matched_idx |= set(cur.index)
+        cli_ids = set(cur["_cli"].dropna().astype(int))
+        cli_union |= cli_ids
+        cur_desc = cur[cur["_desc"] > 0]
+        tipo_raw = str(r.get("tipo_regla", "")).upper()
+        tipo = "Sin cargo" if ("SIN_CARGO" in tipo_raw or "BONIFIC" in tipo_raw) else "Descuento"
+        nombre = (str(r.get("observaciones", "")).strip().split(".")[0]
+                  or str(r.get("id_accion", "")).strip()
+                  or f"{r.get('canal_aplica', '')}|{r.get('categoria', '')}")
+        detalle.append({
+            "nombre":       nombre[:80],
+            "tipo":         tipo,
+            "canal":        str(r.get("canal_aplica", "")).strip(),
+            "categoria":    str(r.get("categoria", "")).strip().upper(),
+            "descuento":    (str(r.get("descuento_pct", "")).strip() + "%") if str(r.get("descuento_pct", "")).strip() else "–",
+            "litros":       round(float(cur["_litros"].sum()), 1),
+            "inversion":    round(float(cur_desc["_desc"].sum()), 0),
+            "importe_neto": round(float(cur["_imp_neto"].sum()), 0),
+            "clientes":     int(len(cli_ids)),
+        })
+    if not detalle:
+        return None
+    detalle.sort(key=lambda a: -a["inversion"])
+    uni = v.loc[v.index.isin(matched_idx)]
+    uni_desc = uni[uni["_desc"] > 0]
+    resumen = {
+        "total_acciones":     len(detalle),
+        "inversion_total":    round(float(uni_desc["_desc"].sum()), 0),
+        "importe_neto":       round(float(uni["_imp_neto"].sum()), 0),
+        "clientes_afectados": int(len(cli_union)),
+    }
+    return _to_native({"resumen": resumen, "detalle": detalle[:10],
+                       "fuente": files["ventas_mes"].name, "catalogo": f"acciones_{files.get('mmaaaa', '')}.csv"})
 
 
 def _cierre_acciones_versionado(files):
@@ -6461,6 +6575,17 @@ def _cierre_acciones_versionado(files):
     (no el xlsx de 19MB). Devuelve {resumen, detalle} jsonify-safe, o None si no hay catálogo/ventas."""
     reglas_name = _ACC_REGLAS_POR_MMAAAA.get(files.get("mmaaaa", ""))
     if not reglas_name:
+        # Sin catálogo mayo-schema registrado: usar el catálogo versionado del cierre
+        # (esquema nuevo ACCIONES COMERCIALES, p.ej. junio) sobre el ventas_mes congelado.
+        acc_path = CIERRES_MES_DIR / f"acciones_{files.get('mmaaaa', '')}.csv"
+        if acc_path.exists():
+            try:
+                rdf = pd.read_csv(acc_path, sep=";", encoding="utf-8-sig", dtype=str)
+                rdf.columns = [c.strip() for c in rdf.columns]
+                if "canal_aplica" in rdf.columns:
+                    return _cierre_acciones_junio_schema(files, rdf.to_dict("records"))
+            except Exception:
+                return None
         return None
     reglas_path = CONFIG / reglas_name
     if not reglas_path.exists():

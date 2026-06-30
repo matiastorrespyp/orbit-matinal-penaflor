@@ -16,9 +16,10 @@
 - [x] Mejor en VOLUMEN del cierre ahora por alcance del objetivo mensual (no litros+dinero), solo ese ganador; score general intacto. `_cierre_ranking_payload(avance_map)`. Junio→V4 181,8%, mayo→V3 144,9%.
 - [x] Sell Out del cierre con drill-down por categoría → subcategoría → marcas → varietales (`_renderCierreSellout`, espejo del dashboard). Se quitó la tarjeta "Del cual · V20 Depósito" (sigue sumado en el total).
 
+- [x] Acciones Comerciales de junio en el cierre: RESUELTO. El catálogo viaja versionado (`01_INPUTS/cierres mes/acciones_<MMAAAA>.csv`, que cerrar_mes.py ya copia) y el server lo procesa con `_cierre_acciones_junio_schema` (esquema nuevo, helpers del motor live, sobre ventas_mes congelado). Junio: 26 acciones, inversión 36,1M (= motor live). Mayo intacto. Ya NO hace falta registrar mes a mes en `_ACC_REGLAS_POR_MMAAAA`.
+
 ### PENDIENTE
-- [ ] Acciones Comerciales de junio salen vacías: registrar el catálogo de reglas del mes en `_ACC_REGLAS_POR_MMAAAA` (hoy solo "052026"). FASE 2b.
-- [ ] Verificar en Render (gerencia → Cierre de Mes, mes 2026-06): tarjeta Sell Out con total incluido depósito + ranking con clientes de innovaciones reales.
+- [ ] Verificar en Render (gerencia → Cierre de Mes, mes 2026-06): tarjeta Sell Out con total incluido depósito, ranking con innovaciones reales, drill-down de Sell Out y tarjeta de Acciones Comerciales con datos.
 
 ## Sesion 2026-06-30 - feat(gerencia): Innovaciones con total de cobertura del mes (HECHO, sin commitear)
 
