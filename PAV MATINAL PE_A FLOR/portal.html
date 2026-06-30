@@ -3668,7 +3668,93 @@ function gCierreMes(p){
       const cs=j.cierres||[];
       if(!cs.length){ cont.innerHTML=`<div class="card"><div class="card-body"><div class="empty"><div class="eico" style="font-size:28px">🗄️</div><p>Sin cierres mensuales históricos generados.</p></div></div></div>`; return; }
       let sel=0;  // cs viene ordenado desc por (periodo,version): [0] = más reciente
+      // ── Sell Out del cierre con drill-down (categoría → subcategoría → marcas → varietales) ──
+      const fmtL=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
+      const alcCol=p=>p>=100?'ok':p>=60?'wn':'bd';
+      let soCExp=new Set(), soCMExp=new Set();
+      function _soCMarcas(marcas,kp){
+        let mh=`<div style="display:flex;flex-wrap:wrap;gap:4px;">`;
+        marcas.forEach((m,mi)=>{
+          const hasV=(m.varietales||[]).length>0, mk=kp+'-'+mi, mexp=soCMExp.has(mk);
+          mh+=`<span ${hasV?`onclick="window._soCMTog('${mk}')" `:''}style="font-size:9px;background:var(--surf2);border-radius:4px;padding:2px 7px;color:var(--text2);cursor:${hasV?'pointer':'default'};">${hasV?(mexp?'▾ ':'▸ '):''}${m.marca} <b style="color:var(--text)">${fmtL(m.litros)}L</b></span>`;
+        });
+        mh+=`</div>`;
+        marcas.forEach((m,mi)=>{
+          const mk=kp+'-'+mi;
+          if(soCMExp.has(mk)&&(m.varietales||[]).length){
+            mh+=`<div style="margin:5px 0 2px 10px;border-left:2px solid var(--bd3);padding-left:8px;">
+              ${m.varietales.map(vv=>`<div style="display:flex;justify-content:space-between;gap:12px;max-width:360px;font-size:9px;color:var(--text2);padding:1px 0;"><span>${vv.nombre}</span><b style="color:var(--text);font-variant-numeric:tabular-nums">${fmtL(vv.litros)} L</b></div>`).join('')}
+            </div>`;
+          }
+        });
+        return mh;
+      }
+      window._soCTog=function(ci){soCExp.has(ci)?soCExp.delete(ci):soCExp.add(ci);_renderCierreSellout();};
+      window._soCMTog=function(mk){soCMExp.has(mk)?soCMExp.delete(mk):soCMExp.add(mk);_renderCierreSellout();};
+      function _renderCierreSellout(){
+        const box=document.getElementById('cierre-sellout'); if(!box) return;
+        const c=cs[sel]||cs[0]; const so=c.sellout||{}; const data=so.categorias||[];
+        if(!data.length){ box.innerHTML=''; return; }
+        let sH=`<div class="card"><div class="card-hd">
+          <span class="card-title">📦 Sell Out · Litros vs Objetivo</span>
+          <span class="chip">${data.length} categorías</span>
+        </div><div class="card-body nop"><table class="tbl" style="font-size:11px;">
+          <thead><tr><th>Categoría</th><th style="text-align:right">Real (L)</th><th style="text-align:right">Objetivo</th><th style="text-align:right">Faltan (L)</th><th style="text-align:right">Avance</th><th style="text-align:right">Clientes</th></tr></thead><tbody>`;
+        data.forEach((ct,ci)=>{
+          const hasAlc=ct.alcance_pct!=null, cl=hasAlc?alcCol(ct.alcance_pct):'', barW=hasAlc?Math.min(Math.round(ct.alcance_pct),100):0;
+          const exp=soCExp.has(ci), hasSubs=(ct.subcategorias||[]).length>0, hasMarcas=(ct.marcas||[]).length>0, canExp=hasSubs||hasMarcas;
+          const falta=ct.objetivo!=null?Math.max(ct.objetivo-ct.litros,0):null;
+          const faltaTxt=ct.objetivo==null?`<span style="color:var(--text3)">–</span>`:(falta<=0?`<span style="color:var(--ok)">✓ 0 L</span>`:`${fmtL(falta)} L`);
+          sH+=`<tr style="cursor:${canExp?'pointer':'default'}" onclick="window._soCTog(${ci})">
+            <td><b>${canExp?`<span style="font-size:10px;opacity:.45;margin-right:4px">${exp?'▼':'▶'}</span>`:''}${ct.categoria}</b></td>
+            <td style="text-align:right;font-variant-numeric:tabular-nums">${fmtL(ct.litros)} L</td>
+            <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--text3)">${ct.objetivo!=null?fmtL(ct.objetivo)+' L':'–'}</td>
+            <td style="text-align:right;font-variant-numeric:tabular-nums">${faltaTxt}</td>
+            <td style="text-align:right">${hasAlc?`<div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;"><div class="bar" style="height:4px;width:60px;"><div class="bar-f ${cl}" style="width:${barW}%"></div></div><span class="chip ${cl}" style="font-size:10px;padding:1px 5px;">${ct.alcance_pct.toFixed(1)}%</span></div>`:`<span style="color:var(--text3)">–</span>`}</td>
+            <td style="text-align:right">${fmtNum(ct.clientes)}</td>
+          </tr>`;
+          if(exp){
+            if(hasSubs){
+              (ct.subcategorias||[]).forEach((s,si)=>{
+                const sHasAlc=s.alcance_pct!=null, scl=sHasAlc?alcCol(s.alcance_pct):'', sBarW=sHasAlc?Math.min(Math.round(s.alcance_pct),100):0;
+                const sFalta=s.objetivo!=null?Math.max(s.objetivo-s.litros,0):null;
+                const sFaltaTxt=s.objetivo==null?'–':(sFalta<=0?`<span style="color:var(--ok)">✓ 0 L</span>`:`${fmtL(sFalta)} L`);
+                sH+=`<tr style="background:rgba(255,255,255,.02)">
+                  <td style="padding-left:22px;color:var(--text3);font-size:11px;">↳ ${s.nombre}</td>
+                  <td style="text-align:right;font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums">${fmtL(s.litros)} L</td>
+                  <td style="text-align:right;font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums">${s.objetivo!=null?fmtL(s.objetivo)+' L':'–'}</td>
+                  <td style="text-align:right;font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums">${sFaltaTxt}</td>
+                  <td style="text-align:right;font-size:11px">${sHasAlc?`<div style="display:flex;align-items:center;gap:4px;justify-content:flex-end;"><div class="bar" style="height:3px;width:40px;"><div class="bar-f ${scl}" style="width:${sBarW}%"></div></div><span class="chip ${scl}" style="font-size:9px;padding:1px 4px;">${s.alcance_pct.toFixed(1)}%</span></div>`:`<span style="color:var(--text3)">–</span>`}</td>
+                  <td style="text-align:right;font-size:11px;color:var(--text3)">${fmtNum(s.clientes)}</td>
+                </tr>`;
+                if((s.marcas||[]).length){
+                  sH+=`<tr><td colspan="6" style="padding:4px 14px 8px 36px;background:rgba(255,255,255,.01);">${_soCMarcas(s.marcas,'m'+ci+'-'+si)}</td></tr>`;
+                }
+              });
+            } else if(hasMarcas){
+              sH+=`<tr><td colspan="6" style="padding:4px 14px 8px 22px;background:rgba(255,255,255,.01);">${_soCMarcas(ct.marcas,'mc'+ci)}</td></tr>`;
+            }
+          }
+        });
+        const totReal=so.total_litros!=null?so.total_litros:data.reduce((a,x)=>a+(x.litros||0),0);
+        const totObj=data.reduce((a,x)=>a+(x.objetivo||0),0);
+        const totFalta=data.reduce((a,x)=>a+(x.objetivo!=null?Math.max(x.objetivo-x.litros,0):0),0);
+        const totAlc=totObj?totReal/totObj*100:null, tcl=totAlc!=null?alcCol(totAlc):'', tBarW=totAlc!=null?Math.min(Math.round(totAlc),100):0;
+        sH+=`<tr style="border-top:2px solid var(--bd3);background:rgba(255,255,255,.03);font-weight:700;">
+          <td><b>TOTAL (ruta + depósito)</b></td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums">${fmtL(totReal)} L</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums">${fmtL(totObj)} L</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums">${totFalta<=0?`<span style="color:var(--ok)">✓ 0 L</span>`:fmtL(totFalta)+' L'}</td>
+          <td style="text-align:right">${totAlc!=null?`<div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;"><div class="bar" style="height:4px;width:60px;"><div class="bar-f ${tcl}" style="width:${tBarW}%"></div></div><span class="chip ${tcl}" style="font-size:10px;padding:1px 5px;">${totAlc.toFixed(1)}%</span></div>`:`<span style="color:var(--text3)">–</span>`}</td>
+          <td style="text-align:right;color:var(--text3)">–</td>
+        </tr>`;
+        sH+=`</tbody></table>`;
+        sH+=`<div style="font-size:9px;color:var(--text3);padding:5px 12px 7px;">📦 Incluye V20 Depósito (venta directa)${so.total_deposito!=null?' · '+fmtL(so.total_deposito)+' L':''}. El objetivo de Sell Out es de la empresa. Clic en una categoría para abrir subcategorías y marcas.</div>`;
+        sH+=`</div></div>`;
+        box.innerHTML=sH;
+      }
       function _render(){
+        soCExp.clear(); soCMExp.clear();
         const c=cs[sel]||cs[0];
         const m=c.manifest||{};
         const e=c.empresa||{};
@@ -3789,49 +3875,10 @@ function gCierreMes(p){
               </table>
             </div></div>`;
         }
-        // ── Sell Out (congelado) — toda la venta (ruta + V20 Depósito) vs objetivo de empresa ──
-        if(so.length){
-          const soTot=(c.sellout||{}).total_litros, soDepTot=(c.sellout||{}).total_deposito;
-          h+=`<div class="card" style="margin-top:14px;">
-            <div class="card-hd"><span class="card-title">📦 Sell Out · Litros vs Objetivo</span><span class="chip">${so.length} categorías</span></div>
-            <div class="card-body nop">
-              <table class="tbl" style="font-size:11px;">
-                <thead><tr><th>Categoría</th><th style="text-align:right">Litros</th><th style="text-align:right">Objetivo</th><th style="text-align:right">Avance</th><th style="text-align:right">Clientes</th></tr></thead>
-                <tbody>${so.map(ct=>{const al=ct.alcance_pct;return `<tr>
-                  <td style="font-weight:600">${ct.categoria}</td>
-                  <td style="text-align:right">${fmtNum(ct.litros)} L</td>
-                  <td style="text-align:right;color:var(--text3)">${ct.objetivo?fmtNum(ct.objetivo)+' L':'–'}</td>
-                  <td style="text-align:right">${al!=null?`<span class="chip ${avc(al)}" style="font-size:9px;">${al}%</span>`:'<span style="color:var(--text3)">–</span>'}</td>
-                  <td style="text-align:right;color:var(--text3)">${fmtNum(ct.clientes)}</td>
-                </tr>`;}).join('')}
-                ${soTot!=null?`<tr style="border-top:2px solid var(--bd3);font-weight:700;">
-                  <td>Total (ruta + depósito)</td>
-                  <td style="text-align:right">${fmtNum(soTot)} L</td>
-                  <td colspan="3" style="text-align:right;color:var(--text3);font-weight:400;font-size:10px;">incluye V20 Depósito${soDepTot!=null?' · '+fmtNum(soDepTot)+' L':''}</td>
-                </tr>`:''}</tbody>
-              </table>
-              <div style="font-size:10px;color:var(--text3);padding:8px 14px;">📦 Incluye V20 Depósito (venta directa). El objetivo de Sell Out es de la empresa: se agrupa toda la venta (ruta + depósito) contra el objetivo.</div>
-            </div></div>`;
-        }
-        // ── Desglose V20 Depósito (informativo — YA incluido en el total de Sell Out de arriba) ──
-        const soDep=((c.sellout||{}).deposito||[]).filter(x=>(x.litros||0)>0)
-                      .sort((a,b)=>(b.litros||0)-(a.litros||0));
-        if(soDep.length){
-          const soDepTot=(c.sellout||{}).total_deposito;
-          h+=`<div class="card" style="margin-top:12px;">
-            <div class="card-hd"><span class="card-title">📦 Del cual · V20 Depósito (venta directa)</span><span class="chip">${fmtNum(soDepTot)} L</span></div>
-            <div class="card-body nop">
-              <div style="font-size:10px;color:var(--text3);padding:8px 14px 0;">Ya está sumado en el total de Sell Out de arriba. Desglose del depósito (venta directa, sin objetivo propio).</div>
-              <table class="tbl" style="font-size:11px;">
-                <thead><tr><th>Categoría</th><th style="text-align:right">Litros</th><th style="text-align:right">Clientes</th></tr></thead>
-                <tbody>${soDep.map(ct=>`<tr>
-                  <td style="font-weight:600">${ct.categoria}</td>
-                  <td style="text-align:right">${fmtNum(ct.litros)} L</td>
-                  <td style="text-align:right;color:var(--text3)">${fmtNum(ct.clientes)}</td>
-                </tr>`).join('')}</tbody>
-              </table>
-            </div></div>`;
-        }
+        // ── Sell Out (congelado) — drill-down por categoría → subcategoría → marcas/varietales.
+        //    Se renderiza aparte en #cierre-sellout (ver _renderCierreSellout) para soportar el
+        //    aperturado interactivo. Incluye V20 Depósito en el total (sin tarjeta aparte). ──
+        h+=`<div id="cierre-sellout" style="margin-top:14px;"></div>`;
         // ── Planes AS (congelado) ──
         if(pasR.clientes){
           h+=`<div class="card" style="margin-top:14px;">
@@ -3917,6 +3964,7 @@ function gCierreMes(p){
         }
         h+=`</div></div>`;
         cont.innerHTML=h;
+        _renderCierreSellout();   // pinta la tarjeta de Sell Out con drill-down en #cierre-sellout
       }
       window._cierreHistSel=function(i){ sel=parseInt(i,10)||0; _render(); };
       _render();

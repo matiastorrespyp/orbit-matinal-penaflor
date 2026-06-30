@@ -1,5 +1,13 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-30 - feat(cierre): Sell Out con drill-down (categoría → subcategoría → marcas) y baja de la tarjeta V20 Depósito
+
+- Pedido: en el Cierre de Mes, (1) poder aperturar la tarjeta de Sell Out por sus categorías y marcas; (2) sacar del informe la tarjeta "Del cual · V20 Depósito".
+- La data ya traía todo: `_sellout_desde_ventas` devuelve `categorias[].subcategorias[].marcas[].varietales[]` y `categorias[].marcas[]`. No hubo cambios de backend para esto (el sell-out del cierre ya incluye V20 en el total).
+- `PAV MATINAL PE_A FLOR/portal.html` (`_renderCierreHistorico`): el Sell Out del cierre pasó de tabla estática a un sub-componente interactivo `_renderCierreSellout` (placeholder `#cierre-sellout`), espejo del drill-down del dashboard (`_renderSoDash`): clic en categoría abre subcategorías (Alto/Medio/Nacionales/Importados/RTD/RTD(S)) con su avance, y dentro las marcas; clic en marca abre varietales (SKUs). Estado `soCExp`/`soCMExp` (se resetea al cambiar de mes), toggles `window._soCTog`/`_soCMTog`. Fila TOTAL (ruta + depósito) con avance vs objetivo de empresa y nota "Incluye V20 Depósito".
+- Se eliminó la tarjeta "Del cual · V20 Depósito (venta directa)" del informe del cierre (el depósito sigue sumado en el total; `total_deposito` se muestra en la nota).
+- Validación: `node --check` del JS del portal OK; test_client cierre 2026-06 → categorías con subcategorías y marcas con varietales (VINOS DEL AÑO 4 subs/22 marcas, SPIRITS Nacionales 21.160 L/Importados 781 L, RTD/RTD(S), marcas con SKUs ej. Smirnoff 17.460 L/5 varietales). Total 56.356 L (depósito 11.087 L).
+
 ## 2026-06-30 - feat(cierre): 'mejor vendedor en volumen' se determina por alcance del objetivo mensual
 
 - Pedido: cambiar la forma de determinar el mejor vendedor en volumen en el Cierre de Mes; que sea por el ALCANCE DE SU OBJETIVO MENSUAL (avance % = acumulado/objetivo), no por litros+dinero vendidos.
