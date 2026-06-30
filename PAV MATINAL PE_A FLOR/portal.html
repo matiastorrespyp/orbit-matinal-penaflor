@@ -1971,7 +1971,7 @@ function renderClienteBuscador(cont,scope){
         <input id="cli-q-${scope}" placeholder="Buscar por nombre, codigo o localidad" onkeydown="if(event.key==='Enter')clienteBuscar('${scope}')" style="flex:1;min-width:220px;padding:11px 12px;border-radius:8px;border:1px solid var(--bs);background:var(--surf2);color:var(--text);">
         <button class="g-ghost" onclick="clienteBuscar('${scope}')">Buscar</button>
       </div>
-      <div class="xs" style="color:var(--text3);margin-top:8px;">${vend?'Solo cartera '+vend:'Cartera completa sin V2/V5/V20'}.</div>
+      <div class="xs" style="color:var(--text3);margin-top:8px;">${vend?'Solo cartera '+vend:'Cartera completa + Depósito (V1), sin V2/V5'}.</div>
     </div></div>
     <div id="cli-res-${scope}" style="margin-top:12px;"></div>
     <div id="cli-card-${scope}" style="margin-top:12px;"></div>`;

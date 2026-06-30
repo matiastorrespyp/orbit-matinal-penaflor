@@ -1,5 +1,15 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-06-30 - feat(gerencia): pantalla de Clientes incluye el Depósito (codven=1)
+
+- Pedido: en gerencia → pantalla de Clientes poder seleccionar TODOS los clientes, incluidos los del depósito. En `clientes.xlsx` el depósito figura como `codven=1` (no 20).
+- Causa: `_clientes_maestro()` excluía `_VENDEDORES_EXCLUIDOS = {1,2,5,20}`, así que los 29 clientes del depósito (codven=1) no aparecían en el buscador.
+- `server_orbit.py` (`_clientes_maestro`): nuevo parámetro `incluir_deposito=False`. El caché ahora guarda el maestro completo y el filtro de excluidos se aplica al retornar; con `incluir_deposito=True` solo se excluyen 2/5/20 (conserva codven=1). Por defecto sigue excluyendo el depósito → cobertura, planes AS y demás métricas con objetivo intactas.
+- `server_orbit.py` (`clientes_buscar`, `cliente_ficha`): pasan `incluir_deposito=True` — son las dos rutas de la pantalla de Clientes (búsqueda + ficha). El resto de callers (cobertura, planes_as join, alertas V3) quedan en el default.
+- `PAV MATINAL PE_A FLOR/portal.html`: la nota del buscador (sin vendedor) ahora dice "Cartera completa + Depósito (V1), sin V2/V5".
+- Regla de negocio respetada: el depósito sigue EXCLUIDO de toda métrica con objetivo; solo se lo deja seleccionar/ver en la pantalla de Clientes. Los clientes del depósito muestran chip "V1" (así viene el dato en el maestro).
+- Validación: `_clientes_maestro()` → 2097 clientes (codven 3..10, sin depósito); `_clientes_maestro(incluir_deposito=True)` → 2126 (incluye los 29 de codven=1, ej. #100000 DELFIN S.A.).
+
 ## 2026-06-29 - feat(gerencia): Sell Out agrupa toda la venta de la empresa (incluye V20) vs objetivo
 
 - Pedido (cambio de criterio): el objetivo de Sell Out es de la EMPRESA, independiente del vendedor que vende. La tarjeta debe estar unificada y AGRUPAR toda la venta (ruta + V20 Depósito) contra el objetivo, no mostrar V20 como bloque aparte sin objetivo.

@@ -1193,8 +1193,13 @@ def clientes():
 
 _CLIENTES_MAESTRO_CACHE = {}
 
-def _clientes_maestro():
-    """Cartera real desde clientes.xlsx, sin vendedores excluidos."""
+def _clientes_maestro(incluir_deposito=False):
+    """Cartera real desde clientes.xlsx, sin vendedores excluidos.
+
+    En el maestro el Depósito (V20 en ventas) figura como codven=1 y por defecto
+    queda excluido como el resto de las métricas con objetivo. incluir_deposito=True
+    lo conserva SOLO para la pantalla de Clientes de gerencia (buscar/ficha); no
+    afecta cobertura, planes AS ni ninguna métrica con objetivo."""
     p = INPUTS / "clientes.xlsx"
     if not p.exists():
         return pd.DataFrame()
@@ -1203,24 +1208,24 @@ def _clientes_maestro():
     except OSError:
         key = 0
     df = _CLIENTES_MAESTRO_CACHE.get(key)
-    if df is not None:
-        return df
-    try:
-        df = pd.read_excel(p)
-    except Exception:
-        return pd.DataFrame()
-    df.columns = [str(c).strip() for c in df.columns]
-    if "Codigo" not in df.columns:
-        return pd.DataFrame()
-    df["_cliente_id"] = pd.to_numeric(df["Codigo"], errors="coerce")
-    df["_vend"] = pd.to_numeric(df.get("codven"), errors="coerce")
-    df = df.dropna(subset=["_cliente_id"])
-    df = df[~df["_vend"].isin(_VENDEDORES_EXCLUIDOS)].copy()
-    df["_cliente_id"] = df["_cliente_id"].astype(int)
-    df["_vend_id"] = df["_vend"].apply(lambda x: f"V{int(x)}" if pd.notna(x) else "")
-    _CLIENTES_MAESTRO_CACHE.clear()
-    _CLIENTES_MAESTRO_CACHE[key] = df
-    return df
+    if df is None:
+        try:
+            df = pd.read_excel(p)
+        except Exception:
+            return pd.DataFrame()
+        df.columns = [str(c).strip() for c in df.columns]
+        if "Codigo" not in df.columns:
+            return pd.DataFrame()
+        df["_cliente_id"] = pd.to_numeric(df["Codigo"], errors="coerce")
+        df["_vend"] = pd.to_numeric(df.get("codven"), errors="coerce")
+        df = df.dropna(subset=["_cliente_id"]).copy()
+        df["_cliente_id"] = df["_cliente_id"].astype(int)
+        df["_vend_id"] = df["_vend"].apply(lambda x: f"V{int(x)}" if pd.notna(x) else "")
+        _CLIENTES_MAESTRO_CACHE.clear()
+        _CLIENTES_MAESTRO_CACHE[key] = df
+    # Depósito = codven 1; el resto de excluidos (2/5/20) nunca se muestran.
+    excluir = _VENDEDORES_EXCLUIDOS - {1} if incluir_deposito else _VENDEDORES_EXCLUIDOS
+    return df[~df["_vend"].isin(excluir)].copy()
 
 
 _CLIENTE_VENTAS_CACHE = {}
@@ -1287,7 +1292,7 @@ def clientes_buscar():
         limit = min(max(int(request.args.get("limit", 20)), 1), 50)
     except Exception:
         limit = 20
-    df = _clientes_maestro()
+    df = _clientes_maestro(incluir_deposito=True)
     if df.empty:
         return jsonify([])
     if vend:
@@ -1304,7 +1309,7 @@ def clientes_buscar():
 @app.route("/api/clientes/<int:cliente_id>/ficha")
 def cliente_ficha(cliente_id):
     vend = normalizar_vendedor_codigo(request.args.get("vendedor") or "")
-    cli = _clientes_maestro()
+    cli = _clientes_maestro(incluir_deposito=True)
     if cli.empty:
         return jsonify({"error": "clientes.xlsx no disponible"}), 404
     row_df = cli[cli["_cliente_id"] == int(cliente_id)]

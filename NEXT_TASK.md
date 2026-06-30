@@ -1,5 +1,15 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-06-30 - feat(gerencia): Clientes incluye Depósito (codven=1) (HECHO, sin commitear)
+
+### HECHO
+- [x] `_clientes_maestro(incluir_deposito=False)` + `clientes_buscar`/`cliente_ficha` con `incluir_deposito=True`. Depósito (codven=1, 29 clientes) ahora seleccionable en la pantalla de Clientes de gerencia. Métricas con objetivo sin cambios.
+- [x] Validado en local (2097 sin depósito / 2126 con depósito). Ver CHANGELOG_AI 2026-06-30.
+
+### PENDIENTE
+- [ ] Probar en el portal vivo (server 8502): buscar un cliente del depósito y abrir su ficha. (¿Reiniciar server / deploy a Render cuando el usuario lo pida.)
+- [ ] Opcional UX: ¿mostrar el chip como "Depósito" en vez de "V1"? No pedido; dejar como está salvo que se solicite.
+
 ## Sesion 2026-06-29 - feat(FARO): premios (millas) + métrica Antares por SKU (HECHO, sin commitear)
 
 ### HECHO
