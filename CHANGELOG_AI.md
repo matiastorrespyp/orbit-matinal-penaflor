@@ -1,5 +1,19 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-01 - feat(portal): botón "Plan Frizze" (On Premise Noche · 3+1 misma variedad) en gerencia y vendedor
+
+- Pedido: botón "Plan Frizze" debajo de Incentivo FARO. Por cada cliente del plan una tarjeta con código, nombre, dirección, localidad, sub canal, vendedor y ventas por marca (litros y $) + sin cargos enviados; clic en el sin cargo → fecha de facturación; alerta si el sin cargo enviado es de otra variedad que la facturada (el 3+1 debe ser de la misma variedad). En gerencia (todos) y vendedor (solo los que tienen cliente con el plan).
+- Fuentes reales (sin hardcode / sin mock):
+  - Definición del plan (clientes 301/1443, códigos 14583 Frizze Blue New / 14619 Frizze Bubble Mood, mecánica) se **parsea de `01_INPUTS/PLAN FRIZZE/planfrizze.xlsx`** (el archivo que agregó el usuario) — fuente única y editable.
+  - Ficha del cliente ← `clientes.xlsx` (SubSegmento = sub canal). 1443 NO está en el maestro → sus campos muestran "Dato no disponible".
+  - Ventas $/litros ← `ventas.csv` (mes vivo), líneas `ImporteNetoItem>0` de los 2 códigos; litros = CantBase × Lts/caja del maestro 04D (ambos 6 L/caja).
+  - Sin cargos ← líneas 100% desc (`ImporteNetoItem==0`) de los 2 códigos; fecha = FechaComprobante (regla de facturación).
+  - Alerta = sin cargo de una variedad sin compra de esa misma variedad.
+- `server_orbit.py`: `_plan_frizze_config()` (parser del xlsx, cacheado por mtime) + `_plan_frizze_clientes()` (arma tarjetas en vivo, reusa `_cargar_maestro_04D` para litros y `_ventas_parsed` cacheado). Endpoints nuevos `GET /api/gerencia/plan_frizze` y `GET /api/vendedor/<vid>/plan_frizze` (este filtra a los clientes del vendedor). Aditivo: no toca Planes AS, FARO, ni el pipeline de datasets/BAT.
+- `PAV MATINAL PE_A FLOR/portal.html`: botón en menú gerencia (bajo Incentivo FARO) + tab vendedor (bajo FARO, se muestra sólo si el vendedor tiene cliente del plan, decidido en `vPlanFrizze()` tras cargar datos). Render `_pfRender`/`_pfHeader`/`_pfClienteCard` (cabecera con las 2 imágenes de producto sobre banner degradé azul→violeta + tarjetas por cliente) y desplegable `verSincargoFrizze` (fecha de facturación por marca). CSS `.pf-*` con tokens del sistema (--surf/--b/--wn/--ok/--f-dis).
+- Imágenes: `frizze_blue.jpg` / `frizze_bubble.jpg` copiadas a la carpeta del frontend (servidas por la ruta estática existente).
+- Validación: endpoints por test_client y en vivo (8502) → gerencia 2 clientes, V8 1 (cliente 301), V4 0. Alerta probada con datos reales (cliente 2353: sin cargo Blue sin compra Blue → alerta correcta + fechas). `node --check` del JS OK. Screenshots reales gerencia + vendedor V8 (login real): cabecera, tarjetas, "Dato no disponible" para 1443, y tab "FRIZZE" visible en la barra del vendedor. Datos en 0 para 301/1443 porque aún no hay ventas Frizze del mes vivo (poblará en julio). Emoji 🥂 (🫧 salía como cuadro en Win10).
+
 ## 2026-06-30 - feat(cierre): Acciones Comerciales de junio en el cierre (catálogo versionado, esquema nuevo)
 
 - Pedido: registrar el catálogo de reglas de acciones de junio (las Acciones del cierre de junio salían vacías).

@@ -5632,6 +5632,174 @@ def vendedor_incentivo_faro(vid):
     }))
 
 
+# ====== PLAN FRIZZE (On Premise Noche · 3+1 misma variedad) ======
+_PLAN_FRIZZE_CFG_CACHE = {}
+_PF_IMG = {"BLUE": "/frizze_blue.jpg", "BUBBLE": "/frizze_bubble.jpg"}
+
+def _plan_frizze_config():
+    """Definición del Plan Frizze desde 01_INPUTS/PLAN FRIZZE/planfrizze.xlsx (fuente
+    única, editable). Parsea clientes activos, productos (código+variedad) y mecánica del
+    texto del Excel — sin hardcodear códigos ni clientes. Devuelve None si falta la fuente."""
+    import re as _re, unicodedata as _ud
+    path = INPUTS / "PLAN FRIZZE" / "planfrizze.xlsx"
+    if not path.exists():
+        return None
+    try:
+        key = os.path.getmtime(path)
+    except OSError:
+        key = 0
+    cached = _PLAN_FRIZZE_CFG_CACHE.get(key)
+    if cached is not None:
+        return cached
+    try:
+        raw = pd.read_excel(path, header=None)
+    except Exception as e:
+        print(f"[WARN] plan_frizze config: {e}")
+        return None
+
+    def _norm(s):
+        return _ud.normalize("NFKD", str(s)).encode("ascii", "ignore").decode().lower()
+
+    lineas = [str(x).strip() for row in raw.values.tolist() for x in row if pd.notna(x)]
+    nombre = lineas[0] if lineas else "Plan Frizze"
+    clientes, productos = [], []
+    for ln in lineas:
+        n = _norm(ln)
+        if "clientes activos" in n:
+            clientes = [int(x) for x in _re.findall(r"\d+", ln.split(":", 1)[-1])]
+        if "productos que entran" in n or "codigos productos" in n:
+            for cod, lab in _re.findall(r"\((\d+)\)\s*([^,]+)", ln):
+                lab = lab.strip()
+                nl = _norm(lab)
+                var = "BLUE" if "blue" in nl else ("BUBBLE" if "bubble" in nl else lab.upper())
+                productos.append({"codigo": str(cod), "label": lab.title(),
+                                  "variedad": var, "img": _PF_IMG.get(var, "")})
+    if not clientes or not productos:
+        return None
+    cfg = {"nombre": nombre, "mecanica": "3+1 misma variedad", "tope_combos": 3,
+           "clientes": clientes, "productos": productos, "fuente": path.name}
+    _PLAN_FRIZZE_CFG_CACHE.clear()
+    _PLAN_FRIZZE_CFG_CACHE[key] = cfg
+    return cfg
+
+
+def _plan_frizze_clientes():
+    """Arma las tarjetas de cliente del Plan Frizze desde datos reales:
+    ficha ← clientes.xlsx · ventas ($/litros) y sin cargos ← ventas.csv (mes vivo) ·
+    litros/caja ← maestro 04D. Alerta = sin cargo de una variedad sin compra de esa
+    misma variedad (el 3+1 debe ser de la misma variedad)."""
+    cfg = _plan_frizze_config()
+    if not cfg:
+        return None
+    prod_por_cod = {p["codigo"]: p for p in cfg["productos"]}
+    cli_ids = cfg["clientes"]
+    _, _, cod2lxu, _ = _cargar_maestro_04D()
+
+    # Ventas vivas del plan: sólo los códigos del plan y los clientes del plan.
+    v = _ventas_parsed()
+    if not v.empty:
+        cod_norm = v["Codigo"].astype(str).str.replace(r"\.0$", "", regex=True).str.strip()
+        vv = v[v["cliente_id"].isin(cli_ids) & cod_norm.isin(prod_por_cod)].copy()
+        vv["_cod"] = cod_norm[vv.index]
+        vv["_cant"] = pd.to_numeric(vv["CantBase"], errors="coerce").fillna(0)
+    else:
+        vv = pd.DataFrame()
+
+    # Maestro de clientes (ficha). 1443 no está en el maestro → "Dato no disponible".
+    cli_master = _clientes_maestro()
+    minfo = {}
+    if not cli_master.empty:
+        for _, r in cli_master.iterrows():
+            minfo[int(r["_cliente_id"])] = r
+
+    def _sc_line(r):   # sin cargo = 100% descuento → ImporteNetoItem == 0
+        return float(pd.to_numeric(r.get("importe_neto"), errors="coerce") or 0) <= 0
+
+    clientes = []
+    for cid in cli_ids:
+        sub = vv[vv["cliente_id"] == cid] if not vv.empty else pd.DataFrame()
+        m = minfo.get(cid)
+
+        # Vendedor: maestro; si no está, el más frecuente en ventas del cliente.
+        if m is not None:
+            vend_id = m.get("_vend_id") or ""
+            vend_nom = str(m.get("Vendedor", "") or "")
+        elif not sub.empty:
+            vc = pd.to_numeric(sub["CodVendedor"], errors="coerce").dropna()
+            vend_id = f"V{int(vc.mode().iloc[0])}" if not vc.empty else ""
+            vend_nom = str(sub["Vendedor"].mode().iloc[0]) if "Vendedor" in sub and not sub["Vendedor"].dropna().empty else ""
+        else:
+            vend_id, vend_nom = "", ""
+
+        marcas = []
+        alerta_vars = []
+        sc_total = 0
+        for p in cfg["productos"]:
+            cod = p["codigo"]
+            lxu = float(cod2lxu.get(cod, 0) or 0)
+            pl = sub[sub["_cod"] == cod] if not sub.empty else pd.DataFrame()
+            fact = pl[pl["importe_neto"] > 0] if not pl.empty else pd.DataFrame()
+            scl = pl[[_sc_line(r) for _, r in pl.iterrows()]] if not pl.empty else pd.DataFrame()
+            cajas_fact = float(fact["_cant"].sum()) if not fact.empty else 0.0
+            cajas_sc = float(scl["_cant"].sum()) if not scl.empty else 0.0
+            sc_total += cajas_sc
+            # Envíos de sin cargo con fecha (FechaComprobante) para el desplegable.
+            envios = []
+            if not scl.empty:
+                tmp = scl.assign(_f=scl["fecha"].dt.strftime("%Y-%m-%d"))
+                for f, g in tmp.dropna(subset=["_f"]).groupby("_f"):
+                    envios.append({"fecha": f, "unidades": int(g["_cant"].sum())})
+                envios.sort(key=lambda e: e["fecha"])
+            # Alerta: sin cargo de esta variedad sin compra de la misma variedad.
+            if cajas_sc > 0 and cajas_fact <= 0:
+                alerta_vars.append(p["variedad"])
+            marcas.append({
+                "codigo": cod, "label": p["label"], "variedad": p["variedad"], "img": p["img"],
+                "litros": round(cajas_fact * lxu, 1), "importe": round(float(fact["importe_neto"].sum()) if not fact.empty else 0.0, 0),
+                "unidades_facturadas": int(cajas_fact), "sin_cargo_unidades": int(cajas_sc),
+                "envios": envios,
+            })
+
+        alerta = bool(alerta_vars)
+        alerta_msg = ("" if not alerta else
+                      "Sin cargo de " + " y ".join(v.title() for v in alerta_vars) +
+                      " sin compra de esa variedad — el 3+1 debe ser de la misma variedad.")
+        clientes.append({
+            "cliente_id": cid,
+            "nombre":     (str(m.get("Razon_Social", "")) if m is not None else
+                           (str(sub["RazonSocial"].mode().iloc[0]) if not sub.empty and "RazonSocial" in sub and not sub["RazonSocial"].dropna().empty else "Dato no disponible")),
+            "direccion":  (str(m.get("Direccion", "")) if m is not None else "Dato no disponible"),
+            "localidad":  (str(m.get("Localidad", "")) if m is not None else "Dato no disponible"),
+            "sub_canal":  (str(m.get("SubSegmento", "")) if m is not None else "Dato no disponible"),
+            "vendedor_id": vend_id, "vendedor_nombre": vend_nom,
+            "en_maestro": m is not None,
+            "marcas": marcas,
+            "sin_cargo_total_unidades": int(sc_total),
+            "alerta": alerta, "alerta_msg": alerta_msg,
+        })
+    return {"plan": cfg, "clientes": clientes,
+            "fuente": "planfrizze.xlsx + ventas.csv + clientes.xlsx + maestro 04D"}
+
+
+@app.route("/api/gerencia/plan_frizze")
+def gerencia_plan_frizze():
+    data = _plan_frizze_clientes()
+    if data is None:
+        return jsonify({"error": "Plan Frizze no disponible: falta 01_INPUTS/PLAN FRIZZE/planfrizze.xlsx o no se pudo parsear."}), 404
+    return jsonify(_to_native({"generado_en": _now_ar(), **data}))
+
+
+@app.route("/api/vendedor/<vid>/plan_frizze")
+def vendedor_plan_frizze(vid):
+    """Sólo los clientes del plan que pertenecen a este vendedor."""
+    data = _plan_frizze_clientes()
+    if data is None:
+        return jsonify({"error": "Plan Frizze no disponible"}), 404
+    vid_u = str(vid).upper()
+    data = {**data, "clientes": [c for c in data["clientes"] if (c.get("vendedor_id") or "").upper() == vid_u]}
+    return jsonify(_to_native({"generado_en": _now_ar(), "vendedor": vid_u, **data}))
+
+
 # ====== CIERRE DE MES ======
 @app.route("/api/gerencia/cierre_mes")
 def gerencia_cierre_mes():
