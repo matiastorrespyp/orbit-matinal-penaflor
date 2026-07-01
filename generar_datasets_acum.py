@@ -273,9 +273,38 @@ def cargar_clientes():
     return df
 
 
+_MESES_ES = ("enero", "febrero", "marzo", "abril", "mayo", "junio",
+             "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre")
+
+
+def _ordenar_por_mes(candidatos, mes_idx=None):
+    """Ordena Paths cuyo nombre incluye el mes en español (escalajulio.xlsx,
+    sincargosjunio.xlsx, ...) poniendo PRIMERO el del mes ACTUAL y el resto por mtime
+    (respaldo). Regla operativa: el archivo mensual se elige por el MES que dice su nombre,
+    no por fecha de modificación — así el sistema pasa solo de <algo>junio.xlsx a
+    <algo>julio.xlsx cuando cambia el mes, sin tocar código. Si ninguno matchea el mes en
+    curso quedan todos por mtime (fail-safe: la pantalla de Planes nunca se queda sin datos)."""
+    cands = list(candidatos)
+    if not cands:
+        return []
+    mes = _MESES_ES[(mes_idx if mes_idx is not None else datetime.now().month - 1)]
+    del_mes = sorted([c for c in cands if mes in c.name.lower()],
+                     key=lambda f: f.stat().st_mtime, reverse=True)
+    resto = sorted([c for c in cands if c not in del_mes],
+                   key=lambda f: f.stat().st_mtime, reverse=True)
+    return del_mes + resto
+
+
+def _archivo_del_mes(candidatos, mes_idx=None):
+    """Como _ordenar_por_mes pero devuelve sólo el archivo elegido para el mes (o None)."""
+    orden = _ordenar_por_mes(candidatos, mes_idx)
+    return orden[0] if orden else None
+
+
 def _cargar_escala_df():
-    """Escala del Plan AS. Prioriza 01_INPUTS/PLANES_AS/escala_*.xlsx (mensual, autodetecta
-    el más reciente → escala_julio.xlsx el mes que viene). Cae a la hoja 'ESCALA' de
+    """Escala del Plan AS. Prioriza 01_INPUTS/PLANES_AS/escala_*.xlsx (mensual: elige el
+    archivo cuyo nombre trae el MES actual → escalajulio.xlsx en julio, escalaagosto.xlsx
+    en agosto, subiendo el archivo con ese nombre). Cae a la hoja 'ESCALA' de
     Reconocimiento Plan As.xlsx. Mapea columnas por NOMBRE de encabezado (robusto a la posición).
     Devuelve DataFrame con: escala_num, thresh_gold, thresh_silver, thresh_inicial."""
     pdir = BASE / "01_INPUTS" / "PLANES_AS"
@@ -284,8 +313,9 @@ def _cargar_escala_df():
     for d, pat in ((pdir, "escala_*.xlsx"), (pdir2, "escala*.xlsx")):
         if d.exists():
             candidatos += list(d.glob(pat))
-    candidatos = sorted(set(candidatos), key=lambda f: f.stat().st_mtime, reverse=True)
-    fuentes = [(c, 0) for c in candidatos] + [(pdir / "Reconocimiento Plan As.xlsx", "ESCALA")]
+    # El del mes en curso primero; el resto por mtime como respaldo; luego la hoja ESCALA.
+    orden = _ordenar_por_mes(set(candidatos))
+    fuentes = [(c, 0) for c in orden] + [(pdir / "Reconocimiento Plan As.xlsx", "ESCALA")]
     for path, sheet in fuentes:
         if not path.exists():
             continue
@@ -325,7 +355,7 @@ def _cargar_escala_df():
 
 def _cargar_sincargos_mes():
     """Sin cargos ASIGNADOS del mes desde 01_INPUTS/Planes AASS/sincargos*.xlsx
-    (autodetecta el más reciente por mtime → sincargosjulio.xlsx el mes que viene).
+    (elige por el MES del nombre → sincargosjulio.xlsx en julio; fallback a mtime).
 
     Hoja 'Planes AASS': columna código + 'Cjas Sin Cargos' (total del mes) + tabla escala
     (ESCALA 1..N → LC = marca). La escala es ACUMULATIVA: para N cajas se toman las primeras
@@ -347,7 +377,7 @@ def _cargar_sincargos_mes():
         "smirnoff":  "sc_smf_flavours",
     }
     SC_COLS = ["sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa", "sc_smf_flavours"]
-    cand = sorted(pdir.glob("sincargos*.xlsx"), key=lambda f: f.stat().st_mtime, reverse=True)
+    cand = _ordenar_por_mes(pdir.glob("sincargos*.xlsx"))
     for path in cand:
         try:
             df = pd.read_excel(path, sheet_name="Planes AASS", header=0)
@@ -400,7 +430,7 @@ def _cargar_planfrio_mes():
     pdir = BASE / "01_INPUTS" / "Planes AASS"
     if not pdir.exists():
         return set()
-    cand = sorted(pdir.glob("sincargos*.xlsx"), key=lambda f: f.stat().st_mtime, reverse=True)
+    cand = _ordenar_por_mes(pdir.glob("sincargos*.xlsx"))
     for path in cand:
         try:
             xl = pd.ExcelFile(path)
@@ -457,8 +487,7 @@ def _bbdd_desde_sincargos():
              "sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa",
              "sc_smf_flavours", "sc_total_ganado"]
     pdir = BASE / "01_INPUTS" / "Planes AASS"
-    cand = sorted(pdir.glob("sincargos*.xlsx"),
-                  key=lambda f: f.stat().st_mtime, reverse=True) if pdir.exists() else []
+    cand = _ordenar_por_mes(pdir.glob("sincargos*.xlsx")) if pdir.exists() else []
     for path in cand:
         try:
             df = pd.read_excel(path, sheet_name="Planes AASS", header=0)

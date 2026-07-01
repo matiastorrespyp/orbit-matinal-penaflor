@@ -1,5 +1,14 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-01 - fix(planes as): la escala del mes se elige por el MES del nombre del archivo, no por mtime
+
+- Pedido: la medición de Planes AASS (a qué escala accede cada cliente según su compra) debe cambiar SOLA de archivo al cambiar de mes. El usuario sube cada mes `escala<mes>.xlsx` a `01_INPUTS/Planes AASS/` (p.ej. `escalajulio.xlsx`) y no quiere tocar código todos los meses.
+- Causa raíz: `_cargar_escala_df()` en `generar_datasets_acum.py` autodetectaba el `escala*.xlsx` **más reciente por fecha de modificación (mtime)**. Frágil: un `git checkout`, re-descarga o subir el archivo del mes siguiente por adelantado podía elegir el equivocado.
+- Cambio mínimo: nuevo helper `_archivo_del_mes(candidatos, mes_idx=None)` que elige el archivo cuyo nombre contiene el MES actual en español (`_MESES_ES`). Regla: julio→`escalajulio.xlsx`, agosto→`escalaagosto.xlsx`, etc. Si ningún archivo matchea el mes en curso, cae al más reciente por mtime (fail-safe: la pantalla de Planes nunca queda sin escala). En `_cargar_escala_df` se pone el archivo del mes primero y el resto como respaldo, antes de la hoja 'ESCALA' de Reconocimiento.
+- Convención de nombre (queda establecida): `escala` + nombre del mes en español, minúsculas, `.xlsx`. El match es por "el nombre contiene el mes", así que tolera variantes tipo `escalasjunio.xlsx`.
+- Validación real: `_archivo_del_mes` elige `escalajulio.xlsx` en julio, `escalasjunio.xlsx` simulando junio, y cae a mtime simulando agosto (sin archivo). `generar_datasets_acum.py` corre completo: "Escala Plan AS desde: escalajulio.xlsx" y regenera `mod_planes_as.csv` sin errores.
+- Ampliación (misma sesión): a pedido del usuario, se extendió la regla a `sincargos*.xlsx`. El helper se generalizó a `_ordenar_por_mes(candidatos)` (devuelve lista ordenada: el del mes primero, resto por mtime) y `_archivo_del_mes` ahora lo reusa. Migrados los 3 puntos que leían sincargos por mtime: `_cargar_sincargos_mes`, `_cargar_planfrio_mes`, `_bbdd_desde_sincargos`. Convención: `sincargos<mes>.xlsx`. Validado: en julio, con sólo `sincargosjunio.xlsx` presente, cae al de junio (fallback correcto); al subir `sincargosjulio.xlsx` lo tomará solo. Pipeline completo OK.
+
 ## 2026-07-01 - feat(portal): botón "Plan Frizze" (On Premise Noche · 3+1 misma variedad) en gerencia y vendedor
 
 - Pedido: botón "Plan Frizze" debajo de Incentivo FARO. Por cada cliente del plan una tarjeta con código, nombre, dirección, localidad, sub canal, vendedor y ventas por marca (litros y $) + sin cargos enviados; clic en el sin cargo → fecha de facturación; alerta si el sin cargo enviado es de otra variedad que la facturada (el 3+1 debe ser de la misma variedad). En gerencia (todos) y vendedor (solo los que tienen cliente con el plan).

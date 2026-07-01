@@ -1,5 +1,20 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-01 - fix(planes as): escala del mes por nombre de archivo
+
+### HECHO
+- [x] `_cargar_escala_df()` (`generar_datasets_acum.py`) ahora elige el `escala<mes>.xlsx` por el MES actual (helper `_archivo_del_mes` + `_MESES_ES`), no por mtime. Fallback a mtime si no hay archivo del mes.
+- [x] Convención establecida: subir cada mes `escala<mes>.xlsx` a `01_INPUTS/Planes AASS/` (ya está `escalajulio.xlsx`). No hay que tocar código.
+- [x] Validado: elige `escalajulio.xlsx` en julio; `generar_datasets_acum.py` regenera `mod_planes_as.csv` OK.
+
+### HECHO (ampliación)
+- [x] Misma regla por mes aplicada a `sincargos*.xlsx` (helper `_ordenar_por_mes`): `_cargar_sincargos_mes`, `_cargar_planfrio_mes`, `_bbdd_desde_sincargos`. Convención `sincargos<mes>.xlsx`.
+
+### PENDIENTE / A TENER EN CUENTA
+- [ ] Al cambiar a agosto: subir `escalaagosto.xlsx` **y** `sincargosagosto.xlsx` a `01_INPUTS/Planes AASS/`. El sistema los toma solos.
+- [ ] Falta `sincargosjulio.xlsx`: hoy (julio) el motor cae al de junio (fallback correcto). Subirlo cuando esté para medir sin cargos de julio.
+- [ ] Este cambio es en el motor de datasets (`generar_datasets_acum.py`). Se aplica al **regenerar datasets** (cierre / BAT). Si el portal en Render debe reflejarlo, requiere el pipeline de datasets del deploy.
+
 ## Sesion 2026-07-01 - feat(portal): botón Plan Frizze (HECHO + DEPLOYADO a Render)
 
 ### HECHO
