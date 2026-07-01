@@ -1,15 +1,16 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
-## Sesion 2026-07-01 - feat(portal): botón Plan Frizze (HECHO local, sin commitear)
+## Sesion 2026-07-01 - feat(portal): botón Plan Frizze (HECHO + DEPLOYADO a Render)
 
 ### HECHO
 - [x] Endpoints `GET /api/gerencia/plan_frizze` y `/api/vendedor/<vid>/plan_frizze` en `server_orbit.py` (`_plan_frizze_config` parsea `01_INPUTS/PLAN FRIZZE/planfrizze.xlsx`; `_plan_frizze_clientes` arma tarjetas en vivo desde ventas.csv + clientes.xlsx + 04D).
 - [x] Portal: botón en gerencia (bajo Incentivo FARO) + tab vendedor (bajo FARO, visible solo si tiene cliente del plan). Cabecera con las 2 imágenes de producto + tarjetas por cliente; clic en sin cargo → fecha de facturación; alerta por mezcla de variedad (3+1 debe ser misma variedad).
 - [x] Imágenes `frizze_blue.jpg`/`frizze_bubble.jpg` en la carpeta del frontend.
 - [x] Validado por test_client, en vivo (8502) y screenshots reales (gerencia + V8). node --check OK.
+- [x] **Commiteado y pusheado** (`38119e4`) — incluye el `planfrizze.xlsx` (el parser lo lee en Render).
+- [x] **Deployado y verificado en Render** (`orbit-matinal-penaflor.onrender.com`): `/api/gerencia/plan_frizze` → 2 clientes (301 CAMAR SRL / V8), imágenes 200. Bitácora en `00_OBSIDIAN_ORBIT/BITACORA_2026-07-01.md` (`d25351a`).
 
 ### PENDIENTE / A TENER EN CUENTA
-- [ ] **Sin commitear** todavía (esperar aprobación). Al commitear incluir: `server_orbit.py`, `PAV MATINAL PE_A FLOR/portal.html`, `PAV MATINAL PE_A FLOR/frizze_blue.jpg`, `PAV MATINAL PE_A FLOR/frizze_bubble.jpg`. NO commitear `01_INPUTS/PLAN FRIZZE/` (fuente de inputs) salvo orden explícita — pero ojo: si no se sube el xlsx, en Render el plan mostrará "no disponible" (el parser lo lee de 01_INPUTS). Definir con el usuario si el xlsx va al deploy o se sube por otra vía.
 - [ ] Datos en 0 para 301/1443: es real (aún sin ventas Frizze del mes vivo). Verificar en julio cuando haya facturación que litros/$/sin cargos/alerta pueblen.
 - [ ] Cliente **1443 no está en el maestro `clientes.xlsx`** ni tiene vendedor asignado → aparece como "Dato no disponible" en gerencia y no lo ve ningún vendedor. Si debe verlo un vendedor, hay que darlo de alta en el maestro.
 
