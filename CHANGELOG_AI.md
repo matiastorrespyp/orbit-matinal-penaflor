@@ -1,5 +1,12 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-01 - feat(cierre dia): PASO 0 valida consistencia resultado.xlsx <-> ventas.csv (fail-closed)
+
+- Problema reportado: en el dashboard V9 figuraba con ventas (Acumulado $7.015.577, Avance 368%) pero 0 clientes con compra. Causa raíz: `resultado.xlsx` (fuente de acumulado/avance) y `ventas.csv` (fuente de CCC) salieron desincronizados del ERP. V9 (y V6) tenían Acumulado > 0 en resultado.xlsx pero CERO líneas en ventas.csv del mes — matemáticamente imposible (no hay venta neta sin línea bruta). El dashboard reportaba fiel a cada archivo; la contradicción estaba en los inputs.
+- Pedido del usuario: que no vuelva a ocurrir (no una alerta pasiva). Enfoque elegido: bloquear el cierre (fail-closed), NO cambiar números oficiales del ERP (respeta "no inventar datos" y conserva rechazos/ajustes que netean en resultado.xlsx).
+- Cambio: nuevo `validar_consistencia_cierre.py` — lee la hoja Avance de resultado.xlsx y cuenta líneas por vendedor en ventas.csv; si algún vendedor con objetivo tiene Acumulado > $1 y 0 líneas, sale con exit 1 listando los casos. Solo valida vendedores con objetivo (los de la hoja Avance; V2/V5/V20 no están ahí, quedan fuera solos). Se agregó como PASO 0/3 en `CIERRE_DIA_ORBIT.bat`, después de validar ventas.csv y antes de regenerar datasets: si falla, NO se regenera, NO se commitea, NO se publica; Render no avanza el día.
+- Validación real: con los datos de hoy el validador devuelve exit 1 y lista V9 ($7.015.577) y V6 ($536.305) como desincronizados; el cierre corta en PASO 0 sin tocar datasets. Cuando resultado.xlsx y ventas.csv coincidan, pasa a exit 0 y el cierre sigue normal.
+
 ## 2026-07-01 - fix(cierre dia): el incentivo Club FARO frenaba el cierre como "cambio funcional"
 
 - Síntoma: `CIERRE_DIA_ORBIT.bat` abortaba en la verificación inicial de Git con "Hay cambios FUNCIONALES pendientes fuera de las rutas operativas", listando todos los inputs operativos (ventas, resultado, clientes, datasets…). No regeneraba nada ni publicaba.

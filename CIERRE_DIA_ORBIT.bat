@@ -90,6 +90,25 @@ if errorlevel 1 (
 
 echo.
 echo ============================================================
+echo PASO 0/3: Validando consistencia resultado.xlsx ^<-^> ventas.csv...
+echo (Un vendedor no puede tener acumulado sin lineas de venta)
+echo ============================================================
+echo.
+
+python "%ROOT%\validar_consistencia_cierre.py"
+if errorlevel 1 (
+    echo.
+    echo ============================================================
+    echo ERROR: resultado.xlsx y ventas.csv estan desincronizados.
+    echo No se regenero ningun dato. NO se publico. Render NO fue actualizado.
+    echo Re-exporta ambos del MISMO corte del ERP y reintenta el cierre.
+    echo ============================================================
+    pause
+    exit /b 1
+)
+
+echo.
+echo ============================================================
 echo PASO 1/3: Regenerando datasets (motor legacy + CSVs)...
 echo Esto actualiza acumulado, sellout, CCC, 11T y todos los KPIs.
 echo Puede tardar 1-2 minutos.
