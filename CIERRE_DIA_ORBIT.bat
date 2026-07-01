@@ -24,7 +24,7 @@ REM                 ventas-clubfaro.csv, INNOVACIONES/, Planes AASS/, ACCIONES C
 REM      02_HISTORY/  04_DATASETS_ORBIT/
 REM    Cualquier .py, .bat, portal.html, config u otro archivo fuera de eso FRENA el cierre.
 set "FUNC_PEND="
-for /f "delims=" %%i in ('git status --porcelain -- . ":(exclude)01_INPUTS/resultado.xlsx" ":(exclude)01_INPUTS/ventas.csv" ":(exclude)01_INPUTS/ventas_acumulada.csv" ":(exclude)01_INPUTS/clientes.xlsx" ":(exclude)01_INPUTS/ventas-clubfaro.csv" ":(exclude)01_INPUTS/INNOVACIONES" ":(exclude)01_INPUTS/Planes AASS" ":(exclude)01_INPUTS/ACCIONES COMERCIALES" ":(exclude)02_HISTORY" ":(exclude)04_DATASETS_ORBIT"') do set "FUNC_PEND=1"
+for /f "delims=" %%i in ('git status --porcelain -- . ":(exclude)01_INPUTS/resultado.xlsx" ":(exclude)01_INPUTS/ventas.csv" ":(exclude)01_INPUTS/ventas_acumulada.csv" ":(exclude)01_INPUTS/clientes.xlsx" ":(exclude)01_INPUTS/ventas-clubfaro.csv" ":(exclude)01_INPUTS/incentivo_club_faro*.xlsx" ":(exclude)01_INPUTS/INNOVACIONES" ":(exclude)01_INPUTS/Planes AASS" ":(exclude)01_INPUTS/ACCIONES COMERCIALES" ":(exclude)02_HISTORY" ":(exclude)04_DATASETS_ORBIT"') do set "FUNC_PEND=1"
 
 if defined FUNC_PEND (
     echo ============================================================
@@ -143,6 +143,7 @@ git add "01_INPUTS/ventas.csv"
 git add "01_INPUTS/ventas_acumulada.csv"
 git add "01_INPUTS/clientes.xlsx"
 git add "01_INPUTS/ventas-clubfaro.csv"
+git add "01_INPUTS/incentivo_club_faro*.xlsx"
 git add "01_INPUTS/INNOVACIONES/Innovaciones.xlsx"
 git add "01_INPUTS/Planes AASS"
 git add "02_HISTORY/historial_ventas_cliente.csv"
@@ -175,7 +176,7 @@ git add "01_INPUTS/ACCIONES COMERCIALES/*/acciones_comerciales_*.csv"
 REM ── Abortar si quedan cambios FUERA del allowlist operativo (desarrollo colado).
 REM    Los archivos operativos ya quedaron staged por los git add de arriba.
 set "FUERA_ALLOW="
-for /f "delims=" %%i in ('git status --porcelain -- . ":(exclude)01_INPUTS/resultado.xlsx" ":(exclude)01_INPUTS/ventas.csv" ":(exclude)01_INPUTS/ventas_acumulada.csv" ":(exclude)01_INPUTS/clientes.xlsx" ":(exclude)01_INPUTS/ventas-clubfaro.csv" ":(exclude)01_INPUTS/INNOVACIONES" ":(exclude)01_INPUTS/Planes AASS" ":(exclude)01_INPUTS/ACCIONES COMERCIALES" ":(exclude)02_HISTORY" ":(exclude)04_DATASETS_ORBIT"') do set "FUERA_ALLOW=1"
+for /f "delims=" %%i in ('git status --porcelain -- . ":(exclude)01_INPUTS/resultado.xlsx" ":(exclude)01_INPUTS/ventas.csv" ":(exclude)01_INPUTS/ventas_acumulada.csv" ":(exclude)01_INPUTS/clientes.xlsx" ":(exclude)01_INPUTS/ventas-clubfaro.csv" ":(exclude)01_INPUTS/incentivo_club_faro*.xlsx" ":(exclude)01_INPUTS/INNOVACIONES" ":(exclude)01_INPUTS/Planes AASS" ":(exclude)01_INPUTS/ACCIONES COMERCIALES" ":(exclude)02_HISTORY" ":(exclude)04_DATASETS_ORBIT"') do set "FUERA_ALLOW=1"
 if defined FUERA_ALLOW (
     echo.
     echo ============================================================

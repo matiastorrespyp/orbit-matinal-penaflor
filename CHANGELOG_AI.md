@@ -1,5 +1,12 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-01 - fix(cierre dia): el incentivo Club FARO frenaba el cierre como "cambio funcional"
+
+- Síntoma: `CIERRE_DIA_ORBIT.bat` abortaba en la verificación inicial de Git con "Hay cambios FUNCIONALES pendientes fuera de las rutas operativas", listando todos los inputs operativos (ventas, resultado, clientes, datasets…). No regeneraba nada ni publicaba.
+- Causa raíz: `01_INPUTS/incentivo_club_faro .xlsx` (objetivos del Incentivo Club FARO, consumido por `server_orbit.py:5368` vía `incentivo_club_faro*.xlsx`) es un input operativo que se actualiza en cada cierre, pero **no estaba en la allowlist** de excludes del guardián (líneas 27 y 178) ni en los `git add` del PASO 3. Al cambiar, el guardián lo interpretaba como código funcional sin commitear y frenaba todo.
+- Cambio mínimo: se agregó `":(exclude)01_INPUTS/incentivo_club_faro*.xlsx"` a las dos allowlists de `git status --porcelain` y `git add "01_INPUTS/incentivo_club_faro*.xlsx"` en el PASO 3, junto a `ventas-clubfaro.csv`. Patrón sin espacio (`incentivo_club_faro*.xlsx`) igual que el server, tolera el espacio raro del nombre real (`incentivo_club_faro .xlsx`).
+- Validación real: se reprodujo el error corriendo el .bat (salía exit 1 en el guardián). Tras el fix, el `git status --porcelain` con los mismos excludes ya no marca el incentivo; sólo queda el propio `CIERRE_DIA_ORBIT.bat` editado (pendiente de commit, cambio de código legítimo).
+
 ## 2026-07-01 - fix(planes as): la escala del mes se elige por el MES del nombre del archivo, no por mtime
 
 - Pedido: la medición de Planes AASS (a qué escala accede cada cliente según su compra) debe cambiar SOLA de archivo al cambiar de mes. El usuario sube cada mes `escala<mes>.xlsx` a `01_INPUTS/Planes AASS/` (p.ej. `escalajulio.xlsx`) y no quiere tocar código todos los meses.
