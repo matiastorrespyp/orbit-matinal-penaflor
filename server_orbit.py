@@ -3492,7 +3492,8 @@ _ACC_CAT_CANON = [
 ]
 _ACC_LINEA_TOK = {"VDA": "VDA", "VDG": "VDG", "VDM": "VDM",
                   "ESPUMANTE": "ESPUMANTES", "ESPUMANTES": "ESPUMANTES",
-                  "SIDRA": "SIDRA", "SPIRIT": "SPIRITS", "SPIRITS": "SPIRITS"}
+                  "SIDRA": "SIDRA", "SPIRIT": "SPIRITS", "SPIRITS": "SPIRITS",
+                  "CERVEZA": "CERVEZA"}
 _ACC_PROD_GENERICOS = {"", "SEGUN MAESTRO PRODUCTOS ACTIVOS", "RESTO SKU", "RESTO",
                        "TODOS", "TODOS_ACTIVOS", "LISTA CERRADA DE INNOVACIONES JUNIO 2026"}
 _ACC_11T_CACHE = None
@@ -3628,12 +3629,16 @@ def _acc_item_cats(txt):
     return cats
 
 
-def _acc_enriquecer_grupo(g, cat_to_marcas, cod2seg, cod2linea):
+def _acc_enriquecer_grupo(g, cat_to_marcas, cod2seg, cod2linea, cod2cat=None):
     """Copia el grupo de DETALLE_CATEGORIAS agregando a cada item la lista `marcas`
     (con segmento) resuelta del maestro. Reglas por tipo_detalle:
       - FILTRO_MAESTRO / FILTRO_EXCLUSION → todas las marcas de la(s) categoría(s).
-      - FAMILIA / MARCA_EXPLICITA → marcas del maestro cuya Linea Comercial matchea el token.
+      - FAMILIA / MARCA_EXPLICITA → marcas del maestro cuya Linea Comercial matchea el token,
+        RESTRINGIDAS a la categoría del grupo si ésta se puede inferir (ej. 'Smirnoff' bajo
+        Spirits NO trae Smirnoff Ice, que es RTD).
       - resto (PRODUCTO_EXPLICITO, PRODUCTO_O_FAMILIA, SUBREGLA, EXCLUSION) → literal."""
+    cod2cat = cod2cat or {}
+    grp_cats = _acc_item_cats(f"{g.get('categoria_tarjeta','')} {g.get('detalle_click_ref','')}")
     items_out = []
     for it in g.get("items", []):
         tipo = _acc_norm(it.get("tipo_detalle"))
@@ -3653,6 +3658,8 @@ def _acc_enriquecer_grupo(g, cat_to_marcas, cod2seg, cod2linea):
             for cod, ln in cod2linea.items():
                 lnn = _acc_norm(ln)
                 if tok and lnn and (tok in lnn or lnn in tok):
+                    if grp_cats and _acc_canon_cat(cod2cat.get(cod)) not in grp_cats:
+                        continue  # respeta la categoría del grupo (excluye p.ej. Ice/RTD)
                     seg = str(cod2seg.get(cod, "") or "").strip()
                     if seg.lower() == "nan":
                         seg = ""
@@ -3741,10 +3748,13 @@ def _acc_subseg_filtro(seg_text, canal_text):
 
 
 def _acc_norm(s):
-    """Normaliza para matchear marcas: mayúsculas, sin acentos, sin puntuación (apóstrofes/´)."""
+    """Normaliza para matchear marcas: mayúsculas, sin acentos, sin puntuación.
+    Los apóstrofes/comillas se ELIMINAN (no se vuelven espacio) para que 'Gordon's'
+    y 'Gordons' matcheen igual (el catálogo usa 'Gordons', las ventas 'Gordon's')."""
     import unicodedata
     s = str(s or "").upper()
     s = "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
+    s = _re.sub(r"[\'’‘´`]", "", s)   # apóstrofes/comillas → nada
     s = _re.sub(r"[^A-Z0-9 ]", " ", s)
     return _re.sub(r"\s+", " ", s).strip()
 
@@ -3854,8 +3864,11 @@ def _acc_product_pred(rule, all_lineas):
         if t.isdigit():   # token numérico = código de producto exacto
             code_set.add(t)
             continue
+        # "TODOS ..." (incl. descripciones como "Todos menos importados premium...") es
+        # genérico, NO una marca: si se tratara como marca, su token basura cortaría el
+        # match por categoría (line_cats) y la acción no matchearía nada (ej. ACJ26-007).
         if (t in _ACC_PROD_GENERICOS or "MAESTRO" in t or "LISTA CERRADA" in t
-                or "RESTO" in t or t in ("TODOS", "TODOS_ACTIVOS")):
+                or "RESTO" in t or t.startswith("TODOS")):
             continue
         mapped = _ACC_LINEA_TOK.get(t)   # match exacto de token de línea (no substring)
         if mapped:
@@ -4192,7 +4205,7 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
         cat_tarjeta = str(r.get("categoria_tarjeta", "")).strip()
         refs = [x.strip() for x in str(r.get("detalle_click_ref", "")).split("|") if x.strip()]
         detalle_grupos = [_acc_enriquecer_grupo(detalle_map[ref], _cat_to_marcas,
-                                                _m_cod2seg, _m_cod2linea)
+                                                _m_cod2seg, _m_cod2linea, _m_cod2cat)
                           for ref in refs if ref in detalle_map]
         mostrar_click = (_acc_norm(r.get("mostrar_detalle_click", "")) == "SI") and bool(detalle_grupos)
         try:
@@ -4284,7 +4297,9 @@ def _alertas_descuento_mes():
         tramos = [float(x) for x in str(r.get("descuento_pct", "")).replace(",", ".").split("|")
                   if x.strip().replace(".", "").isdigit()]
         maxpct = 100.0 if ("BONIFIC" in tipo or "SIN_CARGO" in tipo) else (max(tramos) if tramos else 0.0)
-        parsed.append((str(r.get("id_accion", "")).strip(), codes, seg, sub_allowed, pred, maxpct))
+        regla_txt = _acc_norm(" ".join(str(r.get(k, "")) for k in ("categoria", "canal_aplica", "segmento_cliente_aplica")))
+        requiere_plan_as = "PLANES AASS" in regla_txt or "PLAN AASS" in regla_txt
+        parsed.append((str(r.get("id_accion", "")).strip(), codes, seg, sub_allowed, pred, maxpct, requiere_plan_as))
 
     # Clientes Plan AS: tienen 10% de descuento en factura SIEMPRE → piso permitido = 10%.
     pas = read_csv(DATASETS / "mod_planes_as.csv")
@@ -4299,17 +4314,21 @@ def _alertas_descuento_mes():
             continue
         vend = row["_vend"]; seg_v = row["_seg"]
         row_may = bool(row["_es_mayorista"]) if "_es_mayorista" in row else False
+        try: cli_int = int(row["_cli"])
+        except Exception: cli_int = None
         allowed, fuente_id = 0.0, None
-        for rid, codes, seg, sub_allowed, pred, maxpct in parsed:
+        for rid, codes, seg, sub_allowed, pred, maxpct, requiere_plan_as in parsed:
             # el sub-filtro almacén/kiosco SOLO restringe el canon TRADICIONAL
             if (sub_allowed is not None and str(row["_seg"]).upper() == "TRADICIONAL"
                     and not any(tok in row["_subseg"] for tok in sub_allowed)):
                 continue
+            # Acción de Planes AASS: su tope solo aplica a clientes DENTRO del plan; para
+            # el resto no autoriza (si no, taparía sobre-descuentos en autoservicios sin plan).
+            if requiere_plan_as and (cli_int is None or cli_int not in pas_ids):
+                continue
             if (vend in codes) and _acc_seg_match(seg_v, row_may, seg) and pred(row["_cat"], row["_linea"], row["_art"], row["_marca"], row["_cod"]):
                 if maxpct > allowed:
                     allowed, fuente_id = maxpct, rid
-        try: cli_int = int(row["_cli"])
-        except Exception: cli_int = None
         # Piso 10% para clientes Plan AS (descuento de factura)
         if cli_int is not None and cli_int in pas_ids and allowed < 10.0:
             allowed = 10.0

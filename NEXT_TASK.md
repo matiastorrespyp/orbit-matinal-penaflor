@@ -1,5 +1,16 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-02 - feat(acciones): tarjeta caja mixta almacén/kiosco + review de alertas
+
+### HECHO
+- [x] 2 tarjetas nuevas (ACJ26-022 20% Los Árboles+Trapiche; ACJ26-023 15% Smirnoff+Gordon's) para V3/V4/V6/V8/V10 en Almacén/Kiosco, 1 caja mixta/cliente/mes. En CSV julio + detalle. Visibles en gerencia y esos vendedores; V7/V9 no.
+- [x] Alertas: tope Planes AASS solo a clientes del plan; "TODOS ..." como genérico + CERVEZA mapeada; `_acc_norm` elimina apóstrofes (Gordons=Gordon's). Footprint validado por acción, sin regresiones.
+- [x] Detalle consciente de categoría (Smirnoff bajo Spirits no trae Smirnoff Ice/RTD).
+
+### PENDIENTE / A TENER EN CUENTA
+- [ ] **Gerencia**: en julio hay un 25% en Smirnoff Ice (cód 35103) y 6% en Smirnoff Ice Flavours (35105) SIN acción en el catálogo → alertan. En junio existía ACJ26-027 (35103 al 25%). Si sigue vigente, agregar la acción al CSV de julio; si no, la alerta es correcta.
+- [ ] Verificar en Render el modal de ACJ26-022/023 (gerencia + un vendedor que aplique) y que la tarjeta aparezca en el orden correcto.
+
 ## Sesion 2026-07-02 - fix(acciones comerciales): modal encima + marcas reales del maestro
 
 ### HECHO

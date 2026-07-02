@@ -1,5 +1,17 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-02 - feat(acciones comerciales): tarjeta caja mixta almacén/kiosco (V3/V4/V6/V8/V10) + review integral de alertas
+
+- Pedido: (a) revisar cada acción para que el módulo (sobre todo alertas) trabaje bien; (b) agregar una tarjeta para V3/V4/V6/V8/V10, segmento Almacén+Kiosco: 20% en una caja mixta de 3 botellas Los Árboles + 3 botellas Trapiche por cliente, y 15% en 3 botellas Smirnoff + 3 botellas Gordon's, una sola caja por cliente en el mes; con el mismo click de categoría para ver la variedad; visible en gerencia y en los vendedores que aplican.
+- Nuevas acciones (2 filas en el CSV de julio + 4 en detalle_categorias): se implementó como DOS tarjetas (ACJ26-022 20% VDA Los Árboles+Trapiche; ACJ26-023 15% Spirits Smirnoff+Gordon's) porque el cap de alerta es por producto (20 vs 15): una sola fila con "20|15" habría autorizado 20% también a Smirnoff/Gordon's y tapado sobre-descuentos. Segmento "Almacén; Despensa; Kiosco" (Despensa=Almacén), vendedores "V3; V4; V6; V8; V10", tope 1 caja mixta/cliente/mes. `lineas_comerciales` vacío a propósito (si se pone "VDA"/"Spirits", el pred matchea TODA la categoría, no solo las marcas). Validado: gerencia y V3/V4/V6/V8/V10 las ven; V7/V9 no; detalle expande marcas del maestro (Los Árboles Medio Alto, Trapiche Reserva/Origen; Smirnoff/Gordon's sin Smirnoff Ice).
+- Review de alertas — 3 fixes de correctitud en el motor de matching (server_orbit.py), todos con footprint validado antes/después:
+  1. Planes AASS en alertas: el tope de las acciones PLANES_AASS ahora aplica SOLO a clientes del plan (`requiere_plan_as` en `parsed` + skip si el cliente no está en `mod_planes_as.csv`). Antes autorizaban su % a cualquier autoservicio y tapaban sobre-descuentos de clientes sin plan.
+  2. Token "TODOS ..." (ej. "Todos menos importados premium…") se trata como genérico, no como marca: antes ese token basura cortaba el match por categoría y ACJ26-007/008 (Spirits y Cerveza) no matcheaban nada. Además se mapeó "CERVEZA" en `_ACC_LINEA_TOK`.
+  3. Apóstrofes: `_acc_norm` ahora ELIMINA apóstrofes/comillas (antes los volvía espacio), así "Gordons" (catálogo) = "Gordon's" (ventas). Corrige que ACJ26-005/006/011 no tomaban "Gordon's Tonic" y generaban falsas alertas.
+- Enriquecimiento de detalle consciente de categoría: `_acc_enriquecer_grupo` restringe la expansión FAMILIA/MARCA_EXPLICITA a la categoría del grupo (ej. Smirnoff bajo Spirits no trae Smirnoff Ice, que es RTD).
+- Resultado alertas: de 3→5 (fix Planes AASS destapó reales) y luego a 3 legítimas: Smirnoff Ice 25% (cód 35103) y Smirnoff Ice Flavours 6% (cód 35105) SIN acción en el catálogo de julio, y Don David 10% con cap 8% (sobre-descuento real). NOTA para gerencia: en junio existía ACJ26-027 (Smirnoff Ice 35103 al 25%); no está en el catálogo de julio — si sigue vigente hay que agregarla al CSV del mes.
+- Validado: syntax OK; 23 acciones orden ASC; endpoints gerencia/V4/V3 → 200; screenshot del modal de ACJ26-023 (Smirnoff/Gordon's, sin Ice). Deployado a Render.
+
 ## 2026-07-02 - fix(acciones comerciales): las acciones de MAYORISTA no deben caer sobre autoservicios
 
 - Bug reportado: la tarjeta de ACJ26-021 (Petit Mayoristas, canal MAYORISTA) mostraba al cliente 538, que es Autoservicio.
