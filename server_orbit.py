@@ -3616,6 +3616,75 @@ def _acc_marcas_maestro():
     return out
 
 
+_ACC_DESC_ART_CACHE = {}
+_ACC_MESES_ES = {1: "enero", 2: "febrero", 3: "marzo", 4: "abril", 5: "mayo", 6: "junio",
+                 7: "julio", 8: "agosto", 9: "septiembre", 10: "octubre", 11: "noviembre", 12: "diciembre"}
+
+
+def _acc_desc_articulo_file():
+    """Archivo de productos crudo (01_INPUTS/RAW_PRODUCTOS/productos<mes>.xlsx). Prefiere el
+    del mes en curso por nombre; si no, el más reciente por mtime."""
+    base = INPUTS / "RAW_PRODUCTOS"
+    if not base.exists():
+        return None
+    xls = [p for p in base.glob("*.xlsx") if not p.name.startswith("~$")]
+    if not xls:
+        return None
+    mes = _ACC_MESES_ES.get(datetime.now(_ARG_TZ).month, "")
+    delmes = [p for p in xls if mes and mes in p.name.lower()]
+    cand = delmes or xls
+    return max(cand, key=lambda p: p.stat().st_mtime)
+
+
+def _acc_desc_articulo_map():
+    """Lee el archivo de productos crudo y mapea Código Art. -> {descripcion, linea, categoria}.
+    La descripción (columna H 'Descripción Art.') se muestra en la tarjeta de la acción para que
+    el vendedor sepa el producto exacto. Header autodetectado. Cacheado por (path, mtime)."""
+    p = _acc_desc_articulo_file()
+    if p is None:
+        return {}
+    try:
+        key = (str(p), os.path.getmtime(p))
+    except OSError:
+        key = (str(p), 0)
+    cached = _ACC_DESC_ART_CACHE.get(key)
+    if cached is not None:
+        return cached
+    mapa = {}
+    try:
+        raw = pd.read_excel(p, header=None, dtype=str)
+        hdr, cols = None, None
+        for i, row in raw.iterrows():
+            vals = [str(x).strip() for x in row.tolist()]
+            if (any(v.startswith("Código Art") or v.startswith("Codigo Art") for v in vals)
+                    and any(v.startswith("Descripci") for v in vals)):
+                hdr, cols = i, vals
+                break
+        if hdr is None:
+            return {}
+        df = raw.iloc[hdr + 1:].copy()
+        df.columns = cols
+        ccod = next(c for c in cols if c.startswith("Código Art") or c.startswith("Codigo Art"))
+        cdesc = next(c for c in cols if c.startswith("Descripci"))
+        clin = next((c for c in cols if c.strip().lower().startswith("linea comercial")), None)
+        ccat = next((c for c in cols if c.startswith("Categor")), None)
+        for _, r in df.iterrows():
+            cod = _re.sub(r"\.0$", "", str(r.get(ccod, "")).strip())
+            if not cod or cod.lower() == "nan":
+                continue
+            desc = str(r.get(cdesc, "") or "").strip()
+            mapa[cod] = {
+                "descripcion": "" if desc.lower() == "nan" else desc,
+                "linea": str(r.get(clin, "") or "").strip() if clin else "",
+                "categoria": str(r.get(ccat, "") or "").strip() if ccat else "",
+            }
+    except Exception:
+        return {}
+    _ACC_DESC_ART_CACHE.clear()
+    _ACC_DESC_ART_CACHE[key] = mapa
+    return mapa
+
+
 def _acc_item_cats(txt):
     """Categorías canónicas del maestro que menciona un texto de detalle (para expandir
     items FILTRO_MAESTRO/FILTRO_EXCLUSION a marcas reales)."""
@@ -4040,6 +4109,12 @@ def _acc_mes_sig():
             sig.append((p.name, os.path.getmtime(p) if p.exists() else 0))
         except OSError:
             sig.append((p.name, 0))
+    # archivo de productos crudo (descripción de artículo para las tarjetas por código)
+    _pf = _acc_desc_articulo_file()
+    try:
+        sig.append(("raw_productos", os.path.getmtime(_pf) if _pf else 0))
+    except OSError:
+        sig.append(("raw_productos", 0))
     base = INPUTS / "ACCIONES COMERCIALES"
     try:
         cat = max((os.path.getmtime(c) for sub in base.iterdir() if sub.is_dir()
@@ -4096,6 +4171,7 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
     _cat_to_marcas = _acc_marcas_maestro() if detalle_map else {}
     _m_cod2cat, _m_cod2seg, _m_cod2lxu, _m_cod2linea = (_cargar_maestro_04D() if detalle_map
                                                         else ({}, {}, {}, {}))
+    _desc_art_map = _acc_desc_articulo_map()   # cod -> {descripcion, linea, categoria}
 
     def _detalle_clientes(df, nuevos=None):
         if df.empty:
@@ -4236,22 +4312,27 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
         except (TypeError, ValueError):
             orden_visual = None
 
-        # Acciones por código (SKU curados): resolver cada código al producto del maestro.
-        # Si un código todavía no está en el maestro, se muestra EL CÓDIGO (para que el
-        # vendedor lo vea igual); al actualizar el maestro se resuelve solo el nombre.
+        # Acciones por código (SKU curados): resolver cada código a su DESCRIPCIÓN de artículo
+        # (01_INPUTS/RAW_PRODUCTOS/productos<mes>.xlsx, col. H) para que el vendedor sepa el
+        # producto exacto. Fallback a la Linea Comercial del 04D. Si no está en ninguno, se
+        # muestra el CÓDIGO igual.
         codigos_raw = [t.strip() for t in _re.split(r"[;,]", str(r.get("productos_marcas", "")))
                        if t.strip().isdigit()]
         codigos_detalle, _res_names, _res_seen, _pend = [], [], set(), []
         for cod in codigos_raw:
-            lin = _m_cod2linea.get(cod)
-            encontrado = bool(lin and str(lin).strip().lower() != "nan")
-            prod = str(lin).strip() if encontrado else ""
-            codigos_detalle.append({"codigo": cod, "producto": prod,
-                                    "categoria": _acc_canon_cat(_m_cod2cat.get(cod)) or "",
-                                    "encontrado": encontrado})
+            d = _desc_art_map.get(cod)
+            lin04 = _m_cod2linea.get(cod)
+            desc = (d or {}).get("descripcion", "")
+            linea = (d or {}).get("linea", "") or (str(lin04).strip() if lin04 and str(lin04).strip().lower() != "nan" else "")
+            cat = (d or {}).get("categoria", "") or (_acc_canon_cat(_m_cod2cat.get(cod)) or "")
+            encontrado = bool(desc or linea)
+            producto = desc or linea  # lo que ve el vendedor: descripción del artículo
+            codigos_detalle.append({"codigo": cod, "producto": producto, "descripcion": desc,
+                                    "linea": linea, "categoria": cat, "encontrado": encontrado})
             if encontrado:
-                if prod not in _res_seen:
-                    _res_seen.add(prod); _res_names.append(prod)
+                lbl = linea or desc
+                if lbl and lbl not in _res_seen:
+                    _res_seen.add(lbl); _res_names.append(lbl)
             else:
                 _pend.append(cod)
         if codigos_detalle:

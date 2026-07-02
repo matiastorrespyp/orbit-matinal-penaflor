@@ -1,5 +1,13 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-02 - feat(acciones comerciales): descripción de artículo por código desde productos<mes>.xlsx
+
+- Pedido: en las tarjetas por código, al hacer click mostrar la DESCRIPCIÓN del artículo para que el vendedor sepa qué producto entra. Gerencia subió 01_INPUTS/RAW_PRODUCTOS/productosjulio.xlsx (dato en columna H "Descripción Art.").
+- Backend: nuevo `_acc_desc_articulo_map()` que lee ese archivo (header autodetectado; Código Art. col D, Descripción Art. col H, Linea Comercial, Categoría), mapea código→{descripcion, linea, categoria}. Autodetección por mes (productos<mes>.xlsx, fallback al más reciente), cacheado por mtime y sumado a `_acc_mes_sig` (al resubir el archivo se refresca solo). La resolución de códigos usa primero este archivo (descripción) y cae al 04D (Linea Comercial); `codigos_detalle` ahora trae `descripcion`/`linea`/`categoria`.
+- Frontend: el modal "Códigos participantes" muestra `código · descripción de artículo` (ej. 30075 · GORDON'S GIN 6x700, 80010 · LOS ARBOLES SEL MALBEC 6X750). Los 4 códigos antes pendientes (35093, 35101, 74882, 74881) ya resuelven.
+- .gitignore: `01_INPUTS/RAW_PRODUCTOS/` estaba ignorado entero; se cambió a `RAW_PRODUCTOS/*` + `!RAW_PRODUCTOS/productos*.xlsx` para trackear solo el archivo mensual de productos (58KB) sin subir el raw 04D de 19MB. Así Render tiene el archivo y resuelve las descripciones.
+- Validado: 339 productos leídos; los 20 códigos de ACJ26-022/023 resuelven su descripción; JS del portal parsea; screenshot del modal con descripciones; dry-run de git agrega solo productosjulio.xlsx. Deployado a Render.
+
 ## 2026-07-02 - feat(acciones comerciales): mostrar el CÓDIGO cuando el SKU no está en el maestro
 
 - Pedido: los códigos de las cajas mixtas son correctos; gerencia actualizará el maestro de productos y ahí se resolverá el nombre (el match por código ya funciona en dashboard/cierre, es independiente del maestro). Mientras tanto, si un código no encuentra match en el maestro, mostrar EL CÓDIGO para que el vendedor lo vea igual.

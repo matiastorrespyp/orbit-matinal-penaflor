@@ -2834,7 +2834,7 @@ function accShowCat(scope,id){
     codsHtml=`<div class="accd-grp">
       <div class="accd-grptitle">Códigos participantes</div>
       <div class="accd-chips">${cods.map(c=>c.encontrado
-        ? `<span class="accd-chip"><b>${esc(c.codigo)}</b> · ${esc(c.producto)}</span>`
+        ? `<span class="accd-chip"><b>${esc(c.codigo)}</b> · ${esc(c.descripcion||c.producto)}</span>`
         : `<span class="accd-chip" style="border-color:var(--wn-g);color:var(--wn);"><b>${esc(c.codigo)}</b> · pendiente en maestro</span>`
       ).join('')}</div>
     </div>`;
