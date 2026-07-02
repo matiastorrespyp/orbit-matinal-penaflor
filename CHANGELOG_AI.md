@@ -1,5 +1,12 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-02 - fix(acciones comerciales): ACJ26-023 (caja mixta Smirnoff+Gordon's 15%) es SOLO botella
+
+- Aclaración del usuario: la acción del 15% (3 botellas Smirnoff + 3 botellas Gordon's) aplica SOLO a botella, no a lata/RTD. El detalle ya excluía Smirnoff Ice, pero el footprint/alertas usan el `pred` por marca SIN filtro de categoría, así que el token "Gordon's" todavía matcheaba Gordon's Tonic (lata RTD) y "Smirnoff" la Smirnoff Ice.
+- Fix: nuevo filtro `_acc_es_botella(cat_canon, articulo)` (excluye categoría RTD y descripciones con marcador de lata "LATA"/"LAT"). `_acc_product_pred` lo aplica cuando la acción menciona "botella" en condicion_compra/unidad (se activa solo en ACJ26-022 y 023; ninguna otra acción de julio menciona botella). Vale para footprint Y alertas (una lata Smirnoff/Gordon's ya no queda autorizada por esta acción).
+- Validado con datos reales: en 023 quedan afuera 35103 Smirnoff Ice, 35105 Ice Flavours y 35107 Gordon's Tonic (todas latas RTD) y adentro 30020 Smirnoff Green Apple 6X700 y 35101 Smirnoff BC Orange&Lime 6X700 (botellas). ACJ26-022 (vinos, ya botella) sin cambios. Alertas siguen en 3 legítimas; endpoints gerencia/V4/V3 → 200. Deployado a Render.
+- NOTA: 35101 "Smirnoff BC Orange & Lime 6X700" (categoría sin clasificar en el maestro) es botella y entra al 15%. Si el usuario quiere excluir la línea BC del 15%, avisar.
+
 ## 2026-07-02 - feat(acciones comerciales): tarjeta caja mixta almacén/kiosco (V3/V4/V6/V8/V10) + review integral de alertas
 
 - Pedido: (a) revisar cada acción para que el módulo (sobre todo alertas) trabaje bien; (b) agregar una tarjeta para V3/V4/V6/V8/V10, segmento Almacén+Kiosco: 20% en una caja mixta de 3 botellas Los Árboles + 3 botellas Trapiche por cliente, y 15% en 3 botellas Smirnoff + 3 botellas Gordon's, una sola caja por cliente en el mes; con el mismo click de categoría para ver la variedad; visible en gerencia y en los vendedores que aplican.

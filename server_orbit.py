@@ -3837,8 +3837,21 @@ def _acc_plan_as_clientes():
     return _ACC_PLAN_AS_CACHE
 
 
+def _acc_es_botella(cat_canon, articulo):
+    """True si el producto es BOTELLA (no lata/RTD). Excluye la categoría RTD (Smirnoff Ice,
+    Gordon's Tonic, etc.) y descripciones con marcador de lata. Para acciones acotadas a
+    'solo botella' (ej. la caja mixta Smirnoff+Gordon's 15%: 3 botellas de cada uno)."""
+    if str(cat_canon or "").upper() == "RTD":
+        return False
+    a = _acc_norm(articulo)
+    if _re.search(r"\bLATA?\b", a):
+        return False
+    return True
+
+
 def _acc_product_pred(rule, all_lineas):
-    """Devuelve función(cat_canon, linea, articulo, marca, cod=None)->bool para esta regla."""
+    """Devuelve función(cat_canon, linea, articulo, marca, cod=None)->bool para esta regla.
+    Si la acción menciona 'botella' (condición/unidad), el match se restringe a botella."""
     regla_txt = _acc_norm(" ".join(str(rule.get(k, "")) for k in (
         "categoria", "subcategoria", "productos_marcas", "lineas_comerciales", "tipo_regla"
     )))
@@ -3892,7 +3905,16 @@ def _acc_product_pred(rule, all_lineas):
         if line_cats:
             return cat_canon in line_cats
         return False
-    return pred
+
+    # Acción "solo botella" (ej. caja mixta 3 botellas + 3 botellas): excluye latas/RTD.
+    solo_botella = "BOTELLA" in _acc_norm(" ".join(str(rule.get(k, "")) for k in (
+        "condicion_compra", "unidad_minimo", "unidad_maximo", "subcategoria")))
+    if not solo_botella:
+        return pred
+
+    def pred_botella(cat_canon, linea, articulo, marca, cod=None):
+        return pred(cat_canon, linea, articulo, marca, cod) and _acc_es_botella(cat_canon, articulo)
+    return pred_botella
 
 
 _ACC_VENTAS_CACHE = {}
