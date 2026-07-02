@@ -4236,6 +4236,31 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
         except (TypeError, ValueError):
             orden_visual = None
 
+        # Acciones por código (SKU curados): resolver cada código al producto del maestro.
+        # Si un código todavía no está en el maestro, se muestra EL CÓDIGO (para que el
+        # vendedor lo vea igual); al actualizar el maestro se resuelve solo el nombre.
+        codigos_raw = [t.strip() for t in _re.split(r"[;,]", str(r.get("productos_marcas", "")))
+                       if t.strip().isdigit()]
+        codigos_detalle, _res_names, _res_seen, _pend = [], [], set(), []
+        for cod in codigos_raw:
+            lin = _m_cod2linea.get(cod)
+            encontrado = bool(lin and str(lin).strip().lower() != "nan")
+            prod = str(lin).strip() if encontrado else ""
+            codigos_detalle.append({"codigo": cod, "producto": prod,
+                                    "categoria": _acc_canon_cat(_m_cod2cat.get(cod)) or "",
+                                    "encontrado": encontrado})
+            if encontrado:
+                if prod not in _res_seen:
+                    _res_seen.add(prod); _res_names.append(prod)
+            else:
+                _pend.append(cod)
+        if codigos_detalle:
+            marcas_display = "; ".join(_res_names)
+            if _pend:
+                marcas_display += ("; " if marcas_display else "") + "cód. " + ", ".join(_pend)
+        else:
+            marcas_display = str(r.get("productos_marcas", "")).strip()
+
         acciones.append({
             "id_accion":     str(r.get("id_accion", "")).strip(),
             "tipo":          tipo,
@@ -4243,7 +4268,8 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
             "segmento":      str(r.get("segmento_cliente_aplica", "")).strip(),
             "canal":         str(r.get("canal_aplica", "")).strip(),
             "vendedores":    sorted(vend_set),
-            "marcas":        str(r.get("productos_marcas", "")).strip(),
+            "marcas":        marcas_display,
+            "codigos":       codigos_detalle,
             "escala":        str(r.get("condicion_compra", "")).strip(),
             "descuento_pct": str(r.get("descuento_pct", "")).strip(),
             "tope":          str(r.get("tope", "")).strip(),

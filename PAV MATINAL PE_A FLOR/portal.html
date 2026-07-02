@@ -2826,6 +2826,20 @@ function accShowCat(scope,id){
     ${(g.items||[]).map(renderItem).join('')||'<div class="accd-empty">Sin marcas resueltas.</div>'}
   </div>`).join('');
 
+  // Códigos participantes (acciones por SKU). Si un código no está en el maestro todavía,
+  // se muestra el código igual para que el vendedor lo vea.
+  const cods=acc.codigos||[];
+  let codsHtml='';
+  if(cods.length){
+    codsHtml=`<div class="accd-grp">
+      <div class="accd-grptitle">Códigos participantes</div>
+      <div class="accd-chips">${cods.map(c=>c.encontrado
+        ? `<span class="accd-chip"><b>${esc(c.codigo)}</b> · ${esc(c.producto)}</span>`
+        : `<span class="accd-chip" style="border-color:var(--wn-g);color:var(--wn);"><b>${esc(c.codigo)}</b> · pendiente en maestro</span>`
+      ).join('')}</div>
+    </div>`;
+  }
+
   accCloseCat();
   const div=document.createElement('div');
   div.className='emod-bg open'; div.id='accCatBg';
@@ -2836,7 +2850,7 @@ function accShowCat(scope,id){
         <div class="accd-hd-s">${esc(acc.id_accion)}${acc.segmento?(' · '+esc(acc.segmento)):''} · marcas del maestro vigente</div></div>
       <span class="accd-x" onclick="accCloseCat()">✕</span>
     </div>
-    <div class="accd-body">${secs}</div>
+    <div class="accd-body">${secs}${codsHtml}</div>
   </div>`;
   document.body.appendChild(div);
 }

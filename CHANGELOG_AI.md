@@ -1,5 +1,13 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-02 - feat(acciones comerciales): mostrar el CÓDIGO cuando el SKU no está en el maestro
+
+- Pedido: los códigos de las cajas mixtas son correctos; gerencia actualizará el maestro de productos y ahí se resolverá el nombre (el match por código ya funciona en dashboard/cierre, es independiente del maestro). Mientras tanto, si un código no encuentra match en el maestro, mostrar EL CÓDIGO para que el vendedor lo vea igual.
+- Backend: cada acción por código ahora trae `codigos` = [{codigo, producto, categoria, encontrado}] resolviendo cada SKU contra el maestro 04D. El campo `marcas` de la tarjeta pasó de los códigos crudos a un resumen legible: nombres resueltos + "cód. X, Y" para los pendientes (ej. ACJ26-023 → "Smirnoff; Smirnoff Flavors; Gordon's Flavors; Gordon's; cód. 35093, 35101"). Acciones sin códigos (por marca) quedan igual.
+- Frontend: el modal de detalle agrega la sección "Códigos participantes": cada código con su producto; los que aún no están en el maestro se muestran igual, resaltados en ámbar "pendiente en maestro".
+- Confirmado que el cierre del día también matchea por código (reúsa `_acc_product_pred`, línea 6931): al actualizar el maestro solo se resuelve el nombre/categoría/litros, el match ya opera hoy.
+- Validado: payload resuelve 30019/30020/30131/30065→Smirnoff, 30135→Smirnoff Flavors, 30139/30134→Gordon's Flavors, 30075→Gordon's; pendientes 35093/35101 (ACJ26-023) y 74882/74881 (ACJ26-022) se muestran como código; JS del portal parsea; screenshot del modal con la sección de códigos. Deployado a Render.
+
 ## 2026-07-02 - feat(acciones comerciales): cajas mixtas almacén/kiosco por CÓDIGOS EXACTOS (SKU curados por gerencia)
 
 - Pedido: armar las 2 cajas mixtas (almacén/kiosco, V3/V4/V6/V8/V10) con los códigos exactos que participan, en vez del match por marca. "Si hay algún parecido no importa" → no preocuparse por colisiones. Segmento almacén/kiosco se mantiene.
