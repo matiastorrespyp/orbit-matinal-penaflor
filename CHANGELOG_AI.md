@@ -1,5 +1,16 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-02 - feat(acciones comerciales): cajas mixtas almacén/kiosco por CÓDIGOS EXACTOS (SKU curados por gerencia)
+
+- Pedido: armar las 2 cajas mixtas (almacén/kiosco, V3/V4/V6/V8/V10) con los códigos exactos que participan, en vez del match por marca. "Si hay algún parecido no importa" → no preocuparse por colisiones. Segmento almacén/kiosco se mantiene.
+- Mapeo de los 2 grupos que pasó gerencia: Grupo 1 = Spirits (Smirnoff+Gordon's) → ACJ26-023 15%; Grupo 2 = VDA (Trapiche Reserva + Los Árboles) → ACJ26-022 20%.
+- `productos_marcas` de ACJ26-022 y 023 pasó de tokens de marca a la LISTA DE CÓDIGOS. El `pred` ya soporta `code_set` (match por Codigo exacto), así que ahora cada acción matchea solo esos SKU (footprint + alertas). Detalle: Trapiche → "Trapiche Reserva" (los códigos del grupo 2 son solo Reserva, sin Origen By Trapiche).
+  - Grupo 1 (ACJ26-023): 30019; 35093; 35101; 30020; 30135; 30131; 30065; 30139; 30075; 30134. Se dedupe `30020` (venía repetido) y se corrige `300131`→`30131` (typo). `35093` no está en el maestro liviano pero se incluye literal (el match es por código de venta).
+  - Grupo 2 (ACJ26-022): 74737; 74415; 74421; 74419; 74882; 74881; 80089; 80007; 80008; 80010. `74882`/`74881` no están en el maestro liviano; se incluyen literal.
+- Motor: el filtro heurístico "solo botella" ahora se saltea cuando la acción trae códigos explícitos (`solo_botella and not code_set`): con SKU curados no hace falta el heurístico. Queda inactivo para 022/023 (usan códigos) y disponible para futuras acciones sin códigos.
+- Validado: CSV íntegro (24 filas × 36 cols); ACJ26-023 pred True para 30020 (botella en lista) y False para 35103 (Smirnoff Ice, fuera de lista); detalle 022 = Los Árboles + Trapiche Reserva, 023 = Smirnoff/Smirnoff Flavors/Gordon's/Gordon's Flavors; 23 acciones orden ASC; V3/V4 las ven, V7 no; alertas 3 legítimas; endpoints 200. Deployado a Render.
+- REVISAR (gerencia): confirmar `35093` (no aparece en el maestro liviano; ¿código correcto?), `74882`/`74881` (idem), y que `300131` efectivamente era `30131`.
+
 ## 2026-07-02 - fix(acciones comerciales): ACJ26-023 (caja mixta Smirnoff+Gordon's 15%) es SOLO botella
 
 - Aclaración del usuario: la acción del 15% (3 botellas Smirnoff + 3 botellas Gordon's) aplica SOLO a botella, no a lata/RTD. El detalle ya excluía Smirnoff Ice, pero el footprint/alertas usan el `pred` por marca SIN filtro de categoría, así que el token "Gordon's" todavía matcheaba Gordon's Tonic (lata RTD) y "Smirnoff" la Smirnoff Ice.

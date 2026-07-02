@@ -3907,7 +3907,8 @@ def _acc_product_pred(rule, all_lineas):
         return False
 
     # Acción "solo botella" (ej. caja mixta 3 botellas + 3 botellas): excluye latas/RTD.
-    solo_botella = "BOTELLA" in _acc_norm(" ".join(str(rule.get(k, "")) for k in (
+    # Si la acción lista códigos explícitos, éstos ya están curados → no se aplica el heurístico.
+    solo_botella = (not code_set) and "BOTELLA" in _acc_norm(" ".join(str(rule.get(k, "")) for k in (
         "condicion_compra", "unidad_minimo", "unidad_maximo", "subcategoria")))
     if not solo_botella:
         return pred
