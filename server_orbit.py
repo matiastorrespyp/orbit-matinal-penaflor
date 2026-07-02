@@ -3702,11 +3702,23 @@ def _acc_seg_canon(seg_text, canal_text):
         out.add("AUTOSERVICIO")
     if "ON PREMISE" in t or "ON_PREMISE" in t or "VTK" in t or "TDB" in t or "VINOTECA" in t:
         out.add("ON_PREMISE_VTK")
+    # MAYORISTA es su propio canon: una acción de Petit Mayoristas NO debe caer sobre
+    # autoservicios (el cliente mayorista se detecta aparte por Ramo/Subramo, _es_mayorista).
     if "MAYORISTA" in t:
-        out.add("AUTOSERVICIO")
+        out.add("MAYORISTA")
     if not out:
-        out = {"TRADICIONAL", "AUTOSERVICIO", "ON_PREMISE_VTK", "OTROS"}
+        out = {"TRADICIONAL", "AUTOSERVICIO", "ON_PREMISE_VTK", "MAYORISTA", "OTROS"}
     return out
+
+
+def _acc_seg_match(row_seg, row_may, rule_segs):
+    """¿La fila (segmento clasificado + flag mayorista) cae bajo los segmentos de la regla?
+    - Cliente mayorista → solo si la regla apunta a MAYORISTA.
+    - Cliente NO mayorista → si su segmento está en la regla (el token MAYORISTA nunca
+      iguala un segmento clasificado, así que no lo alcanza)."""
+    if row_may:
+        return "MAYORISTA" in rule_segs
+    return row_seg in rule_segs
 
 
 # Subtipos de tradicional para acciones que aplican SOLO a almacén/despensa/kiosco.
@@ -3917,6 +3929,11 @@ def _acc_preparar_from_df(df):
     # Subramo normalizado: sub-filtro de acciones acotadas a almacén/kiosco.
     # Despensa = Almacén (regla de negocio): se canoniza despensa→almacén en todas las estadísticas.
     out["_subseg"] = [_acc_norm(s).replace("DESPENSA", "ALMACEN") for s in _subr]
+    # Cliente Petit Mayorista (por Ramo/Subramo): se separa de AUTOSERVICIO para que las
+    # acciones de MAYORISTA no caigan sobre autoservicios (y viceversa). El clasificador
+    # global mete al mayorista en AUTOSERVICIO; acá se detecta aparte, sin tocarlo.
+    _ramo_txt = df.get("Ramo", pd.Series([""] * len(df))).astype(str).str.upper()
+    out["_es_mayorista"] = (_ramo_txt + " " + _subr.astype(str).str.upper()).str.contains("MAYORISTA", na=False)
     _fc = pd.to_datetime(df.get("FechaComprobante"), dayfirst=True, errors="coerce")
     out["_mes"]  = _fc.dt.to_period("M")
     out["_fcomp"] = _fc.dt.strftime("%d/%m/%Y").fillna("")
@@ -4118,10 +4135,15 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
                 if sub_allowed is None:
                     sub_allowed = {"ALMACEN", "KIOSCO"}
 
-        def _match(df, sub_allowed=sub_allowed):
+        wants_may = "MAYORISTA" in seg_use
+        def _match(df, sub_allowed=sub_allowed, wants_may=wants_may):
             if df.empty:
                 return df
-            m = df["_vend"].isin(codes) & df["_seg"].isin(seg_use)
+            # Segmento: clientes NO mayoristas matchean por su segmento clasificado;
+            # los mayoristas SOLO si la regla apunta a MAYORISTA (evita el cruce con AS).
+            es_may = df["_es_mayorista"] if "_es_mayorista" in df.columns else False
+            seg_ok = (~es_may & df["_seg"].isin(seg_use)) | (es_may & wants_may)
+            m = df["_vend"].isin(codes) & seg_ok
             if sub_allowed is not None:
                 # el sub-filtro almacén/kiosco SOLO restringe el canon TRADICIONAL;
                 # Autoservicio / On Premise no se filtran por subramo (acción multicanal).
@@ -4276,13 +4298,14 @@ def _alertas_descuento_mes():
         if apl <= 0:
             continue
         vend = row["_vend"]; seg_v = row["_seg"]
+        row_may = bool(row["_es_mayorista"]) if "_es_mayorista" in row else False
         allowed, fuente_id = 0.0, None
         for rid, codes, seg, sub_allowed, pred, maxpct in parsed:
             # el sub-filtro almacén/kiosco SOLO restringe el canon TRADICIONAL
             if (sub_allowed is not None and str(row["_seg"]).upper() == "TRADICIONAL"
                     and not any(tok in row["_subseg"] for tok in sub_allowed)):
                 continue
-            if (vend in codes) and (seg_v in seg) and pred(row["_cat"], row["_linea"], row["_art"], row["_marca"], row["_cod"]):
+            if (vend in codes) and _acc_seg_match(seg_v, row_may, seg) and pred(row["_cat"], row["_linea"], row["_art"], row["_marca"], row["_cod"]):
                 if maxpct > allowed:
                     allowed, fuente_id = maxpct, rid
         try: cli_int = int(row["_cli"])

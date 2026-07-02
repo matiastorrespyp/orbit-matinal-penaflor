@@ -1,5 +1,15 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-02 - fix(acciones comerciales): las acciones de MAYORISTA no deben caer sobre autoservicios
+
+- Bug reportado: la tarjeta de ACJ26-021 (Petit Mayoristas, canal MAYORISTA) mostraba al cliente 538, que es Autoservicio.
+- Causa raíz: el canal MAYORISTA de la regla mapeaba a canon AUTOSERVICIO en `_acc_seg_canon`, y el clasificador global `_clasificar_segmento` también mete a los mayoristas dentro de AUTOSERVICIO. Así, toda acción de mayoristas matcheaba a cualquier autoservicio (538 = `TRADITIONAL TRADE / Autoservicio Tradicional` → AUTOSERVICIO). Encima no hay mayoristas en ventas, así que esas acciones debían dar 0 clientes.
+- Fix (SOLO dentro del módulo de acciones; NO se toca `_clasificar_segmento`, que alimenta cobertura/CCC/11T/cierre):
+  - `_acc_seg_canon`: MAYORISTA pasa a ser su propio canon (antes se agregaba AUTOSERVICIO); el fallback "cualquier segmento" ahora incluye MAYORISTA.
+  - `_acc_preparar_from_df`: nueva columna `_es_mayorista` (Ramo/Subramo contiene "MAYORISTA"), para separar al mayorista del autoservicio sin cambiar el clasificador global.
+  - Nuevo helper `_acc_seg_match(row_seg, row_may, rule_segs)`: cliente mayorista matchea solo si la regla apunta a MAYORISTA; cliente no mayorista matchea por su segmento clasificado. `_match` (payload) usa la versión vectorizada; `_alertas_descuento_mes` usa el helper. Corrige el cruce en ambos sentidos (mayorista→AS y AS→mayorista).
+- Validación real: ACJ26-019/020/021 (Petit Mayoristas) → 0 clientes, 538 excluido; ACJ26-001 (Autoservicio) sigue incluyendo a 538; ACJ26-002 (Trad/Kiosco/On Premise) no lo incluye. Alertas sin crash (3), endpoints gerencia/V4/V3 → 200. Deployado a Render.
+
 ## 2026-07-02 - fix(acciones comerciales): detalle de categoría en MODAL encima + marcas reales del maestro
 
 - Feedback del usuario tras probar en Render: el botón de la categoría (1) hacía scrollear al fondo de la lista (se renderizaba en `acc-v-detalle`/`acc-g-detalle` al final), poco práctico; debía abrir una tarjeta ENCIMA con diseño propio; y (2) mostraba la categoría genérica ("VDA") en vez de las MARCAS que entran (ej. "VDA Alto Alma Mora").
