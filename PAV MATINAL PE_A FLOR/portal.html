@@ -678,6 +678,46 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 .emod-sel option { background:#111820; }
 .emod-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:18px; }
 
+/* ── modal detalle de categoría (marcas que entran en una acción) ── */
+.accd-card {
+  background:var(--surf); border:1px solid var(--bs); border-radius:var(--r-xl);
+  width:100%; max-width:560px; max-height:88vh; overflow:hidden;
+  box-shadow:0 32px 80px rgba(0,0,0,.6); display:flex; flex-direction:column;
+}
+.accd-hd {
+  padding:18px 20px 14px; border-bottom:1px solid var(--b);
+  background:linear-gradient(135deg, rgba(226,20,122,.16), rgba(226,20,122,.02));
+  display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+}
+.accd-hd-t { font-family:var(--f-dis); font-size:16px; font-weight:700; line-height:1.3; }
+.accd-hd-s { font-size:11px; color:var(--text3); margin-top:3px; }
+.accd-x {
+  cursor:pointer; font-size:18px; color:var(--text3); line-height:1;
+  border:1px solid var(--b); border-radius:8px; padding:4px 9px; flex-shrink:0;
+}
+.accd-x:hover { color:var(--text); background:rgba(255,255,255,.05); }
+.accd-body { padding:16px 20px 20px; overflow-y:auto; }
+.accd-grp { margin-bottom:16px; }
+.accd-grp:last-child { margin-bottom:0; }
+.accd-grptitle {
+  font-size:11px; font-weight:800; letter-spacing:.6px; text-transform:uppercase;
+  color:var(--mg); margin-bottom:8px;
+  border-bottom:1px dashed var(--b); padding-bottom:5px;
+}
+.accd-seg { display:flex; gap:8px; align-items:baseline; margin:6px 0; flex-wrap:wrap; }
+.accd-segname {
+  font-size:10px; font-weight:700; color:var(--text3); min-width:78px;
+  text-transform:uppercase; letter-spacing:.4px;
+}
+.accd-chips { display:flex; flex-wrap:wrap; gap:5px; flex:1; }
+.accd-chip {
+  font-size:11px; padding:3px 9px; border-radius:20px;
+  background:rgba(255,255,255,.05); border:1px solid var(--b); color:var(--text2);
+}
+.accd-lit { font-size:12px; color:var(--text2); padding:4px 0; line-height:1.45; }
+.accd-obs { color:var(--text3); font-size:11px; }
+.accd-empty { font-size:12px; color:var(--text3); font-style:italic; }
+
 /* ═══════════════════════════════════════════════════════════
    RESPONSIVE — Mobile & Tablet
 ═══════════════════════════════════════════════════════════ */
@@ -2757,37 +2797,48 @@ function accCatChip(scope,a){
   </div>`;
 }
 
+function accCloseCat(){ document.getElementById('accCatBg')?.remove(); }
+
+// Modal (tarjeta encima) con las marcas/líneas que entran en la acción. Se resuelven
+// del maestro vigente en el backend (ej. VDA → Alto · Alma Mora), no se hardcodean.
 function accShowCat(scope,id){
   const dat=scope==='v'?(D.acc_mes_v||{}):(D.acc_mes||{});
   const acc=(dat.acciones||[]).find(a=>a.id_accion===id);
-  const cont=document.getElementById(scope==='v'?'acc-v-detalle':'acc-g-detalle');
-  if(!acc||!cont) return;
-  const key=scope+'|'+id+'|cat';
-  if(cont.dataset.k===key){cont.innerHTML='';cont.dataset.k='';return;}
-  cont.dataset.k=key;
-  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  if(!acc) return;
   const grupos=acc.detalle_categorias||[];
-  if(!grupos.length){cont.innerHTML='';cont.dataset.k='';return;}
-  const secs=grupos.map(g=>{
-    const items=(g.items||[]).map(it=>{
-      const meta=[it.grupo,it.tipo_detalle].filter(x=>x&&x!==g.categoria_tarjeta).join(' · ');
-      return `<div style="padding:5px 0;border-bottom:1px solid var(--b);">
-        <div style="font-size:12px;font-weight:600;">${esc(it.marca_o_linea||'–')}</div>
-        ${meta?`<div style="font-size:10px;color:var(--text3);">${esc(meta)}</div>`:''}
-        ${it.observaciones?`<div style="font-size:10px;color:var(--text2);line-height:1.4;">${esc(it.observaciones)}</div>`:''}
-      </div>`;
-    }).join('');
-    return `<div style="margin-bottom:10px;">
-      <div style="font-size:11px;font-weight:800;color:var(--mg);letter-spacing:.5px;margin-bottom:3px;">${esc(g.categoria_tarjeta||g.detalle_click_ref)}</div>
-      ${items}
-    </div>`;
-  }).join('');
-  cont.innerHTML=`<div class="card" style="background:var(--surf2);"><div class="card-body" style="padding:11px 13px;">
-    <div style="font-size:12px;font-weight:800;margin-bottom:8px;">🗂 ${esc(acc.categoria_tarjeta)} · ${esc(acc.id_accion)}
-      <span style="float:right;cursor:pointer;color:var(--text3);" onclick="document.getElementById('${scope==='v'?'acc-v-detalle':'acc-g-detalle'}').innerHTML='';document.getElementById('${scope==='v'?'acc-v-detalle':'acc-g-detalle'}').dataset.k='';">✕</span></div>
-    <div style="font-size:10px;color:var(--text3);margin-bottom:8px;">Marcas / líneas del maestro vigente. No se hardcodean en la tarjeta.</div>
-    ${secs}
-  </div></div>`;
+  if(!grupos.length) return;
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+  const renderItem=it=>{
+    const ms=it.marcas||[];
+    if(!ms.length){
+      return `<div class="accd-lit">• ${esc(it.marca_o_linea||'')}${it.observaciones?` <span class="accd-obs">— ${esc(it.observaciones)}</span>`:''}</div>`;
+    }
+    const bySeg={};
+    ms.forEach(m=>{const k=m.segmento||'';(bySeg[k]=bySeg[k]||[]).push(m.marca);});
+    return Object.keys(bySeg).map(seg=>`<div class="accd-seg">
+      ${seg?`<span class="accd-segname">${esc(seg)}</span>`:''}
+      <div class="accd-chips">${bySeg[seg].map(x=>`<span class="accd-chip">${esc(x)}</span>`).join('')}</div>
+    </div>`).join('');
+  };
+  const secs=grupos.map(g=>`<div class="accd-grp">
+    <div class="accd-grptitle">${esc(g.categoria_tarjeta||g.detalle_click_ref)}</div>
+    ${(g.items||[]).map(renderItem).join('')||'<div class="accd-empty">Sin marcas resueltas.</div>'}
+  </div>`).join('');
+
+  accCloseCat();
+  const div=document.createElement('div');
+  div.className='emod-bg open'; div.id='accCatBg';
+  div.onclick=e=>{ if(e.target===div) accCloseCat(); };
+  div.innerHTML=`<div class="accd-card" onclick="event.stopPropagation()">
+    <div class="accd-hd">
+      <div><div class="accd-hd-t">🗂 ${esc(acc.categoria_tarjeta||'Detalle')}</div>
+        <div class="accd-hd-s">${esc(acc.id_accion)}${acc.segmento?(' · '+esc(acc.segmento)):''} · marcas del maestro vigente</div></div>
+      <span class="accd-x" onclick="accCloseCat()">✕</span>
+    </div>
+    <div class="accd-body">${secs}</div>
+  </div>`;
+  document.body.appendChild(div);
 }
 
 function accShowDetalle(scope,id,kind){

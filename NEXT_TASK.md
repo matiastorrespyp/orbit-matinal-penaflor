@@ -1,5 +1,15 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-02 - fix(acciones comerciales): modal encima + marcas reales del maestro
+
+### HECHO
+- [x] Detalle de categoría ahora abre en **modal encima** (`.accd-*` sobre `.emod-bg`), no al fondo. Cierra por ✕ / click afuera. Diseño propio (cabecera magenta, chips por segmento).
+- [x] Marcas reales resueltas del **maestro 04D** (no hardcode): `_acc_marcas_maestro()` + `_acc_enriquecer_grupo()`. VDA Alto → Alma Mora, etc. Familias por Linea Comercial; productos/subreglas literales.
+- [x] Validado: VDA Alto incluye Alma Mora; RTD Latas literal; endpoints 200; JS parsea; screenshot del modal OK. Commiteado + pusheado + deployado a Render.
+
+### PENDIENTE / A TENER EN CUENTA
+- [ ] Verificar en vivo en Render el modal (gerencia + vendedor) tras el deploy y que las marcas por segmento se vean bien en mobile.
+
 ## Sesion 2026-07-02 - feat(acciones comerciales): esquema julio + detalle click
 
 ### HECHO

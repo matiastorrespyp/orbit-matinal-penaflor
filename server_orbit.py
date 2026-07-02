@@ -3584,6 +3584,90 @@ def _acc_canon_cat(c):
     return u or None
 
 
+# Orden comercial de segmentos VDA/VDG para listar marcas de menor a mayor gama.
+_ACC_SEG_ORDER = {"MEDIO": 1, "MEDIO ALTO": 2, "ALTO": 3, "SUPERIOR": 4}
+
+
+def _acc_marcas_maestro():
+    """Desde el maestro 04D: dict cat_canon -> [{segmento, marca}] (marca = Linea Comercial,
+    la 'marca canónica'). Deduplicado y ordenado por gama de segmento. NO hardcodea: sale
+    del maestro vigente. Barato (itera dicts ya cacheados de _cargar_maestro_04D)."""
+    cod2cat, cod2seg, cod2lxu, cod2linea = _cargar_maestro_04D()
+    out, seen = {}, set()
+    for cod, cat in cod2cat.items():
+        canon = _acc_canon_cat(cat)
+        if not canon:
+            continue
+        marca = str(cod2linea.get(cod, "") or "").strip()
+        if not marca or marca.lower() == "nan":
+            continue
+        seg = str(cod2seg.get(cod, "") or "").strip()
+        if seg.lower() == "nan":
+            seg = ""
+        key = (canon, seg.upper(), marca.upper())
+        if key in seen:
+            continue
+        seen.add(key)
+        out.setdefault(canon, []).append({"segmento": seg, "marca": marca})
+    for k in out:
+        out[k].sort(key=lambda x: (_ACC_SEG_ORDER.get(x["segmento"].upper(), 99),
+                                   x["segmento"], x["marca"]))
+    return out
+
+
+def _acc_item_cats(txt):
+    """Categorías canónicas del maestro que menciona un texto de detalle (para expandir
+    items FILTRO_MAESTRO/FILTRO_EXCLUSION a marcas reales)."""
+    t = _acc_norm(txt)
+    cats = set()
+    for kw, canon in (("VINOS DEL", "VDA"), ("VDA", "VDA"), ("VINOS DE GUARDA", "VDG"),
+                      ("VDG", "VDG"), ("ESPUMANTE", "ESPUMANTES"), ("SIDRA", "SIDRA"),
+                      ("SPIRIT", "SPIRITS"), ("CERVEZA", "CERVEZA")):
+        if kw in t:
+            cats.add(canon)
+    return cats
+
+
+def _acc_enriquecer_grupo(g, cat_to_marcas, cod2seg, cod2linea):
+    """Copia el grupo de DETALLE_CATEGORIAS agregando a cada item la lista `marcas`
+    (con segmento) resuelta del maestro. Reglas por tipo_detalle:
+      - FILTRO_MAESTRO / FILTRO_EXCLUSION → todas las marcas de la(s) categoría(s).
+      - FAMILIA / MARCA_EXPLICITA → marcas del maestro cuya Linea Comercial matchea el token.
+      - resto (PRODUCTO_EXPLICITO, PRODUCTO_O_FAMILIA, SUBREGLA, EXCLUSION) → literal."""
+    items_out = []
+    for it in g.get("items", []):
+        tipo = _acc_norm(it.get("tipo_detalle"))
+        ml = str(it.get("marca_o_linea", "")).strip()
+        marcas = []
+        if "FILTRO" in tipo or "MAESTRO" in tipo:
+            cats = _acc_item_cats(f"{ml} {g.get('categoria_tarjeta','')} {g.get('detalle_click_ref','')}")
+            seen = set()
+            for c in cats:
+                for m in cat_to_marcas.get(c, []):
+                    k = (m["segmento"].upper(), m["marca"].upper())
+                    if k not in seen:
+                        seen.add(k); marcas.append(m)
+        elif tipo in ("FAMILIA", "MARCA EXPLICITA"):
+            tok = _acc_norm(ml.replace("FAMILIA", "").replace("FLIA", ""))
+            seen = set()
+            for cod, ln in cod2linea.items():
+                lnn = _acc_norm(ln)
+                if tok and lnn and (tok in lnn or lnn in tok):
+                    seg = str(cod2seg.get(cod, "") or "").strip()
+                    if seg.lower() == "nan":
+                        seg = ""
+                    k = (seg.upper(), _acc_norm(ln))
+                    if k not in seen:
+                        seen.add(k); marcas.append({"segmento": seg, "marca": str(ln).strip()})
+            marcas.sort(key=lambda x: (x["segmento"], x["marca"]))
+        item = dict(it)
+        item["marcas"] = marcas  # vacío → el front muestra el label literal (marca_o_linea)
+        items_out.append(item)
+    return {"detalle_click_ref": g.get("detalle_click_ref", ""),
+            "categoria_tarjeta": g.get("categoria_tarjeta", ""),
+            "items": items_out}
+
+
 def _acc_catalogo_mes():
     """Auto-detecta el catálogo del MES EN CURSO (fallback: más reciente disponible).
     Devuelve (mes, fuente, lista_reglas). El catálogo es el primer CSV del mes que NO
@@ -3956,6 +4040,9 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
     all_lineas = set(l for l in pd.concat(_lin).dropna().unique() if l and l != "NAN")
     plan_as_clientes = _acc_plan_as_clientes()
     detalle_map = _acc_detalle_map()   # {} en meses sin detalle (esquema junio)
+    _cat_to_marcas = _acc_marcas_maestro() if detalle_map else {}
+    _m_cod2cat, _m_cod2seg, _m_cod2lxu, _m_cod2linea = (_cargar_maestro_04D() if detalle_map
+                                                        else ({}, {}, {}, {}))
 
     def _detalle_clientes(df, nuevos=None):
         if df.empty:
@@ -4082,7 +4169,9 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
         # detalle_click_ref admite varias referencias separadas por "|": se resuelven todas.
         cat_tarjeta = str(r.get("categoria_tarjeta", "")).strip()
         refs = [x.strip() for x in str(r.get("detalle_click_ref", "")).split("|") if x.strip()]
-        detalle_grupos = [detalle_map[ref] for ref in refs if ref in detalle_map]
+        detalle_grupos = [_acc_enriquecer_grupo(detalle_map[ref], _cat_to_marcas,
+                                                _m_cod2seg, _m_cod2linea)
+                          for ref in refs if ref in detalle_map]
         mostrar_click = (_acc_norm(r.get("mostrar_detalle_click", "")) == "SI") and bool(detalle_grupos)
         try:
             orden_visual = int(float(str(r.get("orden_visual", "")).strip()))
