@@ -1,5 +1,20 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-02 - feat(acciones comerciales): esquema julio + detalle click
+
+### HECHO
+- [x] Backend `server_orbit.py`: `_acc_detalle_map()` lee `detalle_categorias_*.csv` del mes (';' UTF-8-BOM) y arma `{detalle_click_ref: {categoria_tarjeta, items[]}}`, cacheado por mtime.
+- [x] `_acciones_mes_payload_uncached`: agrega por acción `categoria_tarjeta`, `mostrar_detalle_click`, `detalle_click_ref` (lista), `detalle_categorias` (grupos resueltos, multi-ref por `|`), `orden_visual`. Acciones ordenadas por `orden_visual` ASC (sort estable → junio conserva orden).
+- [x] Frontend `portal.html`: chip `🗂 categoria_tarjeta` (helper `accCatChip`) en tarjeta vendedor y gerencia; clic abre `accShowCat` con marcas/líneas del detalle. `id_accion` intacto. Junio sin cambios (chip vacío).
+- [x] Validado: `_acc_detalle_map` 11 refs; payload julio 21 acciones orden ASC, multi-ref OK; endpoints gerencia/V4/V3 → 200; JSON serializa (int/bool nativo); compat junio OK.
+- [x] **Autoactualización por mes**: `_acc_mes_dir()` elige la carpeta del mes en curso (AR) con fallback al no-futuro; `_acc_mes_sig` incluye el mes → flip automático al cambiar de mes sin restart. Probado en 5 escenarios.
+- [x] **Commiteado y pusheado a master → deploy Render** (esta sesión).
+
+### PENDIENTE / A TENER EN CUENTA
+- [ ] Verificar en vivo en Render tras el deploy: `/api/gerencia/acciones_mes` (21 acciones, orden ASC) y el clic de categoría en gerencia/vendedor (screenshots). El portal en 8502 no se levantó en esta sesión.
+- [ ] Al cambiar de mes: subir `acciones_comerciales_<mes>_2026_penaflor.csv` + `detalle_categorias_*.csv` a `01_INPUTS/ACCIONES COMERCIALES/<YYYY-MM>/`. El sistema toma el mes EN CURSO solo (no hace falta tocar código). Subir el mes siguiente por adelantado no adelanta el cambio.
+- [ ] El `.xlsx` de julio no existe (solo los 2 CSV); Orbit lee el CSV. Si más adelante se agrega el xlsx, el loader sigue tomando el CSV principal (se salta explícitamente `detalle_categorias*`).
+
 ## Sesion 2026-07-01 - fix(planes as): escala del mes por nombre de archivo
 
 ### HECHO

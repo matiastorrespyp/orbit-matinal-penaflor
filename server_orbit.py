@@ -3498,6 +3498,82 @@ _ACC_PROD_GENERICOS = {"", "SEGUN MAESTRO PRODUCTOS ACTIVOS", "RESTO SKU", "REST
 _ACC_11T_CACHE = None
 _ACC_INNOV_CACHE = None
 _ACC_PLAN_AS_CACHE = None
+_ACC_DETALLE_CACHE = {}
+
+
+def _acc_mes_dir():
+    """Carpeta de Acciones Comerciales a usar: el MES EN CURSO (YYYY-MM en hora AR) si
+    ya tiene carpeta cargada; si todavía no se subió, cae a la carpeta más reciente
+    disponible (fail-safe: la pantalla nunca queda vacía). Así el módulo se actualiza
+    solo cada mes al crear 01_INPUTS/ACCIONES COMERCIALES/<YYYY-MM>/, y subir el mes
+    siguiente por adelantado NO adelanta el cambio (recién entra al llegar ese mes)."""
+    base = INPUTS / "ACCIONES COMERCIALES"
+    if not base.exists():
+        return None
+    meses = sorted(sub.name for sub in base.iterdir()
+                   if sub.is_dir() and _re.match(r"^\d{4}-\d{2}$", sub.name))
+    if not meses:
+        return None
+    actual = datetime.now(_ARG_TZ).strftime("%Y-%m")
+    if actual in meses:
+        elegido = actual
+    else:
+        # mes en curso aún sin carpeta: usar el mes real más reciente que NO sea futuro
+        # (subir el mes siguiente por adelantado nunca adelanta el cambio). Si todas las
+        # carpetas fueran futuras (estado degenerado), caer a la más nueva.
+        pasados = [m for m in meses if m <= actual]
+        elegido = pasados[-1] if pasados else meses[-1]
+    return base / elegido
+
+
+def _acc_detalle_map():
+    """Lee detalle_categorias_*.csv del mes en curso (';' UTF-8-BOM) y devuelve
+    dict: detalle_click_ref -> {detalle_click_ref, categoria_tarjeta, items:[...]}.
+    Cada item = {grupo, marca_o_linea, tipo_detalle, observaciones}.
+    Vacío si el mes no tiene detalle (esquema histórico, ej. junio). NO hardcodea marcas:
+    todo el detalle sale del CSV. Cacheado por (path, mtime)."""
+    import csv as _csvm
+    mdir = _acc_mes_dir()
+    if mdir is None:
+        return {}
+    det = None
+    for c in sorted(mdir.glob("detalle_categorias*.csv")):
+        if "salida" in str(c).lower() or "_backup" in str(c).lower():
+            continue
+        det = c
+        break
+    if det is None:
+        return {}
+    try:
+        key = (str(det), os.path.getmtime(det))
+    except OSError:
+        key = (str(det), 0)
+    cached = _ACC_DETALLE_CACHE.get(key)
+    if cached is not None:
+        return cached
+    mapa = {}
+    try:
+        with open(det, encoding="utf-8-sig", newline="") as f:
+            for row in _csvm.DictReader(f, delimiter=";"):
+                ref = str(row.get("detalle_click_ref", "")).strip()
+                if not ref:
+                    continue
+                entry = mapa.setdefault(ref, {
+                    "detalle_click_ref": ref,
+                    "categoria_tarjeta": str(row.get("categoria_tarjeta", "")).strip(),
+                    "items": [],
+                })
+                entry["items"].append({
+                    "grupo":         str(row.get("grupo", "")).strip(),
+                    "marca_o_linea": str(row.get("marca_o_linea", "")).strip(),
+                    "tipo_detalle":  str(row.get("tipo_detalle", "")).strip(),
+                    "observaciones": str(row.get("observaciones", "")).strip(),
+                })
+    except Exception:
+        return {}
+    _ACC_DETALLE_CACHE.clear()
+    _ACC_DETALLE_CACHE[key] = mapa
+    return mapa
 
 
 def _acc_canon_cat(c):
@@ -3509,28 +3585,28 @@ def _acc_canon_cat(c):
 
 
 def _acc_catalogo_mes():
-    """Auto-detecta el catálogo del mes más reciente. Devuelve (mes, fuente, lista_reglas)."""
+    """Auto-detecta el catálogo del MES EN CURSO (fallback: más reciente disponible).
+    Devuelve (mes, fuente, lista_reglas). El catálogo es el primer CSV del mes que NO
+    sea el detalle_categorias ni salidas/backups."""
     import csv as _csvm
-    base = INPUTS / "ACCIONES COMERCIALES"
-    if not base.exists():
+    mdir = _acc_mes_dir()
+    if mdir is None:
         return None, None, []
-    cands = []
-    for sub in base.iterdir():
-        if sub.is_dir() and _re.match(r"^\d{4}-\d{2}$", sub.name):
-            for c in sorted(sub.glob("*.csv")):
-                if "salida" in str(c).lower() or "_backup" in str(c).lower():
-                    continue
-                cands.append((sub.name, c)); break
-    if not cands:
-        return None, None, []
-    cands.sort(key=lambda x: x[0])
-    mes, fuente = cands[-1]
+    fuente = None
+    for c in sorted(mdir.glob("*.csv")):
+        low = str(c).lower()
+        if ("salida" in low or "_backup" in low
+                or c.name.lower().startswith("detalle_categorias")):
+            continue
+        fuente = c; break
+    if fuente is None:
+        return mdir.name, None, []
     try:
         with open(fuente, encoding="utf-8-sig", newline="") as f:
             reglas = list(_csvm.DictReader(f, delimiter=";"))
     except Exception:
-        return mes, fuente.name, []
-    return mes, fuente.name, reglas
+        return mdir.name, fuente.name, []
+    return mdir.name, fuente.name, reglas
 
 
 def _acc_seg_canon(seg_text, canal_text):
@@ -3834,6 +3910,9 @@ def _acc_mes_sig():
     except OSError:
         cat = 0
     sig.append(("acc_cat", cat))
+    # Mes en curso en la firma: al cambiar de mes el payload se recalcula solo aunque
+    # el proceso de Render lleve semanas vivo y ningún archivo haya cambiado su mtime.
+    sig.append(("mes_actual", datetime.now(_ARG_TZ).strftime("%Y-%m")))
     return tuple(sig)
 
 
@@ -3876,6 +3955,7 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
     _lin = [v_cur["_linea"]] + ([v_acum["_linea"]] if not v_acum.empty else [])
     all_lineas = set(l for l in pd.concat(_lin).dropna().unique() if l and l != "NAN")
     plan_as_clientes = _acc_plan_as_clientes()
+    detalle_map = _acc_detalle_map()   # {} en meses sin detalle (esquema junio)
 
     def _detalle_clientes(df, nuevos=None):
         if df.empty:
@@ -3998,6 +4078,17 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
         detalle = _detalle_clientes(cur, nuevos)
         detalle_nuevos = [d for d in detalle if d["nuevo"]]
 
+        # Columnas nuevas del esquema julio (ausentes en junio → cadenas vacías / None).
+        # detalle_click_ref admite varias referencias separadas por "|": se resuelven todas.
+        cat_tarjeta = str(r.get("categoria_tarjeta", "")).strip()
+        refs = [x.strip() for x in str(r.get("detalle_click_ref", "")).split("|") if x.strip()]
+        detalle_grupos = [detalle_map[ref] for ref in refs if ref in detalle_map]
+        mostrar_click = (_acc_norm(r.get("mostrar_detalle_click", "")) == "SI") and bool(detalle_grupos)
+        try:
+            orden_visual = int(float(str(r.get("orden_visual", "")).strip()))
+        except (TypeError, ValueError):
+            orden_visual = None
+
         acciones.append({
             "id_accion":     str(r.get("id_accion", "")).strip(),
             "tipo":          tipo,
@@ -4010,6 +4101,12 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
             "descuento_pct": str(r.get("descuento_pct", "")).strip(),
             "tope":          str(r.get("tope", "")).strip(),
             "observaciones": str(r.get("observaciones", "")).strip(),
+            # columnas nuevas esquema julio (compat: vacías/None en junio)
+            "categoria_tarjeta":     cat_tarjeta,
+            "mostrar_detalle_click": mostrar_click,
+            "detalle_click_ref":     refs,
+            "detalle_categorias":    detalle_grupos,
+            "orden_visual":          orden_visual,
             # computado
             "inversion_pesos":   round(float(cur_desc["_desc"].sum()), 0),
             "litros":            round(float(cur["_litros"].sum()), 1),
@@ -4021,6 +4118,11 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
             "clientes_nuevos_detalle": detalle_nuevos,
             "nota_calculo": "clientes desde ventas.csv con ImporteNetoItem > 0; inversion desde valorDescuento x CantBase",
         })
+
+    # Orden de tarjetas por orden_visual ASC (respeta el orden del PPTX julio). Sort
+    # estable: en meses sin la columna (junio) todos caen en el mismo bucket y se
+    # conserva el orden original del catálogo.
+    acciones.sort(key=lambda a: (0, a["orden_visual"]) if isinstance(a.get("orden_visual"), int) else (1, 0))
 
     # Totales reales = sobre la UNION de líneas (sin doble conteo entre acciones).
     uni = v_act.loc[v_act.index.isin(matched_idx)] if matched_idx else v_act.iloc[0:0]
