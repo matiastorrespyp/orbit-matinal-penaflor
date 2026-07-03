@@ -1,5 +1,14 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-03 - feat(incentivo dada): botón "Incentivo Dada" en gerencia (cobertura Dada Tinto Verano · autoservicios)
+
+- Pedido: en el perfil de gerencia, botón bajo Plan Frizze llamado "Incentivo Dada". Adentro: arriba la imagen de 01_INPUTS/dadatinto.png y debajo una tarjeta con el seguimiento de la cobertura del producto. Objetivo de la distribuidora en 01_INPUTS/DADAVERANOOBJ.xlsx y ventas para las coberturas en 01_INPUTS/dadatinto.csv.
+- Regla (del XLSX): "se mide ccc (cobertura del producto 74884 Dada tinto de verano) en autoservicios objetivo 38 clientes". Cliente cubierto = superficie autoservicio + compra válida (ImporteNeto>0) + ≥6 botellas del código objetivo (regla Cobertura Autoservicio de CLAUDE.md). Excluye V1/V2/V5/V20.
+- Backend (server_orbit.py): `_incentivo_dada_objetivo()` parsea objetivo (38) y código (74884) del texto del XLSX (sin hardcode, con fallback); `_incentivo_dada()` lee dadatinto.csv (ya filtrado al producto), clasifica autoservicio por Ramo/Subramo, agrupa por cliente y arma logrado/objetivo/faltan/avance + desglose por vendedor + detalle de clientes. Nueva ruta `/api/gerencia/incentivo_dada`.
+- Frontend (portal.html): item de menú "🍷 Incentivo Dada" bajo Plan Frizze, carga en loadRole (gerencia), router `gRender`, título y render `gIncentivoDada` (hero con la imagen + tarjeta con KPIs, barra de avance, por vendedor y tabla de clientes). CSS `.dd-*`. Imagen copiada a PAV MATINAL PE_A FLOR/dadatinto.png (patrón Frizze) y servida en `/dadatinto.png`.
+- Validado: `/api/gerencia/incentivo_dada` → 200, objetivo=38 logrado=22 faltan=16 avance=57.9% (V8=14, V10=6, V4=2, 22 clientes); `/dadatinto.png` → 200 (2.26MB); py_compile OK; server reiniciado en :8502.
+- Incremento: el KPI "Clientes con compra" es clickeable y abre un modal con el detalle de cada cliente (nombre, localidad, vendedor, total de botellas) y sus pedidos (fecha del comprobante + cantidad). Backend agrega `pedidos:[{fecha,botellas}]` por cliente (agrupado por FechaComprobante). Validado: suma de pedidos == total por cliente (0 descuadres); ej. YANDEN S.A.S 12 bot = 17/06 (6) + 30/06 (6).
+
 ## 2026-07-02 - feat(acciones comerciales): descripción de artículo por código desde productos<mes>.xlsx
 
 - Pedido: en las tarjetas por código, al hacer click mostrar la DESCRIPCIÓN del artículo para que el vendedor sepa qué producto entra. Gerencia subió 01_INPUTS/RAW_PRODUCTOS/productosjulio.xlsx (dato en columna H "Descripción Art.").

@@ -380,6 +380,50 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 .pf-sc-on { color:var(--ok); cursor:pointer; font-weight:600; }
 @media(max-width:560px){ .pf-cards{ grid-template-columns:1fr; } }
 
+/* ── Incentivo Dada ── */
+.dd-hero { border-radius:16px; overflow:hidden; margin-bottom:18px; background:var(--surf2);
+  border:1px solid var(--b); box-shadow:0 8px 24px rgba(0,0,0,.28); }
+.dd-hero img { display:block; width:100%; height:auto; max-height:340px; object-fit:contain; }
+.dd-card .card-body { display:flex; flex-direction:column; gap:16px; }
+.dd-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:11px; }
+.dd-kpi { background:var(--surf2); border:1px solid var(--b); border-radius:12px; padding:14px 16px;
+  display:flex; flex-direction:column; gap:3px; }
+.dd-kpi-click { cursor:pointer; transition:border-color .15s,background .15s; }
+.dd-kpi-click:hover { border-color:var(--mg); background:var(--surf3); }
+.dd-clilist { display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow-y:auto; }
+.dd-clirow { background:var(--surf2); border:1px solid var(--b); border-radius:10px; padding:10px 12px; }
+.dd-clihd { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.dd-cliname { font-size:13.5px; font-weight:600; }
+.dd-clitot { font-size:12px; font-weight:700; color:var(--ok); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.dd-climeta { font-size:11px; color:var(--text3); margin-top:2px; }
+.dd-peds { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.dd-ped { font-size:11px; color:var(--text2); background:var(--surf3); border:1px solid var(--b);
+  border-radius:20px; padding:4px 10px; font-variant-numeric:tabular-nums; }
+.dd-ped-nd { color:var(--text3); font-style:italic; }
+.dd-kn { font-family:var(--f-dis); font-weight:700; font-size:26px; font-variant-numeric:tabular-nums; line-height:1; }
+.dd-kn.ok{ color:var(--ok);} .dd-kn.wn{ color:var(--wn);} .dd-kn.bad{ color:var(--bd);}
+.dd-kl { font-size:11px; color:var(--text3); }
+.dd-bar { height:12px; border-radius:8px; background:var(--surf3); overflow:hidden; }
+.dd-bar-fill { height:100%; border-radius:8px; transition:width .4s; }
+.dd-bar-fill.ok{ background:var(--ok);} .dd-bar-fill.wn{ background:var(--wn);} .dd-bar-fill.bad{ background:var(--bd);}
+.dd-note { font-size:11.5px; color:var(--text3); line-height:1.4; margin-top:-4px; }
+.dd-sub { font-family:var(--f-dis); font-weight:700; font-size:13px; color:var(--text2);
+  border-top:1px solid var(--b); padding-top:14px; }
+.dd-vlist { display:flex; flex-direction:column; gap:7px; margin-top:-6px; }
+.dd-vrow { display:flex; justify-content:space-between; align-items:center; gap:10px;
+  background:var(--surf2); border:1px solid var(--b); border-radius:9px; padding:9px 12px; }
+.dd-vname { font-size:13px; font-weight:600; }
+.dd-vnums { font-size:12px; color:var(--text2); font-variant-numeric:tabular-nums; }
+.dd-tblwrap { overflow-x:auto; margin-top:-6px; }
+.dd-tbl { width:100%; border-collapse:collapse; font-size:12.5px; }
+.dd-tbl th { text-align:left; font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px;
+  color:var(--text3); padding:6px 8px; border-bottom:1px solid var(--b); white-space:nowrap; }
+.dd-tbl td { padding:8px; border-bottom:1px solid var(--b); }
+.dd-tbl tr.dd-nc td { color:var(--text3); }
+.dd-id { color:var(--text3); font-size:10px; }
+.dd-empty { color:var(--text3); padding:12px 4px; font-size:12.5px; text-align:center; }
+.dd-fuente { font-size:10.5px; color:var(--text3); border-top:1px solid var(--b); padding-top:10px; }
+
 /* ═══════════════════════════════════════════════════════════
    COMPONENTES COMPARTIDOS
 ═══════════════════════════════════════════════════════════ */
@@ -1000,6 +1044,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       <div class="gs-item" data-sc="acciones_comerciales" onclick="gSw('acciones_comerciales',this)"><span class="gs-ico">💰</span>Acciones Comerciales</div>
       <div class="gs-item" data-sc="incentivo_faro" onclick="gSw('incentivo_faro',this)"><span class="gs-ico">🌟</span>Incentivo FARO</div>
       <div class="gs-item" data-sc="plan_frizze" onclick="gSw('plan_frizze',this)"><span class="gs-ico">🥂</span>Plan Frizze</div>
+      <div class="gs-item" data-sc="incentivo_dada" onclick="gSw('incentivo_dada',this)"><span class="gs-ico">🍷</span>Incentivo Dada</div>
       <div class="gs-sec">Reportes</div>
       <div class="gs-item" data-sc="cierre_mes" onclick="gSw('cierre_mes',this)"><span class="gs-ico">🏁</span>Cierre de Mes</div>
     </div>
@@ -1268,7 +1313,7 @@ async function loadRole(){
     if(planFrizzeV) D.plan_frizze_v=planFrizzeV;
   }
   if(userData?.rol==='gerencia'){
-    const [cccEmp,onceTit,onceTitDia,inov,cobAcum,t11Acum,inovTot,plasAS,sellLitros,accRank,dormidos,planFrizzeG]=await Promise.all([
+    const [cccEmp,onceTit,onceTitDia,inov,cobAcum,t11Acum,inovTot,plasAS,sellLitros,accRank,dormidos,planFrizzeG,incentivoDadaG]=await Promise.all([
       safe('/api/gerencia/ccc_empresa'),
       safe('/api/gerencia/once_titulares'),
       safe('/api/gerencia/once_titulares_zona?dia='+(currentDay||'')),
@@ -1280,7 +1325,8 @@ async function loadRole(){
       safe('/api/gerencia/sellout_litros'),
       safe('/api/gerencia/acciones_mes'),
       safe('/api/gerencia/alertas_caida'),
-      safe('/api/gerencia/plan_frizze')
+      safe('/api/gerencia/plan_frizze'),
+      safe('/api/gerencia/incentivo_dada')
     ]);
     if(cccEmp)      D.cccEmpresa=cccEmp;
     if(onceTit)     D.onceTit=onceTit;
@@ -1294,6 +1340,7 @@ async function loadRole(){
     if(accRank)     D.acc_mes=accRank;
     if(dormidos)    D.dormidos=dormidos;
     if(planFrizzeG) D.plan_frizze_g=planFrizzeG;
+    if(incentivoDadaG) D.incentivo_dada_g=incentivoDadaG;
   }
 }
 
@@ -1411,7 +1458,7 @@ function gSw(id,el){
   gScreen=id;
   document.querySelectorAll('.gs-item').forEach(n=>n.classList.remove('active'));
   (el||document.querySelector(`[data-sc="${id}"]`))?.classList.add('active');
-  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',cliente:'Cliente',planificacion:'Planificación',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',incentivo_faro:'Incentivo FARO',plan_frizze:'Plan Frizze',cierre_mes:'Cierre de Mes'};
+  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',cliente:'Cliente',planificacion:'Planificación',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',incentivo_faro:'Incentivo FARO',plan_frizze:'Plan Frizze',incentivo_dada:'Incentivo Dada',cierre_mes:'Cierre de Mes'};
   document.getElementById('gTopTitle').textContent=tt[id]||'';
   gRender();
 }
@@ -1429,6 +1476,7 @@ function gRender(){
   else if(gScreen==='acciones_comerciales')  gAccionesComerciales(p);
   else if(gScreen==='incentivo_faro')        gIncentivoFaro(p);
   else if(gScreen==='plan_frizze')           gPlanFrizze(p);
+  else if(gScreen==='incentivo_dada')        gIncentivoDada(p);
   else if(gScreen==='dormidos')              gDormidos(p);
   else if(gScreen==='cierre_mes')            gCierreMes(p);
 }
@@ -3208,6 +3256,98 @@ function verSincargoFrizze(cid, codigo){
     <div class="emod-title">Sin cargo · ${m?m.label:('Cód. '+codigo)}</div>
     <div style="font-size:12px;color:var(--text3);margin:-10px 0 14px;">${c?c.nombre:''}${cid?' · #'+cid:''} · fecha de facturación</div>
     ${filas}
+    <div class="emod-actions"><button class="g-ghost" onclick="closeModal()">Cerrar</button></div>
+  </div>`;
+  document.body.appendChild(div);
+  div.addEventListener('click',e=>{if(e.target===div) closeModal();});
+}
+
+/* ════ INCENTIVO DADA (cobertura Dada Tinto Verano · autoservicios) ════ */
+function gIncentivoDada(p){
+  const d=D.incentivo_dada_g;
+  if(!d || d.error){
+    p.innerHTML=`<div class="gph"><div><div class="gph-title">Incentivo Dada</div></div></div>
+      <div class="card"><div class="card-body"><div class="empty"><div class="eico">🍷</div>
+      <p>${(d&&d.error)||'Falta la fuente (01_INPUTS/dadatinto.csv o DADAVERANOOBJ.xlsx).'}</p></div></div></div>`;
+    return;
+  }
+  const prod=d.producto||{};
+  const avance=Number(d.avance_pct||0);
+  const cls=avance>=100?'ok':(avance>=60?'wn':'bad');
+  const barW=Math.min(avance,100);
+
+  const filVend=(d.por_vendedor||[]).map(v=>`
+    <div class="dd-vrow">
+      <span class="dd-vname">${v.vendedor_id||'—'}${v.vendedor_nombre?' · '+v.vendedor_nombre:''}</span>
+      <span class="dd-vnums"><b>${v.clientes}</b> cli · ${v.botellas} bot.</span>
+    </div>`).join('') || '<div class="dd-empty">Sin clientes cubiertos aún.</div>';
+
+  const filCli=(d.clientes||[]).map(c=>`
+    <tr class="${c.cubierto?'':'dd-nc'}">
+      <td>${c.cubierto?'✅':'⚠️'}</td>
+      <td>${c.nombre||'Dato no disponible'} <span class="dd-id">#${c.cliente_id}</span></td>
+      <td>${c.localidad||''}</td>
+      <td>${c.vendedor_id||'—'}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;">${c.botellas}</td>
+    </tr>`).join('') || '<tr><td colspan="5" class="dd-empty">Sin ventas del producto aún.</td></tr>';
+
+  p.innerHTML=`
+  <div class="gph"><div><div class="gph-title">Incentivo Dada</div>
+    <div class="gph-sub">Cobertura ${prod.articulo?prod.articulo:('Cód. '+(prod.codigo||''))} · ${d.superficie||'Autoservicios'}</div></div></div>
+
+  <div class="dd-hero"><img src="${prod.imagen||'/dadatinto.png'}" alt="Incentivo Dada" loading="lazy"></div>
+
+  <div class="card dd-card">
+    <div class="card-body">
+      <div class="dd-kpis">
+        <div class="dd-kpi dd-kpi-click" title="Ver detalle de clientes con compra" onclick="ddVerClientes()"><span class="dd-kn ${cls}">${d.logrado}</span><span class="dd-kl">Clientes con compra ▸</span></div>
+        <div class="dd-kpi"><span class="dd-kn">${d.objetivo}</span><span class="dd-kl">Objetivo distribuidora</span></div>
+        <div class="dd-kpi"><span class="dd-kn ${cls}">${avance.toLocaleString('es-AR',{maximumFractionDigits:1})}%</span><span class="dd-kl">Avance</span></div>
+        <div class="dd-kpi"><span class="dd-kn">${d.faltan}</span><span class="dd-kl">Faltan</span></div>
+      </div>
+      <div class="dd-bar"><div class="dd-bar-fill ${cls}" style="width:${barW}%"></div></div>
+      <div class="dd-note">Cliente cubierto = autoservicio con compra válida y ≥ ${d.min_botellas||6} botellas del código ${prod.codigo||''}. Excluye V2/V5/V20.</div>
+
+      <div class="dd-sub">Por vendedor</div>
+      <div class="dd-vlist">${filVend}</div>
+
+      <div class="dd-sub">Detalle de clientes (${(d.clientes||[]).length})</div>
+      <div class="dd-tblwrap">
+        <table class="dd-tbl">
+          <thead><tr><th></th><th>Cliente</th><th>Localidad</th><th>Vend.</th><th style="text-align:right;">Bot.</th></tr></thead>
+          <tbody>${filCli}</tbody>
+        </table>
+      </div>
+      <div class="dd-fuente">Fuente: ${d.fuente||''}${d.regla?' · '+d.regla:''}</div>
+    </div>
+  </div>`;
+}
+
+/* Modal: detalle de clientes con compra (cantidad + fecha del pedido) */
+function ddVerClientes(){
+  const d=D.incentivo_dada_g; if(!d) return;
+  const cli=(d.clientes||[]).filter(c=>c.cubierto);
+  const fmtF=s=>{const p=(s||'').split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:(s||'');};
+  const filas=cli.length ? cli.map(c=>{
+    const peds=(c.pedidos||[]).slice().sort((a,b)=>a.fecha<b.fecha?-1:1);
+    const chips=peds.length
+      ? peds.map(p=>`<span class="dd-ped">📅 ${fmtF(p.fecha)} · <b>${p.botellas}</b> bot.</span>`).join('')
+      : `<span class="dd-ped dd-ped-nd">Sin fecha registrada</span>`;
+    return `<div class="dd-clirow">
+      <div class="dd-clihd">
+        <span class="dd-cliname">${c.nombre||'Dato no disponible'} <span class="dd-id">#${c.cliente_id}</span></span>
+        <span class="dd-clitot">${c.botellas} bot.</span>
+      </div>
+      <div class="dd-climeta">${[c.localidad,(c.vendedor_id||'')+(c.vendedor_nombre?' · '+c.vendedor_nombre:'')].filter(Boolean).join(' · ')}</div>
+      <div class="dd-peds">${chips}</div>
+    </div>`;
+  }).join('') : `<div class="dd-empty">Sin clientes con compra aún.</div>`;
+  document.getElementById('emodBg')?.remove();
+  const div=document.createElement('div'); div.className='emod-bg open'; div.id='emodBg';
+  div.innerHTML=`<div class="emod-card" style="max-width:520px;">
+    <div class="emod-title">Clientes con compra · Incentivo Dada</div>
+    <div style="font-size:12px;color:var(--text3);margin:-10px 0 14px;">${cli.length} clientes · cantidad y fecha del pedido</div>
+    <div class="dd-clilist">${filas}</div>
     <div class="emod-actions"><button class="g-ghost" onclick="closeModal()">Cerrar</button></div>
   </div>`;
   document.body.appendChild(div);

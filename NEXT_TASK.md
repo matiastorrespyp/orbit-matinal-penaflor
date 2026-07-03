@@ -1,5 +1,17 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-03 - feat(incentivo dada): botón + cobertura Dada Tinto Verano
+
+### HECHO
+- [x] Gerencia: botón "🍷 Incentivo Dada" bajo Plan Frizze. Hero con 01_INPUTS/dadatinto.png (copiada a la carpeta del portal → `/dadatinto.png`) + tarjeta de cobertura (KPIs, barra de avance, por vendedor, tabla de clientes).
+- [x] Backend `/api/gerencia/incentivo_dada`: objetivo y código parseados de DADAVERANOOBJ.xlsx; ventas de dadatinto.csv; cliente cubierto = autoservicio + compra válida + ≥6 bot.; excluye V2/V5/V20.
+- [x] Validado: 200; objetivo=38 logrado=22 faltan=16 avance=57.9% (V8=14, V10=6, V4=2); imagen 200. Server local :8502 reiniciado.
+
+### PENDIENTE / A TENER EN CUENTA
+- [ ] **Commit + deploy a Render NO hechos** (esperando aprobación). Al commitear: incluir server_orbit.py, portal.html, CHANGELOG/NEXT_TASK y el asset `PAV MATINAL PE_A FLOR/dadatinto.png`; los inputs (dadatinto.csv, dadatinto.png, DADAVERANOOBJ.xlsx) NO se commitean salvo orden — pero OJO: si Render necesita dadatinto.csv/DADAVERANOOBJ.xlsx para computar, hay que definir cómo llegan (¿cierre/subida?). Sin esos inputs el endpoint devuelve 404 en Render.
+- [ ] Confirmar con gerencia la definición de "cubierto": hoy = autoservicio + ≥6 botellas (regla Cobertura AS). Si quieren CCC puro (compra >0 sin umbral) o incluir otras superficies, ajustar `_incentivo_dada`.
+- [ ] ¿Falta vista de vendedor (cada vendedor ve solo sus clientes Dada)? El pedido fue solo gerencia; si lo quieren, replicar patrón Frizze.
+
 ## Sesion 2026-07-02 - feat(acciones): tarjeta caja mixta almacén/kiosco + review de alertas
 
 ### HECHO

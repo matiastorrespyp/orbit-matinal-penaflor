@@ -6163,6 +6163,132 @@ def vendedor_plan_frizze(vid):
     return jsonify(_to_native({"generado_en": _now_ar(), "vendedor": vid_u, **data}))
 
 
+# ====== INCENTIVO DADA (cobertura Dada Tinto Verano · autoservicios) ======
+_DADA_COB_MIN = 6   # Cobertura Autoservicio = mínimo 6 botellas (CLAUDE.md)
+
+def _incentivo_dada_objetivo():
+    """Objetivo desde 01_INPUTS/DADAVERANOOBJ.xlsx (texto de la regla, editable).
+    Extrae objetivo de clientes y código de producto del texto; fallback a defaults."""
+    import re as _re
+    path = INPUTS / "DADAVERANOOBJ.xlsx"
+    obj = {"objetivo_clientes": 38, "codigo": "74884", "superficie": "Autoservicios",
+           "regla": "", "fuente": path.name}
+    if not path.exists():
+        return obj
+    try:
+        raw = pd.read_excel(path, header=None)
+        txt = " ".join(str(x) for row in raw.values.tolist() for x in row if pd.notna(x)).strip()
+        obj["regla"] = txt
+        m = _re.search(r"objetivo\s+(\d+)\s+cliente", txt, _re.I)
+        if m:
+            obj["objetivo_clientes"] = int(m.group(1))
+        m = _re.search(r"producto\s+(\d+)", txt, _re.I)
+        if m:
+            obj["codigo"] = m.group(1)
+    except Exception as e:
+        print(f"[WARN] incentivo_dada objetivo: {e}")
+    return obj
+
+
+def _incentivo_dada():
+    """Cobertura del producto Dada Tinto Verano en autoservicios (CCC de producto).
+    Fuente ventas: 01_INPUTS/dadatinto.csv (ya filtrado al código objetivo).
+    Objetivo:      DADAVERANOOBJ.xlsx.
+    Cliente cubierto = autoservicio + compra válida (ImporteNeto>0) + ≥6 botellas
+    del código objetivo. Excluye V1/V2/V5/V20 (sin ruta con objetivo). Devuelve None
+    si falta la fuente de ventas."""
+    import unicodedata as _ud
+    path = INPUTS / "dadatinto.csv"
+    if not path.exists():
+        return None
+    obj = _incentivo_dada_objetivo()
+
+    df = pd.DataFrame()
+    for enc in ("latin1", "utf-8-sig", "utf-8"):
+        try:
+            df = pd.read_csv(path, sep=";", encoding=enc, dtype=str, low_memory=False)
+            break
+        except Exception:
+            continue
+    req = {"Cliente", "CodVendedor", "ImporteNetoItem", "Codigo", "Ramo", "Subramo", "CantBase"}
+    if df.empty or not req.issubset(set(df.columns)):
+        return None
+
+    def _norm(s):
+        return _ud.normalize("NFKD", str(s)).encode("ascii", "ignore").decode().lower()
+
+    cod_norm = df["Codigo"].astype(str).str.replace(r"\.0$", "", regex=True).str.strip()
+    df = df[cod_norm == str(obj["codigo"])].copy()
+    df["_cli"]  = pd.to_numeric(df["Cliente"], errors="coerce")
+    df["_vend"] = pd.to_numeric(df["CodVendedor"], errors="coerce")
+    df["_imp"]  = df["ImporteNetoItem"].apply(_parse_num_ar)
+    df["_cant"] = pd.to_numeric(df["CantBase"], errors="coerce").fillna(0)
+    df["_fec"]  = pd.to_datetime(df.get("FechaComprobante"), dayfirst=True, errors="coerce")
+    df["_aut"]  = (df["Subramo"].map(_norm).str.contains("autoservicio")
+                   | df["Ramo"].map(_norm).str.contains("autoservicio"))
+
+    # Universo objetivo: autoservicio, compra válida, vendedor con ruta (excl. V1/V2/V5/V20).
+    val = df[(df["_aut"]) & (df["_imp"] > 0) & (~df["_vend"].isin(_VENDEDORES_EXCLUIDOS))].copy()
+
+    articulo = str(df["Articulo"].dropna().mode().iloc[0]) if "Articulo" in df and not df["Articulo"].dropna().empty else ""
+
+    clientes = []
+    if not val.empty:
+        for cid, g in val.groupby("_cli"):
+            botellas = int(g["_cant"].sum())
+            vc = g["_vend"].dropna()
+            vend_id = f"V{int(vc.mode().iloc[0])}" if not vc.empty else ""
+            vend_nom = str(g["Vendedor"].mode().iloc[0]) if "Vendedor" in g and not g["Vendedor"].dropna().empty else ""
+            # Pedidos del cliente: una línea por fecha de comprobante con las botellas de ese día.
+            pedidos = []
+            gf = g.assign(_f=g["_fec"].dt.strftime("%Y-%m-%d"))
+            for f, gg in gf.dropna(subset=["_f"]).groupby("_f"):
+                pedidos.append({"fecha": f, "botellas": int(gg["_cant"].sum())})
+            pedidos.sort(key=lambda e: e["fecha"])
+            clientes.append({
+                "cliente_id": int(cid),
+                "nombre":    str(g["RazonSocial"].mode().iloc[0]) if "RazonSocial" in g and not g["RazonSocial"].dropna().empty else "Dato no disponible",
+                "localidad": str(g["Localidad"].mode().iloc[0]) if "Localidad" in g and not g["Localidad"].dropna().empty else "",
+                "vendedor_id": vend_id, "vendedor_nombre": vend_nom,
+                "botellas": botellas,
+                "cubierto": botellas >= _DADA_COB_MIN,
+                "pedidos": pedidos,
+            })
+    clientes.sort(key=lambda c: (not c["cubierto"], c["vendedor_id"], -c["botellas"]))
+
+    logrado = sum(1 for c in clientes if c["cubierto"])
+    objetivo = int(obj["objetivo_clientes"]) or 0
+    avance = round(logrado / objetivo * 100, 1) if objetivo else 0.0
+
+    por_vend = {}
+    for c in clientes:
+        if not c["cubierto"]:
+            continue
+        k = c["vendedor_id"] or "—"
+        d = por_vend.setdefault(k, {"vendedor_id": c["vendedor_id"], "vendedor_nombre": c["vendedor_nombre"], "clientes": 0, "botellas": 0})
+        d["clientes"] += 1
+        d["botellas"] += c["botellas"]
+    por_vendedor = sorted(por_vend.values(), key=lambda d: -d["clientes"])
+
+    return {
+        "producto": {"codigo": obj["codigo"], "articulo": articulo, "imagen": "/dadatinto.png"},
+        "objetivo": objetivo, "superficie": obj["superficie"],
+        "logrado": logrado, "faltan": max(objetivo - logrado, 0), "avance_pct": avance,
+        "min_botellas": _DADA_COB_MIN,
+        "por_vendedor": por_vendedor, "clientes": clientes,
+        "regla": obj["regla"],
+        "fuente": "dadatinto.csv + DADAVERANOOBJ.xlsx",
+    }
+
+
+@app.route("/api/gerencia/incentivo_dada")
+def gerencia_incentivo_dada():
+    data = _incentivo_dada()
+    if data is None:
+        return jsonify({"error": "Incentivo Dada no disponible: falta 01_INPUTS/dadatinto.csv o columnas requeridas."}), 404
+    return jsonify(_to_native({"generado_en": _now_ar(), **data}))
+
+
 # ====== CIERRE DE MES ======
 @app.route("/api/gerencia/cierre_mes")
 def gerencia_cierre_mes():
