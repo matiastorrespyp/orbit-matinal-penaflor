@@ -1,5 +1,13 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-03 - feat(acciones comerciales): tarjetas de acciones ON (On Premise / VTK / TDB / Catering)
+
+- Pedido: agregar a la pantalla de Acciones Comerciales las tarjetas necesarias para las acciones de ON del archivo `01_INPUTS/ACCIONES COMERCIALES/2026-07/acciones_comerciales_julio_2026_orbit_penaflorON.xlsx`.
+- Fuente: el xlsx trae hoja `01_Acciones` (6 combos de incorporación sin cargo: mecánica, canales, compra, beneficio, tope) + hoja `02_Detalle_Productos` (468 líneas de productos elegibles por subcanal y LC). Son informativas (combos "compra 1 → llevás N sin cargo"), NO pasan por el motor de inversión/footprint de las acciones AS/Trad.
+- Backend (`server_orbit.py`): `_acc_on_file()` autodetecta el `*ON.xlsx` del mes; `_acc_on_cards()` lo parsea (cacheado por mtime) → 6 tarjetas con `grupos:[{subcanal, lineas:[{lc, productos:[{codigo,descripcion,estado}]}]}]`. Se suma su mtime a `_acc_mes_sig` (al resubir el archivo el payload se refresca) y se expone como `acciones_on` en el payload de `acciones_mes` (gerencia y vendedor). El motor existente quedó intacto.
+- Frontend (`portal.html`): sección "🌙 Acciones ON" al pie de la pantalla de Acciones Comerciales (gerencia `gAccionesComerciales` y vendedor `vAcciones`). Cada tarjeta: id, "Sin cargo", título, chips de canal, mecánica, combo `📦 compra → 🎁 beneficio`, tope y "Ver productos (N)". Click → modal `accShowOn` (reusa `.accd-*`) con los productos agrupados por subcanal → LC; los no vigentes se resaltan en ámbar con su estado. CSS `.accon-*`.
+- Validado: `/api/gerencia/acciones_mes` → 23 acciones + 6 `acciones_on` (ON-11T 96 prod, VTK-TDB-11T 166, ON-INNOV 88, VTK-TDB-INNOV 88, ANTARES 6, DADA-TDV 24); `/api/vendedor/V8/acciones_mes` también trae las 6. `node --check` JS OK. Playwright con login gerencia: sección ON con 6 tarjetas, modal abre con grupos por subcanal, 0 errores de consola. Screenshots OK.
+
 ## 2026-07-03 - feat(incentivo dada): botón "Incentivo Dada" en gerencia (cobertura Dada Tinto Verano · autoservicios)
 
 - Pedido: en el perfil de gerencia, botón bajo Plan Frizze llamado "Incentivo Dada". Adentro: arriba la imagen de 01_INPUTS/dadatinto.png y debajo una tarjeta con el seguimiento de la cobertura del producto. Objetivo de la distribuidora en 01_INPUTS/DADAVERANOOBJ.xlsx y ventas para las coberturas en 01_INPUTS/dadatinto.csv.

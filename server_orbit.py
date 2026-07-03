@@ -4099,6 +4099,103 @@ def _acc_preparar_ventas_mes_versionado(path):
 
 
 _ACC_MES_CACHE = {}
+_ACC_ON_CACHE = {}
+
+def _acc_on_file(mdir=None):
+    """xlsx de acciones ON del mes: 01_INPUTS/ACCIONES COMERCIALES/<mes>/*ON.xlsx
+    (autodetecta por sufijo 'ON' antes de la extensión). None si no existe."""
+    mdir = mdir or _acc_mes_dir()
+    if not mdir or not mdir.exists():
+        return None
+    cands = sorted(c for c in mdir.glob("*.xlsx")
+                   if c.stem.lower().endswith("on") and not c.name.startswith("~$"))
+    return cands[-1] if cands else None
+
+
+def _acc_on_cards():
+    """Tarjetas informativas de las acciones ON (On Premise / Vinotecas / Tienda de
+    Bebidas / Catering) desde el xlsx ...penaflorON.xlsx del mes. Hoja 01_Acciones =
+    cabeceras (mecánica, compra, beneficio, tope, canales); hoja 02_Detalle_Productos =
+    productos elegibles por subcanal y LC (para el detalle al click). Son combos de
+    incorporación sin cargo: se muestran como catálogo, sin footprint de inversión.
+    Cacheado por mtime; [] si no hay archivo ON en el mes."""
+    path = _acc_on_file()
+    if not path:
+        return []
+    try:
+        key = os.path.getmtime(path)
+    except OSError:
+        key = 0
+    cached = _ACC_ON_CACHE.get(key)
+    if cached is not None:
+        return cached
+    try:
+        xls = pd.ExcelFile(path)
+        acc_df = pd.read_excel(xls, "01_Acciones")
+        det_df = pd.read_excel(xls, "02_Detalle_Productos")
+    except Exception as e:
+        print(f"[WARN] acc_on_cards: {e}")
+        return []
+
+    def _s(v):
+        if v is None or (isinstance(v, float) and pd.isna(v)):
+            return ""
+        return _re.sub(r"\s+", " ", str(v).replace("\xa0", " ")).strip()
+
+    # Detalle: action_id -> subcanal -> lc_visual -> [productos]
+    det = {}
+    for _, r in det_df.iterrows():
+        aid = _s(r.get("action_id"))
+        if not aid:
+            continue
+        sub = _s(r.get("subcanal")) or "—"
+        lc = _s(r.get("lc_visual")) or "—"
+        cod = r.get("codigo_art")
+        cod = "" if pd.isna(cod) else str(cod).split(".")[0].strip()
+        det.setdefault(aid, {}).setdefault(sub, {}).setdefault(lc, []).append(
+            {"codigo": cod, "descripcion": _s(r.get("descripcion_art")),
+             "estado": _s(r.get("estado_producto"))})
+
+    cards = []
+    for _, r in acc_df.iterrows():
+        aid = _s(r.get("action_id"))
+        if not aid:
+            continue
+        canales = [c.strip() for c in _re.split(r"[;,]", _s(r.get("canales"))) if c.strip()]
+        grupos, n_prod = [], 0
+        for sub, lcs in det.get(aid, {}).items():
+            lineas = []
+            for lc, prods in lcs.items():
+                lineas.append({"lc": lc, "productos": prods})
+                n_prod += len(prods)
+            grupos.append({"subcanal": sub, "n_productos": sum(len(l["productos"]) for l in lineas),
+                           "lineas": lineas})
+        try:
+            orden = int(float(_s(r.get("orden_ppt"))))
+        except (TypeError, ValueError):
+            orden = 999
+        cards.append({
+            "id_accion": _s(r.get("tarjeta_codigo")) or aid,
+            "action_id": aid,
+            "orden": orden,
+            "titulo": _s(r.get("tarjeta_titulo")),
+            "categoria": _s(r.get("categoria")),
+            "segmento_lc": _s(r.get("segmento_lc")),
+            "canales": canales,
+            "mecanica": _s(r.get("mecanica")),
+            "compra_requerida": _s(r.get("compra_requerida")),
+            "beneficio": _s(r.get("beneficio")),
+            "tope": _s(r.get("tope_combo_pdv")),
+            "validacion": _s(r.get("validacion")),
+            "n_productos": n_prod,
+            "grupos": grupos,
+        })
+    cards.sort(key=lambda c: c["orden"])
+    _ACC_ON_CACHE.clear()
+    _ACC_ON_CACHE[key] = cards
+    return cards
+
+
 def _acc_mes_sig():
     """Firma de invalidación del payload de acciones: mtime de las fuentes reales."""
     sig = []
@@ -4122,6 +4219,12 @@ def _acc_mes_sig():
     except OSError:
         cat = 0
     sig.append(("acc_cat", cat))
+    # Archivo de acciones ON del mes (xlsx): al resubirlo, el payload se refresca solo.
+    try:
+        onf = _acc_on_file()
+        sig.append(("acc_on", os.path.getmtime(onf) if onf else 0))
+    except OSError:
+        sig.append(("acc_on", 0))
     # Mes en curso en la firma: al cambiar de mes el payload se recalcula solo aunque
     # el proceso de Render lleve semanas vivo y ningún archivo haya cambiado su mtime.
     sig.append(("mes_actual", datetime.now(_ARG_TZ).strftime("%Y-%m")))
@@ -4393,7 +4496,8 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
         "clientes_con_descuento": int(uni_desc["_cli"].dropna().astype(int).nunique()),
     }
     return {"mes": mes, "fuente": fuente, "periodo": str(per_actual),
-            "generado_en": _now_ar(), "acciones": acciones, "totales": totales}
+            "generado_en": _now_ar(), "acciones": acciones, "totales": totales,
+            "acciones_on": _acc_on_cards()}
 
 
 def _alertas_descuento_mes():

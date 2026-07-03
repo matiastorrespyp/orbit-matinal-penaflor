@@ -1,5 +1,16 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-03 - feat(acciones comerciales): tarjetas de acciones ON
+
+### HECHO
+- [x] Sección "🌙 Acciones ON" en la pantalla de Acciones Comerciales (gerencia + vendedor) con las 6 acciones del `...penaflorON.xlsx` de julio. Tarjetas informativas (combo sin cargo) + modal con productos elegibles por subcanal/LC (no vigentes resaltados).
+- [x] Backend `_acc_on_cards()` + `acciones_on` en el payload; motor de inversión intacto. Validado por endpoint + Playwright (login gerencia).
+
+### PENDIENTE / A TENER EN CUENTA
+- [ ] **Commit + deploy a Render NO hechos** (esperando aprobación). Incluir `server_orbit.py`, `portal.html`, CHANGELOG/NEXT_TASK **y el input** `01_INPUTS/ACCIONES COMERCIALES/2026-07/acciones_comerciales_julio_2026_orbit_penaflorON.xlsx` — sin ese archivo en Render la sección ON sale vacía (mismo criterio que los otros inputs de acciones). El `_acc_mes_sig` ya versiona por mtime, así que al resubir el xlsx el payload se refresca solo.
+- [ ] Convención para meses siguientes: subir `acciones_comerciales_<mes>_..._penaflorON.xlsx` en `01_INPUTS/ACCIONES COMERCIALES/<YYYY-MM>/`. El sistema autodetecta el `*ON.xlsx` del mes; sin tocar código.
+- [ ] Las ON no tienen mapeo de vendedor (aplican por canal ON/VTK/TDB/Catering) → hoy se muestran a todos los vendedores. Si gerencia quiere filtrar por vendedor de On Premise, definir la regla.
+
 ## Sesion 2026-07-03 - feat(incentivo dada): botón + cobertura Dada Tinto Verano
 
 ### HECHO

@@ -762,6 +762,17 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 .accd-obs { color:var(--text3); font-size:11px; }
 .accd-empty { font-size:12px; color:var(--text3); font-style:italic; }
 
+/* Acciones ON (sección informativa dentro de Acciones Comerciales) */
+.accon-sec { margin-top:20px; }
+.accon-sec-hd { font-family:var(--f-dis); font-weight:700; font-size:14px; color:var(--text);
+  display:flex; align-items:center; gap:8px; margin-bottom:12px;
+  border-top:1px solid var(--b); padding-top:16px; }
+.accon-mec { font-size:11.5px; color:var(--text2); line-height:1.4; margin-bottom:8px; }
+.accon-combo { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11.5px;
+  background:var(--surf2); border:1px solid var(--b); border-radius:10px; padding:8px 11px; }
+.accon-arrow { color:var(--mg); font-weight:700; }
+.accon-gift { color:var(--ok); font-weight:600; }
+
 /* ═══════════════════════════════════════════════════════════
    RESPONSIVE — Mobile & Tablet
 ═══════════════════════════════════════════════════════════ */
@@ -2802,6 +2813,7 @@ function vAlertas(){
     });
     h+=`<div id="acc-v-detalle" style="margin:0 12px 12px;"></div></div>`;
   }
+  h+=accOnSectionHTML('v',_accP);
 
   // ── BLOQUE 2: Alertas de clientes ────────────────────────
   const mis=(D.al||[]).filter(a=>{
@@ -2899,6 +2911,67 @@ function accShowCat(scope,id){
       <span class="accd-x" onclick="accCloseCat()">✕</span>
     </div>
     <div class="accd-body">${secs}${codsHtml}</div>
+  </div>`;
+  document.body.appendChild(div);
+}
+
+/* ── Acciones ON (On Premise / Vinotecas / Tienda de Bebidas / Catering) ──
+   Combos de incorporación sin cargo desde el xlsx ...penaflorON.xlsx del mes.
+   Informativas: mecánica + productos elegibles por subcanal/LC al click. */
+function accOnSectionHTML(scope, dat){
+  const list=(dat&&dat.acciones_on)||[];
+  if(!list.length) return '';
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const cards=list.map(a=>`
+    <div class="card">
+      <div class="card-hd">
+        <span class="card-title" style="font-size:12px;">${esc(a.id_accion)}</span>
+        <span class="chip wn" style="font-size:10px;">Sin cargo</span>
+      </div>
+      <div class="card-body">
+        <div style="font-size:13px;font-weight:700;line-height:1.3;margin-bottom:7px;">${esc(a.titulo)}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">
+          ${(a.canales||[]).map(c=>`<span class="chip" style="font-size:9px;">${esc(c)}</span>`).join('')}
+        </div>
+        ${a.mecanica?`<div class="accon-mec">${esc(a.mecanica)}</div>`:''}
+        <div class="accon-combo"><span>📦 ${esc(a.compra_requerida)}</span><span class="accon-arrow">→</span><span class="accon-gift">🎁 ${esc(a.beneficio)}</span></div>
+        ${(a.tope&&a.tope.toLowerCase()!=='nan')?`<div style="font-size:10px;color:var(--text3);margin-top:6px;">Tope: ${esc(a.tope)} combos/PDV</div>`:''}
+        <div style="margin-top:9px;"><span class="chip mg" onclick="accShowOn('${scope}','${esc(a.id_accion)}')" style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;font-size:10px;">📋 Ver productos (${a.n_productos}) ▾</span></div>
+      </div>
+    </div>`).join('');
+  return `<div class="accon-sec">
+    <div class="accon-sec-hd">🌙 Acciones ON · On Premise / Vinotecas / Tienda de Bebidas / Catering <span class="chip mg" style="font-size:9px;">${list.length}</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:13px;">${cards}</div>
+  </div>`;
+}
+
+function accShowOn(scope,id){
+  const dat=scope==='v'?(D.acc_mes_v||{}):(D.acc_mes||{});
+  const a=(dat.acciones_on||[]).find(x=>x.id_accion===id);
+  if(!a) return;
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const secs=(a.grupos||[]).map(g=>`
+    <div class="accd-grp">
+      <div class="accd-grptitle">${esc(g.subcanal)} · ${g.n_productos} productos</div>
+      ${(g.lineas||[]).map(l=>`<div class="accd-seg">
+        <span class="accd-segname">${esc(l.lc)}</span>
+        <div class="accd-chips">${(l.productos||[]).map(p=>{
+          const nv=p.estado&&p.estado.toLowerCase()!=='vigente';
+          return `<span class="accd-chip"${nv?' style="border-color:var(--wn-g);color:var(--wn);"':''}><b>${esc(p.codigo)}</b> · ${esc(p.descripcion)}${nv?` <span style="opacity:.75">(${esc(p.estado)})</span>`:''}</span>`;
+        }).join('')}</div>
+      </div>`).join('')}
+    </div>`).join('');
+  accCloseCat();
+  const div=document.createElement('div');
+  div.className='emod-bg open'; div.id='accCatBg';
+  div.onclick=e=>{ if(e.target===div) accCloseCat(); };
+  div.innerHTML=`<div class="accd-card" onclick="event.stopPropagation()">
+    <div class="accd-hd">
+      <div><div class="accd-hd-t">📋 ${esc(a.titulo)}</div>
+        <div class="accd-hd-s">${esc(a.id_accion)}${a.mecanica?(' · '+esc(a.mecanica)):''}</div></div>
+      <span class="accd-x" onclick="accCloseCat()">✕</span>
+    </div>
+    <div class="accd-body">${secs}</div>
   </div>`;
   document.body.appendChild(div);
 }
@@ -3708,6 +3781,7 @@ function gAccionesComerciales(p){
     </div>`;
   }).join('');
   html+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:13px;">${grid}</div><div id="acc-g-detalle" style="margin-top:14px;"></div>`;
+  html+=accOnSectionHTML('g',dat);
   p.innerHTML=html;
   return;
   /* ===== versión anterior (mayo) deshabilitada — reemplazada por acciones del mes =====
