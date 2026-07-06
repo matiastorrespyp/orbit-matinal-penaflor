@@ -47,6 +47,12 @@ V3 trabaja **únicamente** el canal Tradicional, subsegmentos **Almacén / Despe
 - Para CCC por segmento: clasificar por `Ramo` + `Subramo` de ventas.csv usando `_clasificar_segmento()`.
 - V3: `ccc_autoservicio = 0` independientemente de los datos.
 
+### CCC total empresa vs objetivo — tile gerencia (2026-07-06)
+- Endpoint `GET /api/gerencia/ccc_empresa` (reescrito). **Real:** `ventas.csv` (mes vivo), neto>0, solo Peñaflor, excluye V1/V2/V5/V20; clientes únicos por canal.
+- **5 canales** clasificados por **Ramo** (helper `_canal_ccc_empresa`): `Tradicionales` (default: TRADITIONAL TRADE/ALMACENES) · `Autoservicios` (Ramo AUTOSERVICIO/CASH&CARRY) · `On Premise` (ON PREMISE/AWAY FROM HOME/RESTAURANT) · `Vinotecas` · `On Premise Noche`. **Ojo:** acá el Subramo "Autoservicio Tradicional" cuenta como **Tradicional** (por Ramo), distinto del 11T que lo cuenta como AS — son dos métricas con dos definiciones.
+- **Objetivo:** `01_INPUTS/objccc.xlsx` (columnas Canal / Objetivo CCC; helper `_objetivos_ccc_empresa`). Hoy: On Premise 30 / Vinotecas 15 / On Premise Noche 11 / Autoservicios 145 / Tradicionales 845 = **1046**. Objetivo mensual (fuente = mes vivo).
+- Portal: kcard "CCC Compradores Mes" muestra `real / objetivo · %` + card "📊 CCC Empresa · real vs objetivo" por canal.
+
 ---
 
 ## Cobertura
@@ -87,6 +93,7 @@ V3 trabaja **únicamente** el canal Tradicional, subsegmentos **Almacén / Despe
 2. Excluir `CodVendedor in {1,2,5,20}`.
 3. **Período = TRIMESTRE calendario en curso** (ene-mar / abr-jun / jul-sep / oct-dic). Arranca de cero al cambiar de trimestre (en julio → solo jul en adelante). En el vivo se filtra `FechaComprobante >= inicio del trimestre`.
 4. CCC = clientes únicos (neto>0) por marca titular (nunique de Cliente).
+5. **SUPERFICIE (2026-07-06): el 11T se mide SOLO en Autoservicio + Almacén + Kiosco.** Helper `_mask_superficie_11t(df)` (fail-open si falta Ramo/Subramo). INCLUYE: Ramo `AUTOSERVICIO` **o** Subramo con "AUTOSERVICIO" (cuenta **"Autoservicio Tradicional"** — autoservicios chicos bajo Ramo `TRADITIONAL TRADE`, confirmado con el usuario) + Subramo Almacén/Despensa (o Ramo `ALMACENES`) + Subramo Kiosco/Maxikiosco. EXCLUYE On Premise, Vinotecas, Away From Home, Mayoristas, Cash&Carry, Fiambrería/Carnicería/Panadería y resto tradicional sin formato self-service. Aplicado en las 4 mediciones vivas. (Antes no filtraba superficie → inflaba con On Premise/Vinotecas/etc.)
 
 **Por qué trimestre:** confirmado por el usuario el 2026-06-18. (Antes esta regla decía "archivo completo sin filtro de fecha" / "bimestral" — ambos incorrectos.)
 

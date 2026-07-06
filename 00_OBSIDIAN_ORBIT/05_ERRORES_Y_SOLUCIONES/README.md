@@ -126,3 +126,13 @@ Registro de errores ya diagnosticados, con causa raíz y solución aplicada o pe
 **Solución:** **hard refresh** (`Ctrl+Shift+R`) o ventana de incógnito. Confirmado por el usuario.  
 **Estado:** ✅ Resuelto.  
 **Lección / diagnóstico rápido:** ante "no aparece en Render", primero discriminar: si los **datos** frescos (cierre del día) **sí** se ven pero el **elemento nuevo de UI no** → es caché del navegador (`portal.html` es estático), se resuelve con `Ctrl+Shift+R`. Solo si **tampoco** se ven los datos frescos → mirar el deploy en Render (Events/Deploys, commit efectivo, deploy fallido). No asumir "deploy roto" cuando el síntoma es solo de la capa de UI.
+
+## ERR-012 — `/api/gerencia/cierre_mes` da HTTP 500 por `ventas_mes.csv` en `;` leído con `sep=','`
+
+**Detectado:** 2026-07-06 (mientras se validaba el cambio de 11T por superficie; **preexistente**, no lo introdujo ese cambio).  
+**Síntoma:** `GET /api/gerencia/cierre_mes` → 500. Traceback: `pandas.errors.ParserError: Expected 11 fields in line 7, saw 13` en `_leer_ventas_mes_csv` (línea del sell-out del cierre), **antes** de llegar al bloque 11T.  
+**Causa raíz:** `01_INPUTS/ventas_mes.csv` está delimitado por **`;`** (58 columnas, 0 comas en el header), pero `_leer_ventas_mes_csv` lo lee con **`sep=','`**. Los decimales tipo `6620,94` generan filas con distinta cantidad de campos → ParserError. El lector fue pensado para un `ventas_mes.csv` con coma; el archivo vivo hoy es semicolon.  
+**Prueba de que es preexistente:** se copió `server_orbit.py` de **HEAD (git)** al directorio real del proyecto y `cierre_mes` **también dio 500**. La falsa impresión inicial de "HEAD daba 200" fue porque al cargar HEAD desde el scratchpad, su `INPUTS` resolvía a una carpeta sin `ventas_mes.csv` (saltaba el sell-out).  
+**Estado:** ⏳ Pendiente (anotado en `NEXT_TASK.md`, fuera del alcance de la tarea de 11T).  
+**Solución propuesta:** que `_leer_ventas_mes_csv` **autodetecte** el separador (`;` vs `,`) —o `sep=None`+`engine='python'`— o regenerar `ventas_mes.csv` con coma. La pantalla **Cierre de Mes** queda caída hasta entonces.  
+**Lección:** al comparar "mi versión vs HEAD" cargando módulos desde rutas distintas, verificar que `BASE`/`INPUTS` (derivados de `__file__`) apunten al **mismo** directorio de datos; si no, la comparación es inválida.
