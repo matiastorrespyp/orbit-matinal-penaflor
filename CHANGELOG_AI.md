@@ -1,5 +1,11 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-04 - fix(cierre dia): whitelistear ventas_mes.csv para que no bloquee el cierre
+
+- Síntoma: `CIERRE_DIA_ORBIT.bat` frenaba con "Hay cambios FUNCIONALES pendientes fuera de las rutas operativas" porque `01_INPUTS/ventas_mes.csv` aparecía modificado y no estaba en el allowlist operativo. El cambio era legítimo: reducción de ~6100→320 filas por el reset de mes/trimestre de julio (ventas_mes.csv = cierre congelado, consumido por la vista Sell Out de cierre en Render).
+- Fix (`CIERRE_DIA_ORBIT.bat`): se agregó `":(exclude)01_INPUTS/ventas_mes.csv"` a los dos chequeos de bloqueo (`FUNC_PEND` línea 27 y `FUERA_ALLOW` línea 179) y `git add "01_INPUTS/ventas_mes.csv"` al bloque de staging (PASO 3/3) para que se publique en Render junto con el resto de inputs de cierre. Se preservó CRLF.
+- Validado: el `git status --porcelain` con los excludes del `.bat` sale vacío (ya no frena por inputs de datos). El `.bat` se commitea aparte para que su propio cambio de código no auto-bloquee el próximo cierre.
+
 ## 2026-07-03 - feat(acciones comerciales): tarjetas de acciones ON (On Premise / VTK / TDB / Catering)
 
 - Pedido: agregar a la pantalla de Acciones Comerciales las tarjetas necesarias para las acciones de ON del archivo `01_INPUTS/ACCIONES COMERCIALES/2026-07/acciones_comerciales_julio_2026_orbit_penaflorON.xlsx`.
