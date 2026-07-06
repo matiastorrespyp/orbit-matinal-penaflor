@@ -1,5 +1,14 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-06 - feat(11T): match por Código Art. exacto (matriz oficial) como fuente primaria
+
+- Pedido: para la medición de 11 Titulares, usar las reglas con los códigos de producto del archivo `01_INPUTS/11 titulares autoservicio/11_titulares_autoservicios_match_codigos.xlsx` (contrato de datos preparado por el usuario). La medición sigue siendo **por marca**: todas las variedades de una marca (todos sus códigos) suman a la misma marca (confirmado con el usuario). Decisión de alcance: **Opción A** — si un SKU tiene un código fuera de la matriz igual suma a la marca por texto (no se pierde ninguna variedad).
+- Fuente: hoja `DETALLE_SKU_11T_AS` (82 SKUs, columnas `codigo_articulo` + `linea_comercial_11t`). Las 11 líneas de la matriz coinciden 1:1 con los 11 titulares actuales; única normalización: `SMF ICE`→`SMIRNOFF ICE`. El match es `ventas.Codigo` (SKU) == `codigo_articulo`.
+- Cambio (`server_orbit.py`): nuevo helper módulo `_codigos_11t_map()` (carga cacheada por mtime; `{}` si falta el archivo → cae al comportamiento previo) y `_marca_11t_por_codigo(df)`. Se asigna `marca_objetivo` en 2 pasos: **1) código exacto (primario)**, **2) texto de `Marca` (fallback)** + el keyword-fallback por `Articulo` que ya existía. Aplicado en las 4 rutas que calculan CCC por marca en vivo desde ventas: `gerencia_once_titulares`, `gerencia_once_titulares_zona`, snapshot 11T de `gerencia_cierre_mes` y `_cierre_once_titulares`.
+- Cambio (`tools/generar_cierre_mensual.py`): mismo `_codigos_11t_map()` y `_marca_11t()` reescrito a código-primario + fallback texto, para que el cierre mensual congelado quede consistente con el vivo.
+- NO se tocó: reglas de OP/Vinotecas, cobertura, ni el match por texto de otras marcas (Cazador, JW, NC, etc.); los drill-down `11t_empresa`/`11t_vendedor` que leen el legacy `mod_11_titulares.csv` (otra lineage) quedan como estaban (ver NEXT_TASK.md).
+- Validado: `py_compile` OK. Test client Flask → `/api/gerencia/once_titulares` 200, 82 códigos cargados, CCC sin regresión (ALMA MORA 13, DADA 7, DON DAVID 4, TRAPICHE RESERVA 3 — idénticos a texto). Delta medido sobre `ventas_acumulada.csv`: **0 filas cambian de marca** (código coincide con texto donde ya resolvía; texto cubre el resto). `_marca_11t` del cierre probado: código con texto errado→corrige a la marca correcta, variedad fuera de matriz→suma por texto (Opción A), código de cerveza→ANTARES.
+
 ## 2026-07-04 - fix(cierre dia): whitelistear ventas_mes.csv para que no bloquee el cierre
 
 - Síntoma: `CIERRE_DIA_ORBIT.bat` frenaba con "Hay cambios FUNCIONALES pendientes fuera de las rutas operativas" porque `01_INPUTS/ventas_mes.csv` aparecía modificado y no estaba en el allowlist operativo. El cambio era legítimo: reducción de ~6100→320 filas por el reset de mes/trimestre de julio (ventas_mes.csv = cierre congelado, consumido por la vista Sell Out de cierre en Render).

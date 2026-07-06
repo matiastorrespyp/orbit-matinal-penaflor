@@ -1,5 +1,17 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-06 - feat(11T): match por Código Art. exacto (matriz oficial)
+
+### HECHO
+- [x] 11 Titulares ahora asigna la marca por **Código Art. exacto** (matriz `01_INPUTS/11 titulares autoservicio/11_titulares_autoservicios_match_codigos.xlsx`, hoja `DETALLE_SKU_11T_AS`, 82 SKUs) como fuente primaria; texto de `Marca` = fallback (Opción A: variedades fuera de matriz igual suman a la marca). Medición sigue por marca.
+- [x] `server_orbit.py`: helpers `_codigos_11t_map()` + `_marca_11t_por_codigo()`; aplicado en `gerencia_once_titulares`, `once_titulares_zona`, snapshot de `gerencia_cierre_mes` y `_cierre_once_titulares`. `tools/generar_cierre_mensual.py`: `_marca_11t()` reescrito igual.
+- [x] Validado: 82 códigos, endpoints 200, CCC sin regresión, 0 filas cambian de marca sobre `ventas_acumulada.csv`.
+
+### PENDIENTE / A TENER EN CUENTA
+- [ ] **Commit + deploy a Render NO hechos** (esperando aprobación). Al commitear: `server_orbit.py`, `tools/generar_cierre_mensual.py`, CHANGELOG/NEXT_TASK **y el input** `01_INPUTS/11 titulares autoservicio/11_titulares_autoservicios_match_codigos.xlsx` — sin ese archivo en Render el 11T cae al match por texto (comportamiento previo, no rompe pero no aplica el código). El loader versiona por mtime.
+- [ ] Los drill-down `/api/gerencia/11t_empresa` y `11t_vendedor` leen el legacy `mod_11_titulares.csv` (lo genera `LEGACY/orbit_matinal_v42.py`, otra lineage) → NO fueron migrados al match por código. Ya hoy pueden diferir de la tarjeta principal (vivo vs dataset legacy). Si se quiere que también usen código, hay que decidir si se regenera ese dataset o se migran esos endpoints a cálculo en vivo desde ventas.
+- [ ] La matriz cubre solo SKUs de Autoservicios. Si aparece una variedad NUEVA de una marca titular, conviene agregar su `codigo_articulo` a `DETALLE_SKU_11T_AS` (igual suma por texto mientras tanto).
+
 ## Sesion 2026-07-03 - feat(acciones comerciales): tarjetas de acciones ON
 
 ### HECHO

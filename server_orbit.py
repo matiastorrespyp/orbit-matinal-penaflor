@@ -2142,6 +2142,46 @@ def gerencia_ccc_empresa():
     })
 
 
+# ====== 11 TITULARES: MATCH POR CÓDIGO DE ARTÍCULO (matriz oficial AS) ======
+# Contrato de datos: 01_INPUTS/11 titulares autoservicio/11_titulares_autoservicios_match_codigos.xlsx
+# (hoja DETALLE_SKU_11T_AS). El match por Código Art. exacto es la fuente PRIMARIA para asignar
+# cada SKU a su marca titular; el match por texto de Marca queda como FALLBACK (todas las variedades
+# de una marca suman a la misma marca — validado con el usuario 2026-07-06).
+_COD11T_CACHE = {"mtime": None, "map": None}
+
+def _codigos_11t_map():
+    """codigo_articulo (int) -> marca_objetivo, desde la matriz oficial de 11 Titulares.
+    Si el archivo no está, devuelve {} y el 11T cae al match por texto de Marca (comportamiento previo)."""
+    p = INPUTS / "11 titulares autoservicio" / "11_titulares_autoservicios_match_codigos.xlsx"
+    if not p.exists():
+        return {}
+    mt = p.stat().st_mtime
+    if _COD11T_CACHE["map"] is not None and _COD11T_CACHE["mtime"] == mt:
+        return _COD11T_CACHE["map"]
+    _NORM = {"SMF ICE": "SMIRNOFF ICE"}   # nombre de línea en la matriz -> marca_objetivo canónica
+    out = {}
+    try:
+        d = pd.read_excel(p, sheet_name="DETALLE_SKU_11T_AS")
+        for _, r in d.iterrows():
+            cod = pd.to_numeric(r.get("codigo_articulo"), errors="coerce")
+            marca = str(r.get("linea_comercial_11t", "")).upper().strip()
+            marca = _NORM.get(marca, marca)
+            if pd.notna(cod) and marca and marca != "NAN":
+                out[int(cod)] = marca
+    except Exception as e:
+        print(f"[AVISO] 11T códigos matriz: {e}")
+        return {}
+    _COD11T_CACHE["map"], _COD11T_CACHE["mtime"] = out, mt
+    return out
+
+def _marca_11t_por_codigo(df):
+    """Serie marca_objetivo por match de Codigo exacto contra la matriz (NaN si el código no está)."""
+    lk = _codigos_11t_map()
+    if not lk or "Codigo" not in df.columns:
+        return pd.Series(pd.NA, index=df.index, dtype="object")
+    return pd.to_numeric(df["Codigo"], errors="coerce").map(lk)
+
+
 # ====== GERENCIA: 11 TITULARES POR MARCA ======
 @app.route("/api/gerencia/once_titulares")
 def gerencia_once_titulares():
@@ -2214,7 +2254,11 @@ def gerencia_once_titulares():
                 _ini_trim = pd.Timestamp(_hoy.year, ((_hoy.month - 1) // 3) * 3 + 1, 1)
                 vac = vac[_f >= _ini_trim]
             vac["marca_upper"] = vac["Marca"].astype(str).str.upper().str.strip()
-            vac["marca_objetivo"] = vac["marca_upper"].map(_MARCA_LOOKUP)
+            # 1) match por Código Art. exacto (matriz oficial) — fuente primaria
+            vac["marca_objetivo"] = _marca_11t_por_codigo(vac)
+            # 2) fallback: texto de Marca (para variedades fuera de la matriz)
+            _falta = vac["marca_objetivo"].isna()
+            vac.loc[_falta, "marca_objetivo"] = vac.loc[_falta, "marca_upper"].map(_MARCA_LOOKUP)
             unresolved = vac["marca_objetivo"].isna()
             if unresolved.any():
                 for kw, mo in _ART_KW:
@@ -2393,7 +2437,11 @@ def gerencia_once_titulares_zona():
 
     # ── Normalizar marcas ──
     vac["marca_upper"] = vac["Marca"].astype(str).str.upper().str.strip()
-    vac["marca_objetivo"] = vac["marca_upper"].map(_MARCA_LOOKUP)
+    # 1) match por Código Art. exacto (matriz oficial) — fuente primaria
+    vac["marca_objetivo"] = _marca_11t_por_codigo(vac)
+    # 2) fallback: texto de Marca (para variedades fuera de la matriz)
+    _falta = vac["marca_objetivo"].isna()
+    vac.loc[_falta, "marca_objetivo"] = vac.loc[_falta, "marca_upper"].map(_MARCA_LOOKUP)
     unresolved = vac["marca_objetivo"].isna()
     if unresolved.any():
         for kw, mo in _ART_KW:
@@ -6602,7 +6650,11 @@ def gerencia_cierre_mes():
                     (~vac11["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS)) &
                     (vac11["importe"] > 0)
                 ]
-                vac11["marca_objetivo"] = vac11["Marca"].astype(str).str.upper().str.strip().map(_MARCA_LKP)
+                # 1) match por Código Art. exacto (matriz oficial); 2) fallback texto de Marca
+                vac11["marca_objetivo"] = _marca_11t_por_codigo(vac11)
+                _falta11 = vac11["marca_objetivo"].isna()
+                vac11.loc[_falta11, "marca_objetivo"] = (
+                    vac11.loc[_falta11, "Marca"].astype(str).str.upper().str.strip().map(_MARCA_LKP))
                 unresolved = vac11["marca_objetivo"].isna()
                 if unresolved.any():
                     for kw, mo in _ART_KW_11T:
@@ -7012,7 +7064,10 @@ def _cierre_once_titulares(files):
         # Garantizar solo Peñaflor con cualquier fuente (el lector de ventas_mes no filtra Empresa)
         if "Empresa" in df.columns:
             df = df[df["Empresa"].astype(str).str.strip() == "Empresa"]
-        df["mo"] = df["Marca"].astype(str).str.upper().str.strip().map(_MARCA_LKP_CIERRE)
+        # 1) match por Código Art. exacto (matriz oficial); 2) fallback texto de Marca
+        df["mo"] = _marca_11t_por_codigo(df)
+        _falta_mo = df["mo"].isna()
+        df.loc[_falta_mo, "mo"] = df.loc[_falta_mo, "Marca"].astype(str).str.upper().str.strip().map(_MARCA_LKP_CIERRE)
         for kw, mo in _ART_KW_11T_CIERRE:
             still = df["mo"].isna()
             if not still.any():

@@ -46,6 +46,33 @@ _ART_KW_11T = [
     ("JW BLACK", "JW BLACK"), ("JW RED", "JW RED"),
 ]
 
+# Match por Código Art. exacto (matriz oficial 11 Titulares) — fuente primaria; texto de Marca = fallback.
+_COD11T_CACHE = {"mtime": None, "map": None}
+
+def _codigos_11t_map():
+    """codigo_articulo (int) -> marca_objetivo desde la matriz oficial. {} si falta el archivo."""
+    p = INPUTS / "11 titulares autoservicio" / "11_titulares_autoservicios_match_codigos.xlsx"
+    if not p.exists():
+        return {}
+    mt = p.stat().st_mtime
+    if _COD11T_CACHE["map"] is not None and _COD11T_CACHE["mtime"] == mt:
+        return _COD11T_CACHE["map"]
+    _NORM = {"SMF ICE": "SMIRNOFF ICE"}
+    out = {}
+    try:
+        d = pd.read_excel(p, sheet_name="DETALLE_SKU_11T_AS")
+        for _, r in d.iterrows():
+            cod = pd.to_numeric(r.get("codigo_articulo"), errors="coerce")
+            marca = str(r.get("linea_comercial_11t", "")).upper().strip()
+            marca = _NORM.get(marca, marca)
+            if pd.notna(cod) and marca and marca != "NAN":
+                out[int(cod)] = marca
+    except Exception as e:
+        print(f"[AVISO] 11T códigos matriz: {e}")
+        return {}
+    _COD11T_CACHE["map"], _COD11T_CACHE["mtime"] = out, mt
+    return out
+
 
 def _ahora_ar():
     return datetime.now(tz=TZ_AR)
@@ -205,7 +232,15 @@ def _litros(df, m04d):
 
 
 def _marca_11t(df):
-    marcas = df["Marca"].astype(str).str.upper().str.strip().map(_MARCA_LKP)
+    # 1) match por Código Art. exacto (matriz oficial) — fuente primaria
+    lk = _codigos_11t_map()
+    if lk and "Codigo" in df.columns:
+        marcas = pd.to_numeric(df["Codigo"], errors="coerce").map(lk)
+    else:
+        marcas = pd.Series(pd.NA, index=df.index, dtype="object")
+    # 2) fallback: texto de Marca (variedades fuera de la matriz)
+    falta = marcas.isna()
+    marcas.loc[falta] = df.loc[falta, "Marca"].astype(str).str.upper().str.strip().map(_MARCA_LKP)
     for kw, mo in _ART_KW_11T:
         sin = marcas.isna()
         if not sin.any():
