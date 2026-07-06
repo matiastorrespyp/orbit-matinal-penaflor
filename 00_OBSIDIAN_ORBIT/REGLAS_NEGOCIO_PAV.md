@@ -24,7 +24,7 @@ V3 trabaja **únicamente** el canal Tradicional, subsegmentos **Almacén / Despe
 - **Ruta** (`/api/vendedor/V3/ruta`): whitelist por SubSegmento ALMACEN/DESPENSA/KIOSCO.
 - **Clientes** (`/api/clientes` + `_clientes_por_dia`): sin clientes no-tradicionales.
 - **Acciones comerciales**: solo acciones que aplican a tradicional almacén/kiosco; las de AS/OP/Mayorista/Vinoteca no se le muestran.
-- **Incentivo FARO**: solo categoría tradicional (Alaris+FLM); ocultas Antares y Familia Smirnoff (AS).
+- **Incentivo FARO**: solo la(s) categoría(s) de canal **Tradicional** (hoy Smirnoff Ice); ocultas las de Autoservicio.
 - **Alertas**: solo de clientes Tradicional almacén/despensa/kiosco.
 - **Portal**: pestaña "Plan AS" oculta para V3; casillas AS/On Premise ocultas en "CCC por Segmento".
 
@@ -104,6 +104,8 @@ Alma Mora · Trapiche Reserva · Finca Las Moras · Alaris · Don David · Dada 
 
 **Métrica correcta del cierre:** CCC por marca (clientes únicos que compraron esa marca en el período) vs objetivo CCC. No es % de combinaciones.
 
+**Match SKU→marca por CÓDIGO (2026-07-06):** la asignación de cada venta a su marca titular es por **Código Art. exacto** (matriz `01_INPUTS/11 titulares autoservicio/11_titulares_autoservicios_match_codigos.xlsx`, hoja `DETALLE_SKU_11T_AS`, 82 SKUs) como fuente **primaria**; el match por texto de `Marca` queda como **fallback** (todas las variedades de una marca suman a la misma marca — Opción A). Aplicado en las 4 rutas vivas de `server_orbit.py` (`gerencia_once_titulares`, `once_titulares_zona`, snapshot de `gerencia_cierre_mes`, `_cierre_once_titulares`) y en `tools/generar_cierre_mensual.py` (`_marca_11t`). Helper `_codigos_11t_map()`/`_marca_11t_por_codigo()`. Los drill-down `11t_empresa`/`11t_vendedor` (legacy `mod_11_titulares.csv`) NO migraron. Sin el xlsx en Render → cae al match por texto (no rompe).
+
 ---
 
 ## Sell Out — fuentes y cálculo
@@ -177,17 +179,19 @@ Los spirits (códigos 30xxx de Diageo/P&P) **sí están** en el maestro 04D con 
 
 ## Incentivo Club FARO
 
-**Objetivos:** `01_INPUTS/incentivo_club_faro*.xlsx` (por vendedor + supervisores). **Logrado y no-compradores:** `ventas_acumulada.csv` filtrado a **mayo + junio**, solo Peñaflor (`Empresa=='Empresa'`), excluyendo V2/V5/V20. Código: `_faro_ventas()` + `_faro_detalle_vendedor()` en `server_orbit.py`. Endpoints `/api/gerencia/incentivo_faro` y `/api/vendedor/<id>/incentivo_faro`.
+**Definición 100% desde la hoja** (refactor 2026-07-06): TODO se lee de `01_INPUTS/incentivo_club_faro*.xlsx` vía **`_faro_config()`** en `server_orbit.py` (cacheado por mtime) — categorías, canal, umbral, **códigos de SKU**, tope por cliente, período (meses), objetivos por vendedor, premios y supervisores. **Ya no hay nada hardcodeado.** El usuario cambia el incentivo editando SOLO el Excel (y recommiteándolo para Render). **Logrado y no-compradores:** `ventas_acumulada.csv` filtrado a los meses del período (de la hoja), solo Peñaflor (`Empresa=='Empresa'`), excl V2/V5/V20. Match de producto **por CÓDIGO de SKU**. Funciones `_faro_config` / `_faro_ventas(cfg)` / `_faro_detalle_vendedor(df,cod,cfg)`; endpoints `/api/gerencia/incentivo_faro` y `/api/vendedor/<id>/incentivo_faro` (exponen `categorias_orden`+`categorias_meta`; front data-driven).
 
-3 categorías:
+**Conteo:** cobertura **por SKU** — cada SKU participante con **≥ umbral botellas** del PDV suma 1 cobertura; se suman por cliente; el tope por cliente sale de la hoja ("N máximo").
 
-| Categoría | Canal | Umbral | Cómo se cuenta el logrado |
-|---|---|---|---|
-| **Alaris + Finca Las Moras** (incl. Paz de FLM) | Tradicional | 3 bot | 1 cobertura por cliente que alcanza el umbral |
-| **Antares** | Autoservicio | 6 bot | **1 por cliente** (≥6 bot total); **2** si entre sus compras hay XPA o Lager en **botella** |
-| **Familia Smirnoff** (botella 700cc, excluye Ice/RTD) | Autoservicio | 6 bot | 1 cobertura por cliente que alcanza el umbral |
+**Bimestre vigente julio-agosto 2026** (histórico: mayo-junio era Alaris+FLM / Antares por-SKU-con-doble / Familia Smirnoff, matcheado por texto):
 
-> **Antares = por CLIENTE, NO por variedad (regla confirmada 2026-06-19).** Si un cliente compró Antares suma **1**; si esa Antares es **XPA** o **Lager en botella** (cod 60021/60022, formatos 330/660) suma **2**. **Máximo 2 por cliente** — NO se suma una cobertura extra por cada variedad comprada. Antes el cálculo sumaba el peso por cada SKU ≥6 botellas e inflaba (p.ej. V4: 6/8 con solo 2 clientes → corregido a 3/8). **Ojo:** "ANTARES LAGER LATA 6X473" es **lata** → peso 1, NO dobla.
+| Categoría | Canal | Umbral | SKUs | Premio |
+|---|---|---|---|---|
+| **Smirnoff Ice** | Tradicional (kiosco+almacén) | 3 bot/SKU | 35103/35104/35105 | 2000 millas |
+| **Vinos Red Blends** | Autoservicio | 6 bot/SKU | 80089/74684/44395/71716/74735/42376/74737 | 1000 |
+| **Familia Gordons** (x700) | Autoservicio | 6 bot/SKU (tope 3/cli) | 30139/30075/30134 | 1000 |
+
+> Smirnoff Ice se vende en pack de 6 → siempre supera el mínimo 3 (confirmado usuario 2026-07-06). Supervisores: **Esteban** = V3,V4,V6,V8,V10; **Raúl** = V7,V9 (leídos de la hoja). Requisitos de layout de la hoja para el parser: ver `NEXT_TASK.md`.
 
 ---
 
