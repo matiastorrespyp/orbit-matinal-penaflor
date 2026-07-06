@@ -114,3 +114,15 @@ Registro de errores ya diagnosticados, con causa raíz y solución aplicada o pe
 **Commits:** `095c9df` (perf 11T) + reparación del xlsx (archivo gitignored, no commiteable).  
 **Estado:** ✅ Resuelto. El cierre corre completo y rápido.  
 **Prevención / lección:** si `producto activos.xlsx` vuelve a pesar **>1 MB para ~260 productos**, está inflado y volverá a ralentizar el cierre → reexportarlo limpio de Gescom (o re-reparar el rango usado). Regla general: cualquier `.xlsx` de input que de golpe pese de más probablemente arrastra filas/columnas fantasma; openpyxl lee TODO el rango usado. Diagnóstico de cuelgues del motor: `faulthandler` + `py -u`.
+
+---
+
+## ERR-011 — "Hice la pantalla pero no la veo en Render" = caché del navegador
+
+**Detectado:** 2026-07-06  
+**Síntoma:** El usuario había hecho la pantalla **Stock sin Venta** (commit `994efea`) y no la veía en gerencia (trabaja solo en Render, no en local).  
+**Diagnóstico (sin tocar código):** el ítem de menú es HTML estático en `portal.html:1059`, sin filtro de rol → debe aparecer siempre. Los commits ya estaban en `origin/master` y `stock.xlsx` (102 KB) trackeado; el endpoint carga el xlsx *lazy*, no al arranque → no tumba el boot. **Prueba discriminante:** los datos del cierre de hoy **sí** se veían en Render pero el botón **no** → el servidor servía código nuevo y el navegador servía el `portal.html` viejo cacheado.  
+**Causa raíz:** **caché del navegador** (no era código ni deploy).  
+**Solución:** **hard refresh** (`Ctrl+Shift+R`) o ventana de incógnito. Confirmado por el usuario.  
+**Estado:** ✅ Resuelto.  
+**Lección / diagnóstico rápido:** ante "no aparece en Render", primero discriminar: si los **datos** frescos (cierre del día) **sí** se ven pero el **elemento nuevo de UI no** → es caché del navegador (`portal.html` es estático), se resuelve con `Ctrl+Shift+R`. Solo si **tampoco** se ven los datos frescos → mirar el deploy en Render (Events/Deploys, commit efectivo, deploy fallido). No asumir "deploy roto" cuando el síntoma es solo de la capa de UI.
