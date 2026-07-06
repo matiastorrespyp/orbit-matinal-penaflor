@@ -3934,6 +3934,10 @@ function _stockSinVentaRender(){
     </tr>`;
   }).join('');
 }
+function descargarStockSinVentaExcel(){
+  // Descarga server-side (.xlsx) SOLO de los productos con stock y sin ventas del mes.
+  window.location.href='/api/gerencia/stock_sin_venta/export';
+}
 function descargarStockSinVentaCSV(){
   const dat=D.stock_sin_venta; if(!dat||!dat.productos) return;
   const head=['Codigo','Descripcion','Disponible','Reserva','Transito'];
@@ -3950,7 +3954,7 @@ function gStockSinVenta(p){
   let html=`<div class="gph">
     <div><div class="gph-title">Stock sin Venta</div>
     <div class="gph-sub">Productos con existencia en depósito y <b>cero ventas</b> en ${dat&&dat.mes?dat.mes:'el mes'}</div></div>
-    <div class="gph-chips"><button class="g-prim" onclick="descargarStockSinVentaCSV()">⬇ Descargar CSV</button></div>
+    <div class="gph-chips"><button class="g-prim" onclick="descargarStockSinVentaExcel()">⬇ Exportar Excel</button><button class="g-prim" onclick="descargarStockSinVentaCSV()">⬇ CSV</button></div>
   </div>`;
   if(!dat||!dat.productos){
     html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">📦</div><p>${dat&&dat.error?dat.error:'Stock no disponible. Cargá 01_INPUTS/Stock/stock.xlsx.'}</p></div></div></div>`;

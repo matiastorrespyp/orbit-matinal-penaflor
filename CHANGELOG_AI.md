@@ -1,5 +1,12 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-06 - feat(Stock sin Venta): exportación a Excel (.xlsx) del reporte
+
+- Pedido del usuario: agregar un botón de exportación a Excel del reporte Stock sin Venta, **solo con los productos con stock y sin ventas**.
+- Backend (`server_orbit.py`): extraído el cálculo de la ruta JSON a un helper compartido `_stock_sin_venta_payload()` (mismo criterio, sin divergencia); la ruta `GET /api/gerencia/stock_sin_venta` ahora lo consume. Nuevo endpoint `GET /api/gerencia/stock_sin_venta/export` que genera el `.xlsx` server-side (pandas + openpyxl, mismo patrón que `alertas_caida/export`): hoja "Stock sin venta" con Código, Producto, Disponible, Reserva, En tránsito, Bultos total; anchos de columna auto; nombre `stock_sin_venta_<mes>.xlsx`; 404 si falta el xlsx (sin datos falsos).
+- Frontend (`portal.html`): botón "⬇ Exportar Excel" (server-side vía `window.location.href`) junto al CSV existente; función `descargarStockSinVentaExcel()`.
+- Validado: server real en :8502 → `/api/gerencia/stock_sin_venta` HTTP 200 (115 productos, 16.103 u) y `/export` HTTP 200 con `Content-Type` xlsx y `Content-Disposition` correcto; el `.xlsx` bajado abre como "Microsoft Excel 2007+", 115 filas (= total_sin_venta), suma Disponible 16.103 (= unidades_sin_venta), todas Disponible>0. `git status`: solo `server_orbit.py` + `portal.html` (+ CHANGELOG/NEXT_TASK). Sin commit (a la espera de aprobación).
+
 ## 2026-07-06 - feat(Stock sin Venta): pantalla de gerencia con productos sin venta del mes que tienen stock
 
 - Pedido del usuario: subió `01_INPUTS/Stock/stock.xlsx` y pidió una pantalla en gerencia con el listado de productos con **venta cero en el mes** que **tienen stock**.

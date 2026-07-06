@@ -3398,14 +3398,14 @@ def _stock_disponible() -> pd.DataFrame:
     return df
 
 
-@app.route("/api/gerencia/stock_sin_venta")
-def gerencia_stock_sin_venta():
+def _stock_sin_venta_payload():
     """Productos con existencia en depósito (disponible > 0) que NO registraron
     ninguna venta en el mes calendario en curso (ventas.csv, todas las empresas).
+    Devuelve el dict de salida, o None si no hay fuente de stock.
     Fuente stock: 01_INPUTS/Stock/stock.xlsx · Fuente ventas: 01_INPUTS/ventas.csv."""
     stock = _stock_disponible()
     if stock.empty:
-        return jsonify({"error": "Stock no disponible (falta 01_INPUTS/Stock/stock.xlsx)"}), 404
+        return None
     con_stock = stock[stock["disponible"] > 0].copy()
 
     # Códigos con al menos una unidad vendida en el mes en curso (cualquier empresa/vendedor:
@@ -3433,7 +3433,7 @@ def gerencia_stock_sin_venta():
     meses = ["", "enero", "febrero", "marzo", "abril", "mayo", "junio",
              "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
     hoy = datetime.now()
-    return jsonify({
+    return {
         "generado_en": _now_ar(),
         "fuente": "01_INPUTS/Stock/stock.xlsx + 01_INPUTS/ventas.csv",
         "mes": f"{meses[hoy.month]} {hoy.year}",
@@ -3441,7 +3441,47 @@ def gerencia_stock_sin_venta():
         "total_sin_venta": int(len(productos)),
         "unidades_sin_venta": int(round(sin_venta["disponible"].sum())),
         "productos": productos,
+    }
+
+
+@app.route("/api/gerencia/stock_sin_venta")
+def gerencia_stock_sin_venta():
+    """JSON del reporte Stock sin Venta (ver _stock_sin_venta_payload)."""
+    payload = _stock_sin_venta_payload()
+    if payload is None:
+        return jsonify({"error": "Stock no disponible (falta 01_INPUTS/Stock/stock.xlsx)"}), 404
+    return jsonify(payload)
+
+
+@app.route("/api/gerencia/stock_sin_venta/export")
+def gerencia_stock_sin_venta_export():
+    """Descarga Excel (.xlsx) SOLO de los productos con stock y sin ventas en el mes."""
+    payload = _stock_sin_venta_payload()
+    if payload is None:
+        return jsonify({"error": "Stock no disponible (falta 01_INPUTS/Stock/stock.xlsx)"}), 404
+
+    cols = ["codigo", "descripcion", "disponible", "reserva", "transito", "bultos_total"]
+    df = pd.DataFrame(payload["productos"], columns=cols).rename(columns={
+        "codigo": "Código", "descripcion": "Producto", "disponible": "Disponible",
+        "reserva": "Reserva", "transito": "En tránsito", "bultos_total": "Bultos total",
     })
+
+    buf = BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as xl:
+        df.to_excel(xl, index=False, sheet_name="Stock sin venta")
+        ws = xl.sheets["Stock sin venta"]
+        for i, col in enumerate(df.columns, start=1):
+            if len(df):
+                ancho = max(len(str(col)), int(df.iloc[:, i - 1].astype(str).map(len).max()))
+            else:
+                ancho = len(str(col))
+            ws.column_dimensions[chr(64 + i)].width = min(max(ancho + 2, 10), 50)
+    buf.seek(0)
+
+    mes = str(payload.get("mes", "")).replace(" ", "_")
+    fname = f"stock_sin_venta_{mes}.xlsx" if mes else "stock_sin_venta.xlsx"
+    return send_file(buf, as_attachment=True, download_name=fname,
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 # ====== PLANES AS — GERENCIA ======
