@@ -1,5 +1,13 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-06 - refactor(Incentivo FARO): toda la definición se lee de la hoja (sin hardcode)
+
+- Pedido del usuario: que FARO trabaje leyendo la hoja, para editar solo el Excel cada bimestre (así creía que ya funcionaba; por eso solo modificó la hoja).
+- Cambio (`server_orbit.py`): nuevo `_faro_config()` (cacheado por mtime) que parsea TODA la definición desde `incentivo_club_faro*.xlsx` (Hoja1) tal como el usuario la escribe hoy: categorías (fila de encabezado sobre la grilla), segmento (banda superior con forward-fill), objetivos (filas con vendedor numérico), y de las REGLAS en texto libre → códigos de SKU (números ≥4 dígitos por línea de categoría), umbral (nº antes de "botellas/latas", o default por segmento 3 trad/6 AS), tope por cliente ("N máximo"), premios (fila MILLAS, asignados por tokens del nombre), período/meses (título) y supervisores (línea "Esteban… Raúl…"). Se eliminaron TODAS las constantes hardcodeadas (`_FARO_CATS`, `_FARO_CAT_SKUS`, `_FARO_MESES`, etc.); `_faro_ventas(cfg)` y `_faro_detalle_vendedor(df,cod,cfg)` reciben la config; los endpoints la construyen. Si la hoja no se puede leer → 200 con `error` (no datos falsos).
+- Frontend: sin cambios (ya era data-driven por `categorias_orden`/`categorias_meta`).
+- Validado: `py_compile` OK. `_faro_config()` reproduce EXACTO lo que estaba hardcodeado (cats smirnoff_ice/vinos_red_blends/familia_gordons; seg TRAD/AS/AS; umbral 3/6/6; cap gordons=3; SKUs; objetivos V3 60/0/0…; premios 2000/1000/1000; meses (7,8); sup Esteban[3,4,6,8,10]/Raul[7,9]). Endpoints 200 con numeros idénticos al commit anterior. Playwright gerencia+V8: render correcto, 0 errores de consola. La caché de ventas ahora contempla el mtime del xlsx (al reeditar la hoja, refresca).
+- Nota: los nombres de categoría se muestran como se escriben en la hoja (la tabla de gerencia los pasa a mayúscula por CSS). Requisitos de layout para que el parser lea bien la próxima hoja quedan en NEXT_TASK.md.
+
 ## 2026-07-06 - feat(Incentivo FARO): bimestre julio-agosto (nuevas categorías por código de SKU)
 
 - Síntoma: el usuario editó `01_INPUTS/incentivo_club_faro .xlsx` para el nuevo bimestre pero la pantalla de Incentivo FARO no cambiaba. Causa raíz: la lógica de QUÉ se mide estaba **hardcodeada** en `server_orbit.py` para el bimestre viejo (mayo-junio: Alaris+FLM / Antares / Familia Smirnoff, match por texto de marca) y el período fijo en meses [5,6]; del xlsx solo se leían objetivos y premios. Como `ventas_acumulada.csv` hoy solo tiene julio, el filtro [5,6] además descartaba todo.

@@ -1,15 +1,24 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
-## Sesion 2026-07-06 - feat(Incentivo FARO): bimestre julio-agosto por código de SKU
+## Sesion 2026-07-06 - Incentivo FARO: 100% leído de la hoja (data-driven)
 
 ### HECHO
-- [x] Reimplementado el Incentivo FARO para julio-agosto: 3 categorías nuevas (Smirnoff Ice trad/min3; Vinos Red Blends AS/min6; Familia Gordons AS/min6 tope3) con match por CÓDIGO de SKU y período meses [7,8]. Objetivos/premios desde `incentivo_club_faro .xlsx`. Front (gerencia + vendedor) ahora data-driven (`categorias_orden`/`categorias_meta`).
-- [x] Validado con Playwright (gerencia + V8): render correcto, sin errores. Backend objetivos = xlsx.
+- [x] Reimplementado FARO para julio-agosto (Smirnoff Ice trad/min3; Vinos Red Blends AS/min6; Familia Gordons AS/min6 tope3), match por CÓDIGO de SKU.
+- [x] **Ahora TODO se lee de la hoja** (`_faro_config()` en `server_orbit.py`): categorías, segmento, umbral, SKUs, tope, período, objetivos, premios y supervisores. Sin constantes hardcodeadas. Cada bimestre el usuario edita SOLO el Excel.
+- [x] Regla de conteo confirmada por el usuario: umbral POR SKU; Smirnoff Ice se vende en pack de 6 → siempre cubre el min 3.
+- [x] Validado: `_faro_config` reproduce exacto lo anterior; Playwright gerencia+V8 OK, 0 errores. Commiteado + pusheado.
 
-### PENDIENTE / A TENER EN CUENTA
-- [ ] **CONFIRMAR con el usuario la regla de conteo**: se asumió **umbral POR SKU** (cada SKU con ≥3/6 bot suma 1 cobertura). El texto del xlsx es ambiguo para Smirnoff Ice ("cada variedad suma 1 por cualquier SKU participante" — podría ser sin umbral). Si la regla real difiere, ajustar `_faro_detalle_vendedor`.
-- [ ] **Cada bimestre el incentivo cambia** y hoy las categorías/SKUs/umbrales están hardcodeadas en `server_orbit.py` (`_FARO_CATS`, `_FARO_CAT_SKUS`, `_FARO_MESES`, etc.). El xlsx solo aporta objetivos y premios. Mejora futura: mover la definición de productos a una hoja estructurada del xlsx (hoy las reglas están en texto libre, no parseable de forma robusta) para no editar código cada 2 meses.
-- [ ] El input `incentivo_club_faro .xlsx` está modificado en el working tree. Para que Render tome los objetivos/premios nuevos hay que commitearlo (se hará junto con este cambio, orden explícita del usuario).
+### PENDIENTE / A TENER EN CUENTA — CÓMO DEBE ESCRIBIRSE LA HOJA (para que el parser lea bien)
+El parser (`_faro_config`) espera en Hoja1, tal como está la hoja de julio-agosto:
+- Una fila de encabezado con **"vendedores"** en la col A y el **nombre de cada categoría** en las columnas siguientes.
+- La **fila de arriba** con el canal por columna ("kiosco + almacén" → Tradicional / "Autoservicios" → Autoservicio); vale celda combinada.
+- Debajo, las filas de **objetivos** con el **código de vendedor numérico** en col A y el objetivo por categoría.
+- Un bloque de **Reglas en texto libre**, una línea por categoría que **empiece con el nombre de la categoría** y contenga sus **códigos de SKU** (5 dígitos), el mínimo de botellas ("(6 botellas)"/"mínimo 6 botellas") y, si aplica, el tope ("3 máximo").
+- Fila **PREMIOS** con "<nombre> (N MILLAS)" por categoría.
+- El **período** sale del título (nombres de mes, ej. "(julio - agosto)").
+- Línea de **supervisores** ("Esteban … (3,4,6,8 y 10) … Raúl … (7 y 9)").
+Si cambia mucho el formato, el parser puede fallar → el endpoint devuelve `error` (no números falsos). Ante la duda, avisar y ajustar `_faro_config`.
+- [ ] Recordar **commitear el `incentivo_club_faro .xlsx`** cada vez que se cambie de bimestre (Render lo necesita).
 
 ## Sesion 2026-07-06 - feat(11T): match por Código Art. exacto (matriz oficial)
 
