@@ -1056,6 +1056,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       <div class="gs-item" data-sc="incentivo_faro" onclick="gSw('incentivo_faro',this)"><span class="gs-ico">🌟</span>Incentivo FARO</div>
       <div class="gs-item" data-sc="plan_frizze" onclick="gSw('plan_frizze',this)"><span class="gs-ico">🥂</span>Plan Frizze</div>
       <div class="gs-item" data-sc="incentivo_dada" onclick="gSw('incentivo_dada',this)"><span class="gs-ico">🍷</span>Incentivo Dada</div>
+      <div class="gs-item" data-sc="stock_sin_venta" onclick="gSw('stock_sin_venta',this)"><span class="gs-ico">📦</span>Stock sin Venta</div>
       <div class="gs-sec">Reportes</div>
       <div class="gs-item" data-sc="cierre_mes" onclick="gSw('cierre_mes',this)"><span class="gs-ico">🏁</span>Cierre de Mes</div>
     </div>
@@ -1324,7 +1325,7 @@ async function loadRole(){
     if(planFrizzeV) D.plan_frizze_v=planFrizzeV;
   }
   if(userData?.rol==='gerencia'){
-    const [cccEmp,onceTit,onceTitDia,inov,cobAcum,t11Acum,inovTot,plasAS,sellLitros,accRank,dormidos,planFrizzeG,incentivoDadaG]=await Promise.all([
+    const [cccEmp,onceTit,onceTitDia,inov,cobAcum,t11Acum,inovTot,plasAS,sellLitros,accRank,dormidos,planFrizzeG,incentivoDadaG,stockSinVentaG]=await Promise.all([
       safe('/api/gerencia/ccc_empresa'),
       safe('/api/gerencia/once_titulares'),
       safe('/api/gerencia/once_titulares_zona?dia='+(currentDay||'')),
@@ -1337,7 +1338,8 @@ async function loadRole(){
       safe('/api/gerencia/acciones_mes'),
       safe('/api/gerencia/alertas_caida'),
       safe('/api/gerencia/plan_frizze'),
-      safe('/api/gerencia/incentivo_dada')
+      safe('/api/gerencia/incentivo_dada'),
+      safe('/api/gerencia/stock_sin_venta')
     ]);
     if(cccEmp)      D.cccEmpresa=cccEmp;
     if(onceTit)     D.onceTit=onceTit;
@@ -1352,6 +1354,7 @@ async function loadRole(){
     if(dormidos)    D.dormidos=dormidos;
     if(planFrizzeG) D.plan_frizze_g=planFrizzeG;
     if(incentivoDadaG) D.incentivo_dada_g=incentivoDadaG;
+    if(stockSinVentaG) D.stock_sin_venta=stockSinVentaG;
   }
 }
 
@@ -1469,7 +1472,7 @@ function gSw(id,el){
   gScreen=id;
   document.querySelectorAll('.gs-item').forEach(n=>n.classList.remove('active'));
   (el||document.querySelector(`[data-sc="${id}"]`))?.classList.add('active');
-  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',cliente:'Cliente',planificacion:'Planificación',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',incentivo_faro:'Incentivo FARO',plan_frizze:'Plan Frizze',incentivo_dada:'Incentivo Dada',cierre_mes:'Cierre de Mes'};
+  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',cliente:'Cliente',planificacion:'Planificación',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',incentivo_faro:'Incentivo FARO',plan_frizze:'Plan Frizze',incentivo_dada:'Incentivo Dada',stock_sin_venta:'Stock sin Venta',cierre_mes:'Cierre de Mes'};
   document.getElementById('gTopTitle').textContent=tt[id]||'';
   gRender();
 }
@@ -1488,6 +1491,7 @@ function gRender(){
   else if(gScreen==='incentivo_faro')        gIncentivoFaro(p);
   else if(gScreen==='plan_frizze')           gPlanFrizze(p);
   else if(gScreen==='incentivo_dada')        gIncentivoDada(p);
+  else if(gScreen==='stock_sin_venta')       gStockSinVenta(p);
   else if(gScreen==='dormidos')              gDormidos(p);
   else if(gScreen==='cierre_mes')            gCierreMes(p);
 }
@@ -3905,6 +3909,93 @@ function gAccionesComerciales(p){
 function descargarDormidosExcel(){
   // Descarga server-side (.xlsx) con el listado COMPLETO de clientes dormidos.
   window.location.href='/api/gerencia/alertas_caida/export';
+}
+/* ════ STOCK SIN VENTA EN EL MES (gerencia) ════ */
+function _stockSinVentaRender(){
+  const dat=D.stock_sin_venta;
+  const tb=document.getElementById('svBody');
+  if(!tb) return;
+  const q=(document.getElementById('svSearch')?.value||'').trim().toLowerCase();
+  const fmt=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
+  let rows=(dat.productos||[]);
+  if(q) rows=rows.filter(r=>String(r.codigo).includes(q)||String(r.descripcion).toLowerCase().includes(q));
+  const cnt=document.getElementById('svCount'); if(cnt) cnt.textContent=rows.length+' productos';
+  if(!rows.length){ tb.innerHTML=`<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:22px;">Sin coincidencias.</td></tr>`; return; }
+  const maxD=Math.max(...rows.map(r=>r.disponible),1);
+  tb.innerHTML=rows.map(r=>{
+    const pct=Math.round(r.disponible/maxD*100);
+    const tr=r.transito>0?`<span style="font-size:10px;color:var(--info);white-space:nowrap"> +${fmt(r.transito)} en tránsito</span>`:'';
+    return `<tr>
+      <td style="font-variant-numeric:tabular-nums;color:var(--text3)">${r.codigo}</td>
+      <td><b>${r.descripcion}</b></td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums"><b>${fmt(r.disponible)}</b>${tr}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--text3)">${r.reserva>0?fmt(r.reserva):'—'}</td>
+      <td style="min-width:120px"><div style="height:7px;border-radius:5px;background:var(--line);overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--wn)"></div></div></td>
+    </tr>`;
+  }).join('');
+}
+function descargarStockSinVentaCSV(){
+  const dat=D.stock_sin_venta; if(!dat||!dat.productos) return;
+  const head=['Codigo','Descripcion','Disponible','Reserva','Transito'];
+  const lines=[head.join(';')].concat(dat.productos.map(r=>
+    [r.codigo,'"'+String(r.descripcion).replace(/"/g,'""')+'"',r.disponible,r.reserva,r.transito].join(';')));
+  const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='stock_sin_venta_'+(dat.mes||'').replace(/\s+/g,'_')+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+function gStockSinVenta(p){
+  const dat=D.stock_sin_venta;
+  const fmt=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
+  let html=`<div class="gph">
+    <div><div class="gph-title">Stock sin Venta</div>
+    <div class="gph-sub">Productos con existencia en depósito y <b>cero ventas</b> en ${dat&&dat.mes?dat.mes:'el mes'}</div></div>
+    <div class="gph-chips"><button class="g-prim" onclick="descargarStockSinVentaCSV()">⬇ Descargar CSV</button></div>
+  </div>`;
+  if(!dat||!dat.productos){
+    html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">📦</div><p>${dat&&dat.error?dat.error:'Stock no disponible. Cargá 01_INPUTS/Stock/stock.xlsx.'}</p></div></div></div>`;
+    p.innerHTML=html; return;
+  }
+  html+=`<div class="krow" style="margin-bottom:16px;">
+    <div class="kcard bd">
+      <div class="kl">Productos sin venta</div>
+      <div class="kv" style="font-size:22px;">${dat.total_sin_venta}</div>
+      <div class="ks" style="font-size:10px;margin-top:3px;">con stock y 0 ventas este mes</div>
+    </div>
+    <div class="kcard wn">
+      <div class="kl">Unidades inmovilizadas</div>
+      <div class="kv" style="font-size:22px;">${fmt(dat.unidades_sin_venta)}</div>
+      <div class="ks" style="font-size:10px;margin-top:3px;">disponibles en depósito</div>
+    </div>
+    <div class="kcard info">
+      <div class="kl">Total productos con stock</div>
+      <div class="kv" style="font-size:22px;">${dat.total_productos_stock}</div>
+      <div class="ks" style="font-size:10px;margin-top:3px;">base de referencia</div>
+    </div>
+  </div>`;
+  html+=`<div class="card">
+    <div class="card-hd">
+      <span class="card-title">📦 Listado · ordenado por stock disponible</span>
+      <span class="chip" id="svCount">${dat.total_sin_venta} productos</span>
+    </div>
+    <div class="card-body">
+      <input id="svSearch" type="text" placeholder="🔎 Buscar por código o descripción…" oninput="_stockSinVentaRender()"
+        style="width:100%;box-sizing:border-box;margin-bottom:10px;padding:9px 12px;border-radius:9px;border:1px solid var(--line);background:var(--bg2);color:var(--text);font-size:13px;">
+    </div>
+    <div class="card-body nop">
+      <table class="tbl"><thead><tr>
+        <th style="width:70px">Código</th>
+        <th>Producto</th>
+        <th style="text-align:right">Disponible</th>
+        <th style="text-align:right">Reserva</th>
+        <th style="min-width:120px"></th>
+      </tr></thead>
+      <tbody id="svBody"></tbody></table>
+    </div>
+  </div>
+  <div style="font-size:10px;color:var(--text3);margin-top:10px;">Fuente: ${dat.fuente||'stock.xlsx + ventas.csv'} · Generado ${dat.generado_en||''}</div>`;
+  p.innerHTML=html;
+  _stockSinVentaRender();
 }
 function gDormidos(p){
   const dat=D.dormidos;

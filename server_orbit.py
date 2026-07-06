@@ -513,6 +513,8 @@ def _ventas_parsed() -> pd.DataFrame:
     df["vendedor_codigo"] = pd.to_numeric(df["CodVendedor"], errors="coerce")
     df["importe_neto"]    = df["ImporteNetoItem"].apply(_parse_num_ar)
     df["fecha"]           = pd.to_datetime(df["FechaComprobante"], dayfirst=True, errors="coerce")
+    df["codigo_art"]      = pd.to_numeric(df["Codigo"], errors="coerce") if "Codigo" in df.columns else pd.NA
+    df["cant_base"]       = df["CantBase"].apply(_parse_num_ar) if "CantBase" in df.columns else 0.0
     # Segmento vectorizado: clasificar SÓLO las combinaciones únicas (Ramo, Subramo)
     # y mapear — evita el .apply() fila por fila sobre miles de filas en cada request.
     rm = df["Ramo"].fillna("").astype(str)
@@ -3346,6 +3348,99 @@ def gerencia_innovaciones_total():
         "por_vendedor": por_v[["vendedor_id", "vendedor_nombre", "segmento",
                                 "producto_codigo", "producto_nombre",
                                 "clientes_cartera", "clientes_compraron"]].to_dict("records"),
+    })
+
+
+# ====== STOCK SIN VENTA EN EL MES — GERENCIA ======
+_STOCK_CACHE = {}
+
+def _stock_disponible() -> pd.DataFrame:
+    """Stock de depósito desde 01_INPUTS/Stock/stock.xlsx, cacheado por mtime.
+    Columnas normalizadas: codigo (int), descripcion, disponible (UniTotalDisponible),
+    bultos_total, reserva, transito, proveedor. El disponible es la existencia real
+    (Total = Disponible + Reserva; Tránsito es mercadería en camino, informativo)."""
+    p = INPUTS / "Stock" / "stock.xlsx"
+    if not p.exists():
+        return pd.DataFrame()
+    try:
+        key = os.path.getmtime(p)
+    except OSError:
+        key = 0
+    df = _STOCK_CACHE.get(key)
+    if df is not None:
+        return df
+    try:
+        raw = pd.read_excel(p)
+    except Exception:
+        return pd.DataFrame()
+    raw.columns = [str(c).strip() for c in raw.columns]
+    if "Codigo" not in raw.columns:
+        return pd.DataFrame()
+    def _num(col):
+        return pd.to_numeric(raw[col], errors="coerce").fillna(0) if col in raw.columns else 0
+    df = pd.DataFrame({
+        "codigo":       pd.to_numeric(raw["Codigo"], errors="coerce"),
+        "descripcion":  raw.get("Descripcion", "").astype(str).str.strip(),
+        "disponible":   _num("UniTotalDisponible"),
+        "bultos_total": _num("BultosTotal"),
+        "reserva":      _num("BultosReserva"),
+        "transito":     _num("BultosTransito"),
+        "proveedor":    raw.get("NombreProvedor", "").astype(str).str.strip(),
+    })
+    df = df.dropna(subset=["codigo"]).copy()
+    df["codigo"] = df["codigo"].astype(int)
+    # Consolidar por código (por si hay más de una sede/sector): sumar existencias
+    df = (df.groupby(["codigo", "descripcion", "proveedor"], as_index=False)
+            .agg({"disponible": "sum", "bultos_total": "sum",
+                  "reserva": "sum", "transito": "sum"}))
+    _STOCK_CACHE.clear()
+    _STOCK_CACHE[key] = df
+    return df
+
+
+@app.route("/api/gerencia/stock_sin_venta")
+def gerencia_stock_sin_venta():
+    """Productos con existencia en depósito (disponible > 0) que NO registraron
+    ninguna venta en el mes calendario en curso (ventas.csv, todas las empresas).
+    Fuente stock: 01_INPUTS/Stock/stock.xlsx · Fuente ventas: 01_INPUTS/ventas.csv."""
+    stock = _stock_disponible()
+    if stock.empty:
+        return jsonify({"error": "Stock no disponible (falta 01_INPUTS/Stock/stock.xlsx)"}), 404
+    con_stock = stock[stock["disponible"] > 0].copy()
+
+    # Códigos con al menos una unidad vendida en el mes en curso (cualquier empresa/vendedor:
+    # si el producto se movió por algún canal NO es stock muerto).
+    v = _ventas_parsed()
+    codigos_vendidos = set()
+    if not v.empty and "codigo_art" in v.columns:
+        hoy = datetime.now()
+        mes_inicio = hoy.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        vm = v[(v["fecha"] >= mes_inicio) & (v["cant_base"] > 0)]
+        codigos_vendidos = set(vm["codigo_art"].dropna().astype(int).tolist())
+
+    sin_venta = con_stock[~con_stock["codigo"].isin(codigos_vendidos)].copy()
+    sin_venta = sin_venta.sort_values("disponible", ascending=False)
+
+    productos = [{
+        "codigo":       int(r["codigo"]),
+        "descripcion":  str(r["descripcion"]),
+        "disponible":   int(round(r["disponible"])),
+        "bultos_total": int(round(r["bultos_total"])),
+        "reserva":      int(round(r["reserva"])),
+        "transito":     int(round(r["transito"])),
+    } for _, r in sin_venta.iterrows()]
+
+    meses = ["", "enero", "febrero", "marzo", "abril", "mayo", "junio",
+             "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+    hoy = datetime.now()
+    return jsonify({
+        "generado_en": _now_ar(),
+        "fuente": "01_INPUTS/Stock/stock.xlsx + 01_INPUTS/ventas.csv",
+        "mes": f"{meses[hoy.month]} {hoy.year}",
+        "total_productos_stock": int(len(con_stock)),
+        "total_sin_venta": int(len(productos)),
+        "unidades_sin_venta": int(round(sin_venta["disponible"].sum())),
+        "productos": productos,
     })
 
 

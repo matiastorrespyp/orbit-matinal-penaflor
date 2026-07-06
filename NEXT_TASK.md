@@ -1,5 +1,18 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-06 - Stock sin Venta (pantalla gerencia)
+
+### HECHO
+- [x] Nueva pantalla gerencia **📦 Stock sin Venta**: productos con existencia en depósito (`stock.xlsx`) y **0 ventas en el mes** (`ventas.csv`). Endpoint `GET /api/gerencia/stock_sin_venta`; render `gStockSinVenta` con KPIs + buscador + tabla + CSV.
+- [x] Validado con server real (HTTP 200, 115 productos, 16.103 unidades). Sin regresión en endpoints que usan `_ventas_parsed`.
+
+### PENDIENTE / A CONFIRMAR CON EL USUARIO
+- [ ] **Commit**: cambios sin commitear (server_orbit.py + portal.html). `01_INPUTS/Stock/stock.xlsx` NO se commitea (regla 01_INPUTS).
+- [ ] **Refresco del stock**: hoy `stock.xlsx` es una foto manual. Definir si se actualiza en el cierre/BAT o se sube a mano cuando quieran mirar. La caché se refresca sola por mtime al reemplazar el archivo.
+- [ ] **Alcance del "venta cero"**: se cuenta venta en CUALQUIER empresa (Peñaflor + P&P Logística) y cualquier vendedor. Si gerencia quiere "sin venta de RUTA" (excluir depósito/venta directa), avisar para filtrar por Empresa/vendedor.
+- [ ] **Unidad**: se muestra `UniTotalDisponible` como "disponible". Si quieren ver bultos vs botellas por separado, hay que mapear el pack (6x750, 12x1L…) — no está en stock.xlsx.
+- [ ] ¿Filtrar spirits/importados (JW, Baileys, Old Parr…) o mostrarlos junto a vinos? Hoy se muestran todos.
+
 ## Sesion 2026-07-06 - Incentivo FARO: 100% leído de la hoja (data-driven)
 
 ### HECHO

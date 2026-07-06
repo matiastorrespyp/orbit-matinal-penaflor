@@ -1,5 +1,14 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-06 - feat(Stock sin Venta): pantalla de gerencia con productos sin venta del mes que tienen stock
+
+- Pedido del usuario: subió `01_INPUTS/Stock/stock.xlsx` y pidió una pantalla en gerencia con el listado de productos con **venta cero en el mes** que **tienen stock**.
+- Fuente stock: `01_INPUTS/Stock/stock.xlsx` (217 códigos, sede La Francia, depósito Picking). Campo de existencia = `UniTotalDisponible` (= disponible real; `BultosTotal` = disponible + reserva; `BultosTransito` = mercadería en camino, informativo). Fuente ventas: `01_INPUTS/ventas.csv` (mes en curso).
+- Criterio: producto con `disponible > 0` cuyo `Codigo` NO aparece con `CantBase > 0` en ninguna venta del mes calendario en curso (cualquier empresa/vendedor — si se movió por algún canal no es stock muerto). Resultado hoy: 115 productos, 16.103 unidades inmovilizadas; top DADA SIDRA 6X750 (1.743).
+- Backend (`server_orbit.py`): `_ventas_parsed()` ahora conserva `codigo_art` y `cant_base` (solo suma columnas, sin romper consumidores). Nuevo `_stock_disponible()` (cacheado por mtime, consolida por código) + endpoint `GET /api/gerencia/stock_sin_venta` (devuelve `mes`, `total_sin_venta`, `unidades_sin_venta`, `total_productos_stock`, `productos[]` ordenados por disponible desc; 404 con `error` si falta el xlsx, sin datos falsos).
+- Frontend (`portal.html`): ítem de menú "📦 Stock sin Venta" (sección Productos), router `gStockSinVenta`, fetch en `loadRole`, render con 3 KPIs + buscador por código/descripción + tabla (código, producto, disponible, reserva, barra) + descarga CSV client-side.
+- Validado: server real en :8577 → endpoint HTTP 200 (115 productos, top DADA SIDRA), `portal.html` HTTP 200 con el código presente. Regresión: `ccc_empresa`/`sellout_litros`/`incentivo_dada` siguen 200 tras el cambio en `_ventas_parsed`. `git status`: solo `server_orbit.py` + `portal.html`. Sin commit (a la espera de aprobación).
+
 ## 2026-07-06 - refactor(Incentivo FARO): toda la definición se lee de la hoja (sin hardcode)
 
 - Pedido del usuario: que FARO trabaje leyendo la hoja, para editar solo el Excel cada bimestre (así creía que ya funcionaba; por eso solo modificó la hoja).
