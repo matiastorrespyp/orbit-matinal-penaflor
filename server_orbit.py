@@ -2101,46 +2101,95 @@ def matinal_resumen():
 
 
 # ====== GERENCIA: CCC EMPRESA ======
+# Canales de la cobertura CCC total empresa (objetivo en 01_INPUTS/objccc.xlsx).
+# Clasificación por Ramo (mismo criterio con el que se definió el objetivo): el Subramo
+# "Autoservicio Tradicional" (Ramo TRADITIONAL TRADE) cuenta como Tradicional, no Autoservicio.
+_CCC_CANALES_ORDEN = ["Tradicionales", "Autoservicios", "On Premise", "Vinotecas", "On Premise Noche"]
+
+def _canal_ccc_empresa(df):
+    """Serie con el canal objccc por fila, clasificado por Ramo/Subramo."""
+    ramo = df["Ramo"].astype(str).str.upper().str.strip() if "Ramo" in df.columns else pd.Series("", index=df.index)
+    sub  = df["Subramo"].astype(str).str.upper().str.strip() if "Subramo" in df.columns else pd.Series("", index=df.index)
+    txt  = ramo.str.cat(sub, sep=" ")
+    canal = pd.Series("Tradicionales", index=df.index)
+    canal[(ramo == "AUTOSERVICIO") | ramo.str.contains("CASH", regex=False, na=False)] = "Autoservicios"
+    canal[txt.str.contains("ON PREMISE", regex=False, na=False)
+          | txt.str.contains("AWAY FROM HOME", regex=False, na=False)
+          | txt.str.contains("RESTAURANT", regex=False, na=False)] = "On Premise"
+    canal[txt.str.contains("VINOTECA", regex=False, na=False)] = "Vinotecas"
+    canal[txt.str.contains("NOCHE", regex=False, na=False)] = "On Premise Noche"
+    return canal
+
+def _objetivos_ccc_empresa():
+    """canal -> objetivo CCC desde 01_INPUTS/objccc.xlsx (columnas Canal / Objetivo CCC)."""
+    p = INPUTS / "objccc.xlsx"
+    out = {}
+    if not p.exists():
+        return out
+    try:
+        d = pd.read_excel(p)
+        cols = {str(c).strip().lower(): c for c in d.columns}
+        c_can = cols.get("canal")
+        c_obj = next((cols[k] for k in cols if "objetivo" in k), None)
+        if c_can and c_obj:
+            for _, r in d.iterrows():
+                can = str(r[c_can]).strip()
+                try:
+                    out[can] = int(float(r[c_obj]))
+                except (ValueError, TypeError):
+                    pass
+    except Exception as e:
+        print(f"[AVISO] objccc.xlsx: {e}")
+    return out
+
 @app.route("/api/gerencia/ccc_empresa")
 def gerencia_ccc_empresa():
-    """CCC mensual total empresa y por segmento, desglosado por vendedor activo.
-    Fuente: ventas.csv (mes actual, ImporteNetoItem > 0). V3 sin AUTOSERVICIO."""
-    ventas_mes = _cargar_ventas_mes_actual()
-    ccc_map    = _ccc_mes_por_vendedor(ventas_mes)
+    """CCC del mes vivo (cobertura) total empresa vs objetivo por canal.
+    Real: ventas.csv (mes actual, neto>0, solo Peñaflor, excluye V1/V2/V5/V20), clientes únicos
+    por canal (Ramo). Objetivo: 01_INPUTS/objccc.xlsx."""
+    obj_map = _objetivos_ccc_empresa()
+    ccc_map = {}
+    total_ccc = 0
+    vpath = INPUTS / "ventas.csv"
+    if vpath.exists():
+        try:
+            v = pd.read_csv(vpath, sep=";", encoding="latin1", low_memory=False)
+            v["imp"] = pd.to_numeric(
+                v["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
+            if "Empresa" in v.columns:
+                v = v[v["Empresa"].astype(str).str.strip() == "Empresa"]
+            v = v[~v["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS)]
+            v = v[v["imp"] > 0]
+            if not v.empty:
+                v["canal"] = _canal_ccc_empresa(v)
+                ccc_map = v.groupby("canal")["Cliente"].nunique().to_dict()
+                total_ccc = int(v["Cliente"].nunique())
+        except Exception as e:
+            print(f"[AVISO] ccc_empresa ventas.csv: {e}")
 
-    vend = read_csv(CONFIG / "vendedores_activos.csv")
-    por_vendedor = []
-    tot_trad, tot_as, tot_op = 0, 0, 0
+    canales = []
+    total_obj = 0
+    for can in _CCC_CANALES_ORDEN:
+        ccc = int(ccc_map.get(can, 0))
+        obj = int(obj_map.get(can, 0))
+        pct = round(ccc / obj * 100, 1) if obj else None
+        canales.append({"canal": can, "ccc": ccc, "objetivo": obj, "pct": pct})
+        total_obj += obj
 
-    if not vend.empty:
-        for _, v in vend[vend["activo"] == 1].iterrows():
-            cn     = clean_code(str(v["codigo_vendedor"]))
-            cod_int = int(cn) if cn.isdigit() else 0
-            if cod_int in _VENDEDORES_EXCLUIDOS:
-                continue
-            nombre = str(v["nombre_vendedor"]).strip()
-            ccc    = ccc_map.get(cod_int, {"tradicional": 0, "autoservicio": 0, "onpremise": 0, "total": 0})
-            por_vendedor.append({
-                "vendedor_id":   f"V{cn}",
-                "vendedor_nombre": nombre,
-                "tradicional":  ccc["tradicional"],
-                "autoservicio": ccc["autoservicio"],
-                "onpremise":    ccc["onpremise"],
-                "total":        ccc["total"],
-            })
-            tot_trad += ccc["tradicional"]
-            tot_as   += ccc["autoservicio"]
-            tot_op   += ccc["onpremise"]
-
+    _op = sum(int(ccc_map.get(c, 0)) for c in ("On Premise", "Vinotecas", "On Premise Noche"))
     return jsonify({
         "generado_en": _now_ar(),
+        "fuente": "ventas.csv (mes vivo)",
+        "canales": canales,
         "empresa": {
-            "tradicional":  tot_trad,
-            "autoservicio": tot_as,
-            "onpremise":    tot_op,
-            "total":        tot_trad + tot_as + tot_op,
+            "total":         total_ccc,
+            "objetivo_total": total_obj,
+            "pct":           round(total_ccc / total_obj * 100, 1) if total_obj else None,
+            # compat con el render previo (Trad / AS / OP)
+            "tradicional":   int(ccc_map.get("Tradicionales", 0)),
+            "autoservicio":  int(ccc_map.get("Autoservicios", 0)),
+            "onpremise":     _op,
         },
-        "por_vendedor": por_vendedor,
     })
 
 
@@ -2182,6 +2231,35 @@ def _marca_11t_por_codigo(df):
     if not lk or "Codigo" not in df.columns:
         return pd.Series(pd.NA, index=df.index, dtype="object")
     return pd.to_numeric(df["Codigo"], errors="coerce").map(lk)
+
+
+# ── Superficie de medición del 11T (validado con el usuario 2026-07-06) ──
+# El 11T se mide SOLO en Autoservicio + Almacén + Kiosco (antes sumaba todo canal, lo que
+# inflaba el CCC con On Premise, Vinotecas, Away From Home, etc.). Criterio por Ramo/Subramo:
+#   - Autoservicio : Ramo == AUTOSERVICIO  o  Subramo con "AUTOSERVICIO" (incluye
+#                    "Autoservicio Tradicional" — autoservicios chicos; validado 2026-07-06).
+#                    NO entra Cash&Carry ni Mayoristas (Subramo Mayoristas).
+#   - Almacén      : Subramo Almacén/Despensa  (o Ramo ALMACENES)
+#   - Kiosco       : Subramo Kiosco/Maxikiosco
+# Queda EXCLUIDO: On Premise, Vinotecas, Away From Home, Mayoristas, Cash&Carry, Fiambrería,
+# Carnicería, Panadería y resto de tradicionales sin formato self-service.
+def _mask_superficie_11t(df):
+    """Máscara booleana de filas cuya superficie mide para el 11T (AS + Almacén + Kiosco)."""
+    # Fail-open: si la fuente no trae Ramo ni Subramo no se puede clasificar; se deja pasar
+    # todo (no filtrar) en vez de anular el CCC por columnas ausentes.
+    if "Ramo" not in df.columns and "Subramo" not in df.columns:
+        return pd.Series(True, index=df.index)
+    ramo = (df["Ramo"].astype(str).str.upper().str.strip()
+            if "Ramo" in df.columns else pd.Series("", index=df.index))
+    sub  = (df["Subramo"].astype(str).str.upper()
+            if "Subramo" in df.columns else pd.Series("", index=df.index))
+    es_as  = (ramo == "AUTOSERVICIO") | sub.str.contains("AUTOSERVICIO", regex=False, na=False)
+    es_alm = (sub.str.contains("ALMACEN", regex=False, na=False)
+              | sub.str.contains("DESPENSA", regex=False, na=False)
+              | ramo.str.contains("ALMACEN", regex=False, na=False))
+    es_kio = (sub.str.contains("KIOSCO", regex=False, na=False)
+              | sub.str.contains("MAXIKIOSCO", regex=False, na=False))
+    return es_as | es_alm | es_kio
 
 
 # ====== GERENCIA: 11 TITULARES POR MARCA ======
@@ -2249,6 +2327,7 @@ def gerencia_once_titulares():
                           | (vac["CodVendedor"] == 20)]
             vac = vac[~vac["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS - {20})]
             vac = vac[vac["ImporteNetoItem"] > 0]
+            vac = vac[_mask_superficie_11t(vac)]   # 11T mide solo AS + Almacén + Kiosco
             # Período = trimestre calendario en curso (en julio arranca de cero)
             _f = pd.to_datetime(vac.get("FechaComprobante"), dayfirst=True, errors="coerce")
             if _f.notna().any():
@@ -2404,6 +2483,7 @@ def gerencia_once_titulares_zona():
             vac = vac[vac["Empresa"].astype(str).str.strip() == "Empresa"]
         vac = vac[~vac["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS)]
         vac = vac[vac["ImporteNetoItem"] > 0]
+        vac = vac[_mask_superficie_11t(vac)]   # 11T mide solo AS + Almacén + Kiosco
         # Período = trimestre calendario en curso (en julio arranca de cero)
         _f = pd.to_datetime(vac.get("FechaComprobante"), dayfirst=True, errors="coerce")
         if _f.notna().any():
@@ -6876,6 +6956,7 @@ def gerencia_cierre_mes():
                     (~vac11["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS)) &
                     (vac11["importe"] > 0)
                 ]
+                vac11 = vac11[_mask_superficie_11t(vac11)]   # 11T mide solo AS + Almacén + Kiosco
                 # 1) match por Código Art. exacto (matriz oficial); 2) fallback texto de Marca
                 vac11["marca_objetivo"] = _marca_11t_por_codigo(vac11)
                 _falta11 = vac11["marca_objetivo"].isna()
@@ -7290,6 +7371,7 @@ def _cierre_once_titulares(files):
         # Garantizar solo Peñaflor con cualquier fuente (el lector de ventas_mes no filtra Empresa)
         if "Empresa" in df.columns:
             df = df[df["Empresa"].astype(str).str.strip() == "Empresa"]
+        df = df[_mask_superficie_11t(df)]   # 11T mide solo AS + Almacén + Kiosco
         # 1) match por Código Art. exacto (matriz oficial); 2) fallback texto de Marca
         df["mo"] = _marca_11t_por_codigo(df)
         _falta_mo = df["mo"].isna()

@@ -1,5 +1,18 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-06 - 11T por superficie + CCC empresa vs objetivo
+
+### HECHO
+- [x] 11T ahora mide SOLO Autoservicio + Almacén + Kiosco (`_mask_superficie_11t` en `server_orbit.py`, aplicado en las 4 mediciones vivas). "Autoservicio Tradicional" cuenta como AS (confirmado).
+- [x] Tile gerencia CCC total empresa real vs objetivo por canal (`objccc.xlsx`); `gerencia_ccc_empresa` reescrito + card en `portal.html`.
+- [x] Objetivos del mes cargados en `objetivo 11T.xlsx`; nuevo input `objccc.xlsx`.
+- [x] Validado con test_client (once_titulares / zona / ccc_empresa / cierre 200; filtro efectivo). Commit + push a Render.
+
+### PENDIENTE / A CONFIRMAR
+- [ ] **BUG PREEXISTENTE**: `/api/gerencia/cierre_mes` da 500 — `01_INPUTS/ventas_mes.csv` está en `;` pero `_leer_ventas_mes_csv` lo lee con `sep=','` (ParserError en el sell-out del cierre). No es de este cambio (se reproduce en HEAD). Arreglar el lector (autodetectar `;`/`,`) o regenerar `ventas_mes.csv` como CSV con coma. La pantalla Cierre de Mes queda caída hasta entonces.
+- [ ] **`_11t_por_vend` (generar_cierre_mensual.py)**: el ranking mensual por vendedor NO tiene el filtro de superficie (usa cobertura por mínimo de botellas). Si se quiere que el ranking del cierre también sea solo AS+Almacén+Kiosco, alinear ese motor.
+- [ ] **Objetivos**: confirmar si `objccc.xlsx` (1046 CCC) y `objetivo 11T.xlsx` son mensuales o trimestrales. El 11T se compara contra un objetivo trimestral pero mide sobre `ventas_acumulada.csv` (reset julio); objccc se compara contra `ventas.csv` (mes vivo). Si objccc fuese trimestral, cambiar la fuente.
+
 ## Sesion 2026-07-06 - Stock sin Venta (pantalla gerencia)
 
 ### HECHO

@@ -1546,8 +1546,8 @@ function gDashboard(p){
       </div>
       <div class="kcard info">
         <div class="kl">CCC Compradores Mes</div>
-        <div class="kv">${D.cccEmpresa?.empresa?.total??tCCC}</div>
-        <div class="kh">Trad: ${D.cccEmpresa?.empresa?.tradicional??'–'} · AS: ${D.cccEmpresa?.empresa?.autoservicio??'–'} · OP: ${D.cccEmpresa?.empresa?.onpremise??'–'}</div>
+        <div class="kv">${D.cccEmpresa?.empresa?.total??tCCC}${D.cccEmpresa?.empresa?.objetivo_total?` <span style="font-size:13px;color:var(--text3);">/ ${D.cccEmpresa.empresa.objetivo_total}</span>`:''}</div>
+        <div class="kh">${D.cccEmpresa?.empresa?.pct!=null?`${D.cccEmpresa.empresa.pct}% obj · `:''}Trad ${D.cccEmpresa?.empresa?.tradicional??'–'} · AS ${D.cccEmpresa?.empresa?.autoservicio??'–'} · OP ${D.cccEmpresa?.empresa?.onpremise??'–'}</div>
       </div>
       <div class="kcard wn">
         <div class="kl">Sin Comp. Mes</div>
@@ -1636,6 +1636,27 @@ function gDashboard(p){
       <div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">Cargando datos…</div>
     </div>
   </div>`;
+  // CCC total empresa · real vs objetivo por canal (objccc.xlsx)
+  {
+    const ce=D.cccEmpresa||{}; const cans=ce.canales||[]; const emp=ce.empresa||{};
+    const pctT=emp.pct!=null?emp.pct:0; const clT=pctT>=80?'ok':pctT>=50?'wn':'bd';
+    right+=`<div class="card" style="margin-top:13px;">
+      <div class="card-hd"><span class="card-title">📊 CCC Empresa · real vs objetivo</span><span class="chip ${clT}">${emp.total??0}/${emp.objetivo_total??'–'} · ${emp.pct!=null?emp.pct+'%':'–'}</span></div>
+      <div class="card-body nop">${cans.length?`<table class="tbl">
+        <thead><tr><th>Canal</th><th style="text-align:right">CCC</th><th style="text-align:right">Objetivo</th><th style="text-align:right">Avance</th><th style="min-width:80px"></th></tr></thead>
+        <tbody>${cans.map(c=>{
+          const ccc=c.ccc||0,obj=c.objetivo||0,pct=c.pct;
+          const pb=obj?Math.min(Math.round(ccc/obj*100),100):0; const cl=pb>=80?'ok':pb>=50?'wn':'bd';
+          return `<tr>
+            <td style="font-size:12px;font-weight:600;">${c.canal}</td>
+            <td style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;">${ccc.toLocaleString('es-AR')}</td>
+            <td style="text-align:right;font-size:12px;color:var(--text3);">${obj||'–'}</td>
+            <td style="text-align:right;"><span class="chip ${cl}" style="font-size:9px;">${pct!=null?pct+'%':'–'}</span></td>
+            <td><div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${pb}%"></div></div></td>
+          </tr>`;}).join('')}</tbody>
+      </table><div style="font-size:9px;color:var(--text3);padding:4px 12px 6px;">Clientes con compra (neto>0) del mes por canal · Fuente: ${ce.fuente||'ventas.csv'} · Objetivo: objccc.xlsx</div>`:`<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">Sin datos de CCC empresa</div>`}</div>
+    </div>`;
+  }
   right+=`<div class="card" id="card-rechazos" style="margin-top:13px;">
     <div class="card-hd"><span class="card-title">🔴 Ranking de Rechazos</span><span class="chip" id="chip-rechazos">cargando…</span></div>
     <div class="card-body nop" id="body-rechazos">
