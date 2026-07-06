@@ -2413,7 +2413,7 @@ function vFaro(){
     const cats=j.categorias||[];
     const mAlc=j.millas_alcanzadas||0, mPos=j.millas_posibles||0;
     let h=`<div class="vsh">🌟 Incentivo Club FARO</div>
-      <div style="font-size:11px;color:var(--text3);margin:-6px 0 10px;">Cobertura mayo-junio · 3 botellas en Tradicional · Antares por SKU</div>
+      <div style="font-size:11px;color:var(--text3);margin:-6px 0 10px;">Cobertura ${j.periodo||''} · cada SKU con el mínimo de botellas suma 1 cobertura</div>
       <div class="vkw" style="background:linear-gradient(135deg,rgba(226,20,122,.16),rgba(226,20,122,.04));border:1px solid var(--mg);margin-bottom:12px;">
         <div class="row-b" style="align-items:center;">
           <div><div class="vkl">🎟 Millas que vas ganando</div><div class="xs" style="color:var(--text3)">premios por categoría alcanzada</div></div>
@@ -2428,7 +2428,7 @@ function vFaro(){
       const milChip=mil?`<span class="chip ${alc?'ok':''}" style="font-size:10px;${alc?'':'opacity:.7;'}">🎟 ${fmtN(mil)} millas ${alc?'✓':''}</span>`:'';
       h+=`<div class="vkw" style="background:var(--surf2);margin-bottom:10px;${alc?'border:1px solid var(--ok);':''}">
         <div class="row-b" style="align-items:center;">
-          <div><div class="vkl">${c.nombre}</div><div class="xs" style="color:var(--text3)">${c.segmento}${c.cat==='antares'?' · por SKU':''}</div></div>
+          <div><div class="vkl">${c.nombre}</div><div class="xs" style="color:var(--text3)">${c.segmento}${c.umbral?(' · min '+c.umbral+' bot/SKU'):''}</div></div>
           <div style="text-align:right;"><div class="vkv" style="font-size:22px;">${fmtN(c.logrado)}<span style="color:var(--text3);font-size:14px;">/${fmtN(c.objetivo)}</span></div>
             <span class="chip ${avc(pct)}" style="font-size:10px;">${c.pct!=null?c.pct+'%':'s/obj'}</span></div>
         </div>
@@ -2455,7 +2455,8 @@ function vFaro(){
         </div>`).join(''); }
       h+=`</div>`;
     });
-    h+=`<div class="xs" style="color:var(--text3);padding:4px 2px 20px;">Regla FARO: Familia Smirnoff 700cc en Autoservicio; Antares en Autoservicio cuenta por SKU (cada SKU suma 1, y XPA / Porron 330 / Porron 660 suman doble); Alaris/Finca Las Moras en Almacen/Despensa/Kiosco. Premios: Alaris+FLM 2000 millas, Antares 1000, Familia Smirnoff 1000 (al alcanzar el objetivo de la categoria). Fuente: ${j.fuente||'ventas_acumulada.csv'} (${j.periodo||'mayo-junio'}).</div>`;
+    const reglaTxt=cats.map(c=>`${c.nombre} (${c.segmento}, min ${c.umbral} bot/SKU, 🎟${fmtN(c.premio_millas||0)})`).join(' · ');
+    h+=`<div class="xs" style="color:var(--text3);padding:4px 2px 20px;">Regla FARO ${j.periodo||''}: cada SKU participante con al menos el mínimo de botellas suma 1 cobertura; se suman por cliente (Familia Gordons tope 3/cliente). ${reglaTxt}. Premios (millas) al alcanzar el objetivo de la categoría. Fuente: ${j.fuente||'ventas_acumulada.csv'}.</div>`;
     cont.innerHTML=h;
   }).catch(e=>{ cont.innerHTML=`<div class="vsh">🌟 Incentivo Club FARO</div><div style="color:var(--bd);padding:16px;">Error: ${e.message}</div>`; });
 }
@@ -4097,7 +4098,7 @@ function faroShow(cod,cat){
 /* ── Incentivo Club FARO (gerencia): objetivo vs logrado por vendedor + supervisores ── */
 function gIncentivoFaro(p){
   p.innerHTML=`<div class="gph"><div><div class="gph-title">🌟 Incentivo Club FARO</div>
-    <div class="gph-sub">Objetivo (incentivo_club_faro.xlsx) vs logrado · cobertura mayo-junio desde ventas_acumulada.csv</div></div></div>
+    <div class="gph-sub">Objetivo (incentivo_club_faro.xlsx) vs logrado · cobertura del bimestre vigente desde ventas_acumulada.csv</div></div></div>
     <div id="faro-g"><div class="card"><div class="card-body"><div class="empty"><div class="eico" style="font-size:28px">⏳</div><p>Cargando incentivo FARO…</p></div></div></div></div>`;
   (async()=>{
     const cont=document.getElementById('faro-g'); if(!cont) return;
@@ -4107,7 +4108,8 @@ function gIncentivoFaro(p){
       const r=await fetch('/api/gerencia/incentivo_faro');
       if(!r.ok){ cont.innerHTML=`<div class="card"><div class="card-body"><p style="color:var(--bd);padding:16px">FARO: HTTP ${r.status}</p></div></div>`; return; }
       const j=await r.json();
-      const cats=j.categorias||{}; const ck=['alaris_flm','antares','smirnoff'];
+      const cats=j.categorias||{}; const cmeta=j.categorias_meta||{};
+      const ck=j.categorias_orden||Object.keys(cats);
       const prem=j.premios||{};
       D.faroData=j; window._faroByCod={}; (j.vendedores||[]).forEach(v=>{window._faroByCod[v.codigo]=v;});
       const cell=(o,cod,c,clk)=>{const pct=o&&o.pct!=null?o.pct:(o&&o.objetivo?0:null);
@@ -4123,14 +4125,16 @@ function gIncentivoFaro(p){
       const filas=(arr,esSup)=>arr.map(v=>`<tr${esSup?' style="background:rgba(226,20,122,.06);font-weight:600;"':''}>
         <td style="font-weight:600;white-space:nowrap;">${esSup?'👤 '+v.nombre:('V'+v.codigo+' · '+(v.nombre||''))}${esSup&&v.vendedores?`<div style="font-size:9px;color:var(--text3);font-weight:400;">${v.vendedores.join(' ')}</div>`:''}</td>
         ${ck.map(c=>cell(v[c], v.codigo, c, !esSup)).join('')}${milCell(v)}</tr>`).join('');
-      const cabCat=(nom,seg,cat)=>`<th style="text-align:center">${nom}<div style="font-size:9px;color:var(--text3);font-weight:400">${seg}${prem[cat]?' · 🎟'+fmtN(prem[cat]):''}</div></th>`;
-      const head=`<thead><tr><th>Vendedor</th>${cabCat(cats.alaris_flm||'Alaris+FLM','Tradicional','alaris_flm')}${cabCat(cats.antares||'Antares','Autoservicio · por SKU','antares')}${cabCat(cats.smirnoff||'Familia Smirnoff','Autoservicio','smirnoff')}<th style="text-align:center">🎟 Millas<div style="font-size:9px;color:var(--text3);font-weight:400">ganadas / posibles</div></th></tr></thead>`;
+      const cabCat=(cat)=>{const m=cmeta[cat]||{};const nom=cats[cat]||m.nombre||cat;
+        const seg=(m.segmento||'')+(m.umbral!=null?' · min '+m.umbral+' bot':'');
+        return `<th style="text-align:center">${nom}<div style="font-size:9px;color:var(--text3);font-weight:400">${seg}${prem[cat]?' · 🎟'+fmtN(prem[cat]):''}</div></th>`;};
+      const head=`<thead><tr><th>Vendedor</th>${ck.map(cabCat).join('')}<th style="text-align:center">🎟 Millas<div style="font-size:9px;color:var(--text3);font-weight:400">ganadas / posibles</div></th></tr></thead>`;
       cont.innerHTML=`<div class="card"><div class="card-hd"><span class="card-title">Vendedores</span><span class="chip">logrado / objetivo · millas</span></div>
         <div class="card-body nop"><table class="tbl" style="font-size:12px;">${head}<tbody>${filas(j.vendedores||[],false)}</tbody></table></div></div>
         <div id="faro-detalle" style="margin-top:14px;"></div>
         <div class="card" style="margin-top:14px;"><div class="card-hd"><span class="card-title">Supervisores</span><span class="chip">suma de su equipo</span></div>
         <div class="card-body nop"><table class="tbl" style="font-size:12px;">${head}<tbody>${filas(j.supervisores||[],true)}</tbody></table></div></div>
-        <div style="font-size:10px;color:var(--text3);margin-top:8px;">Antares cuenta por SKU sin umbral (cada SKU suma 1; XPA / Porrón 330 / Porrón 660 suman doble) → el logrado puede superar el objetivo. Alaris+FLM 3 botellas en Tradicional, Familia Smirnoff 6 en Autoservicio. Premios (millas) al alcanzar el objetivo de cada categoría. Fuente: ${j.fuente||'ventas_acumulada.csv'} (${j.periodo||'mayo-junio'}).</div>`;
+        <div style="font-size:10px;color:var(--text3);margin-top:8px;">Cobertura por SKU: cada SKU participante con al menos el mínimo de botellas suma 1 cobertura; se suman por cliente (Familia Gordons tope 3/cliente). ${ck.map(c=>{const m=cmeta[c]||{};return (cats[c]||c)+' '+(m.segmento||'')+' min '+(m.umbral)+' bot';}).join(' · ')}. Premios (millas) al alcanzar el objetivo de cada categoría. Fuente: ${j.fuente||'ventas_acumulada.csv'} (${j.periodo||''}).</div>`;
     }catch(e){ cont.innerHTML=`<div class="card"><div class="card-body"><p style="color:var(--bd);padding:16px">FARO — error: ${e.message}</p></div></div>`; }
   })();
 }

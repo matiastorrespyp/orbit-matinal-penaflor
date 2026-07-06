@@ -1,5 +1,16 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-06 - feat(Incentivo FARO): bimestre julio-agosto por código de SKU
+
+### HECHO
+- [x] Reimplementado el Incentivo FARO para julio-agosto: 3 categorías nuevas (Smirnoff Ice trad/min3; Vinos Red Blends AS/min6; Familia Gordons AS/min6 tope3) con match por CÓDIGO de SKU y período meses [7,8]. Objetivos/premios desde `incentivo_club_faro .xlsx`. Front (gerencia + vendedor) ahora data-driven (`categorias_orden`/`categorias_meta`).
+- [x] Validado con Playwright (gerencia + V8): render correcto, sin errores. Backend objetivos = xlsx.
+
+### PENDIENTE / A TENER EN CUENTA
+- [ ] **CONFIRMAR con el usuario la regla de conteo**: se asumió **umbral POR SKU** (cada SKU con ≥3/6 bot suma 1 cobertura). El texto del xlsx es ambiguo para Smirnoff Ice ("cada variedad suma 1 por cualquier SKU participante" — podría ser sin umbral). Si la regla real difiere, ajustar `_faro_detalle_vendedor`.
+- [ ] **Cada bimestre el incentivo cambia** y hoy las categorías/SKUs/umbrales están hardcodeadas en `server_orbit.py` (`_FARO_CATS`, `_FARO_CAT_SKUS`, `_FARO_MESES`, etc.). El xlsx solo aporta objetivos y premios. Mejora futura: mover la definición de productos a una hoja estructurada del xlsx (hoy las reglas están en texto libre, no parseable de forma robusta) para no editar código cada 2 meses.
+- [ ] El input `incentivo_club_faro .xlsx` está modificado en el working tree. Para que Render tome los objetivos/premios nuevos hay que commitearlo (se hará junto con este cambio, orden explícita del usuario).
+
 ## Sesion 2026-07-06 - feat(11T): match por Código Art. exacto (matriz oficial)
 
 ### HECHO
