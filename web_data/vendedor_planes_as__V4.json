@@ -1,0 +1,57 @@
+{
+  "_meta": {
+    "endpoint_equivalente": "/api/vendedor/V4/planes_as",
+    "generated_at": "2026-07-06T17:54:18-03:00",
+    "source_files": [
+      "04_DATASETS_ORBIT/mod_planes_as.csv"
+    ],
+    "http_status": 200,
+    "count": 5,
+    "count_type": "dict_keys",
+    "checksum_sha256": "7918241e2fc0a3acf27b8de06a4f52316832c151c1ebf75f2b953a1d66e02e08",
+    "fase": "1-precompute-paralelo",
+    "uso": "COMPARAR contra /api vivo; NO usar en producción"
+  },
+  "payload": {
+    "clientes": [
+      {
+        "cant_cajas": 0,
+        "cliente_id": 370,
+        "cliente_nombre": "HUANG WEIZHEN",
+        "dcto_plan": 0.0,
+        "direccion": "SAN MARTIN 1025",
+        "envios": [],
+        "escala_actual": 0,
+        "escala_max": 5,
+        "pf_disponible": 0,
+        "pf_enviado": 0,
+        "pf_estado": "nan",
+        "plan_as": "Inicial",
+        "sc_alaris": 1,
+        "sc_alma_mora": 0,
+        "sc_antares_ipa": 0,
+        "sc_env_alaris": 0,
+        "sc_env_alma_mora": 0,
+        "sc_env_antares_ipa": 0,
+        "sc_env_frizze": 0,
+        "sc_env_smf_flavours": 0,
+        "sc_enviadas_total": 0,
+        "sc_frizze": 0,
+        "sc_pend_alaris": 1,
+        "sc_pend_alma_mora": 0,
+        "sc_pend_antares_ipa": 0,
+        "sc_pend_frizze": 0,
+        "sc_pend_smf_flavours": 0,
+        "sc_pendiente": 1,
+        "sc_smf_flavours": 0,
+        "sc_total_ganado": 1,
+        "tope": 0,
+        "total_facturado": 147231.76
+      }
+    ],
+    "fuente": "mod_planes_as.csv",
+    "generado_en": "2026-07-06 17:54:18",
+    "total_clientes": 1,
+    "vendedor_id": "V4"
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "_meta": {
+    "endpoint_equivalente": "/api/gerencia/planes_autoservicio",
+    "generated_at": "2026-07-06T17:54:15-03:00",
+    "source_files": [
+      "04_DATASETS_ORBIT/mod_gastos_accion.csv"
+    ],
+    "http_status": 200,
+    "count": 4,
+    "count_type": "dict_keys",
+    "checksum_sha256": "eb9e4d81876b35df087d506ce247f38e930737930321f0d9f51936b850e46a4c",
+    "fase": "1-precompute-paralelo",
+    "uso": "COMPARAR contra /api vivo; NO usar en producción"
+  },
+  "payload": {
+    "acciones": [
+      {
+        "accion_id": "MAY26-GRAL-AS-SPI-LOC-001",
+        "canal": "AUTOSERVICIOS",
+        "categoria": "SPIRITS LOCALES",
+        "clientes_afectados": 1,
+        "dia_objetivo": "Ma",
+        "es_regla_csv": true,
+        "exceso_pct_promedio": 11.0,
+        "exceso_pesos_total": 384561.0352941177,
+        "fecha_ejecucion": "2026-07-06",
+        "fecha_objetivo": "2026-07-07",
+        "gasto_real_total": 594321.6000000001,
+        "gasto_teorico_total": 209760.5647058824,
+        "lineas_alertadas": 2,
+        "negocio_id": "PENIAFLOR",
+        "negocio_nombre": "Peñaflor",
+        "vendedor_codigo": 8,
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "accion_id": "MAY26-GRAL-AS-VIN-001",
+        "canal": "AUTOSERVICIOS",
+        "categoria": "VDA/VDG/ESPUMANTES/SIDRA",
+        "clientes_afectados": 6,
+        "dia_objetivo": "Ma",
+        "es_regla_csv": true,
+        "exceso_pct_promedio": 6.090909090909091,
+        "exceso_pesos_total": 82082.2157922078,
+        "fecha_ejecucion": "2026-07-06",
+        "fecha_objetivo": "2026-07-07",
+        "gasto_real_total": 142152.3,
+        "gasto_teorico_total": 60070.08420779221,
+        "lineas_alertadas": 22,
+        "negocio_id": "PENIAFLOR",
+        "negocio_nombre": "Peñaflor",
+        "vendedor_codigo": 8,
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "accion_id": "MAY26-GRAL-AS-VIN-001",
+        "canal": "AUTOSERVICIOS",
+        "categoria": "VDA/VDG/ESPUMANTES/SIDRA",
+        "clientes_afectados": 1,
+        "dia_objetivo": "Ma",
+        "es_regla_csv": true,
+        "exceso_pct_promedio": 4.0,
+        "exceso_pesos_total": 3171.528,
+        "fecha_ejecucion": "2026-07-06",
+        "fecha_objetivo": "2026-07-07",
+        "gasto_real_total": 7928.820000000001,
+        "gasto_teorico_total": 4757.292,
+        "lineas_alertadas": 4,
+        "negocio_id": "PENIAFLOR",
+        "negocio_nombre": "Peñaflor",
+        "vendedor_codigo": 10,
+        "vendedor_nombre": "ORTEGA MILAGROS DESIREE"
+      }
+    ],
+    "advertencia": "Sin cargos formales no disponibles: no existe tabla de sin cargos en este sistema. Se muestran únicamente acciones con canal AUTOSERVICIOS de mod_gastos_accion.csv.",
+    "fuente_limitada": true,
+    "total_acciones": 3
+  }
+}

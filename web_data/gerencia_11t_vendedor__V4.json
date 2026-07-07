@@ -1,0 +1,199 @@
+{
+  "_meta": {
+    "endpoint_equivalente": "/api/gerencia/11t_vendedor?vendedor=V4",
+    "generated_at": "2026-07-06T17:54:20-03:00",
+    "source_files": [
+      "04_DATASETS_ORBIT/mod_11_titulares.csv"
+    ],
+    "http_status": 200,
+    "count": 6,
+    "count_type": "dict_keys",
+    "checksum_sha256": "af521e2b419081fd67cbf1ac229c66d9e4ed44b428d1c8e0cf005a2714bb421f",
+    "fase": "1-precompute-paralelo",
+    "uso": "COMPARAR contra /api vivo; NO usar en producción"
+  },
+  "payload": {
+    "fuente": "mod_11_titulares.csv",
+    "generado_en": "2026-07-06 17:54:20",
+    "marcas": [
+      {
+        "con": 0,
+        "marca": "ALARIS",
+        "pct": 0.0,
+        "sin": 13,
+        "total": 13
+      },
+      {
+        "con": 0,
+        "marca": "ALMA MORA",
+        "pct": 0.0,
+        "sin": 52,
+        "total": 52
+      },
+      {
+        "con": 0,
+        "marca": "ANTARES",
+        "pct": 0.0,
+        "sin": 13,
+        "total": 13
+      },
+      {
+        "con": 0,
+        "marca": "BLEND EXTREMOS",
+        "pct": 0.0,
+        "sin": 1,
+        "total": 1
+      },
+      {
+        "con": 0,
+        "marca": "CAZADOR",
+        "pct": 0.0,
+        "sin": 39,
+        "total": 39
+      },
+      {
+        "con": 0,
+        "marca": "COSTA&PAMPA",
+        "pct": 0.0,
+        "sin": 1,
+        "total": 1
+      },
+      {
+        "con": 0,
+        "marca": "DADA",
+        "pct": 0.0,
+        "sin": 13,
+        "total": 13
+      },
+      {
+        "con": 0,
+        "marca": "DON DAVID",
+        "pct": 0.0,
+        "sin": 52,
+        "total": 52
+      },
+      {
+        "con": 0,
+        "marca": "EL ESTECO",
+        "pct": 0.0,
+        "sin": 1,
+        "total": 1
+      },
+      {
+        "con": 0,
+        "marca": "FINCA LAS MORAS",
+        "pct": 0.0,
+        "sin": 13,
+        "total": 13
+      },
+      {
+        "con": 0,
+        "marca": "FOND DE CAVE",
+        "pct": 0.0,
+        "sin": 39,
+        "total": 39
+      },
+      {
+        "con": 0,
+        "marca": "FOND DE CAVE RVA",
+        "pct": 0.0,
+        "sin": 40,
+        "total": 40
+      },
+      {
+        "con": 0,
+        "marca": "GORDON'S FLAVOURS",
+        "pct": 0.0,
+        "sin": 13,
+        "total": 13
+      },
+      {
+        "con": 0,
+        "marca": "JW BLACK",
+        "pct": 0.0,
+        "sin": 40,
+        "total": 40
+      },
+      {
+        "con": 0,
+        "marca": "JW GOLD",
+        "pct": 0.0,
+        "sin": 1,
+        "total": 1
+      },
+      {
+        "con": 0,
+        "marca": "JW RED",
+        "pct": 0.0,
+        "sin": 39,
+        "total": 39
+      },
+      {
+        "con": 0,
+        "marca": "LA MASCOTA",
+        "pct": 0.0,
+        "sin": 1,
+        "total": 1
+      },
+      {
+        "con": 0,
+        "marca": "LOS ARBOLES",
+        "pct": 0.0,
+        "sin": 13,
+        "total": 13
+      },
+      {
+        "con": 0,
+        "marca": "MASCOTA",
+        "pct": 0.0,
+        "sin": 39,
+        "total": 39
+      },
+      {
+        "con": 0,
+        "marca": "NC ESPUMANTES",
+        "pct": 0.0,
+        "sin": 40,
+        "total": 40
+      },
+      {
+        "con": 0,
+        "marca": "SMF ICE",
+        "pct": 0.0,
+        "sin": 13,
+        "total": 13
+      },
+      {
+        "con": 0,
+        "marca": "SMIRNOFF FLAVOURS",
+        "pct": 0.0,
+        "sin": 13,
+        "total": 13
+      },
+      {
+        "con": 0,
+        "marca": "TANQUERAY",
+        "pct": 0.0,
+        "sin": 1,
+        "total": 1
+      },
+      {
+        "con": 0,
+        "marca": "TRAPICHE MEDALLA",
+        "pct": 0.0,
+        "sin": 40,
+        "total": 40
+      },
+      {
+        "con": 0,
+        "marca": "TRAPICHE RESERVA",
+        "pct": 0.0,
+        "sin": 53,
+        "total": 53
+      }
+    ],
+    "total_marcas": 25,
+    "vendedor": "V4",
+    "vendedor_nombre": "GRIBAUDO ANGEL"
+  }
+}

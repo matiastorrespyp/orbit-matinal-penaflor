@@ -1,0 +1,420 @@
+{
+  "phase": "fase-1-validation",
+  "generated_at": "2026-07-06T18:05:06-03:00",
+  "certificado": true,
+  "isolation": {
+    "orbit_db_path": "C:\\Users\\usuario\\AppData\\Local\\Temp\\orbit_fase1_val_ayzqbab8\\throwaway.db",
+    "orbit_plan_backup_dir": "C:\\Users\\usuario\\AppData\\Local\\Temp\\orbit_fase1_val_ayzqbab8\\plan",
+    "gsheets_enabled": false,
+    "nota": "orbit.db de producción y Google Sheets NO tocados."
+  },
+  "volatile_keys_ignored": [
+    "generado_en"
+  ],
+  "nota_meta": "El bloque _meta de cada archivo se excluye por diseño (no es payload productivo).",
+  "totals": {
+    "validated": 44,
+    "ok": 44,
+    "diff": 0,
+    "http_errors": 0,
+    "missing_files": 0
+  },
+  "results": [
+    {
+      "endpoint": "/api/gastos_accion",
+      "file": "web_data/gastos_accion.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/planes_autoservicio",
+      "file": "web_data/gerencia_planes_autoservicio.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/planes_as",
+      "file": "web_data/gerencia_planes_as.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/innovaciones_segmento",
+      "file": "web_data/gerencia_innovaciones_segmento.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/11t_empresa",
+      "file": "web_data/gerencia_11t_empresa.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/11t_acum",
+      "file": "web_data/gerencia_11t_acum.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/cobertura_segmento",
+      "file": "web_data/gerencia_cobertura_segmento.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/cobertura_acum",
+      "file": "web_data/gerencia_cobertura_acum.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/real_ayer_segmento",
+      "file": "web_data/gerencia_real_ayer_segmento.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V3/cobertura_acum",
+      "file": "web_data/vendedor_cobertura_acum__V3.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V4/cobertura_acum",
+      "file": "web_data/vendedor_cobertura_acum__V4.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V6/cobertura_acum",
+      "file": "web_data/vendedor_cobertura_acum__V6.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V7/cobertura_acum",
+      "file": "web_data/vendedor_cobertura_acum__V7.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V8/cobertura_acum",
+      "file": "web_data/vendedor_cobertura_acum__V8.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V9/cobertura_acum",
+      "file": "web_data/vendedor_cobertura_acum__V9.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V10/cobertura_acum",
+      "file": "web_data/vendedor_cobertura_acum__V10.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V3/planes_as",
+      "file": "web_data/vendedor_planes_as__V3.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V4/planes_as",
+      "file": "web_data/vendedor_planes_as__V4.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V6/planes_as",
+      "file": "web_data/vendedor_planes_as__V6.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V7/planes_as",
+      "file": "web_data/vendedor_planes_as__V7.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V8/planes_as",
+      "file": "web_data/vendedor_planes_as__V8.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V9/planes_as",
+      "file": "web_data/vendedor_planes_as__V9.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V10/planes_as",
+      "file": "web_data/vendedor_planes_as__V10.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V3/innovaciones_segmento",
+      "file": "web_data/vendedor_innovaciones_segmento__V3.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V4/innovaciones_segmento",
+      "file": "web_data/vendedor_innovaciones_segmento__V4.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V6/innovaciones_segmento",
+      "file": "web_data/vendedor_innovaciones_segmento__V6.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V7/innovaciones_segmento",
+      "file": "web_data/vendedor_innovaciones_segmento__V7.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V8/innovaciones_segmento",
+      "file": "web_data/vendedor_innovaciones_segmento__V8.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V9/innovaciones_segmento",
+      "file": "web_data/vendedor_innovaciones_segmento__V9.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V10/innovaciones_segmento",
+      "file": "web_data/vendedor_innovaciones_segmento__V10.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V3/plan_innovaciones",
+      "file": "web_data/vendedor_plan_innovaciones__V3.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V4/plan_innovaciones",
+      "file": "web_data/vendedor_plan_innovaciones__V4.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V6/plan_innovaciones",
+      "file": "web_data/vendedor_plan_innovaciones__V6.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V7/plan_innovaciones",
+      "file": "web_data/vendedor_plan_innovaciones__V7.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V8/plan_innovaciones",
+      "file": "web_data/vendedor_plan_innovaciones__V8.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V9/plan_innovaciones",
+      "file": "web_data/vendedor_plan_innovaciones__V9.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/vendedor/V10/plan_innovaciones",
+      "file": "web_data/vendedor_plan_innovaciones__V10.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/11t_vendedor?vendedor=V3",
+      "file": "web_data/gerencia_11t_vendedor__V3.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/11t_vendedor?vendedor=V4",
+      "file": "web_data/gerencia_11t_vendedor__V4.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/11t_vendedor?vendedor=V6",
+      "file": "web_data/gerencia_11t_vendedor__V6.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/11t_vendedor?vendedor=V7",
+      "file": "web_data/gerencia_11t_vendedor__V7.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/11t_vendedor?vendedor=V8",
+      "file": "web_data/gerencia_11t_vendedor__V8.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/11t_vendedor?vendedor=V9",
+      "file": "web_data/gerencia_11t_vendedor__V9.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/11t_vendedor?vendedor=V10",
+      "file": "web_data/gerencia_11t_vendedor__V10.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,1810 @@
+{
+  "_meta": {
+    "endpoint_equivalente": "/api/vendedor/V6/cobertura_acum",
+    "generated_at": "2026-07-06T17:54:18-03:00",
+    "source_files": [
+      "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
+      "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
+    ],
+    "http_status": 200,
+    "count": 5,
+    "count_type": "dict_keys",
+    "checksum_sha256": "69495f70834ea9bc68aebe47d9169295ec512c3eb044025a60bd03e1714286c5",
+    "fase": "1-precompute-paralelo",
+    "uso": "COMPARAR contra /api vivo; NO usar en producción"
+  },
+  "payload": {
+    "fecha_calculo": "2026-07-06",
+    "fuente": "mod_cobertura_acum.csv",
+    "generado_en": "2026-07-06 17:54:18",
+    "segmentos": [
+      {
+        "cartera": 37,
+        "cubiertos": 2,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 2805,
+            "cliente_nombre": "AGUIRRE JOSE RUBEN",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 59,
+            "cliente_nombre": "ASOCIACION MUTUAL CLUB ATENEO JUVENIL ACCION",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2420,
+            "cliente_nombre": "ASOCIACION MUTUAL DE AYUDA ENTRE ASOCIADOS Y ADHER",
+            "localidad": "Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2647,
+            "cliente_nombre": "ASOCIACION MUTUAL LIBERTAD BALNEARIA",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 14,
+            "cliente_nombre": "BLANGINO TITO NERI",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2602,
+            "cliente_nombre": "BRESSO JULIO NORBERTO Y BR.",
+            "localidad": "Miramar",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2980,
+            "cliente_nombre": "CASSINA MARIA TERESA",
+            "localidad": "Villa Fontana",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1383,
+            "cliente_nombre": "CHEN FANG",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2392,
+            "cliente_nombre": "CHEN FANG",
+            "localidad": "La Para",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1167,
+            "cliente_nombre": "CHEN HONGYAN - SUPER MIRAMAR",
+            "localidad": "Miramar",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3123,
+            "cliente_nombre": "CHEN JINMEI",
+            "localidad": "Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3166,
+            "cliente_nombre": "CUELLO DANIEL ANTONIO",
+            "localidad": "Miramar",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2918,
+            "cliente_nombre": "CUELLO LUIS ALBERTO",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2130,
+            "cliente_nombre": "DAI BIYING",
+            "localidad": "La Puerta",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 836,
+            "cliente_nombre": "DELFIN S A",
+            "localidad": "La Para",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2961,
+            "cliente_nombre": "DELFIN S.A.",
+            "localidad": "La Para",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3519,
+            "cliente_nombre": "DELFIN S.A.",
+            "localidad": "Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3521,
+            "cliente_nombre": "DELFIN S.A.",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3514,
+            "cliente_nombre": "DELFIN S.A.-",
+            "localidad": "Altos de Chipión",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2693,
+            "cliente_nombre": "FISSORE LORENA",
+            "localidad": "Marull",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3520,
+            "cliente_nombre": "GAIDO SRL",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2038,
+            "cliente_nombre": "HUANG XIAODONG",
+            "localidad": "La Para",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 932,
+            "cliente_nombre": "LAGLAIVE SUSANA NOEMI ",
+            "localidad": "Miramar",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2648,
+            "cliente_nombre": "MENDEZ RAUL",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 584,
+            "cliente_nombre": "MI FAMILIA S.A.S. S. A. S.",
+            "localidad": "Obispo Trejo",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2646,
+            "cliente_nombre": "MUTUAL DE SOCIEDAD CULTURAL SUC LP",
+            "localidad": "La Para",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2927,
+            "cliente_nombre": "PRIOTTO VALERIA SOLEDAD",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3501,
+            "cliente_nombre": "SERCA S.R.L.",
+            "localidad": "Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3502,
+            "cliente_nombre": "SERCA S.R.L.",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 115,
+            "cliente_nombre": "SOC DE SOCORROS MUTUOS SAN ROQUE",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 299,
+            "cliente_nombre": "SUBELZA LIMA EFRAIN",
+            "localidad": "Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3522,
+            "cliente_nombre": "SUPERMERCADO GAIDO SRL",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2334,
+            "cliente_nombre": "YANG ZHENKUN-LA ESPERANZA 1",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2857,
+            "cliente_nombre": "YANG ZHENKUN-LA ESPERANZA 2",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1441,
+            "cliente_nombre": "ZHANG FANGFANG",
+            "localidad": "Marull",
+            "umbral": 6
+          }
+        ],
+        "pct_cobertura": 0.0541,
+        "segmento": "AUTOSERVICIO",
+        "sin_cobertura": 35
+      },
+      {
+        "cartera": 2,
+        "cubiertos": 0,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 2446,
+            "cliente_nombre": "BOCCO EMANUEL ",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1009,
+            "cliente_nombre": "FULL DISTRIBUIDORA",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          }
+        ],
+        "pct_cobertura": 0.0,
+        "segmento": "MAYORISTA",
+        "sin_cobertura": 2
+      },
+      {
+        "cartera": 34,
+        "cubiertos": 1,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 463,
+            "cliente_nombre": " RAIRERI CECILIA",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2230,
+            "cliente_nombre": "AGUIRRE DAMIAN",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2044,
+            "cliente_nombre": "AGUIRRE IOHANNA ELISABETH",
+            "localidad": "La Puerta",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 550,
+            "cliente_nombre": "AGUIRRE RAUL ARMANDO",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 278,
+            "cliente_nombre": "AVENATTI LUCIO MAURICIO ",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 267,
+            "cliente_nombre": "BERTOLA MARCELA",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 92,
+            "cliente_nombre": "BORDA BOSSANA LUIS ESTEBAN",
+            "localidad": "Villa Fontana",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 192,
+            "cliente_nombre": "BRUNETTI DANTE RAUL ",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 28010,
+            "cliente_nombre": "BRUNO YULIANA",
+            "localidad": "La Para",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1256,
+            "cliente_nombre": "CERDA NORMA FABIANA-EST DAPSA",
+            "localidad": "Miramar",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 488,
+            "cliente_nombre": "DEGANI RONALD GERMAN",
+            "localidad": "Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 754,
+            "cliente_nombre": "DIAZ DANIEL IVAN ",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2924,
+            "cliente_nombre": "DIAZ RAUL ENRIQUE",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2641,
+            "cliente_nombre": "EDGARDO BERNABE LERDA",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 177,
+            "cliente_nombre": "FANTINI Y CIA SA (2)",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2629,
+            "cliente_nombre": "FARCHETTO MAURICIO RAFAEL",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1365,
+            "cliente_nombre": "FENOGLIO MELISA",
+            "localidad": "Miramar",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 235,
+            "cliente_nombre": "GALLARDO AGUSTIN",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 191,
+            "cliente_nombre": "GAVIGLIO ANDREA DE LOURDES",
+            "localidad": "Marull",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2868,
+            "cliente_nombre": "GUIPONI MIRIAN BELKY",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2659,
+            "cliente_nombre": "HAAS GERMAN",
+            "localidad": "Miramar",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1066,
+            "cliente_nombre": "MAMANI FITA MIRIAN MARISOL",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2238,
+            "cliente_nombre": "MAPELLI MARTA BEATRIZ",
+            "localidad": "Miramar",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 753,
+            "cliente_nombre": "MARCHETTI JOAQUIN DARIO ",
+            "localidad": "Miramar",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2146,
+            "cliente_nombre": "MUSA CRISTIAN ALEJANDRO",
+            "localidad": "La Puerta",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 178,
+            "cliente_nombre": "NIEVAS GABRIELA DEL VALLE",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 23,
+            "cliente_nombre": "NOVILLO MARIA DEL CARMEN",
+            "localidad": "Obispo Trejo",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 266,
+            "cliente_nombre": "PORCHETTO DANIEL",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1003,
+            "cliente_nombre": "ROLLAN ALFREDO RAUL",
+            "localidad": "Obispo Trejo",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2064,
+            "cliente_nombre": "SANTA ROSA COMBUSTIBLE",
+            "localidad": "Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2865,
+            "cliente_nombre": "SANTA ROSA COMBUSTIBLES SRL",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2200,
+            "cliente_nombre": "SCUBIN JUAN",
+            "localidad": "Marull",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2557,
+            "cliente_nombre": "YUNOT MARIA ELENA",
+            "localidad": "Balnearia",
+            "umbral": 6
+          }
+        ],
+        "pct_cobertura": 0.0294,
+        "segmento": "ON_PREMISE",
+        "sin_cobertura": 33
+      },
+      {
+        "cartera": 189,
+        "cubiertos": 9,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 1131,
+            "cliente_nombre": "AGUINALDO MAURO GABRIEL",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3570,
+            "cliente_nombre": "AGUINALDO SILVIA DEL VALLE",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 562,
+            "cliente_nombre": "AGUIRRE ALDANA ABIGAIL",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1436,
+            "cliente_nombre": "AHUMADA PIZARROI LUCINDA DE LAS NIEVES",
+            "localidad": "Villa Fontana",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3378,
+            "cliente_nombre": "ALBARRACIN SHERYL",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2598,
+            "cliente_nombre": "ALMADA BLANCA NORA",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2658,
+            "cliente_nombre": "AMADO FIAMMA ABIGAIL AYELEN",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1433,
+            "cliente_nombre": "AMAYA ANDINA ANAHI",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2250,
+            "cliente_nombre": "ANGARAMO ANDREA FABIANA",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 622,
+            "cliente_nombre": "ARANDA CECILIA ELIZABETH ",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 156,
+            "cliente_nombre": "ARCE PAOLA NATALIA",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2052,
+            "cliente_nombre": "ARRIETA  MARCELO II",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 988,
+            "cliente_nombre": "ASTRADA MARIA INES",
+            "localidad": "Obispo Trejo",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1313,
+            "cliente_nombre": "BAEZ NATALIA EUGENIA",
+            "localidad": "Marull",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2911,
+            "cliente_nombre": "BALDO DE BRUGALETTA ODILIA",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2063,
+            "cliente_nombre": "BARALE LEONARDO ",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2208,
+            "cliente_nombre": "BARBERIS VALERIA SOLEDAD",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3227,
+            "cliente_nombre": "BARRAZA RITA DEL VALLE",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 383,
+            "cliente_nombre": "BEARZI EVELINA ROXANA",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3035,
+            "cliente_nombre": "BECCARIA VILMA DEL MILAGRO",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2061,
+            "cliente_nombre": "BELTRAMO MIRTA",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2730,
+            "cliente_nombre": "BOLATTI  ROSSANA DEL VALLE",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2846,
+            "cliente_nombre": "BORDOY MARISEL",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1024,
+            "cliente_nombre": "BOSSIO SERGIO DANIEL",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1164,
+            "cliente_nombre": "BROCHERO MARIANA",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2714,
+            "cliente_nombre": "BROCHERO MARIANA",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2430,
+            "cliente_nombre": "BROCHERO RUBEN DARIO",
+            "localidad": "Villa Fontana",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 527,
+            "cliente_nombre": "BROCHERO SILVIA VIVIANA",
+            "localidad": "Villa Fontana",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2246,
+            "cliente_nombre": "BUGNONE  MARIA ROSA",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2665,
+            "cliente_nombre": "BULCHI AMALIA",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 195,
+            "cliente_nombre": "CABRAL ANDRES JAVIER",
+            "localidad": "Marull",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1426,
+            "cliente_nombre": "CAMARGO JUAN CRUZ",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2655,
+            "cliente_nombre": "CAMPANA NORMA BEATRIZ",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1048,
+            "cliente_nombre": "CAMPOS LUIS ANGEL",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 431,
+            "cliente_nombre": "CAMPOS LUIS ANGEL",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 875,
+            "cliente_nombre": "CAMPOS NORMA LIDIA ",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2012,
+            "cliente_nombre": "CANAVESIO OSCAR ROLANDO",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2005,
+            "cliente_nombre": "CAPDEVILA MACIEL",
+            "localidad": "La Puerta",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2606,
+            "cliente_nombre": "CARDO LUIS ALBERTO",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 780,
+            "cliente_nombre": "CARDO SANTINO AGUSTIN ",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1040,
+            "cliente_nombre": "CARDOZO LUIS ALBERTO ",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1331,
+            "cliente_nombre": "CELAYES   JESICA SABRINA",
+            "localidad": "Obispo Trejo",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 707,
+            "cliente_nombre": "COLLINO MAYRA LUCILA ",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2745,
+            "cliente_nombre": "COSTA MATIAS MANUEL",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 277,
+            "cliente_nombre": "CRAVERO RUBEN DARIO",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 427,
+            "cliente_nombre": "D' ALESSANDRI MARA NOELIA",
+            "localidad": "Obispo Trejo",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 909,
+            "cliente_nombre": "DANIEL ESTEFANIA MILAGROS ",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 650,
+            "cliente_nombre": "DELL ERBA CARINA DEL VALLE",
+            "localidad": "Villa Fontana",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3289,
+            "cliente_nombre": "DELLERBA DIEGO RAUL",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 630,
+            "cliente_nombre": "DELPRATO MARIA PAZ",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1031,
+            "cliente_nombre": "ECHEZARRETA RUBEN HIPOLITO",
+            "localidad": "La Puerta",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 716,
+            "cliente_nombre": "EMPRENDIMIENTOS CENTELLA S.A.",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1143,
+            "cliente_nombre": "ERCOLE ARRASCAETA NICOLAS JOSE",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3458,
+            "cliente_nombre": "FANER PORCHETTO JORGE DENIS",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1141,
+            "cliente_nombre": "FARIAS CRISTIAN  MATIAS",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2692,
+            "cliente_nombre": "FENOGLIO MARCELO FABIO",
+            "localidad": "Marull",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2288,
+            "cliente_nombre": "FERRADAS GERARDO HORACIO ",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 785,
+            "cliente_nombre": "FERRERO YOHANA JANET",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1305,
+            "cliente_nombre": "FLORES RENE ADRIAN DEL VALLE",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2577,
+            "cliente_nombre": "FRANCO CLAUDIO FABIAN FRANC",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2654,
+            "cliente_nombre": "GABRIELONI MARIA LAURA",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3367,
+            "cliente_nombre": "GAITAN MAFALDA DEL VALLE",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2017,
+            "cliente_nombre": "GALANZINO GERARDO FAVIO",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2611,
+            "cliente_nombre": "GALFRE PATRICIA",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 475,
+            "cliente_nombre": "GALIANO ANTONIO NICOLAS",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1292,
+            "cliente_nombre": "GALIMBERTI DAIANA MARIA",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 400,
+            "cliente_nombre": "GARAY SOLEDAD ANDREA",
+            "localidad": "Obispo Trejo",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1386,
+            "cliente_nombre": "GARAY SONIA ALEJANDRA",
+            "localidad": "Obispo Trejo",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2330,
+            "cliente_nombre": "GELVEZ ANELLO PABLO EMMANUEL",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1059,
+            "cliente_nombre": "GIUPPONI RODRIGO NAHUEL",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2653,
+            "cliente_nombre": "GOMEZ MIGUEL ANGEL",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2691,
+            "cliente_nombre": "GONZALEZ ANGEL MARTIN",
+            "localidad": "Marull",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 860,
+            "cliente_nombre": "GONZALEZ PURA RAQUEL",
+            "localidad": "La Puerta",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 379,
+            "cliente_nombre": "GUTIERREZ  BEATRIZ TERESA",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3118,
+            "cliente_nombre": "HEREDIA MARIA JOSE",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2145,
+            "cliente_nombre": "ILLARA MARIA ELENA",
+            "localidad": "Villa Fontana",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2727,
+            "cliente_nombre": "JALEF MARCELO   ADRIAN",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1118,
+            "cliente_nombre": "JALILES S.A.S--SUC 2",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 599,
+            "cliente_nombre": "JALILES S.A.S.",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1422,
+            "cliente_nombre": "JUAREZ ROSANA NATALI",
+            "localidad": "La Puerta",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2027,
+            "cliente_nombre": "LAVETTI  LUCY AZUCENA",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2033,
+            "cliente_nombre": "LLULL ADRIANA GISELA",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2640,
+            "cliente_nombre": "LONGHI NATIVIDAD MERCEDES ",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2066,
+            "cliente_nombre": "LOPEZ GUSTAVO EDUARDO",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 501,
+            "cliente_nombre": "LUDUEÑA LUIS ALBERTO",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1248,
+            "cliente_nombre": "LUDUEÑA MARCELO FABIAN",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1351,
+            "cliente_nombre": "LUIS ALEJANDRO BAIGORRIA",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 941,
+            "cliente_nombre": "LUIS ALEJANDRO BAIGORRIA",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 298,
+            "cliente_nombre": "LUIS MARCELO MICOL",
+            "localidad": "Marull",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 404,
+            "cliente_nombre": "LUNA ADRIANA MARIA",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2049,
+            "cliente_nombre": "LUNA CARINA",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 974,
+            "cliente_nombre": "LUNA FLAVIA MERCEDES ",
+            "localidad": "Obispo Trejo",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2574,
+            "cliente_nombre": "LUNA NOELIA",
+            "localidad": "Marull",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2003,
+            "cliente_nombre": "LUNA SILVINA NOEMI",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2726,
+            "cliente_nombre": "LUQUE DANIEL GUSTAVO",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2224,
+            "cliente_nombre": "LUQUE JORGE",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1050,
+            "cliente_nombre": "MACAGNO TAMARA AIME",
+            "localidad": "Marull",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2239,
+            "cliente_nombre": "MADUEÑO FLAVIA ROMINA",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 744,
+            "cliente_nombre": "MADUEÑO PABLO ANDRES ",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2501,
+            "cliente_nombre": "MAIDANA LORENA",
+            "localidad": "La Puerta",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 361,
+            "cliente_nombre": "MANSILLA CAMILA SOLEDAD",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1238,
+            "cliente_nombre": "MANSILLA EMANUEL JOSE LUIS",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1113,
+            "cliente_nombre": "MANSILLA LEONEL - PANADERIA",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2129,
+            "cliente_nombre": "MARIA SOLEDAD SANCHEZ",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1052,
+            "cliente_nombre": "MARIANI JESUS MARTIN",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2610,
+            "cliente_nombre": "MARTINA MIRIAN",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1073,
+            "cliente_nombre": "MARTINOTTI ALEJANDRA DEL VALLE ",
+            "localidad": "La Puerta",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 902,
+            "cliente_nombre": "MEDRANO HECTOR SERVILIANO",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3645,
+            "cliente_nombre": "MICOL LUIS MARCELO",
+            "localidad": "Marull",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2162,
+            "cliente_nombre": "MONDINO VANESA PAOLA",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2804,
+            "cliente_nombre": "MONJES MARIA ROSA",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 420,
+            "cliente_nombre": "MONTE SANTO S.A.D.",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2233,
+            "cliente_nombre": "MONTEVERDI LILIANA BEATRIZ",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2636,
+            "cliente_nombre": "MONTI HUGO M.Y MONTI LUIS M.",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 40,
+            "cliente_nombre": "MORENO LIBIA ROXANA",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2437,
+            "cliente_nombre": "NAVARRO MAURICIO GABRIEL",
+            "localidad": "Marull",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1160,
+            "cliente_nombre": "NAVILLE WALTER, RENZO, ROGER Y CAROLINA S.A.",
+            "localidad": "La Puerta",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2896,
+            "cliente_nombre": "NIEVA ANDRES SEBASTIAN",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 729,
+            "cliente_nombre": "NOLE ESTEBAN MICAEL",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 453,
+            "cliente_nombre": "NOLE SOFIA AGUSTINA",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2675,
+            "cliente_nombre": "NOVELLO EMILIE DEL VALLE",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 953,
+            "cliente_nombre": "NOVERO MIGUEL ANGEL",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1377,
+            "cliente_nombre": "ORTIZ LAURA",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 25,
+            "cliente_nombre": "PACHECO HECTOR GABRIEL",
+            "localidad": "Obispo Trejo",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2376,
+            "cliente_nombre": "PAIGEL NOEMI SARA MARISA",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2060,
+            "cliente_nombre": "PAJON ADRIAN",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2882,
+            "cliente_nombre": "PAJON JOSE LUIS",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2042,
+            "cliente_nombre": "PALACIOS  ANDREA",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2883,
+            "cliente_nombre": "PAREDEZ MIRNA NOEMI",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 209,
+            "cliente_nombre": "PATTACINI GUSTAVO EMILIO ",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 940,
+            "cliente_nombre": "PERALTA NANCI MARIELA",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2008,
+            "cliente_nombre": "PEREZ ANDRAUS RAUL ANIBAL ",
+            "localidad": "La Puerta",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2808,
+            "cliente_nombre": "PEREZ INES",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2666,
+            "cliente_nombre": "PERRONE DORIS SILVIA",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 406,
+            "cliente_nombre": "PEYRONEL PRADO GUILLERMINA",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 566,
+            "cliente_nombre": "PEYRONEL VALERIA BEATRIZ ",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 742,
+            "cliente_nombre": "PINTO ALBINA BERNABE ",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2741,
+            "cliente_nombre": "PIOVANO JENNIFER AYLEN",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2985,
+            "cliente_nombre": "PONZO CANDELA YAEL",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2886,
+            "cliente_nombre": "PUCCI DANIEL",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 293,
+            "cliente_nombre": "RENJIFO CAROLINA",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3611,
+            "cliente_nombre": "REYES KARINA CEFER",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2663,
+            "cliente_nombre": "RIVAROSA RAFAEL DARIO",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 971,
+            "cliente_nombre": "ROLDAN MABEL NILDA",
+            "localidad": "Obispo Trejo",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 515,
+            "cliente_nombre": "RUIZ RAUL ALEJANDRO ",
+            "localidad": "La Puerta",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2864,
+            "cliente_nombre": "SALAZAR MARCELO ALEJABNDRO",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2207,
+            "cliente_nombre": "SANCHEZ DANTE EZEQUIEL",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 989,
+            "cliente_nombre": "SANCHEZ HERNAN",
+            "localidad": "Obispo Trejo",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 972,
+            "cliente_nombre": "SANCHEZ MARIA BEATRIZ",
+            "localidad": "Obispo Trejo",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 668,
+            "cliente_nombre": "SANCHEZ MIGUEL ALBERTO ",
+            "localidad": "La Puerta",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 969,
+            "cliente_nombre": "SANCHEZ SIMON GAMALIEL",
+            "localidad": "Obispo Trejo",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2825,
+            "cliente_nombre": "SANCHEZ YAMILE",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2674,
+            "cliente_nombre": "SANJUAN CARLOS JOAQUIN",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3354,
+            "cliente_nombre": "SERIO CARLOS ALBERTO",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 945,
+            "cliente_nombre": "SILVERIO ZARATE",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2540,
+            "cliente_nombre": "SISTERNA ANDREA DEL VALLE",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2057,
+            "cliente_nombre": "SIVILOTTI FERNANDA",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3566,
+            "cliente_nombre": "SORZINI SERGIO DAMIAN",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2680,
+            "cliente_nombre": "TABLADA ESTELA MARY",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2141,
+            "cliente_nombre": "TELLO ROBERTO LUIS",
+            "localidad": "La Puerta",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2088,
+            "cliente_nombre": "TERESITA NAZARENA BITOCHI",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2890,
+            "cliente_nombre": "TOLEDO DANIELA BELEN",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1055,
+            "cliente_nombre": "TOLOSA EMILIANO JAVIER",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1058,
+            "cliente_nombre": "TRAPEIS MIRIAM NOEMI",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 965,
+            "cliente_nombre": "TUSCO TOLABA RAUL ESTEBAN ",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 474,
+            "cliente_nombre": "VACA FERNANDO ANDRES",
+            "localidad": "Obispo Trejo",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3234,
+            "cliente_nombre": "VARELA ANABELLA MARIA",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1267,
+            "cliente_nombre": "VARGAS SANDRA CELIA",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1147,
+            "cliente_nombre": "VEGA DANIZA GISELLE",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 6,
+            "cliente_nombre": "VEGA GABRIELA GISELA",
+            "localidad": "Miramar",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2068,
+            "cliente_nombre": "VEGA MAXIMILIANO RAUL",
+            "localidad": "Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 912,
+            "cliente_nombre": "VEGA SUSANA ESTER",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 560,
+            "cliente_nombre": "VIANCO YAMILA AYLEN ",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3143,
+            "cliente_nombre": "VIDELA CARINA",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1207,
+            "cliente_nombre": "VILLAFAÑE LAUTARO",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2862,
+            "cliente_nombre": "VILLARRUEL JOSE DANIEL",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 307,
+            "cliente_nombre": "VIVAS GABRIELA",
+            "localidad": "La Para",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2065,
+            "cliente_nombre": "VIVAS MONICA DEL VALLE",
+            "localidad": "Marull",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3325,
+            "cliente_nombre": "VIVAS VIVIANA NATIVIDAD",
+            "localidad": "Balnearia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 887,
+            "cliente_nombre": "VOTTERO MELISA SOLEDAD",
+            "localidad": "Villa Fontana",
+            "umbral": 3
+          }
+        ],
+        "pct_cobertura": 0.0476,
+        "segmento": "TRADICIONAL",
+        "sin_cobertura": 180
+      }
+    ],
+    "vendedor_id": "V6"
+  }
+}

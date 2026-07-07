@@ -1,0 +1,238 @@
+{
+  "_meta": {
+    "endpoint_equivalente": "/api/gerencia/cobertura_acum",
+    "generated_at": "2026-07-06T17:54:18-03:00",
+    "source_files": [
+      "04_DATASETS_ORBIT/mod_cobertura_acum.csv"
+    ],
+    "http_status": 200,
+    "count": 5,
+    "count_type": "dict_keys",
+    "checksum_sha256": "973983ec1cf8e65bcd44689f25ab18f0efecf7f82efb6c251e606d7e1b252a5f",
+    "fase": "1-precompute-paralelo",
+    "uso": "COMPARAR contra /api vivo; NO usar en producción"
+  },
+  "payload": {
+    "deposito": {
+      "botellas": 1636.0,
+      "clientes": 5,
+      "vendedor_id": "V20",
+      "vendedor_nombre": "Depósito (venta directa)"
+    },
+    "fecha_calculo": "2026-07-06",
+    "fuente": "mod_cobertura_acum.csv",
+    "generado_en": "2026-07-06 17:54:18",
+    "por_vendedor": [
+      {
+        "segmentos": [
+          {
+            "cartera": 284,
+            "cubiertos": 4,
+            "pct_cobertura": 0.0141,
+            "segmento": "TRADICIONAL",
+            "sin_cobertura": 280
+          }
+        ],
+        "vendedor_id": "V3",
+        "vendedor_nombre": "GAMBINO NADIA"
+      },
+      {
+        "segmentos": [
+          {
+            "cartera": 45,
+            "cubiertos": 5,
+            "pct_cobertura": 0.1111,
+            "segmento": "AUTOSERVICIO",
+            "sin_cobertura": 40
+          },
+          {
+            "cartera": 5,
+            "cubiertos": 0,
+            "pct_cobertura": 0.0,
+            "segmento": "MAYORISTA",
+            "sin_cobertura": 5
+          },
+          {
+            "cartera": 32,
+            "cubiertos": 0,
+            "pct_cobertura": 0.0,
+            "segmento": "ON_PREMISE",
+            "sin_cobertura": 32
+          },
+          {
+            "cartera": 207,
+            "cubiertos": 3,
+            "pct_cobertura": 0.0145,
+            "segmento": "TRADICIONAL",
+            "sin_cobertura": 204
+          }
+        ],
+        "vendedor_id": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL"
+      },
+      {
+        "segmentos": [
+          {
+            "cartera": 37,
+            "cubiertos": 2,
+            "pct_cobertura": 0.0541,
+            "segmento": "AUTOSERVICIO",
+            "sin_cobertura": 35
+          },
+          {
+            "cartera": 2,
+            "cubiertos": 0,
+            "pct_cobertura": 0.0,
+            "segmento": "MAYORISTA",
+            "sin_cobertura": 2
+          },
+          {
+            "cartera": 34,
+            "cubiertos": 1,
+            "pct_cobertura": 0.0294,
+            "segmento": "ON_PREMISE",
+            "sin_cobertura": 33
+          },
+          {
+            "cartera": 189,
+            "cubiertos": 9,
+            "pct_cobertura": 0.0476,
+            "segmento": "TRADICIONAL",
+            "sin_cobertura": 180
+          }
+        ],
+        "vendedor_id": "V6",
+        "vendedor_nombre": "PEYRONEL ANDREA"
+      },
+      {
+        "segmentos": [
+          {
+            "cartera": 23,
+            "cubiertos": 1,
+            "pct_cobertura": 0.0435,
+            "segmento": "AUTOSERVICIO",
+            "sin_cobertura": 22
+          },
+          {
+            "cartera": 7,
+            "cubiertos": 0,
+            "pct_cobertura": 0.0,
+            "segmento": "ON_PREMISE",
+            "sin_cobertura": 7
+          },
+          {
+            "cartera": 271,
+            "cubiertos": 2,
+            "pct_cobertura": 0.0074,
+            "segmento": "TRADICIONAL",
+            "sin_cobertura": 269
+          }
+        ],
+        "vendedor_id": "V7",
+        "vendedor_nombre": "JOFRE GUILLERMO AGUSTIN"
+      },
+      {
+        "segmentos": [
+          {
+            "cartera": 31,
+            "cubiertos": 14,
+            "pct_cobertura": 0.4516,
+            "segmento": "AUTOSERVICIO",
+            "sin_cobertura": 17
+          },
+          {
+            "cartera": 6,
+            "cubiertos": 0,
+            "pct_cobertura": 0.0,
+            "segmento": "MAYORISTA",
+            "sin_cobertura": 6
+          },
+          {
+            "cartera": 47,
+            "cubiertos": 3,
+            "pct_cobertura": 0.0638,
+            "segmento": "ON_PREMISE",
+            "sin_cobertura": 44
+          },
+          {
+            "cartera": 189,
+            "cubiertos": 17,
+            "pct_cobertura": 0.0899,
+            "segmento": "TRADICIONAL",
+            "sin_cobertura": 172
+          }
+        ],
+        "vendedor_id": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "segmentos": [
+          {
+            "cartera": 28,
+            "cubiertos": 4,
+            "pct_cobertura": 0.1429,
+            "segmento": "AUTOSERVICIO",
+            "sin_cobertura": 24
+          },
+          {
+            "cartera": 3,
+            "cubiertos": 0,
+            "pct_cobertura": 0.0,
+            "segmento": "MAYORISTA",
+            "sin_cobertura": 3
+          },
+          {
+            "cartera": 32,
+            "cubiertos": 1,
+            "pct_cobertura": 0.0312,
+            "segmento": "ON_PREMISE",
+            "sin_cobertura": 31
+          },
+          {
+            "cartera": 290,
+            "cubiertos": 13,
+            "pct_cobertura": 0.0448,
+            "segmento": "TRADICIONAL",
+            "sin_cobertura": 277
+          }
+        ],
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
+      },
+      {
+        "segmentos": [
+          {
+            "cartera": 29,
+            "cubiertos": 5,
+            "pct_cobertura": 0.1724,
+            "segmento": "AUTOSERVICIO",
+            "sin_cobertura": 24
+          },
+          {
+            "cartera": 1,
+            "cubiertos": 1,
+            "pct_cobertura": 1.0,
+            "segmento": "MAYORISTA",
+            "sin_cobertura": 0
+          },
+          {
+            "cartera": 33,
+            "cubiertos": 2,
+            "pct_cobertura": 0.0606,
+            "segmento": "ON_PREMISE",
+            "sin_cobertura": 31
+          },
+          {
+            "cartera": 204,
+            "cubiertos": 19,
+            "pct_cobertura": 0.0931,
+            "segmento": "TRADICIONAL",
+            "sin_cobertura": 185
+          }
+        ],
+        "vendedor_id": "V10",
+        "vendedor_nombre": "ORTEGA MILAGROS DESIREE"
+      }
+    ]
+  }
+}

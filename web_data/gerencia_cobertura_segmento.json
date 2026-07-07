@@ -1,0 +1,180 @@
+{
+  "_meta": {
+    "endpoint_equivalente": "/api/gerencia/cobertura_segmento",
+    "generated_at": "2026-07-06T17:54:18-03:00",
+    "source_files": [
+      "04_DATASETS_ORBIT/clientes_dia.csv"
+    ],
+    "http_status": 200,
+    "count": 2,
+    "count_type": "dict_keys",
+    "checksum_sha256": "1211578c900069e46959604010b2283569676a678f9253eea91520af2d59d73d",
+    "fase": "1-precompute-paralelo",
+    "uso": "COMPARAR contra /api vivo; NO usar en producción"
+  },
+  "payload": {
+    "cobertura": [
+      {
+        "con_cobertura": 3,
+        "pct_cobertura": 60.0,
+        "segmento": "AUTOSERVICIO",
+        "total_clientes": 5,
+        "vendedor_id": "V10",
+        "vendedor_nombre": "ORTEGA MILAGROS DESIREE"
+      },
+      {
+        "con_cobertura": 0,
+        "pct_cobertura": 0.0,
+        "segmento": "ON_PREMISE_VTK",
+        "total_clientes": 1,
+        "vendedor_id": "V10",
+        "vendedor_nombre": "ORTEGA MILAGROS DESIREE"
+      },
+      {
+        "con_cobertura": 4,
+        "pct_cobertura": 10.8,
+        "segmento": "TRADICIONAL",
+        "total_clientes": 37,
+        "vendedor_id": "V10",
+        "vendedor_nombre": "ORTEGA MILAGROS DESIREE"
+      },
+      {
+        "con_cobertura": 0,
+        "pct_cobertura": 0.0,
+        "segmento": "TRADICIONAL",
+        "total_clientes": 45,
+        "vendedor_id": "V3",
+        "vendedor_nombre": "GAMBINO NADIA"
+      },
+      {
+        "con_cobertura": 0,
+        "pct_cobertura": 0.0,
+        "segmento": "AUTOSERVICIO",
+        "total_clientes": 13,
+        "vendedor_id": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL"
+      },
+      {
+        "con_cobertura": 0,
+        "pct_cobertura": 0.0,
+        "segmento": "ON_PREMISE_VTK",
+        "total_clientes": 2,
+        "vendedor_id": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL"
+      },
+      {
+        "con_cobertura": 0,
+        "pct_cobertura": 0.0,
+        "segmento": "TRADICIONAL",
+        "total_clientes": 38,
+        "vendedor_id": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL"
+      },
+      {
+        "con_cobertura": 1,
+        "pct_cobertura": 10.0,
+        "segmento": "AUTOSERVICIO",
+        "total_clientes": 10,
+        "vendedor_id": "V6",
+        "vendedor_nombre": "PEYRONEL ANDREA"
+      },
+      {
+        "con_cobertura": 0,
+        "pct_cobertura": 0.0,
+        "segmento": "ON_PREMISE_VTK",
+        "total_clientes": 7,
+        "vendedor_id": "V6",
+        "vendedor_nombre": "PEYRONEL ANDREA"
+      },
+      {
+        "con_cobertura": 3,
+        "pct_cobertura": 5.4,
+        "segmento": "TRADICIONAL",
+        "total_clientes": 56,
+        "vendedor_id": "V6",
+        "vendedor_nombre": "PEYRONEL ANDREA"
+      },
+      {
+        "con_cobertura": 1,
+        "pct_cobertura": 20.0,
+        "segmento": "AUTOSERVICIO",
+        "total_clientes": 5,
+        "vendedor_id": "V7",
+        "vendedor_nombre": "JOFRE GUILLERMO AGUSTIN"
+      },
+      {
+        "con_cobertura": 0,
+        "pct_cobertura": 0.0,
+        "segmento": "ON_PREMISE_VTK",
+        "total_clientes": 2,
+        "vendedor_id": "V7",
+        "vendedor_nombre": "JOFRE GUILLERMO AGUSTIN"
+      },
+      {
+        "con_cobertura": 0,
+        "pct_cobertura": 0.0,
+        "segmento": "TRADICIONAL",
+        "total_clientes": 53,
+        "vendedor_id": "V7",
+        "vendedor_nombre": "JOFRE GUILLERMO AGUSTIN"
+      },
+      {
+        "con_cobertura": 3,
+        "pct_cobertura": 37.5,
+        "segmento": "AUTOSERVICIO",
+        "total_clientes": 8,
+        "vendedor_id": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "con_cobertura": 0,
+        "pct_cobertura": 0.0,
+        "segmento": "ON_PREMISE_VTK",
+        "total_clientes": 7,
+        "vendedor_id": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "con_cobertura": 5,
+        "pct_cobertura": 12.5,
+        "segmento": "TRADICIONAL",
+        "total_clientes": 40,
+        "vendedor_id": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "con_cobertura": 0,
+        "pct_cobertura": 0.0,
+        "segmento": "AUTOSERVICIO",
+        "total_clientes": 5,
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
+      },
+      {
+        "con_cobertura": 0,
+        "pct_cobertura": 0.0,
+        "segmento": "ON_PREMISE_VTK",
+        "total_clientes": 2,
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
+      },
+      {
+        "con_cobertura": 0,
+        "pct_cobertura": 0.0,
+        "segmento": "OTROS",
+        "total_clientes": 1,
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
+      },
+      {
+        "con_cobertura": 0,
+        "pct_cobertura": 0.0,
+        "segmento": "TRADICIONAL",
+        "total_clientes": 15,
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
+      }
+    ],
+    "generado_en": "2026-07-06 17:54:18"
+  }
+}

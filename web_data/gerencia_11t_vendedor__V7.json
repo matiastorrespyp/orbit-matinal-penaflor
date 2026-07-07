@@ -1,0 +1,157 @@
+{
+  "_meta": {
+    "endpoint_equivalente": "/api/gerencia/11t_vendedor?vendedor=V7",
+    "generated_at": "2026-07-06T17:54:20-03:00",
+    "source_files": [
+      "04_DATASETS_ORBIT/mod_11_titulares.csv"
+    ],
+    "http_status": 200,
+    "count": 6,
+    "count_type": "dict_keys",
+    "checksum_sha256": "d8f7fb296eaae2a7d82410e06d3a1ecf7827e5cb3030da9b79c79b2f3fc87f7d",
+    "fase": "1-precompute-paralelo",
+    "uso": "COMPARAR contra /api vivo; NO usar en producción"
+  },
+  "payload": {
+    "fuente": "mod_11_titulares.csv",
+    "generado_en": "2026-07-06 17:54:20",
+    "marcas": [
+      {
+        "con": 1,
+        "marca": "SMF ICE",
+        "pct": 20.0,
+        "sin": 4,
+        "total": 5
+      },
+      {
+        "con": 1,
+        "marca": "ALMA MORA",
+        "pct": 1.7,
+        "sin": 59,
+        "total": 60
+      },
+      {
+        "con": 0,
+        "marca": "ALARIS",
+        "pct": 0.0,
+        "sin": 5,
+        "total": 5
+      },
+      {
+        "con": 0,
+        "marca": "ANTARES",
+        "pct": 0.0,
+        "sin": 5,
+        "total": 5
+      },
+      {
+        "con": 0,
+        "marca": "CAZADOR",
+        "pct": 0.0,
+        "sin": 55,
+        "total": 55
+      },
+      {
+        "con": 0,
+        "marca": "DADA",
+        "pct": 0.0,
+        "sin": 5,
+        "total": 5
+      },
+      {
+        "con": 0,
+        "marca": "DON DAVID",
+        "pct": 0.0,
+        "sin": 60,
+        "total": 60
+      },
+      {
+        "con": 0,
+        "marca": "FINCA LAS MORAS",
+        "pct": 0.0,
+        "sin": 5,
+        "total": 5
+      },
+      {
+        "con": 0,
+        "marca": "FOND DE CAVE",
+        "pct": 0.0,
+        "sin": 55,
+        "total": 55
+      },
+      {
+        "con": 0,
+        "marca": "FOND DE CAVE RVA",
+        "pct": 0.0,
+        "sin": 55,
+        "total": 55
+      },
+      {
+        "con": 0,
+        "marca": "GORDON'S FLAVOURS",
+        "pct": 0.0,
+        "sin": 5,
+        "total": 5
+      },
+      {
+        "con": 0,
+        "marca": "JW BLACK",
+        "pct": 0.0,
+        "sin": 55,
+        "total": 55
+      },
+      {
+        "con": 0,
+        "marca": "JW RED",
+        "pct": 0.0,
+        "sin": 55,
+        "total": 55
+      },
+      {
+        "con": 0,
+        "marca": "LOS ARBOLES",
+        "pct": 0.0,
+        "sin": 5,
+        "total": 5
+      },
+      {
+        "con": 0,
+        "marca": "MASCOTA",
+        "pct": 0.0,
+        "sin": 55,
+        "total": 55
+      },
+      {
+        "con": 0,
+        "marca": "NC ESPUMANTES",
+        "pct": 0.0,
+        "sin": 55,
+        "total": 55
+      },
+      {
+        "con": 0,
+        "marca": "SMIRNOFF FLAVOURS",
+        "pct": 0.0,
+        "sin": 5,
+        "total": 5
+      },
+      {
+        "con": 0,
+        "marca": "TRAPICHE MEDALLA",
+        "pct": 0.0,
+        "sin": 55,
+        "total": 55
+      },
+      {
+        "con": 0,
+        "marca": "TRAPICHE RESERVA",
+        "pct": 0.0,
+        "sin": 60,
+        "total": 60
+      }
+    ],
+    "total_marcas": 19,
+    "vendedor": "V7",
+    "vendedor_nombre": "JOFRE GUILLERMO AGUSTIN"
+  }
+}

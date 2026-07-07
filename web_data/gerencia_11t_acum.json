@@ -1,0 +1,629 @@
+{
+  "_meta": {
+    "endpoint_equivalente": "/api/gerencia/11t_acum",
+    "generated_at": "2026-07-06T17:54:18-03:00",
+    "source_files": [
+      "04_DATASETS_ORBIT/mod_11t_acum.csv"
+    ],
+    "http_status": 200,
+    "count": 5,
+    "count_type": "dict_keys",
+    "checksum_sha256": "058f52941e1607a2790d5877f9f6e2976d6fbacea797b5690871424cce2f29d5",
+    "fase": "1-precompute-paralelo",
+    "uso": "COMPARAR contra /api vivo; NO usar en producción"
+  },
+  "payload": {
+    "fecha_calculo": "2026-07-06",
+    "fuente": "mod_11t_acum.csv",
+    "generado_en": "2026-07-06 17:54:18",
+    "por_marca": [
+      {
+        "cartera": 1840,
+        "cubiertos": 12,
+        "marca_objetivo": "DADA",
+        "pct": 0.7
+      },
+      {
+        "cartera": 1840,
+        "cubiertos": 9,
+        "marca_objetivo": "ALMA MORA",
+        "pct": 0.5
+      },
+      {
+        "cartera": 1840,
+        "cubiertos": 6,
+        "marca_objetivo": "LOS ARBOLES",
+        "pct": 0.3
+      },
+      {
+        "cartera": 1840,
+        "cubiertos": 4,
+        "marca_objetivo": "TRAPICHE RESERVA",
+        "pct": 0.2
+      },
+      {
+        "cartera": 1840,
+        "cubiertos": 4,
+        "marca_objetivo": "ALARIS",
+        "pct": 0.2
+      },
+      {
+        "cartera": 1840,
+        "cubiertos": 4,
+        "marca_objetivo": "FINCA LAS MORAS",
+        "pct": 0.2
+      },
+      {
+        "cartera": 1840,
+        "cubiertos": 3,
+        "marca_objetivo": "DON DAVID",
+        "pct": 0.2
+      },
+      {
+        "cartera": 1840,
+        "cubiertos": 1,
+        "marca_objetivo": "SMIRNOFF ICE",
+        "pct": 0.1
+      },
+      {
+        "cartera": 1840,
+        "cubiertos": 0,
+        "marca_objetivo": "ANTARES",
+        "pct": 0.0
+      },
+      {
+        "cartera": 1840,
+        "cubiertos": 0,
+        "marca_objetivo": "GORDON'S FLAVOURS",
+        "pct": 0.0
+      },
+      {
+        "cartera": 1840,
+        "cubiertos": 0,
+        "marca_objetivo": "SMIRNOFF FLAVOURS",
+        "pct": 0.0
+      }
+    ],
+    "por_vendedor": [
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "ALARIS",
+        "vendedor_id": "V3",
+        "vendedor_nombre": "GAMBINO NADIA"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "ALMA MORA",
+        "vendedor_id": "V3",
+        "vendedor_nombre": "GAMBINO NADIA"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "ANTARES",
+        "vendedor_id": "V3",
+        "vendedor_nombre": "GAMBINO NADIA"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "DADA",
+        "vendedor_id": "V3",
+        "vendedor_nombre": "GAMBINO NADIA"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "DON DAVID",
+        "vendedor_id": "V3",
+        "vendedor_nombre": "GAMBINO NADIA"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "FINCA LAS MORAS",
+        "vendedor_id": "V3",
+        "vendedor_nombre": "GAMBINO NADIA"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "GORDON'S FLAVOURS",
+        "vendedor_id": "V3",
+        "vendedor_nombre": "GAMBINO NADIA"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "LOS ARBOLES",
+        "vendedor_id": "V3",
+        "vendedor_nombre": "GAMBINO NADIA"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "SMIRNOFF FLAVOURS",
+        "vendedor_id": "V3",
+        "vendedor_nombre": "GAMBINO NADIA"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "SMIRNOFF ICE",
+        "vendedor_id": "V3",
+        "vendedor_nombre": "GAMBINO NADIA"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "TRAPICHE RESERVA",
+        "vendedor_id": "V3",
+        "vendedor_nombre": "GAMBINO NADIA"
+      },
+      {
+        "cartera": 252,
+        "cubiertos": 0,
+        "marca_objetivo": "ALARIS",
+        "vendedor_id": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL"
+      },
+      {
+        "cartera": 252,
+        "cubiertos": 0,
+        "marca_objetivo": "ALMA MORA",
+        "vendedor_id": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL"
+      },
+      {
+        "cartera": 252,
+        "cubiertos": 0,
+        "marca_objetivo": "ANTARES",
+        "vendedor_id": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL"
+      },
+      {
+        "cartera": 252,
+        "cubiertos": 1,
+        "marca_objetivo": "DADA",
+        "vendedor_id": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL"
+      },
+      {
+        "cartera": 252,
+        "cubiertos": 0,
+        "marca_objetivo": "DON DAVID",
+        "vendedor_id": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL"
+      },
+      {
+        "cartera": 252,
+        "cubiertos": 0,
+        "marca_objetivo": "FINCA LAS MORAS",
+        "vendedor_id": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL"
+      },
+      {
+        "cartera": 252,
+        "cubiertos": 0,
+        "marca_objetivo": "GORDON'S FLAVOURS",
+        "vendedor_id": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL"
+      },
+      {
+        "cartera": 252,
+        "cubiertos": 1,
+        "marca_objetivo": "LOS ARBOLES",
+        "vendedor_id": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL"
+      },
+      {
+        "cartera": 252,
+        "cubiertos": 0,
+        "marca_objetivo": "SMIRNOFF FLAVOURS",
+        "vendedor_id": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL"
+      },
+      {
+        "cartera": 252,
+        "cubiertos": 1,
+        "marca_objetivo": "SMIRNOFF ICE",
+        "vendedor_id": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL"
+      },
+      {
+        "cartera": 252,
+        "cubiertos": 0,
+        "marca_objetivo": "TRAPICHE RESERVA",
+        "vendedor_id": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL"
+      },
+      {
+        "cartera": 226,
+        "cubiertos": 0,
+        "marca_objetivo": "ALARIS",
+        "vendedor_id": "V6",
+        "vendedor_nombre": "PEYRONEL ANDREA"
+      },
+      {
+        "cartera": 226,
+        "cubiertos": 1,
+        "marca_objetivo": "ALMA MORA",
+        "vendedor_id": "V6",
+        "vendedor_nombre": "PEYRONEL ANDREA"
+      },
+      {
+        "cartera": 226,
+        "cubiertos": 0,
+        "marca_objetivo": "ANTARES",
+        "vendedor_id": "V6",
+        "vendedor_nombre": "PEYRONEL ANDREA"
+      },
+      {
+        "cartera": 226,
+        "cubiertos": 1,
+        "marca_objetivo": "DADA",
+        "vendedor_id": "V6",
+        "vendedor_nombre": "PEYRONEL ANDREA"
+      },
+      {
+        "cartera": 226,
+        "cubiertos": 0,
+        "marca_objetivo": "DON DAVID",
+        "vendedor_id": "V6",
+        "vendedor_nombre": "PEYRONEL ANDREA"
+      },
+      {
+        "cartera": 226,
+        "cubiertos": 0,
+        "marca_objetivo": "FINCA LAS MORAS",
+        "vendedor_id": "V6",
+        "vendedor_nombre": "PEYRONEL ANDREA"
+      },
+      {
+        "cartera": 226,
+        "cubiertos": 0,
+        "marca_objetivo": "GORDON'S FLAVOURS",
+        "vendedor_id": "V6",
+        "vendedor_nombre": "PEYRONEL ANDREA"
+      },
+      {
+        "cartera": 226,
+        "cubiertos": 0,
+        "marca_objetivo": "LOS ARBOLES",
+        "vendedor_id": "V6",
+        "vendedor_nombre": "PEYRONEL ANDREA"
+      },
+      {
+        "cartera": 226,
+        "cubiertos": 0,
+        "marca_objetivo": "SMIRNOFF FLAVOURS",
+        "vendedor_id": "V6",
+        "vendedor_nombre": "PEYRONEL ANDREA"
+      },
+      {
+        "cartera": 226,
+        "cubiertos": 0,
+        "marca_objetivo": "SMIRNOFF ICE",
+        "vendedor_id": "V6",
+        "vendedor_nombre": "PEYRONEL ANDREA"
+      },
+      {
+        "cartera": 226,
+        "cubiertos": 0,
+        "marca_objetivo": "TRAPICHE RESERVA",
+        "vendedor_id": "V6",
+        "vendedor_nombre": "PEYRONEL ANDREA"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "ALARIS",
+        "vendedor_id": "V7",
+        "vendedor_nombre": "JOFRE GUILLERMO AGUSTIN"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "ALMA MORA",
+        "vendedor_id": "V7",
+        "vendedor_nombre": "JOFRE GUILLERMO AGUSTIN"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "ANTARES",
+        "vendedor_id": "V7",
+        "vendedor_nombre": "JOFRE GUILLERMO AGUSTIN"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 1,
+        "marca_objetivo": "DADA",
+        "vendedor_id": "V7",
+        "vendedor_nombre": "JOFRE GUILLERMO AGUSTIN"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "DON DAVID",
+        "vendedor_id": "V7",
+        "vendedor_nombre": "JOFRE GUILLERMO AGUSTIN"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "FINCA LAS MORAS",
+        "vendedor_id": "V7",
+        "vendedor_nombre": "JOFRE GUILLERMO AGUSTIN"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "GORDON'S FLAVOURS",
+        "vendedor_id": "V7",
+        "vendedor_nombre": "JOFRE GUILLERMO AGUSTIN"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "LOS ARBOLES",
+        "vendedor_id": "V7",
+        "vendedor_nombre": "JOFRE GUILLERMO AGUSTIN"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "SMIRNOFF FLAVOURS",
+        "vendedor_id": "V7",
+        "vendedor_nombre": "JOFRE GUILLERMO AGUSTIN"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "SMIRNOFF ICE",
+        "vendedor_id": "V7",
+        "vendedor_nombre": "JOFRE GUILLERMO AGUSTIN"
+      },
+      {
+        "cartera": 294,
+        "cubiertos": 0,
+        "marca_objetivo": "TRAPICHE RESERVA",
+        "vendedor_id": "V7",
+        "vendedor_nombre": "JOFRE GUILLERMO AGUSTIN"
+      },
+      {
+        "cartera": 220,
+        "cubiertos": 3,
+        "marca_objetivo": "ALARIS",
+        "vendedor_id": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "cartera": 220,
+        "cubiertos": 5,
+        "marca_objetivo": "ALMA MORA",
+        "vendedor_id": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "cartera": 220,
+        "cubiertos": 0,
+        "marca_objetivo": "ANTARES",
+        "vendedor_id": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "cartera": 220,
+        "cubiertos": 5,
+        "marca_objetivo": "DADA",
+        "vendedor_id": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "cartera": 220,
+        "cubiertos": 3,
+        "marca_objetivo": "DON DAVID",
+        "vendedor_id": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "cartera": 220,
+        "cubiertos": 3,
+        "marca_objetivo": "FINCA LAS MORAS",
+        "vendedor_id": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "cartera": 220,
+        "cubiertos": 0,
+        "marca_objetivo": "GORDON'S FLAVOURS",
+        "vendedor_id": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "cartera": 220,
+        "cubiertos": 5,
+        "marca_objetivo": "LOS ARBOLES",
+        "vendedor_id": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "cartera": 220,
+        "cubiertos": 0,
+        "marca_objetivo": "SMIRNOFF FLAVOURS",
+        "vendedor_id": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "cartera": 220,
+        "cubiertos": 0,
+        "marca_objetivo": "SMIRNOFF ICE",
+        "vendedor_id": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "cartera": 220,
+        "cubiertos": 3,
+        "marca_objetivo": "TRAPICHE RESERVA",
+        "vendedor_id": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "cartera": 318,
+        "cubiertos": 1,
+        "marca_objetivo": "ALARIS",
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
+      },
+      {
+        "cartera": 318,
+        "cubiertos": 2,
+        "marca_objetivo": "ALMA MORA",
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
+      },
+      {
+        "cartera": 318,
+        "cubiertos": 0,
+        "marca_objetivo": "ANTARES",
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
+      },
+      {
+        "cartera": 318,
+        "cubiertos": 2,
+        "marca_objetivo": "DADA",
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
+      },
+      {
+        "cartera": 318,
+        "cubiertos": 0,
+        "marca_objetivo": "DON DAVID",
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
+      },
+      {
+        "cartera": 318,
+        "cubiertos": 1,
+        "marca_objetivo": "FINCA LAS MORAS",
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
+      },
+      {
+        "cartera": 318,
+        "cubiertos": 0,
+        "marca_objetivo": "GORDON'S FLAVOURS",
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
+      },
+      {
+        "cartera": 318,
+        "cubiertos": 0,
+        "marca_objetivo": "LOS ARBOLES",
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
+      },
+      {
+        "cartera": 318,
+        "cubiertos": 0,
+        "marca_objetivo": "SMIRNOFF FLAVOURS",
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
+      },
+      {
+        "cartera": 318,
+        "cubiertos": 0,
+        "marca_objetivo": "SMIRNOFF ICE",
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
+      },
+      {
+        "cartera": 318,
+        "cubiertos": 1,
+        "marca_objetivo": "TRAPICHE RESERVA",
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
+      },
+      {
+        "cartera": 233,
+        "cubiertos": 0,
+        "marca_objetivo": "ALARIS",
+        "vendedor_id": "V10",
+        "vendedor_nombre": "ORTEGA MILAGROS DESIREE"
+      },
+      {
+        "cartera": 233,
+        "cubiertos": 1,
+        "marca_objetivo": "ALMA MORA",
+        "vendedor_id": "V10",
+        "vendedor_nombre": "ORTEGA MILAGROS DESIREE"
+      },
+      {
+        "cartera": 233,
+        "cubiertos": 0,
+        "marca_objetivo": "ANTARES",
+        "vendedor_id": "V10",
+        "vendedor_nombre": "ORTEGA MILAGROS DESIREE"
+      },
+      {
+        "cartera": 233,
+        "cubiertos": 2,
+        "marca_objetivo": "DADA",
+        "vendedor_id": "V10",
+        "vendedor_nombre": "ORTEGA MILAGROS DESIREE"
+      },
+      {
+        "cartera": 233,
+        "cubiertos": 0,
+        "marca_objetivo": "DON DAVID",
+        "vendedor_id": "V10",
+        "vendedor_nombre": "ORTEGA MILAGROS DESIREE"
+      },
+      {
+        "cartera": 233,
+        "cubiertos": 0,
+        "marca_objetivo": "FINCA LAS MORAS",
+        "vendedor_id": "V10",
+        "vendedor_nombre": "ORTEGA MILAGROS DESIREE"
+      },
+      {
+        "cartera": 233,
+        "cubiertos": 0,
+        "marca_objetivo": "GORDON'S FLAVOURS",
+        "vendedor_id": "V10",
+        "vendedor_nombre": "ORTEGA MILAGROS DESIREE"
+      },
+      {
+        "cartera": 233,
+        "cubiertos": 0,
+        "marca_objetivo": "LOS ARBOLES",
+        "vendedor_id": "V10",
+        "vendedor_nombre": "ORTEGA MILAGROS DESIREE"
+      },
+      {
+        "cartera": 233,
+        "cubiertos": 0,
+        "marca_objetivo": "SMIRNOFF FLAVOURS",
+        "vendedor_id": "V10",
+        "vendedor_nombre": "ORTEGA MILAGROS DESIREE"
+      },
+      {
+        "cartera": 233,
+        "cubiertos": 0,
+        "marca_objetivo": "SMIRNOFF ICE",
+        "vendedor_id": "V10",
+        "vendedor_nombre": "ORTEGA MILAGROS DESIREE"
+      },
+      {
+        "cartera": 233,
+        "cubiertos": 0,
+        "marca_objetivo": "TRAPICHE RESERVA",
+        "vendedor_id": "V10",
+        "vendedor_nombre": "ORTEGA MILAGROS DESIREE"
+      }
+    ]
+  }
+}

@@ -1,0 +1,1459 @@
+{
+  "_meta": {
+    "endpoint_equivalente": "/api/gerencia/11t_empresa",
+    "generated_at": "2026-07-06T17:54:17-03:00",
+    "source_files": [
+      "04_DATASETS_ORBIT/mod_11_titulares.csv"
+    ],
+    "http_status": 200,
+    "count": 5,
+    "count_type": "dict_keys",
+    "checksum_sha256": "214bf5825131b82064cb44c8b701874389b1e2561f8c27ea996f26f51a660924",
+    "fase": "1-precompute-paralelo",
+    "uso": "COMPARAR contra /api vivo; NO usar en producción"
+  },
+  "payload": {
+    "fuente": "mod_11_titulares.csv",
+    "generado_en": "2026-07-06 17:54:17",
+    "marcas": [
+      {
+        "con": 5,
+        "marca": "DADA",
+        "pct": 10.9,
+        "por_vendedor": {
+          "V10": {
+            "con": 1,
+            "pct": 20.0,
+            "sin": 4,
+            "total": 5
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V6": {
+            "con": 1,
+            "pct": 10.0,
+            "sin": 9,
+            "total": 10
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 5,
+            "total": 5
+          },
+          "V8": {
+            "con": 3,
+            "pct": 37.5,
+            "sin": 5,
+            "total": 8
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 5,
+            "total": 5
+          }
+        },
+        "sin": 41,
+        "total": 46
+      },
+      {
+        "con": 3,
+        "marca": "FINCA LAS MORAS",
+        "pct": 6.5,
+        "por_vendedor": {
+          "V10": {
+            "con": 1,
+            "pct": 20.0,
+            "sin": 4,
+            "total": 5
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V6": {
+            "con": 1,
+            "pct": 10.0,
+            "sin": 9,
+            "total": 10
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 5,
+            "total": 5
+          },
+          "V8": {
+            "con": 1,
+            "pct": 12.5,
+            "sin": 7,
+            "total": 8
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 5,
+            "total": 5
+          }
+        },
+        "sin": 43,
+        "total": 46
+      },
+      {
+        "con": 2,
+        "marca": "ALARIS",
+        "pct": 4.3,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 5,
+            "total": 5
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 10,
+            "total": 10
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 5,
+            "total": 5
+          },
+          "V8": {
+            "con": 2,
+            "pct": 22.2,
+            "sin": 7,
+            "total": 9
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 5,
+            "total": 5
+          }
+        },
+        "sin": 45,
+        "total": 47
+      },
+      {
+        "con": 2,
+        "marca": "ANTARES",
+        "pct": 4.3,
+        "por_vendedor": {
+          "V10": {
+            "con": 2,
+            "pct": 40.0,
+            "sin": 3,
+            "total": 5
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 10,
+            "total": 10
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 5,
+            "total": 5
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 8,
+            "total": 8
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 5,
+            "total": 5
+          }
+        },
+        "sin": 44,
+        "total": 46
+      },
+      {
+        "con": 2,
+        "marca": "LOS ARBOLES",
+        "pct": 4.3,
+        "por_vendedor": {
+          "V10": {
+            "con": 2,
+            "pct": 40.0,
+            "sin": 3,
+            "total": 5
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 10,
+            "total": 10
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 5,
+            "total": 5
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 8,
+            "total": 8
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 5,
+            "total": 5
+          }
+        },
+        "sin": 44,
+        "total": 46
+      },
+      {
+        "con": 11,
+        "marca": "ALMA MORA",
+        "pct": 3.1,
+        "por_vendedor": {
+          "V10": {
+            "con": 4,
+            "pct": 9.3,
+            "sin": 39,
+            "total": 43
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 50,
+            "total": 50
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 52,
+            "total": 52
+          },
+          "V6": {
+            "con": 2,
+            "pct": 2.8,
+            "sin": 69,
+            "total": 71
+          },
+          "V7": {
+            "con": 1,
+            "pct": 1.7,
+            "sin": 59,
+            "total": 60
+          },
+          "V8": {
+            "con": 4,
+            "pct": 7.4,
+            "sin": 50,
+            "total": 54
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 23,
+            "total": 23
+          }
+        },
+        "sin": 342,
+        "total": 353
+      },
+      {
+        "con": 1,
+        "marca": "GORDON'S FLAVOURS",
+        "pct": 2.2,
+        "por_vendedor": {
+          "V10": {
+            "con": 1,
+            "pct": 20.0,
+            "sin": 4,
+            "total": 5
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 10,
+            "total": 10
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 5,
+            "total": 5
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 8,
+            "total": 8
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 5,
+            "total": 5
+          }
+        },
+        "sin": 45,
+        "total": 46
+      },
+      {
+        "con": 1,
+        "marca": "SMF ICE",
+        "pct": 2.2,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 5,
+            "total": 5
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 10,
+            "total": 10
+          },
+          "V7": {
+            "con": 1,
+            "pct": 20.0,
+            "sin": 4,
+            "total": 5
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 8,
+            "total": 8
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 5,
+            "total": 5
+          }
+        },
+        "sin": 45,
+        "total": 46
+      },
+      {
+        "con": 1,
+        "marca": "SMIRNOFF FLAVOURS",
+        "pct": 2.1,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 5,
+            "total": 5
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V6": {
+            "con": 1,
+            "pct": 10.0,
+            "sin": 9,
+            "total": 10
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 5,
+            "total": 5
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 9,
+            "total": 9
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 5,
+            "total": 5
+          }
+        },
+        "sin": 46,
+        "total": 47
+      },
+      {
+        "con": 4,
+        "marca": "TRAPICHE RESERVA",
+        "pct": 1.1,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 43,
+            "total": 43
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 50,
+            "total": 50
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 53,
+            "total": 53
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 73,
+            "total": 73
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 60,
+            "total": 60
+          },
+          "V8": {
+            "con": 4,
+            "pct": 7.4,
+            "sin": 50,
+            "total": 54
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 23,
+            "total": 23
+          }
+        },
+        "sin": 352,
+        "total": 356
+      },
+      {
+        "con": 1,
+        "marca": "DON DAVID",
+        "pct": 0.3,
+        "por_vendedor": {
+          "V10": {
+            "con": 1,
+            "pct": 2.3,
+            "sin": 42,
+            "total": 43
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 50,
+            "total": 50
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 52,
+            "total": 52
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 71,
+            "total": 71
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 60,
+            "total": 60
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 53,
+            "total": 53
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 22,
+            "total": 22
+          }
+        },
+        "sin": 350,
+        "total": 351
+      },
+      {
+        "con": 0,
+        "marca": "BLEND EXTREMOS",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 1,
+            "total": 1
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 2,
+            "total": 2
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 1,
+            "total": 1
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          }
+        },
+        "sin": 4,
+        "total": 4
+      },
+      {
+        "con": 0,
+        "marca": "CAZADOR",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 38,
+            "total": 38
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 50,
+            "total": 50
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 39,
+            "total": 39
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 61,
+            "total": 61
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 55,
+            "total": 55
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 45,
+            "total": 45
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 17,
+            "total": 17
+          }
+        },
+        "sin": 305,
+        "total": 305
+      },
+      {
+        "con": 0,
+        "marca": "COSTA&PAMPA",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 1,
+            "total": 1
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 2,
+            "total": 2
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 1,
+            "total": 1
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          }
+        },
+        "sin": 4,
+        "total": 4
+      },
+      {
+        "con": 0,
+        "marca": "EL ESTECO",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 1,
+            "total": 1
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 2,
+            "total": 2
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 1,
+            "total": 1
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          }
+        },
+        "sin": 4,
+        "total": 4
+      },
+      {
+        "con": 0,
+        "marca": "FOND DE CAVE",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 38,
+            "total": 38
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 50,
+            "total": 50
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 39,
+            "total": 39
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 61,
+            "total": 61
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 55,
+            "total": 55
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 45,
+            "total": 45
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 18,
+            "total": 18
+          }
+        },
+        "sin": 306,
+        "total": 306
+      },
+      {
+        "con": 0,
+        "marca": "FOND DE CAVE RVA",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 38,
+            "total": 38
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 50,
+            "total": 50
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 40,
+            "total": 40
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 63,
+            "total": 63
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 55,
+            "total": 55
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 46,
+            "total": 46
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 17,
+            "total": 17
+          }
+        },
+        "sin": 309,
+        "total": 309
+      },
+      {
+        "con": 0,
+        "marca": "GORDONS",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 1,
+            "total": 1
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          }
+        },
+        "sin": 1,
+        "total": 1
+      },
+      {
+        "con": 0,
+        "marca": "JW BLACK",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 38,
+            "total": 38
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 50,
+            "total": 50
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 40,
+            "total": 40
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 63,
+            "total": 63
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 55,
+            "total": 55
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 47,
+            "total": 47
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 17,
+            "total": 17
+          }
+        },
+        "sin": 310,
+        "total": 310
+      },
+      {
+        "con": 0,
+        "marca": "JW GOLD",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 1,
+            "total": 1
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 2,
+            "total": 2
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 2,
+            "total": 2
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          }
+        },
+        "sin": 5,
+        "total": 5
+      },
+      {
+        "con": 0,
+        "marca": "JW RED",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 38,
+            "total": 38
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 50,
+            "total": 50
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 39,
+            "total": 39
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 61,
+            "total": 61
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 55,
+            "total": 55
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 46,
+            "total": 46
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 17,
+            "total": 17
+          }
+        },
+        "sin": 306,
+        "total": 306
+      },
+      {
+        "con": 0,
+        "marca": "LA MASCOTA",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 1,
+            "total": 1
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 2,
+            "total": 2
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 1,
+            "total": 1
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          }
+        },
+        "sin": 4,
+        "total": 4
+      },
+      {
+        "con": 0,
+        "marca": "LOS INTOCABLES",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 1,
+            "total": 1
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          }
+        },
+        "sin": 1,
+        "total": 1
+      },
+      {
+        "con": 0,
+        "marca": "MASCOTA",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 38,
+            "total": 38
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 50,
+            "total": 50
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 39,
+            "total": 39
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 61,
+            "total": 61
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 55,
+            "total": 55
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 45,
+            "total": 45
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 17,
+            "total": 17
+          }
+        },
+        "sin": 305,
+        "total": 305
+      },
+      {
+        "con": 0,
+        "marca": "NC ESPUMANTES",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 38,
+            "total": 38
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 50,
+            "total": 50
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 40,
+            "total": 40
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 63,
+            "total": 63
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 55,
+            "total": 55
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 47,
+            "total": 47
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 17,
+            "total": 17
+          }
+        },
+        "sin": 310,
+        "total": 310
+      },
+      {
+        "con": 0,
+        "marca": "SMIRNOFF",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 1,
+            "total": 1
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          }
+        },
+        "sin": 1,
+        "total": 1
+      },
+      {
+        "con": 0,
+        "marca": "TANQUERAY",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 1,
+            "total": 1
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 2,
+            "total": 2
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 2,
+            "total": 2
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          }
+        },
+        "sin": 5,
+        "total": 5
+      },
+      {
+        "con": 0,
+        "marca": "TRAPICHE MEDALLA",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 38,
+            "total": 38
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 50,
+            "total": 50
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 40,
+            "total": 40
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 63,
+            "total": 63
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 55,
+            "total": 55
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 46,
+            "total": 46
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 17,
+            "total": 17
+          }
+        },
+        "sin": 309,
+        "total": 309
+      }
+    ],
+    "total_marcas": 28,
+    "vendedores": [
+      "V3",
+      "V4",
+      "V6",
+      "V7",
+      "V8",
+      "V9",
+      "V10"
+    ]
+  }
+}

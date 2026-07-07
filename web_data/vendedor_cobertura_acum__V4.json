@@ -1,0 +1,2027 @@
+{
+  "_meta": {
+    "endpoint_equivalente": "/api/vendedor/V4/cobertura_acum",
+    "generated_at": "2026-07-06T17:54:18-03:00",
+    "source_files": [
+      "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
+      "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
+    ],
+    "http_status": 200,
+    "count": 5,
+    "count_type": "dict_keys",
+    "checksum_sha256": "82eb1d5791e5a96226f8ee0c311ec0a76951cb67900d8d20dcac47b86229a859",
+    "fase": "1-precompute-paralelo",
+    "uso": "COMPARAR contra /api vivo; NO usar en producción"
+  },
+  "payload": {
+    "fecha_calculo": "2026-07-06",
+    "fuente": "mod_cobertura_acum.csv",
+    "generado_en": "2026-07-06 17:54:18",
+    "segmentos": [
+      {
+        "cartera": 45,
+        "cubiertos": 5,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 819,
+            "cliente_nombre": "ALEGRE MABEL",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 185,
+            "cliente_nombre": "ARGUELLO ALFONSINA LAURA ",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 356,
+            "cliente_nombre": "ASOC.MUT.AFIL ATILRA FREYRE",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 188,
+            "cliente_nombre": "BARRERA RAUL OMAR",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 206,
+            "cliente_nombre": "BIDERBOST JOSE MARIA",
+            "localidad": "Brinkmann",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 304,
+            "cliente_nombre": "CLEMENTE C Y J S.A.S.",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 114,
+            "cliente_nombre": "CLEMENTE JORGE LUIS",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 222,
+            "cliente_nombre": "COMBA PAOLA ANDREA",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 197,
+            "cliente_nombre": "COOP. AGR. GANAD. MORTEROS",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 45,
+            "cliente_nombre": "COOP. AGR. GANAD. MORTEROS SUC",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4467,
+            "cliente_nombre": "COOP. AGRIC. CONSUMO",
+            "localidad": "Porteña",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 99,
+            "cliente_nombre": "DARDANO DEMA",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 35,
+            "cliente_nombre": "DELLA LIBERA JUAN CARLOS",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4457,
+            "cliente_nombre": "FERRARIS HUGO RUBY",
+            "localidad": "Porteña",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1294,
+            "cliente_nombre": "FRANCO DISTRIBUCIONES S.R.L",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 62,
+            "cliente_nombre": "GRUPO DIOS BACO EN FORMACION S.A.",
+            "localidad": "Brinkmann",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 176,
+            "cliente_nombre": "GUAN LILING",
+            "localidad": "Brinkmann",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 289,
+            "cliente_nombre": "ITEGA SA",
+            "localidad": "Brinkmann",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 207,
+            "cliente_nombre": "LENTA MARCELA CARINA",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 22,
+            "cliente_nombre": "MACHADO DANIELA",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 210,
+            "cliente_nombre": "MAINARDI MATIAS",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 748,
+            "cliente_nombre": "MALANO MERCEDES",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 373,
+            "cliente_nombre": "MANFREY",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1370,
+            "cliente_nombre": "PEANO SEBASTIAN-MERCADO 9 LA FREYRE",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 180,
+            "cliente_nombre": "SU XIANHUI",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 260,
+            "cliente_nombre": "SUPER LAS HERAS S.A.S.",
+            "localidad": "Brinkmann",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 439,
+            "cliente_nombre": "SUPERVEINTINUEVE S.R.L.",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1223,
+            "cliente_nombre": "TORRES RODRIGUEZ FELIX PASTOR",
+            "localidad": "Brinkmann",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1054,
+            "cliente_nombre": "TORRES ZAMBRANO SANDRA PATRICIA",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 329,
+            "cliente_nombre": "TOSOLINI VERONICA LILIANA",
+            "localidad": "Brinkmann",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 120,
+            "cliente_nombre": "VACHETTA ALEJANDRO JORGE",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1254,
+            "cliente_nombre": "VACHETTA ALEJANDRO JORGE-SUC",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 204,
+            "cliente_nombre": "VACHETTA JUAN MANUEL",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 3.0,
+            "cliente_id": 334,
+            "cliente_nombre": "VERNETTI DANIEL FERNANDO",
+            "localidad": "Brinkmann",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 378,
+            "cliente_nombre": "VILLEGAS CUENCA RAFAEL ",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 181,
+            "cliente_nombre": "WANG XUEQUING",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 874,
+            "cliente_nombre": "WENG KUNGUANG",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 100,
+            "cliente_nombre": "YANDEN S.A.S",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 161,
+            "cliente_nombre": "YANDEN S.A.S",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 282,
+            "cliente_nombre": "YANDEN S.A.S",
+            "localidad": "Morteros",
+            "umbral": 6
+          }
+        ],
+        "pct_cobertura": 0.1111,
+        "segmento": "AUTOSERVICIO",
+        "sin_cobertura": 40
+      },
+      {
+        "cartera": 5,
+        "cubiertos": 0,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 216,
+            "cliente_nombre": "PEDROTTI DIST. S.R.L.",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 905,
+            "cliente_nombre": "PEDROTTI DIST. S.R.L.-SUC",
+            "localidad": "Brinkmann",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1000,
+            "cliente_nombre": "PEDROTTI DISTRIBUCIONES",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4502,
+            "cliente_nombre": "PEDROTTI DISTRIBUCIONES",
+            "localidad": "Porteña",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 310,
+            "cliente_nombre": "VSB DISTRIBUCIONES S.R.L",
+            "localidad": "Villa Esquiú",
+            "umbral": 6
+          }
+        ],
+        "pct_cobertura": 0.0,
+        "segmento": "MAYORISTA",
+        "sin_cobertura": 5
+      },
+      {
+        "cartera": 32,
+        "cubiertos": 0,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 1304,
+            "cliente_nombre": "611 LOGISTICA SA",
+            "localidad": "Córdoba",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3700,
+            "cliente_nombre": "BIANCO HUGO",
+            "localidad": "Porteña",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4453,
+            "cliente_nombre": "BORTOLON RUBEN Y URQUIZA S.R.L",
+            "localidad": "Porteña",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 391,
+            "cliente_nombre": "BORTOLON Y URQUIZA COMB. SRL",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1159,
+            "cliente_nombre": "BRITEZ FLORENCIA ARIANA-SUC",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4499,
+            "cliente_nombre": "BRUERA OSCAR Y CIA- S.R.L.",
+            "localidad": "Porteña",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 28,
+            "cliente_nombre": "BRUNA ENRIQUE ANGEL",
+            "localidad": "Brinkmann",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 421,
+            "cliente_nombre": "BUSTAMANTE SILVIA NOEMI",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 712,
+            "cliente_nombre": "CARIONI RUBEN",
+            "localidad": "Brinkmann",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 194,
+            "cliente_nombre": "CASA BENJAMIN SARTORI S.R.L.",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 108,
+            "cliente_nombre": "CRICKA SHOP",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 200,
+            "cliente_nombre": "DANIELE OMAR JUAN Y DANIELE  A",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4405,
+            "cliente_nombre": "DELLA TORRE LUIS ALBERTO ",
+            "localidad": "Porteña",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3533,
+            "cliente_nombre": "DEMARIA GERMAN DARIO",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 612,
+            "cliente_nombre": "DURANDO HNOS. FREYRE S.A.S.",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 202,
+            "cliente_nombre": "EMPRESA TRANSPORTE MORTEROS",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1012,
+            "cliente_nombre": "GONZALEZ JORGE ANDRES",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2151,
+            "cliente_nombre": "HERRERA NADIA VANESA",
+            "localidad": "Porteña",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 470,
+            "cliente_nombre": "MAIDANA MAURO DAMIAN ",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2,
+            "cliente_nombre": "MARTIN ROVAI BOLAÑEZ",
+            "localidad": "Brinkmann",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 349,
+            "cliente_nombre": "MC COMBUSTIBLES S.R.L.",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 561,
+            "cliente_nombre": "MOLARDO FACUNDO - PILETA",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 363,
+            "cliente_nombre": "MOLINA AGUSTIN NAHUEL (CAFETERIA OTILIA)",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 498,
+            "cliente_nombre": "NIVOLI MARISA ALEJANDRA",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 215,
+            "cliente_nombre": "OLIVERO PATRICIA SOLEDAD ",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 271,
+            "cliente_nombre": "OSCAR BRUERA Y CIA S.R.L.",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 85,
+            "cliente_nombre": "OSTERTAG EZEQUIEL DAVID",
+            "localidad": "Porteña",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 148,
+            "cliente_nombre": "PANADERIA Y CONFITERIA EL BUEN GUSTO DE GIUDTINA S",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 244,
+            "cliente_nombre": "POLO S.R.L.",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 396,
+            "cliente_nombre": "ROSSO HUGO DANIEL",
+            "localidad": "Brinkmann",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2316,
+            "cliente_nombre": "STEIMBACH JORGE LUIS",
+            "localidad": "Porteña",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2792,
+            "cliente_nombre": "SUCESION DE PORTA MIGUEL ANGEL",
+            "localidad": "Morteros",
+            "umbral": 6
+          }
+        ],
+        "pct_cobertura": 0.0,
+        "segmento": "ON_PREMISE",
+        "sin_cobertura": 32
+      },
+      {
+        "cartera": 207,
+        "cubiertos": 3,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 159,
+            "cliente_nombre": "8 DE ENERO S.A.S.",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 961,
+            "cliente_nombre": "ACEVEDO JANET ERIKA ",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 252,
+            "cliente_nombre": "ACTIS LETICIA CARLA",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 959,
+            "cliente_nombre": "ACTIS LUCIA",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 122,
+            "cliente_nombre": "AGUIRRE ALCIRA VERONICA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4687,
+            "cliente_nombre": "ALESANDRIA  ELIJIO",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 67,
+            "cliente_nombre": "AMBROGGIO GUSTAVO",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 217,
+            "cliente_nombre": "ANGONOA ROBERTO AGUSTIN",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 233,
+            "cliente_nombre": "ANGULO MATIAS DAMIAN",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4005,
+            "cliente_nombre": "ARESE ALICIA",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 175,
+            "cliente_nombre": "ARGAÑARAZ LUZ MARIA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 211,
+            "cliente_nombre": "ARIAS MARILINA EMILCE",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1201,
+            "cliente_nombre": "ARMANDO DAIANA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 155,
+            "cliente_nombre": "AUBONE JUAN BAUTISTA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 423,
+            "cliente_nombre": "BALMA JOSEFINA EDITH",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 449,
+            "cliente_nombre": "BARBONAGLIA MARCELA ANAHI",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3436,
+            "cliente_nombre": "BAROVERO ANDREA LUCIANA Y BARO",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 789,
+            "cliente_nombre": "BARRERA RAUL ALBERTO-KIOSCO",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 571,
+            "cliente_nombre": "BASUALDO CELIA MARIA ",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 447,
+            "cliente_nombre": "BEJARANO JORGE RODOLFO ",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 377,
+            "cliente_nombre": "BELTRAMINO AXEL ROBERTO",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 153,
+            "cliente_nombre": "BERGERO JAVIER",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 484,
+            "cliente_nombre": "BERGIA LORENA MARICEL ",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 739,
+            "cliente_nombre": "BETIANA ELIZABETH ",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 247,
+            "cliente_nombre": "BIDDERBOST PAOLA MARISEL \"CONOS\"",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 337,
+            "cliente_nombre": "BIGLIA ESTELA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 831,
+            "cliente_nombre": "BLANDA LAUTARO ANTONIO ",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 57,
+            "cliente_nombre": "BOCCO MATIAS GASTON",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 118,
+            "cliente_nombre": "BOGLIONE CARLA NOEMI",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 19,
+            "cliente_nombre": "BOGLIONE FRANCO",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 205,
+            "cliente_nombre": "BOSCAROL BRISA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 316,
+            "cliente_nombre": "BOSIO LUZ",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 394,
+            "cliente_nombre": "BRAVO LUCIANO",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 654,
+            "cliente_nombre": "BRITEZ FLORENCIA ARIANA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1284,
+            "cliente_nombre": "BUSTAMANTE ALICIA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 262,
+            "cliente_nombre": "BUSTAMANTE NORMA ",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 281,
+            "cliente_nombre": "CALUVA MARISEL DE LOS ANGELES",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1303,
+            "cliente_nombre": "CAPANNO CLAUDIA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 129,
+            "cliente_nombre": "CARIGNANO DEBORA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 124,
+            "cliente_nombre": "CARIGNANO FABRICIO",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 834,
+            "cliente_nombre": "CARLOS FROILAN TORRES ZAMBRANO",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 236,
+            "cliente_nombre": "CASA BENJAMIN SARTORI (NVA ESPERANZA)",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 36,
+            "cliente_nombre": "CASAS CAROLINA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2788,
+            "cliente_nombre": "CASAS CESAR ALBERTO",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1008,
+            "cliente_nombre": "CHAVEZ DANA VANESA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 20,
+            "cliente_nombre": "CHIALVO GUSTAVO CELESTINO",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 220,
+            "cliente_nombre": "CHIAPERO VANESA",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 184,
+            "cliente_nombre": "CLEMENTE CLAUDIA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 897,
+            "cliente_nombre": "CORIGLIANI ARIANA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 44,
+            "cliente_nombre": "COSTA FEDERICO CARLOS",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 34,
+            "cliente_nombre": "CRAVERO SUSANA BEATRIZ",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 507,
+            "cliente_nombre": "CURIOTTI LAURA ANDREA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 352,
+            "cliente_nombre": "DALL AGATA NATALIA MARIA",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 638,
+            "cliente_nombre": "DALMAU RUBEN DARIO",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 64,
+            "cliente_nombre": "DAVILA EDUARDO EUGENIO.",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 510,
+            "cliente_nombre": "DE BARBERIS JUAN VICENTE ",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 362,
+            "cliente_nombre": "DE SOUZA MONICA APARECIDA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 572,
+            "cliente_nombre": "DELLA LIBERA CARLOS DANIEL ",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1250,
+            "cliente_nombre": "DEMARIA PATRICIA NOELIA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 145,
+            "cliente_nombre": "DIAZ MARISA SILVANA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4440,
+            "cliente_nombre": "DURAN LUISINA",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7,
+            "cliente_nombre": "DURANDO DESIREE AYELEN",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 10,
+            "cliente_nombre": "FARIAS ALDO",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 625,
+            "cliente_nombre": "FARIAS ESTELA MARIS",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4470,
+            "cliente_nombre": "FAVA MARCELA INES",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 376,
+            "cliente_nombre": "FENOGLIO OLGA MARIA CAROLINA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 790,
+            "cliente_nombre": "FERNANDEZ SOLEDAD",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3622,
+            "cliente_nombre": "FERRARIS NANCI MARIA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 841,
+            "cliente_nombre": "FERRERO MARIA BELEN",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 141,
+            "cliente_nombre": "FERRERO VIRGINIA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 179,
+            "cliente_nombre": "FERRI LORENA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 765,
+            "cliente_nombre": "FESSIA STELLA MARIS",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 131,
+            "cliente_nombre": "FILIPPA LILIANA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 380,
+            "cliente_nombre": "FISOLO TERESA JOSEFA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4471,
+            "cliente_nombre": "FORNES ROCIO MAC ARENA",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 408,
+            "cliente_nombre": "FRANCO SANDRA MARCELA",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4473,
+            "cliente_nombre": "GAIDO OSVALDO RAMON",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 285,
+            "cliente_nombre": "GALLEGOS CARLOS",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 418,
+            "cliente_nombre": "GALOPPO JUAN PABLO",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 81,
+            "cliente_nombre": "GAREIS FRANCO",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 76,
+            "cliente_nombre": "GARIS SERGIO JUAN",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 504,
+            "cliente_nombre": "GHIBERTO FEDERICO NICOLAS ",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 140,
+            "cliente_nombre": "GHIRARDOTTI MARISEL BEATRIZ",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 232,
+            "cliente_nombre": "GILLI ANDRES",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 590,
+            "cliente_nombre": "GODONE SUSANA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 387,
+            "cliente_nombre": "GONELLA VICTOR JUAN",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 338,
+            "cliente_nombre": "GONZALEZ JORGE ANDRES",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1384,
+            "cliente_nombre": "GOROSITO NICOLAS",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 333,
+            "cliente_nombre": "GOYTEA NANCY",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 311,
+            "cliente_nombre": "GRANDE CLAUDIA",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 97,
+            "cliente_nombre": "GROSSO MONICA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 203,
+            "cliente_nombre": "GUDIÑO RAUL MARCELO",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 249,
+            "cliente_nombre": "GUERRERO JUAN ROGELIO",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 503,
+            "cliente_nombre": "GULLINO ROMINA MARIA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 228,
+            "cliente_nombre": "GUZMAN DANIELA RAQUEL",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4371,
+            "cliente_nombre": "HEREDIA GUILLERMO FEDERICO",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1282,
+            "cliente_nombre": "HERRERA JUAN CARLOS-TERMINAL",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 56,
+            "cliente_nombre": "HERRERA MARIA LAURA CEFERINA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4480,
+            "cliente_nombre": "JUNCOS SUSANA",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 73,
+            "cliente_nombre": "KLOSTER RUBEN ALBINO",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 950,
+            "cliente_nombre": "LEAL VERONICA ANDREA",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 253,
+            "cliente_nombre": "LENCINA GABRIEL JOSE MARIA",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 694,
+            "cliente_nombre": "LOZANO ROSANA",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 563,
+            "cliente_nombre": "LUDUEÑA ALEJANDRA DEL VALLE",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 101,
+            "cliente_nombre": "MAGALLAN CLAUDIA BEATRIZ",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1301,
+            "cliente_nombre": "MAIDANA FABIANA GIMENA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 306,
+            "cliente_nombre": "MALANO ERIKA NOELIA ",
+            "localidad": "Seeber",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 102,
+            "cliente_nombre": "MALANO JESICA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 10014,
+            "cliente_nombre": "MALANO ROBERTO",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 620,
+            "cliente_nombre": "MANUEL SANTIAGO",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 656,
+            "cliente_nombre": "MANUEL SANTIAGO",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 664,
+            "cliente_nombre": "MANUEL SANTIAGO",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 174,
+            "cliente_nombre": "MARGARIA SANTIAGO ",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 533,
+            "cliente_nombre": "MARIA DEL CARMEN SCHUNK",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2186,
+            "cliente_nombre": "MARISEL BEATRIZ ALVAREZ",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 583,
+            "cliente_nombre": "MARTINA  ANDRES",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 435,
+            "cliente_nombre": "MARTINEZ DANIELA JORGELINA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 602,
+            "cliente_nombre": "MATUCHESKI HECTOR RICARDO ",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 38,
+            "cliente_nombre": "MEDINA ALEJANDRA",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 224,
+            "cliente_nombre": "MEJIA MERCEDES",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 78,
+            "cliente_nombre": "MELANO ANDREA",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 296,
+            "cliente_nombre": "MENDOZA YOANA BELEN ",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4400,
+            "cliente_nombre": "MERLO ANA MARIA",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 157,
+            "cliente_nombre": "MICHLIG LUCIANA VANESA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1435,
+            "cliente_nombre": "MIRA JOS ALBERTO",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 144,
+            "cliente_nombre": "MIÑO GABRIELA ANDREA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 246,
+            "cliente_nombre": "MONETTI ROBERTO",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 51,
+            "cliente_nombre": "MONTENEGRO CLAUDIA MARINA",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 623,
+            "cliente_nombre": "MOREYRA DEBORA",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 214,
+            "cliente_nombre": "MOSCHIETTO YANINA RAQUEL",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 395,
+            "cliente_nombre": "MUCHA MARCELO ALFREDO ",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 548,
+            "cliente_nombre": "MULLER FLORENCIA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 80,
+            "cliente_nombre": "MURATURE NANCI",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1019,
+            "cliente_nombre": "NESTOR DANIEL BUSTO",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4,
+            "cliente_nombre": "OLGA GROSSO",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 743,
+            "cliente_nombre": "ORTEGA DOMINGA LUCIA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 154,
+            "cliente_nombre": "OSTERTAC CRISTIAN",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1334,
+            "cliente_nombre": "OSTERTAG MILENA",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 295,
+            "cliente_nombre": "PAOLASSI PABLO JOSE ",
+            "localidad": "Colonia San Pedro",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 457,
+            "cliente_nombre": "PERALTA ALEJANDRA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 116,
+            "cliente_nombre": "PERALTA MARIANA SOLEDAD",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 843,
+            "cliente_nombre": "PERALTA MAXIMILIANO EZEQUIEL",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1023,
+            "cliente_nombre": "PERALTA NOELIA ESTHER MARGARITA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 58,
+            "cliente_nombre": "PEREZ ARIADNA LAURA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 335,
+            "cliente_nombre": "PEREZ CINDY",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 351,
+            "cliente_nombre": "PEREZ ERICA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 171,
+            "cliente_nombre": "PEREZ GABRIEL NESTOR",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 257,
+            "cliente_nombre": "PEREZ MARCELA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2297,
+            "cliente_nombre": "PEREZ MARCELO",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 434,
+            "cliente_nombre": "PERFUMO DANIELA HAYDEE",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3536,
+            "cliente_nombre": "PESUTTO CARLOS ALBERTO",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 16,
+            "cliente_nombre": "PONCE EVELIN SABRINA",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 366,
+            "cliente_nombre": "PRATO MELINA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 90,
+            "cliente_nombre": "PRATTO BRUNO NICOLAS",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 138,
+            "cliente_nombre": "PRATTO JORGE LUIS MATEO",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 374,
+            "cliente_nombre": "RACCA GLADYS PATRICIA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1028,
+            "cliente_nombre": "RACCA MARIA LAURA",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1127,
+            "cliente_nombre": "RACCA SEBASTIAN",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 218,
+            "cliente_nombre": "RASPO SEBASTIAN",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 84,
+            "cliente_nombre": "RIBODETTI ALDANA MARIA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 168,
+            "cliente_nombre": "RICCHIARDI MARTA GABRIELA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 508,
+            "cliente_nombre": "RICCIARDI DIEGO ALBERTO ",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 77,
+            "cliente_nombre": "RINALDI GABRIEL ALBERTO",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4491,
+            "cliente_nombre": "RION OLGA ESTER",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 143,
+            "cliente_nombre": "RIVERO MONICA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 814,
+            "cliente_nombre": "ROJAS MAXIMILIANO RUBEN ",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 428,
+            "cliente_nombre": "ROLANDO LEONARDO ARIEL",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 137,
+            "cliente_nombre": "ROLANDO SOLEDAD",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 530,
+            "cliente_nombre": "ROLDAN ANDREA LORENA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 292,
+            "cliente_nombre": "ROMANO RICARDO DANIEL",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 109,
+            "cliente_nombre": "ROMERO ESTELA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1169,
+            "cliente_nombre": "ROSSO NEREA EVELIN",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 838,
+            "cliente_nombre": "ROTELA ADRIANA DEL VALLE ",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 960,
+            "cliente_nombre": "ROVERO DANIEL FERNANDO ",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 86,
+            "cliente_nombre": "RUI EVANGELINA MARIA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 415,
+            "cliente_nombre": "SADA AZUL CANDELA",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 456,
+            "cliente_nombre": "SADA KAREN JANET ",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 495,
+            "cliente_nombre": "SADA KAREN JANET ",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 167,
+            "cliente_nombre": "SANCHEZ ESTELA MARIS",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 816,
+            "cliente_nombre": "SARANZ LILIANA DEL CARMEN ",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 107,
+            "cliente_nombre": "SAYAGO YOHANA AYELEN",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1348,
+            "cliente_nombre": "SCOLASTRICHI NARENA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 546,
+            "cliente_nombre": "SEPEDA VANINA BELEN ",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 991,
+            "cliente_nombre": "SOLIS MICAELA LUCIANA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 781,
+            "cliente_nombre": "SORIA LUCAS MATIAS",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 305,
+            "cliente_nombre": "SORIA MARIA ELENA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1272,
+            "cliente_nombre": "SORIA RAUL",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 999,
+            "cliente_nombre": "STERZER LAURA ANDREA",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3641,
+            "cliente_nombre": "TABORDA ELVIRA ESTER",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 24,
+            "cliente_nombre": "TESSIO JACQUELINE FLORENCIA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 104,
+            "cliente_nombre": "TIRANTI ROMINA",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 459,
+            "cliente_nombre": "TORASSA CARINA BEATRIZ",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4649,
+            "cliente_nombre": "TORREANO LORENA DEOLINDA",
+            "localidad": "Porteña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 127,
+            "cliente_nombre": "TURCO DIEGO MARTIN",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 245,
+            "cliente_nombre": "TURQUETTI MARIA CRISTINA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 851,
+            "cliente_nombre": "ULLUA RAUL",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1068,
+            "cliente_nombre": "UTRERA CARINA DEL VALLE",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1045,
+            "cliente_nombre": "UTRERA VALERIA SOLEDAD",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 74,
+            "cliente_nombre": "VALERO LILIANA ESTHER",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 149,
+            "cliente_nombre": "VARGAS NORMA JOSEFA",
+            "localidad": "Brinkmann",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1029,
+            "cliente_nombre": "VEGA SERGIO ARIEL",
+            "localidad": "Freyre",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 221,
+            "cliente_nombre": "VIGLINO GRACIELA",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1001,
+            "cliente_nombre": "VIVAS JOSE FELICIANO ",
+            "localidad": "Morteros",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1404,
+            "cliente_nombre": "YANDEN S.A.S. -SUC",
+            "localidad": "Morteros",
+            "umbral": 3
+          }
+        ],
+        "pct_cobertura": 0.0145,
+        "segmento": "TRADICIONAL",
+        "sin_cobertura": 204
+      }
+    ],
+    "vendedor_id": "V4"
+  }
+}

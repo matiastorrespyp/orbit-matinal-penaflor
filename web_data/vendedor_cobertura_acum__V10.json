@@ -1,0 +1,1739 @@
+{
+  "_meta": {
+    "endpoint_equivalente": "/api/vendedor/V10/cobertura_acum",
+    "generated_at": "2026-07-06T17:54:18-03:00",
+    "source_files": [
+      "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
+      "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
+    ],
+    "http_status": 200,
+    "count": 5,
+    "count_type": "dict_keys",
+    "checksum_sha256": "ad29e7718815a02a38083dd43ee6e9c21b31337dcf043ec829354def9f7a9db9",
+    "fase": "1-precompute-paralelo",
+    "uso": "COMPARAR contra /api vivo; NO usar en producción"
+  },
+  "payload": {
+    "fecha_calculo": "2026-07-06",
+    "fuente": "mod_cobertura_acum.csv",
+    "generado_en": "2026-07-06 17:54:18",
+    "segmentos": [
+      {
+        "cartera": 29,
+        "cubiertos": 5,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 2109,
+            "cliente_nombre": "BENEDETTI EDUARDO",
+            "localidad": "Tránsito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2390,
+            "cliente_nombre": "CABRERA RODRIGO HECTOR Y CABRERA GONZALO ADRIAN",
+            "localidad": "El Tío",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2393,
+            "cliente_nombre": "CABRERA RODRIGO HECTOR Y CABRERA GONZALO ADRIAN",
+            "localidad": "Villa Concepción del Tío",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3500,
+            "cliente_nombre": "CAVALLO MARTIN ALEJANDRO",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3506,
+            "cliente_nombre": "CAVALLO MARTIN ALEJANDRO",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 549,
+            "cliente_nombre": "CAVALLO MARTIN ALEJANDRO",
+            "localidad": "Santiago Temple",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2809,
+            "cliente_nombre": "COOP.TAMB.LAS CAÑITAS LTDA.SUC",
+            "localidad": "El Tío",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 123,
+            "cliente_nombre": "COOPERATIVA DE TAMBEROS, AGRICOLA GANADERA \"EL TRA",
+            "localidad": "Devoto",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2796,
+            "cliente_nombre": "DALMASSO MARTIN ALEJANDRO",
+            "localidad": "La Francia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2015,
+            "cliente_nombre": "DELFIN S A SGO TEMPLE",
+            "localidad": "Santiago Temple",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2932,
+            "cliente_nombre": "DELFIN S.A.",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3515,
+            "cliente_nombre": "DELFIN S.A.",
+            "localidad": "La Francia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3517,
+            "cliente_nombre": "DELFIN S.A.",
+            "localidad": "El Tío",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2539,
+            "cliente_nombre": "ECO GROUP S.R.L  (EN FORMACION",
+            "localidad": "La Francia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2450,
+            "cliente_nombre": "EL GURY SRL",
+            "localidad": "Devoto",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 829,
+            "cliente_nombre": "EL GURY SRL",
+            "localidad": "Devoto",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1352,
+            "cliente_nombre": "FERRERO DANIEL GERMAN  Y FERREROS JUAN JOSE",
+            "localidad": "La Francia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2689,
+            "cliente_nombre": "GEREDIN ALEJANDRA FABIOLA",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2441,
+            "cliente_nombre": "JAMAR S.R.L.",
+            "localidad": "Devoto",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1288,
+            "cliente_nombre": "LIN AGUSTIN",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2331,
+            "cliente_nombre": "SHI JINCHUI",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 997,
+            "cliente_nombre": "SOCIEDAD COSMOPOLITA DE SOCORROS  MUTUOS",
+            "localidad": "Colonia San Bartolomé",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1178,
+            "cliente_nombre": "WANG JINHUA",
+            "localidad": "La Francia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2083,
+            "cliente_nombre": "WENG LIHUA",
+            "localidad": "Arroyito",
+            "umbral": 6
+          }
+        ],
+        "pct_cobertura": 0.1724,
+        "segmento": "AUTOSERVICIO",
+        "sin_cobertura": 24
+      },
+      {
+        "cartera": 1,
+        "cubiertos": 1,
+        "faltantes": [],
+        "pct_cobertura": 1.0,
+        "segmento": "MAYORISTA",
+        "sin_cobertura": 0
+      },
+      {
+        "cartera": 33,
+        "cubiertos": 2,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 1367,
+            "cliente_nombre": "ACOSTA ANGEL DAVID",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1033,
+            "cliente_nombre": "ALFONZO FERNANDEZ CLAUDIO DANIEL",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3524,
+            "cliente_nombre": "ALMADA SONIA MARCEL",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 219,
+            "cliente_nombre": "ARMAN MARIA FLORENCIA",
+            "localidad": "El Tío",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2161,
+            "cliente_nombre": "ARROYITO SERVICIOS",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1347,
+            "cliente_nombre": "ASCARATE MARIANA-HELADERIA MAYO",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2828,
+            "cliente_nombre": "BALSUAR 3 S.R.L.",
+            "localidad": "Devoto",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2325,
+            "cliente_nombre": "BARALE BARBARA DAYANA",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2615,
+            "cliente_nombre": "BRUNO SUSANA TERESA",
+            "localidad": "La Francia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 505,
+            "cliente_nombre": "CARABAJAL GABRIEL ALEJANDRO",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1138,
+            "cliente_nombre": "CASTILLO MATEO-CARNICERIA",
+            "localidad": "El Tío",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 49,
+            "cliente_nombre": "CEIRANO JONATHAN ANTONIO ",
+            "localidad": "Tránsito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2421,
+            "cliente_nombre": "CISNEROS ALEJANDRO ALBERTO",
+            "localidad": "Piquillín",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1129,
+            "cliente_nombre": "DALMASSO MARCELO ATILIO",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2977,
+            "cliente_nombre": "DON EDUARDO SRL",
+            "localidad": "Devoto",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 314,
+            "cliente_nombre": "GEN COMBUSTIBLES SRL",
+            "localidad": "Santiago Temple",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 136,
+            "cliente_nombre": "GIORDANINO LORENA DEL VALLE",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 259,
+            "cliente_nombre": "GRUPO BARUCH S.R.L.",
+            "localidad": "La Francia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1242,
+            "cliente_nombre": "GRUPO COMDECOR - CENTRO",
+            "localidad": "Santiago Temple",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 241,
+            "cliente_nombre": "GRUPO COMDECOR- RUTA",
+            "localidad": "Santiago Temple",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1173,
+            "cliente_nombre": "HURTADO MARIA",
+            "localidad": "Tránsito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 389,
+            "cliente_nombre": "LA ESTACION RESTO-BAR S.A.S.",
+            "localidad": "La Francia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1108,
+            "cliente_nombre": "MONTES DANIEL ALBERTO",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2110,
+            "cliente_nombre": "SANCHEZ ACICLA",
+            "localidad": "Tránsito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 731,
+            "cliente_nombre": "SERENO MARIA ANGELICA ",
+            "localidad": "Devoto",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 290,
+            "cliente_nombre": "STRUMIA ARIEL JOSE",
+            "localidad": "Piquillín",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 957,
+            "cliente_nombre": "TALI ROXMERI MENDOZA",
+            "localidad": "Santiago Temple",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1307,
+            "cliente_nombre": "TEMPAXION SAS",
+            "localidad": "Santiago Temple",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1181,
+            "cliente_nombre": "TIJUANA BEBIDAS  SOCIEDAD POR  ACCIONES SIMPLIFICADAS",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2603,
+            "cliente_nombre": "TORANZO MAGDALI YAMIR",
+            "localidad": "Devoto",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 133,
+            "cliente_nombre": "URQUIZA LORENA",
+            "localidad": "Arroyito",
+            "umbral": 6
+          }
+        ],
+        "pct_cobertura": 0.0606,
+        "segmento": "ON_PREMISE",
+        "sin_cobertura": 31
+      },
+      {
+        "cartera": 204,
+        "cubiertos": 19,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 1325,
+            "cliente_nombre": "ACEVEDO M BELEN-SEDE CULTURAL",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 303,
+            "cliente_nombre": "ACEVEDO MARIBEL ROSANA",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2021,
+            "cliente_nombre": "ACHILLE PAOLA BEATRIZ DEL VALLE",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 126,
+            "cliente_nombre": "ALMADA  ANA  EUGENIA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2108,
+            "cliente_nombre": "ALMADA MARISEL DEL VALLE ",
+            "localidad": "Tránsito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2335,
+            "cliente_nombre": "ALMADA MONICA VALERIA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2678,
+            "cliente_nombre": "ALMADA SILVINA EDITH",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 32,
+            "cliente_nombre": "ALVAREZ ANA LAURA",
+            "localidad": "Tránsito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3121,
+            "cliente_nombre": "ANGULO NORMA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 132,
+            "cliente_nombre": "ARGUELLO SERGIO",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 603,
+            "cliente_nombre": "ARTICO GRACIELA DEL VALLE",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 95,
+            "cliente_nombre": "BALDO LEANDRO EZEQUIEL",
+            "localidad": "La Tordilla",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1415,
+            "cliente_nombre": "BANEGA RAUL ANTONIO",
+            "localidad": "Colonia San Bartolomé",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2018,
+            "cliente_nombre": "BARA INTEGRAL S.A.S.",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3111,
+            "cliente_nombre": "BARRALES RAUL GUILLERMO",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1302,
+            "cliente_nombre": "BAZAN ANGELICA INES",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2169,
+            "cliente_nombre": "BAZZI CLAUDIA ALEJANDRA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2256,
+            "cliente_nombre": "BECCARINI EDUARDO JORGE",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1179,
+            "cliente_nombre": "BERNARDI LUCIANO",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 901,
+            "cliente_nombre": "BERTONE JORGE REINALDO",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2028,
+            "cliente_nombre": "BERTORELLO JUAN C. Y DANIELA",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1308,
+            "cliente_nombre": "BESSONE GABRIEL DARIO",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2158,
+            "cliente_nombre": "BESSONE MONICA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2140,
+            "cliente_nombre": "BIAVA GUSTAVO RUBEN",
+            "localidad": "La Tordilla",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2824,
+            "cliente_nombre": "BIRRI VIOLA ANGELA GEORGINA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2523,
+            "cliente_nombre": "BONETTO ROBERTO OMAR",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 196,
+            "cliente_nombre": "BORDA BOSSANA MARIELA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 800,
+            "cliente_nombre": "BRUNE VANESA DEL LUJAN",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2425,
+            "cliente_nombre": "BRUNO MELISA",
+            "localidad": "Piquillín",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1260,
+            "cliente_nombre": "BURIASCO JESICA ROMINA",
+            "localidad": "El Tío",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2327,
+            "cliente_nombre": "CABRERA LAURA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2347,
+            "cliente_nombre": "CABRERA MARIA JOSE",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2503,
+            "cliente_nombre": "CAGNASSO GLADYS ISABEL",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2530,
+            "cliente_nombre": "CANELLO DE GIORGIS ESTELA",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2534,
+            "cliente_nombre": "CASTILLO CRISTIAN",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1253,
+            "cliente_nombre": "CEBALLOS PERLO PATRICIA DEL VALLE",
+            "localidad": "El Tío",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 240,
+            "cliente_nombre": "CERSOCIMO AXEL LUIS",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 134,
+            "cliente_nombre": "COLAZO FABIO MAURICIO",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2096,
+            "cliente_nombre": "CONTRERAS MAXIMILIANO NESTOR",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 544,
+            "cliente_nombre": "CORDOBA GISEL AYELEN",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2203,
+            "cliente_nombre": "COSTAMAGNA MARIO A. Y NOELIA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2802,
+            "cliente_nombre": "CUENCA VICTORIA YOLANDA",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1391,
+            "cliente_nombre": "DAGATTI VANINA ANAHI",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 139,
+            "cliente_nombre": "DALMAZZO FAVIO ALEXIS",
+            "localidad": "El Fuertecito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3672,
+            "cliente_nombre": "DANIELLE GABRIEL ANTONIO",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1268,
+            "cliente_nombre": "DESPENSA EL MILAGRO",
+            "localidad": "El Tío",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1205,
+            "cliente_nombre": "DISTRIBUIDORA GEROSA",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1440,
+            "cliente_nombre": "DOMINGUEZ DANIELA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2321,
+            "cliente_nombre": "ESCUDERO FRANCO SEBASTIAN",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 358,
+            "cliente_nombre": "ESPINDOLA DANIELLE",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 878,
+            "cliente_nombre": "ESTABLECIMIENTO BOZZANA S.A.S",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2483,
+            "cliente_nombre": "FALCO GRACIELA JUANA M.",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2262,
+            "cliente_nombre": "FANTINO MONICA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2465,
+            "cliente_nombre": "FATIMA COLAZO",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2496,
+            "cliente_nombre": "FERREYRA GERARDO",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2121,
+            "cliente_nombre": "FERREYRA JOSE",
+            "localidad": "Tránsito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2100,
+            "cliente_nombre": "FERREYRA MARCELA",
+            "localidad": "La Tordilla",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 485,
+            "cliente_nombre": "FERREYRA YOLI EDITH",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2135,
+            "cliente_nombre": "FLORES",
+            "localidad": "Tránsito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1269,
+            "cliente_nombre": "FRANCH JORGELINA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3562,
+            "cliente_nombre": "FUENTES MONICA PATRICIA ",
+            "localidad": "Tránsito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2139,
+            "cliente_nombre": "FUNEZ DAVID EUGENIO",
+            "localidad": "La Tordilla",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1197,
+            "cliente_nombre": "GALLEGOS LILIANA VANESA",
+            "localidad": "El Tío",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2789,
+            "cliente_nombre": "GALLEGOS RENE ALEJANDRO",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2440,
+            "cliente_nombre": "GANDINO ANA ESTHER",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 328,
+            "cliente_nombre": "GARAY MARIA LUZ",
+            "localidad": "Tránsito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2016,
+            "cliente_nombre": "GARCIA GUSTAVO HORACIO",
+            "localidad": "Santiago Temple",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1072,
+            "cliente_nombre": "GARRUDO MARIA MAGDALENA",
+            "localidad": "El Tío",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 164,
+            "cliente_nombre": "GASTALDELLO CAROLINA",
+            "localidad": "El Tío",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2677,
+            "cliente_nombre": "GHIONE DIEGO ADALBERTO",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 344,
+            "cliente_nombre": "GHIONE RICARDO MAURO LUJAN  ",
+            "localidad": "Tránsito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1241,
+            "cliente_nombre": "GIGENA MARIA CRISTINA",
+            "localidad": "Villa Concepción del Tío",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3144,
+            "cliente_nombre": "GOMEZ FLAVIA VERONICA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3026,
+            "cliente_nombre": "GOMEZ IVANA DANIELA",
+            "localidad": "Tránsito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1075,
+            "cliente_nombre": "GOMEZ LEANDRO EZEQUIEL",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 169,
+            "cliente_nombre": "GONZALES ZULMA",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1136,
+            "cliente_nombre": "GRABOBI MARIANELA SOLEDAD",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2428,
+            "cliente_nombre": "GRIVA DAVID",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2536,
+            "cliente_nombre": "GROSSO MAGALI SOLEDAD",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1361,
+            "cliente_nombre": "GUDIÑO AINARA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2589,
+            "cliente_nombre": "GUDIÑO GISELA NEREA MAGALI",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2444,
+            "cliente_nombre": "GUDIÑO HECTOR UVALDO",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 728,
+            "cliente_nombre": "GUDIÑO YAMILA GRACIELA",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 302,
+            "cliente_nombre": "GUZMAN ROCIO DEL MILAGRO",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 313,
+            "cliente_nombre": "HASAM CRISTINA NELIDA ",
+            "localidad": "Santiago Temple",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2102,
+            "cliente_nombre": "HERRADOR ESTHER DEL VALLE",
+            "localidad": "La Tordilla",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2377,
+            "cliente_nombre": "HILGUERO J. JORGE ANTONIO-SUC",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2378,
+            "cliente_nombre": "HILGUERO JORGE ANTONIO",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2379,
+            "cliente_nombre": "HILGUERO JORGE ANTONIO SUC 3",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2051,
+            "cliente_nombre": "INES NAZARENA SACHETTO",
+            "localidad": "La Tordilla",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1290,
+            "cliente_nombre": "JUAREZ LEONELA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2473,
+            "cliente_nombre": "JUNCOS CLAUDIA",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1338,
+            "cliente_nombre": "KEMERER FACUNDO",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1098,
+            "cliente_nombre": "LA FAMILIA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 52,
+            "cliente_nombre": "LA SIRENA S.R.L.",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1211,
+            "cliente_nombre": "LA TERMINAL",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2520,
+            "cliente_nombre": "LAS PEKES",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3415,
+            "cliente_nombre": "LEIVA DEBORA",
+            "localidad": "El Tío",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 225,
+            "cliente_nombre": "LEMOS NANCY TERESITA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2582,
+            "cliente_nombre": "LEONES ROLANDO",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1342,
+            "cliente_nombre": "LOPEZ MARIELA",
+            "localidad": "El Tío",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 300,
+            "cliente_nombre": "LUCERO JULIO C. Y MIGUEL A.",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 883,
+            "cliente_nombre": "LUCERO JULIO C. Y MIGUEL A.",
+            "localidad": "El Tío",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2699,
+            "cliente_nombre": "LUDUENA YAMILA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1263,
+            "cliente_nombre": "LUNA EDGARDO",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 89,
+            "cliente_nombre": "LUNA JESICA PAOLA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2201,
+            "cliente_nombre": "LUNA SANDRA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 60,
+            "cliente_nombre": "LUQUE JUAN CARLOS",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2366,
+            "cliente_nombre": "MAGNI CLAUDIA ALEJANDRA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 576,
+            "cliente_nombre": "MAIDANA ELVIO LIBER",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 229,
+            "cliente_nombre": "MALANO CLAUDIO GUSTAVO",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 243,
+            "cliente_nombre": "MALDONADO STEFANI DESIREE",
+            "localidad": "Tránsito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1273,
+            "cliente_nombre": "MAZZONI CASANDRA",
+            "localidad": "Santiago Temple",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2466,
+            "cliente_nombre": "MEJIA GREGORIO NORMA-SUC",
+            "localidad": "Villa Concepción del Tío",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 158,
+            "cliente_nombre": "MEZZOPEVA FERNANDA PAOLA",
+            "localidad": "Santiago Temple",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 458,
+            "cliente_nombre": "MONESTEROLO VANESA (BIEN BARATO MINIMARKET)",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2281,
+            "cliente_nombre": "MONGILARDI DAVID OSVALDO",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 956,
+            "cliente_nombre": "MONINA LUCAS SANTIAGO",
+            "localidad": "Santiago Temple",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 462,
+            "cliente_nombre": "MONTES DANIEL ALBERTO",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2293,
+            "cliente_nombre": "MONTIEL IVANA SOLEDAD",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2191,
+            "cliente_nombre": "MOREYRA EDIT ESTER",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1061,
+            "cliente_nombre": "MOYA SIMON ARIEL",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2993,
+            "cliente_nombre": "MOYANO CECILIA DEL VALLE",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2506,
+            "cliente_nombre": "MOYANO JORGE-KIOSCO  JOEL",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2986,
+            "cliente_nombre": "MOYANO PAOLA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1246,
+            "cliente_nombre": "MUSSO MARIELA DEL VALLE -KIOSCO",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2635,
+            "cliente_nombre": "OGGERO RENE MARIO",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1264,
+            "cliente_nombre": "OLOCCO NICOLAS JOSE",
+            "localidad": "El Tío",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2292,
+            "cliente_nombre": "OTTERO  ARI ELIAN",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2449,
+            "cliente_nombre": "OVIEDO ERNESTO",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1062,
+            "cliente_nombre": "PAEZ IVANA BELEN",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3532,
+            "cliente_nombre": "PAEZ MARIO",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2265,
+            "cliente_nombre": "PAULETO SUSANA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 239,
+            "cliente_nombre": "PAULETO SUSANA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 939,
+            "cliente_nombre": "PEREZ CRISTIAN ALBERTO",
+            "localidad": "Villa Concepción del Tío",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1132,
+            "cliente_nombre": "PEREZ SERGIO",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3075,
+            "cliente_nombre": "PERRONE JAVIER D.",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2432,
+            "cliente_nombre": "PIERONI ANDREA CAROLINA",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2497,
+            "cliente_nombre": "PINO ROXANA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 190,
+            "cliente_nombre": "PIOVANO JENNIFER",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1185,
+            "cliente_nombre": "PORTA MARIANA ESTELA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2264,
+            "cliente_nombre": "PUCHETA RAQUEL",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2237,
+            "cliente_nombre": "QUINTANA JIMENA LUCIANA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1259,
+            "cliente_nombre": "QUINTERO WILLIAMS ALFREDO",
+            "localidad": "Tránsito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 12,
+            "cliente_nombre": "QUINTEROS JOEL ENRIQUE",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2388,
+            "cliente_nombre": "RAMOS JULIO MARIO",
+            "localidad": "Villa Concepción del Tío",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 466,
+            "cliente_nombre": "RANSIGLIO EZEQUIEL HORACIO",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1434,
+            "cliente_nombre": "REYNOSO MARIELA-POLLERIA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 213,
+            "cliente_nombre": "RIBOTTA VICTOR HUGO",
+            "localidad": "La Tordilla",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3673,
+            "cliente_nombre": "RIVADENEIRA ALICIA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2633,
+            "cliente_nombre": "RODRIGUEZ FERNANDO RAMON",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1146,
+            "cliente_nombre": "RODRIGUEZ PAOLA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1095,
+            "cliente_nombre": "ROMALUZ",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1364,
+            "cliente_nombre": "ROMAN GASTON",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 269,
+            "cliente_nombre": "ROMAN GASTON",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 173,
+            "cliente_nombre": "ROMERA ELISA NATALIA",
+            "localidad": "El Tío",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2324,
+            "cliente_nombre": "ROMERO CLAUDIO ADRIAN",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 166,
+            "cliente_nombre": "ROMERO GEORGINA AMALIA",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2616,
+            "cliente_nombre": "ROMERO LOZA BIBIANA GRACIELA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 33,
+            "cliente_nombre": "ROMINA ARDILES",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1427,
+            "cliente_nombre": "RUBIOLO SOLANA",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1442,
+            "cliente_nombre": "Rodriguez Juan Alberto",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2487,
+            "cliente_nombre": "SALVAI CLARA NIEVE CEFERINA",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2519,
+            "cliente_nombre": "SANCHEZ FERNANDO ESTEBAN",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 924,
+            "cliente_nombre": "SANDRI JUAN MANUEL ",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2752,
+            "cliente_nombre": "SANMARTINO EVA",
+            "localidad": "Tránsito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2000,
+            "cliente_nombre": "SANTORO FRANCO",
+            "localidad": "Santiago Temple",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2340,
+            "cliente_nombre": "SCHOTT ANA MARIA MERCEDES",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2326,
+            "cliente_nombre": "SPAHR FERREYRA NATALIA ELIZABETH",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2101,
+            "cliente_nombre": "STOLA GABRIELA DEL VALLE",
+            "localidad": "La Tordilla",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2133,
+            "cliente_nombre": "TADONE JUAN LUIS",
+            "localidad": "Tránsito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2332,
+            "cliente_nombre": "TONINI MARISA ELIZABETH",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2716,
+            "cliente_nombre": "TORRE MARCELO FABIAN",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1056,
+            "cliente_nombre": "TOSOLINI NAZARENO FRANCISCO ",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2512,
+            "cliente_nombre": "TURINETTI FABIAN",
+            "localidad": "La Francia",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2255,
+            "cliente_nombre": "VACA MARIA LAURA",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2839,
+            "cliente_nombre": "VALVERDE ELLENA",
+            "localidad": "Tránsito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 336,
+            "cliente_nombre": "VEGA NESTOR RAUL",
+            "localidad": "Tránsito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1330,
+            "cliente_nombre": "VIDELA CLAUDIA BEATRIZ",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 581,
+            "cliente_nombre": "VILLAGRAN NOEMI LAURA ",
+            "localidad": "Devoto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 317,
+            "cliente_nombre": "VILLARREAL HECTOR ARTURO ",
+            "localidad": "Santiago Temple",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2953,
+            "cliente_nombre": "YAKO DRUGDTORE S.A.S.",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1026,
+            "cliente_nombre": "YAKO DRUGSTORE S.A.S.",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2370,
+            "cliente_nombre": "ZORDAN MIRNA LIZET",
+            "localidad": "Arroyito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1335,
+            "cliente_nombre": "perez maria alngelica",
+            "localidad": "La Francia",
+            "umbral": 3
+          }
+        ],
+        "pct_cobertura": 0.0931,
+        "segmento": "TRADICIONAL",
+        "sin_cobertura": 185
+      }
+    ],
+    "vendedor_id": "V10"
+  }
+}

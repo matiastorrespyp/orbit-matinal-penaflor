@@ -1,0 +1,1733 @@
+{
+  "_meta": {
+    "endpoint_equivalente": "/api/vendedor/V8/cobertura_acum",
+    "generated_at": "2026-07-06T17:54:18-03:00",
+    "source_files": [
+      "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
+      "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
+    ],
+    "http_status": 200,
+    "count": 5,
+    "count_type": "dict_keys",
+    "checksum_sha256": "98b9b0f5d5b7d8b23be6ff21dec881038a58741f70a4ed671d713dcefc156b10",
+    "fase": "1-precompute-paralelo",
+    "uso": "COMPARAR contra /api vivo; NO usar en producción"
+  },
+  "payload": {
+    "fecha_calculo": "2026-07-06",
+    "fuente": "mod_cobertura_acum.csv",
+    "generado_en": "2026-07-06 17:54:18",
+    "segmentos": [
+      {
+        "cartera": 31,
+        "cubiertos": 14,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 1249,
+            "cliente_nombre": "ALVARADO MARIA PILAR HERRERA",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30011,
+            "cliente_nombre": "CHUN JIN ZHANG",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30021,
+            "cliente_nombre": "CHUN JIN ZHANG",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 626,
+            "cliente_nombre": "CUIZA MARINO ROLANDO ",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30061,
+            "cliente_nombre": "GIACOMO GABRIEL RAMON",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1074,
+            "cliente_nombre": "GIOINO ARIEL NORBERTO",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 615,
+            "cliente_nombre": "LI WENFANG  (SUC. PLAZA)",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1006,
+            "cliente_nombre": "LIN HAIJUN",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 736,
+            "cliente_nombre": "MARTINEZ CATRIEL",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 390,
+            "cliente_nombre": "MIRANDA SEBASTIAN LEONARDO",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30026,
+            "cliente_nombre": "PEDROTTI DISTRIBUCIONES SOCIEDAD DE RESPONSABILIDA",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 517,
+            "cliente_nombre": "PEREZ PABLO EZEQUIEL ",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30017,
+            "cliente_nombre": "WANG ZHENJIE",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30054,
+            "cliente_nombre": "XIAZHANG HUANG",
+            "localidad": "Seeber",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 652,
+            "cliente_nombre": "YAN JINQING",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30013,
+            "cliente_nombre": "YBAÑEZ ALICIA RAQUEL ",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30063,
+            "cliente_nombre": "YINGYING CHEN (SUP. SAN VICENTE)",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          }
+        ],
+        "pct_cobertura": 0.4516,
+        "segmento": "AUTOSERVICIO",
+        "sin_cobertura": 17
+      },
+      {
+        "cartera": 6,
+        "cubiertos": 0,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 733,
+            "cliente_nombre": "APONTE LILIANA DEL VALLE ",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 15,
+            "cliente_nombre": "BELTRAMO, DUTTO Y DUTTO S.R.L.",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 938,
+            "cliente_nombre": "CAREGLIO HERMANOS SRL",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 678,
+            "cliente_nombre": "DANGUISE DISTRIBUCIONES S.R.L.",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1142,
+            "cliente_nombre": "INGA KEVIN DANIEL",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1239,
+            "cliente_nombre": "STETTLER PABLO DAVID",
+            "localidad": "San Francisco",
+            "umbral": 6
+          }
+        ],
+        "pct_cobertura": 0.0,
+        "segmento": "MAYORISTA",
+        "sin_cobertura": 6
+      },
+      {
+        "cartera": 47,
+        "cubiertos": 3,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 1400,
+            "cliente_nombre": "ANGIOLINI DIEGO MIGUEL",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 106,
+            "cliente_nombre": "APIS SILVANA MIRTA",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 110,
+            "cliente_nombre": "ASOC SOC BOMBEROS VOLUNTARIOS DE SAN FRANCISCO",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 805,
+            "cliente_nombre": "AYMAR MARIA SUSANA ",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 759,
+            "cliente_nombre": "BALLARIO GABRIELA SUSANA ",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1283,
+            "cliente_nombre": "BARBERO RAMIRO",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1378,
+            "cliente_nombre": "BARREDO ALVARO JESUS",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 46,
+            "cliente_nombre": "BATTAN CARLOS RUBEN",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1428,
+            "cliente_nombre": "BENEDETTO LORENA PAOLA",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1320,
+            "cliente_nombre": "BIANCOTTI MARCELO",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 682,
+            "cliente_nombre": "BLASHB S.R.L.",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 711,
+            "cliente_nombre": "BRISSIO LUCAS",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 125,
+            "cliente_nombre": "BUSTOS JORGE ALBERTO-BAR CANTINA",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 689,
+            "cliente_nombre": "CARRIZO NICOLAS MANUEL ",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30048,
+            "cliente_nombre": "CASTAGNO MAURO ANDRES",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 350,
+            "cliente_nombre": "CASTRO DARIO FABIAN",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 848,
+            "cliente_nombre": "CAVAGLIA EMANUEL",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1399,
+            "cliente_nombre": "DIVISION ESPECTACULOS S.A.",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 635,
+            "cliente_nombre": "FRANCONE GASTON NICOLAS ",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1368,
+            "cliente_nombre": "GRUPO RONDA S.A.S. S.A.S.",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 37,
+            "cliente_nombre": "LA CAJA BUSINESS S.R.L.",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 237,
+            "cliente_nombre": "LAZZURI SOLANGE LISETTE",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 323,
+            "cliente_nombre": "LOTUSRB S.A.S.",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 103,
+            "cliente_nombre": "MARI GABRIEL ANTONIO",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1396,
+            "cliente_nombre": "MARTINA MAURICIO ALBERTO",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1439,
+            "cliente_nombre": "MIL NUEVE 82 S.R.L.",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 692,
+            "cliente_nombre": "MIRANDA SEBASTIAN LEONARDO ",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 876,
+            "cliente_nombre": "NAVARRO RAUL MIGUEL ",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1437,
+            "cliente_nombre": "NAVARRO ROMINA SOLEDAD",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 147,
+            "cliente_nombre": "OITANA LUCAS DARIO",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30058,
+            "cliente_nombre": "OITTANA MARTIN ANDRES ",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 320,
+            "cliente_nombre": "RABINO JOSE JUAN ",
+            "localidad": "La Playosa",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 611,
+            "cliente_nombre": "RAM LUDUEÑA ALEJANDRO JAVIER ",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1275,
+            "cliente_nombre": "REALE NICOLAS",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1407,
+            "cliente_nombre": "RINALDI JULIAN AGUSTIN",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30004,
+            "cliente_nombre": "ROBERTO J COLOMBATTI E HIJOS S R L",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1013,
+            "cliente_nombre": "RUELLA FRANCISCO-CHIQUI PUB",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 476,
+            "cliente_nombre": "SABENA BLANCA ESTHER ISABEL ",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 910,
+            "cliente_nombre": "SARMIENTO MARTIN EZEQUIEL ",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 26,
+            "cliente_nombre": "SPERANZA MELISA ROCIO BELEN",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1182,
+            "cliente_nombre": "TEDESCHI TOMAS * TOMI´S DRINKS",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1010,
+            "cliente_nombre": "VARELA ROBERTO CARLOS -ALEPH",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1109,
+            "cliente_nombre": "VINOTECA-DEPOSITO",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1381,
+            "cliente_nombre": "ZALAZAR DANIEL WALTER",
+            "localidad": "San Francisco",
+            "umbral": 6
+          }
+        ],
+        "pct_cobertura": 0.0638,
+        "segmento": "ON_PREMISE",
+        "sin_cobertura": 44
+      },
+      {
+        "cartera": 189,
+        "cubiertos": 17,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 30045,
+            "cliente_nombre": " AIMAR SERGIO MARCELO",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 628,
+            "cliente_nombre": "AGHEMO PABLO FABIAN ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 633,
+            "cliente_nombre": "AGUIRRE CARINA MARIELA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30060,
+            "cliente_nombre": "AIASSA MARICEL JUDITH",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 597,
+            "cliente_nombre": "ALBARRACIN .ALBERTO RUBEN ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 642,
+            "cliente_nombre": "ALVARADO MARIA PILAR HERRERA ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30,
+            "cliente_nombre": "AMANTINI MARICEL MARCELA",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 813,
+            "cliente_nombre": "AMAYA SILVIA ANDREA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30064,
+            "cliente_nombre": "ANDRADA ROMINA PAOLA ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 83,
+            "cliente_nombre": "ANGUS SOCIEDAD DE RESPONSABILIDAD LIMITADA",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 787,
+            "cliente_nombre": "ARCE DANIEL CARLOS ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 472,
+            "cliente_nombre": "AREVALO VANESA SOLEDAD",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1004,
+            "cliente_nombre": "ARICCIO MARCELA ALEJANDRA ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 724,
+            "cliente_nombre": "ARIETTI VANESA PAOLA ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1432,
+            "cliente_nombre": "ARMANDO FRANCO",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 721,
+            "cliente_nombre": "AUDISIO SEBASTIAN EUGENIO ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1251,
+            "cliente_nombre": "AVILA LEANDRO MIGUEL",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 858,
+            "cliente_nombre": "BARELLO ALICIA ANDREA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7245,
+            "cliente_nombre": "BAROVERO DAMIAN JOSE",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 613,
+            "cliente_nombre": "BASSANO EZEQUIEL LUIS Y BASSANO CESAR MATIAS",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 589,
+            "cliente_nombre": "BATTAN CARLOS RUBEN ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7602,
+            "cliente_nombre": "BATTAN VANINA CELESTE RITA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 607,
+            "cliente_nombre": "BATTISTON MARIANO DANIEL ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 585,
+            "cliente_nombre": "BAZAN YANINA MARIEL ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 673,
+            "cliente_nombre": "BECCARIA RAMIRO GERMAN ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7221,
+            "cliente_nombre": "BELTRAMONE ALFREDO",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 98,
+            "cliente_nombre": "BERTOLA CLAUDIA IRENE",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 500,
+            "cliente_nombre": "BERTORELLO CHRISTIAN ALEJANDRO ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 634,
+            "cliente_nombre": "BESUZZO EVANGELINA PATRICIA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 539,
+            "cliente_nombre": "BOETTO LILIANA DEL CARMEN ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 575,
+            "cliente_nombre": "BORGOGNO SILVIO MATIAS BORGOGNO",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1166,
+            "cliente_nombre": "BOSSA GIANFRANCO",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 518,
+            "cliente_nombre": "BRITO MAXIMILIANO LUIS",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 87,
+            "cliente_nombre": "BUFFA SUSANA ISABEL",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1385,
+            "cliente_nombre": "BURGOS FERNANDO MATIAS NICOLAS",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 835,
+            "cliente_nombre": "BUSTOS CLAUDIO DAMIAN ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 863,
+            "cliente_nombre": "CACCHARELLI PAOLA ANDREA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 487,
+            "cliente_nombre": "CAGLIERO PAULA ANDREA ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30062,
+            "cliente_nombre": "CALDERON LUCAS ANIBAL ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 532,
+            "cliente_nombre": "CARLE CLAUDIO AMERICO ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 832,
+            "cliente_nombre": "CASSINERIO CARLOS ALBERTO ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 699,
+            "cliente_nombre": "CAVAGLIA RICARDO HORACIO ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 553,
+            "cliente_nombre": "CEBALLOS FERNANDA NATACHA",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4758,
+            "cliente_nombre": "CEBALLOS LUCIA DERMIRIA",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 903,
+            "cliente_nombre": "CEJAS ALEJANDRA CARINA",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 687,
+            "cliente_nombre": "CENA CLAUDIA PATRICIA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30019,
+            "cliente_nombre": "CERRA CARLA VALENTINA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 676,
+            "cliente_nombre": "COLLINO MARISEL GUADALUPE",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 823,
+            "cliente_nombre": "DEL VALLE MARINO VANESA",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 604,
+            "cliente_nombre": "DEMATTIAS SANTIAGO LEONARDO ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 722,
+            "cliente_nombre": "DESTEFANIS MARY ISABEL ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30037,
+            "cliente_nombre": "DIAZ PINEDA HERNAN ALEJANDRO",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1324,
+            "cliente_nombre": "FEDERICO ARMANDO RAFAEL",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 88,
+            "cliente_nombre": "FERNANDEZ PATRICIA DEL VALLE",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30001,
+            "cliente_nombre": "FERNANDEZ PATRICIO JAVIER ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 208,
+            "cliente_nombre": "FERRERO MATIAS",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 54,
+            "cliente_nombre": "FERREYRA MARIA PAULA",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30057,
+            "cliente_nombre": "FEYMI SOCIEDAD POR ACCIONES SIMPLIFICADA",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 686,
+            "cliente_nombre": "FINETTI LORENA ANDREA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 975,
+            "cliente_nombre": "FISSORE AGUSTINA JULIA",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 509,
+            "cliente_nombre": "FRANCESCHI HERMANOS SRL",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1431,
+            "cliente_nombre": "FRARE MELINA SOLEDAD",
+            "localidad": "Seeber",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7622,
+            "cliente_nombre": "GABRIEL FIXMAN",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 398,
+            "cliente_nombre": "GAITE MONICA ALEJANDRA",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 850,
+            "cliente_nombre": "GALFRE JUAN ALBERTO ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 393,
+            "cliente_nombre": "GALLEGOS OSCAR ALBERTO",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1257,
+            "cliente_nombre": "GAMBINO EMILIANO DANIEL",
+            "localidad": "Seeber",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30039,
+            "cliente_nombre": "GENERO MARCO ARIEL ",
+            "localidad": "Seeber",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1016,
+            "cliente_nombre": "GIMENEZ MAXIMILIANO ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 605,
+            "cliente_nombre": "GIMENEZ MORETTO CAROLINA ELIZABETH ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1339,
+            "cliente_nombre": "GIMENEZ SANDRA SOLEDAD",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 586,
+            "cliente_nombre": "GOETTE ROMINA SOLEDAD ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30000,
+            "cliente_nombre": "GOIRAN JULIAN ROBERTO ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 512,
+            "cliente_nombre": "HEREDIA DANIEL GERMAN ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 536,
+            "cliente_nombre": "HERRERA RESTREPO MARTHA LUCIA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 914,
+            "cliente_nombre": "IBARRA IVANA CAROLINA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1424,
+            "cliente_nombre": "IBAÑEZ MARCOS FACUNDO",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30125,
+            "cliente_nombre": "ISSOGLIO SERGIO EDUARDO ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 919,
+            "cliente_nombre": "JORGE RUBEN YUDI",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 365,
+            "cliente_nombre": "JUAREZ ANA CAROLINA",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 69,
+            "cliente_nombre": "JUNCOS HECTOR",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 227,
+            "cliente_nombre": "KANTOR MARIELA BEATRIZ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 525,
+            "cliente_nombre": "LAMI ANGELICA BELEN ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 946,
+            "cliente_nombre": "LAUTARO EZEQUIEL BARON",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 558,
+            "cliente_nombre": "LUDUEÑA JORGE LUIS ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 703,
+            "cliente_nombre": "MACHADO GISELLE DAYANA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 962,
+            "cliente_nombre": "MAGAGNO MARCELA ELSA",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30049,
+            "cliente_nombre": "MAIULLI ANDREA ALEJANDRA",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 697,
+            "cliente_nombre": "MANSUINO SABRINA SOLEDAD ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 600,
+            "cliente_nombre": "MARIA EUGENIA GARCIA",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 551,
+            "cliente_nombre": "MARIA RAFAELA CARRIZO",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 520,
+            "cliente_nombre": "MARTINA ALBERTO ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30042,
+            "cliente_nombre": "MARTINETTI MARTA SUSANA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30031,
+            "cliente_nombre": "MEIER CECILIA",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 802,
+            "cliente_nombre": "MERCADO PABLO YVO ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 898,
+            "cliente_nombre": "MEYER ELIAS",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 606,
+            "cliente_nombre": "MILANESIO VICTORIA",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 665,
+            "cliente_nombre": "MIRTA DEL VALLE STRATTA",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30035,
+            "cliente_nombre": "MONTINI MAURO LEANDRO ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 497,
+            "cliente_nombre": "MONZON LAZARO MISAEL ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30043,
+            "cliente_nombre": "MORO LILIANA BEATRIZ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 758,
+            "cliente_nombre": "MOYA TAMARA MAGALI ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 598,
+            "cliente_nombre": "MOYANO ALDANA SOLEDAD",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 667,
+            "cliente_nombre": "MOYANO LILIANA BEATRIZ ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 931,
+            "cliente_nombre": "MYRIAM MAGDALENA ALVAREZ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 595,
+            "cliente_nombre": "NARVAEZ IVAN MAXIMILIANO ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30005,
+            "cliente_nombre": "NAVARRO ROMINA SOLEDAD",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 714,
+            "cliente_nombre": "NORMA MAGDALENA OLIVA",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 796,
+            "cliente_nombre": "OJEDA ROSANA GRACIELA ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 918,
+            "cliente_nombre": "OLIVERO LEONARDO DARIO ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 735,
+            "cliente_nombre": "OLMOS JULIO CESAR ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 710,
+            "cliente_nombre": "ORCE RAUL ANTONIO ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 631,
+            "cliente_nombre": "ORELLANO GEORGINA MICAELA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 113,
+            "cliente_nombre": "ORTEGA DALL AGATA IGNACIO RAFAEL",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 564,
+            "cliente_nombre": "OVIEDO ZULMA RITA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1392,
+            "cliente_nombre": "PASERO GABRIELA FERNANDA",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1403,
+            "cliente_nombre": "PASERO GABRIELA FERNANDA",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1357,
+            "cliente_nombre": "PAULETTI ANDREA DEL VALLE",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 521,
+            "cliente_nombre": "PENTACOMB S.A.",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 726,
+            "cliente_nombre": "PERALTA ADRIANA HAIDEE ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 31,
+            "cliente_nombre": "PERALTA DIEGO JOSE",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 198,
+            "cliente_nombre": "PERALTA JESICA SOL",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30066,
+            "cliente_nombre": "PERALTA JOHANA CRISTINA",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30052,
+            "cliente_nombre": "PERALTA JUAN IGNACIO ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 554,
+            "cliente_nombre": "PERALTA MANUEL LUCIO ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1107,
+            "cliente_nombre": "PERALTA PATRICIA GRACIELA",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1319,
+            "cliente_nombre": "PERCIVALDI EDGARDO",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 540,
+            "cliente_nombre": "PEREZ MARIA SANDRA",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1430,
+            "cliente_nombre": "PEREZ PABLO EZEQUIEL",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 978,
+            "cliente_nombre": "PERRET STELLA MARIS",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1065,
+            "cliente_nombre": "PIACENZA MARIA FERNANDA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30020,
+            "cliente_nombre": "PICATTI DANIEL ALBERTO ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 47,
+            "cliente_nombre": "PINTO GALLARDO MARCELO LEONARDO",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 619,
+            "cliente_nombre": "PIOLI RICARDO CARLOS ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30010,
+            "cliente_nombre": "PRUNELLO LEONARDO ANDRES",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 732,
+            "cliente_nombre": "QUINTEROS PABLO GUILLERMO ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 727,
+            "cliente_nombre": "RAMIREZ JOSE LUIS",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1049,
+            "cliente_nombre": "REVELINO JUAN RAMON",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1366,
+            "cliente_nombre": "REVELINO MIGUEL ANGEL",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30067,
+            "cliente_nombre": "RICCI FRANCISCO JAVIER",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30024,
+            "cliente_nombre": "RIEDEL ANDREA VIVIANA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1286,
+            "cliente_nombre": "RINAUDO ESTEBAN",
+            "localidad": "La Playosa",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30051,
+            "cliente_nombre": "ROLFO GABRIEL ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30397,
+            "cliente_nombre": "ROSANA MERCEDES REMI",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1336,
+            "cliente_nombre": "ROSTAGNO RAFAEL ERNESTO",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30032,
+            "cliente_nombre": "ROSTAGNO SANDRA ISABEL DEL VALLE ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 643,
+            "cliente_nombre": "ROVASIO RICARDO LUIS ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30055,
+            "cliente_nombre": "SAEZ ALICIA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 771,
+            "cliente_nombre": "SALOMONE PEDRO IGNACIO",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 949,
+            "cliente_nombre": "SAMBUCETTI MONICA DEL VALLE",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1018,
+            "cliente_nombre": "SANCHEZ MARIELA OLGA ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 616,
+            "cliente_nombre": "SANDRA VERONICA VALDEZ",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4719,
+            "cliente_nombre": "SARACCO RASPO MARIA LAURA",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 18,
+            "cliente_nombre": "SCARAVAGLIONE LEONARDO SEBASTIAN",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1293,
+            "cliente_nombre": "SERINO MARIA SOLEDAD",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 450,
+            "cliente_nombre": "SIMON DANIELA AGUSTINA",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30008,
+            "cliente_nombre": "SOLANGE BEATRIZ FUNES",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 718,
+            "cliente_nombre": "SONTTO RUBEN FABIAN",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 411,
+            "cliente_nombre": "SOSA GERARDO RAUL ",
+            "localidad": "Seeber",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 53,
+            "cliente_nombre": "STASSI HECTOR ADRIAN",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7244,
+            "cliente_nombre": "SUAREZ VICTOR DANIEL",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 684,
+            "cliente_nombre": "SUSANA BEATRIZ FOGLIATA",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 593,
+            "cliente_nombre": "TEOBALDO NARA BELEN ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1125,
+            "cliente_nombre": "TISSERA DAIANA BELEN",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 272,
+            "cliente_nombre": "URQUIA OMAR MARCELO",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1157,
+            "cliente_nombre": "VACA LORENA DEL VALLE",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1414,
+            "cliente_nombre": "VELAZQUEZ ANDREA SOLEDAD",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 531,
+            "cliente_nombre": "VILLAREAL JENIFER ",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30047,
+            "cliente_nombre": "VILLARREAL ALBANO FABRICIO",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 29,
+            "cliente_nombre": "VILLARROEL MAURICIO EZEQUIEL",
+            "localidad": "San Francisco",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30059,
+            "cliente_nombre": "WALTER JAVIER LELL",
+            "localidad": "Las Varillas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 913,
+            "cliente_nombre": "YAMILA GIORDANO",
+            "localidad": "San Francisco",
+            "umbral": 3
+          }
+        ],
+        "pct_cobertura": 0.0899,
+        "segmento": "TRADICIONAL",
+        "sin_cobertura": 172
+      }
+    ],
+    "vendedor_id": "V8"
+  }
+}

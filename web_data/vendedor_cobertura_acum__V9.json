@@ -1,0 +1,2405 @@
+{
+  "_meta": {
+    "endpoint_equivalente": "/api/vendedor/V9/cobertura_acum",
+    "generated_at": "2026-07-06T17:54:18-03:00",
+    "source_files": [
+      "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
+      "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
+    ],
+    "http_status": 200,
+    "count": 5,
+    "count_type": "dict_keys",
+    "checksum_sha256": "5a6461cfb6b4d39c3ff95cc6bba921e746f484be01705b6b458df54c34386820",
+    "fase": "1-precompute-paralelo",
+    "uso": "COMPARAR contra /api vivo; NO usar en producción"
+  },
+  "payload": {
+    "fecha_calculo": "2026-07-06",
+    "fuente": "mod_cobertura_acum.csv",
+    "generado_en": "2026-07-06 17:54:18",
+    "segmentos": [
+      {
+        "cartera": 28,
+        "cubiertos": 4,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 8170,
+            "cliente_nombre": "AMMANN ARAYA MARIELA BEATRIZ",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1193,
+            "cliente_nombre": "ASTRADA VIEYRA RICARDO DAVID",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8125,
+            "cliente_nombre": "CEBALLOS CARLOS JULIO",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1089,
+            "cliente_nombre": "CHEN MIN",
+            "localidad": "Los Hornillos",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8139,
+            "cliente_nombre": "CHEN XIANYU",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8068,
+            "cliente_nombre": "CHEN ZHONGYI",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 234,
+            "cliente_nombre": "COLLO MAXIMILIANO",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1194,
+            "cliente_nombre": "FERRERO FABIO EZEQUIEL",
+            "localidad": "Los Pozos",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8197,
+            "cliente_nombre": "HUANG JIANPING",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8147,
+            "cliente_nombre": "LIN XIANJIN",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8063,
+            "cliente_nombre": "MAGRIS RITA GLADYS",
+            "localidad": "Villa de las Rosas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7869,
+            "cliente_nombre": "MATOS ABEL",
+            "localidad": "Las Rabonas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 751,
+            "cliente_nombre": "OVIEDO CLAUDIA ALEJANDRA",
+            "localidad": "Villa de las Rosas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 889,
+            "cliente_nombre": "PEN HUANG",
+            "localidad": "San José",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 769,
+            "cliente_nombre": "PEREYRA PABLO NICOLAS",
+            "localidad": "Las Rabonas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8059,
+            "cliente_nombre": "RAMIREZ AYELEN MICAELA ",
+            "localidad": "Villa de las Rosas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1093,
+            "cliente_nombre": "RAMIREZ LUISINA AINELEN",
+            "localidad": "La Paz",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8171,
+            "cliente_nombre": "ROMERO ARTURO JOSE DIOLINDO",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8177,
+            "cliente_nombre": "ROXANA ELIZABETH CHAHER",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7892,
+            "cliente_nombre": "TRAD WALTER ADRIAN",
+            "localidad": "Luyaba",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8011,
+            "cliente_nombre": "TRAD WALTER ADRIAN",
+            "localidad": "San Javier y Yacanto",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1092,
+            "cliente_nombre": "ZABALA MARCELO GASTON",
+            "localidad": "La Paz",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 340,
+            "cliente_nombre": "ZHUANG BIN ",
+            "localidad": "Villa Yacanto",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8230,
+            "cliente_nombre": "ZHUANG XIAYAN 63",
+            "localidad": "Villa de las Rosas",
+            "umbral": 6
+          }
+        ],
+        "pct_cobertura": 0.1429,
+        "segmento": "AUTOSERVICIO",
+        "sin_cobertura": 24
+      },
+      {
+        "cartera": 3,
+        "cubiertos": 0,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 8077,
+            "cliente_nombre": "AMMANN ARAYA MARIELA BEATRIZ",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 403,
+            "cliente_nombre": "LOPEZ HNOS S R L",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 451,
+            "cliente_nombre": "RETINTO S. R. L.",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          }
+        ],
+        "pct_cobertura": 0.0,
+        "segmento": "MAYORISTA",
+        "sin_cobertura": 3
+      },
+      {
+        "cartera": 32,
+        "cubiertos": 1,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 1226,
+            "cliente_nombre": "ACOSTA JOSE ANDRES",
+            "localidad": "Luyaba",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1195,
+            "cliente_nombre": "AGUERO HUGO ANTONIO",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8066,
+            "cliente_nombre": "APELLGRAN S.A.S.",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8103,
+            "cliente_nombre": "ARDANAZ VIVIANA LETICIA CAROLINA",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1278,
+            "cliente_nombre": "ASIS ABRAMO EMIR",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1410,
+            "cliente_nombre": "ASIS ABRAMO JULIETA",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1234,
+            "cliente_nombre": "BRAMAJO GASTON JAZIEL",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 937,
+            "cliente_nombre": "CALAMANTE CIRO FELIPE",
+            "localidad": "Villa de las Rosas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1417,
+            "cliente_nombre": "CASTRO LARA",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1265,
+            "cliente_nombre": "CEBALLOS NATALIA KARINA",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1215,
+            "cliente_nombre": "CRUZ MONICA RAQUEL",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 798,
+            "cliente_nombre": "DIAZ FRANKLIN ORLANDO ",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1186,
+            "cliente_nombre": "DONIGIAN-FUNES 2009 SAS",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1213,
+            "cliente_nombre": "ESCALANTE DIEGO MATIAS",
+            "localidad": "San Pedro",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1100,
+            "cliente_nombre": "GALLARDO HORACIO EZEQUIEL",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1280,
+            "cliente_nombre": "GALLARDO HORACIO EZEQUIEL",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1299,
+            "cliente_nombre": "GALLARDO HORACIO EZEQUIEL",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1416,
+            "cliente_nombre": "GODOY ROSA LIDIA",
+            "localidad": "La Paz",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1192,
+            "cliente_nombre": "LOUREIRO DANIEL OSCAR",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1281,
+            "cliente_nombre": "MACIAS MIGUEL ANGEL",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1408,
+            "cliente_nombre": "MONTANI MIRKO",
+            "localidad": "La Paz",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 738,
+            "cliente_nombre": "MURUAM DIEGO NEHUEN",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1209,
+            "cliente_nombre": "PONCE ANITA RAQUEL",
+            "localidad": "Los Hornillos",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1204,
+            "cliente_nombre": "QUIROGA LUCAS MAXIMILIANO",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1425,
+            "cliente_nombre": "REICH GERMAN RAUL",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1409,
+            "cliente_nombre": "RODRIGUEZ MOSCATELLI MARIA VIRGINIA",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1208,
+            "cliente_nombre": "ROMERO MIGUEL ALEJANDRO",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1296,
+            "cliente_nombre": "SOSA MIGUEL ANGEL",
+            "localidad": "Las Tapias",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8072,
+            "cliente_nombre": "SUMI",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 713,
+            "cliente_nombre": "TEALDI MARA GISELA",
+            "localidad": "San Pedro",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1096,
+            "cliente_nombre": "VALLEJO MARCO DAMIAN",
+            "localidad": "Villa de las Rosas",
+            "umbral": 6
+          }
+        ],
+        "pct_cobertura": 0.0312,
+        "segmento": "ON_PREMISE",
+        "sin_cobertura": 31
+      },
+      {
+        "cartera": 290,
+        "cubiertos": 13,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 371,
+            "cliente_nombre": " BRITO RAMON ANTONIO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 388,
+            "cliente_nombre": " OVIEDO JUAN JOSE",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8225,
+            "cliente_nombre": " QUINTERO JUAN MARCELO MARTIN",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8098,
+            "cliente_nombre": "ABRAMO DOMINGO A",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1156,
+            "cliente_nombre": "AGUERO FERNANDO ALFREDO",
+            "localidad": "Sarmiento",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1379,
+            "cliente_nombre": "AGUILAR GUSTAVO ARIEL",
+            "localidad": "Los Hornillos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8131,
+            "cliente_nombre": "AGUILERA ARTURO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8140,
+            "cliente_nombre": "AGUILERA EPIFANIO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7984,
+            "cliente_nombre": "AGÜERO FERNANDO ALFREDO",
+            "localidad": "Villa Sarmiento",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8070,
+            "cliente_nombre": "AHUMADA FACUNDO FEDERICO ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8117,
+            "cliente_nombre": "ALANIZ ILDA LEONARDA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 680,
+            "cliente_nombre": "ALANIZ MARIO ARNALDO",
+            "localidad": "Las Tapias",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8196,
+            "cliente_nombre": "ALBORNOS MARCELO ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8113,
+            "cliente_nombre": "ALDO SEBASTIAN AMAYA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8159,
+            "cliente_nombre": "ALLENDE VALERIA SUSANA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1130,
+            "cliente_nombre": "ALMEIDA JORGE ANTONIO",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1355,
+            "cliente_nombre": "ALTAMIRANO TAMARA VALERIA",
+            "localidad": "La Travesía",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 715,
+            "cliente_nombre": "ALVAREZ EMILSE SOLEDAD",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1271,
+            "cliente_nombre": "ALVAREZ MARIA DANIELA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 375,
+            "cliente_nombre": "ALVAREZ MUÑOZ MARTIN ALBERTO ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8015,
+            "cliente_nombre": "AMAR FANI NOEMI",
+            "localidad": "San Pedro",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8211,
+            "cliente_nombre": "AMARAL LUIS TORRES ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7861,
+            "cliente_nombre": "AMAYA JOSE AMILCAR",
+            "localidad": "La Población",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1135,
+            "cliente_nombre": "ANDRADA PATRICIA LIA",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8014,
+            "cliente_nombre": "ANDRADA WALTER RAUL",
+            "localidad": "San Pedro",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8130,
+            "cliente_nombre": "ANSELMO VICENTE OSCAR",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1233,
+            "cliente_nombre": "ARCE ANDRES DIEGO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8132,
+            "cliente_nombre": "ARGUELLE NICOLAS ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8006,
+            "cliente_nombre": "ARREGUIS CLAUDIA MARCELA",
+            "localidad": "San Javier y Yacanto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8134,
+            "cliente_nombre": "AVILA VILMA MABEL",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8123,
+            "cliente_nombre": "BARRIOS FEDERICO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8207,
+            "cliente_nombre": "BARROSO RAUL OMAR ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 441,
+            "cliente_nombre": "BARZOLA VALERIA SOLEDAD",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1198,
+            "cliente_nombre": "BECERRA VALERIA DEL VALLE",
+            "localidad": "Corralito",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8161,
+            "cliente_nombre": "BELLON FABRICIO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8189,
+            "cliente_nombre": "BELTRAMONE DANIELA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1217,
+            "cliente_nombre": "BENEDETTI RUBEN DARIO",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1043,
+            "cliente_nombre": "BENGOLEA MARIAS NELLY",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8129,
+            "cliente_nombre": "BENGOLEA MONICA MARGARITA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8092,
+            "cliente_nombre": "BENITEZ ADRIANA ALEJANDRA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 791,
+            "cliente_nombre": "BENITEZ CARLOS",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1122,
+            "cliente_nombre": "BEQUIS HECTOR JAVIER",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8152,
+            "cliente_nombre": "BERROGAIN KARINA VERONICA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8110,
+            "cliente_nombre": "BOCH CLAUDIO EMILIANO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8078,
+            "cliente_nombre": "BONEL CARLOS ALBERTO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8205,
+            "cliente_nombre": "BONELLI ALFREDO ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1397,
+            "cliente_nombre": "BRINGAS CAMILO DAVID",
+            "localidad": "San Javier y Yacanto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8105,
+            "cliente_nombre": "BRITOS MARIA DEL CARMEN",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8119,
+            "cliente_nombre": "BUCCO MIRNA IVONE",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 506,
+            "cliente_nombre": "BULONE CLAUDIO DANIEL ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8102,
+            "cliente_nombre": "BURELA MAURICIO JAVIER",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1315,
+            "cliente_nombre": "BUSTOS LUIS FABIAN",
+            "localidad": "Las Tapias",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1091,
+            "cliente_nombre": "BUSTOS RAMON ARMANDO",
+            "localidad": "La Ramada",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1212,
+            "cliente_nombre": "CACERES LUIS EDUARDO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8100,
+            "cliente_nombre": "CACERES RICARDO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8203,
+            "cliente_nombre": "CALCAGNI ALDO ALBERTO ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1133,
+            "cliente_nombre": "CALDERON NOELIA CAROLINA",
+            "localidad": "Los Hornillos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1218,
+            "cliente_nombre": "CAMERLO MARIA JIMENA",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8163,
+            "cliente_nombre": "CARDINALI FACUNDO GABRIEL",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8222,
+            "cliente_nombre": "CARLOS MANUEL AGUERO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8106,
+            "cliente_nombre": "CARRANZA JUAN CARLOS",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8157,
+            "cliente_nombre": "CARRERA MONICA CRISTINA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1085,
+            "cliente_nombre": "CASAS JIJON MELINE",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7894,
+            "cliente_nombre": "CASAS LEO ",
+            "localidad": "Luyaba",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8085,
+            "cliente_nombre": "CASO HUGO EDUARDO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 407,
+            "cliente_nombre": "CASTILLO GLADYS ISABEL ",
+            "localidad": "San Javier y Yacanto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 788,
+            "cliente_nombre": "CASTRO JESCIA MAIRA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 355,
+            "cliente_nombre": "CASTRO MARIANELA JOHANA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1327,
+            "cliente_nombre": "CEBALLO MARIA VICTORIA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8220,
+            "cliente_nombre": "CHACON ELBIO ERNAN",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8209,
+            "cliente_nombre": "CHECA LUCAS ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8204,
+            "cliente_nombre": "CHENONES MARIA CELIA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1097,
+            "cliente_nombre": "CLADERA ROBERTO",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8141,
+            "cliente_nombre": "CLARAMUNT CRISTIAN ARIEL",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8142,
+            "cliente_nombre": "CLAVERO JORGE JACINTO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8212,
+            "cliente_nombre": "CLIENTE MOSTRADOR V20",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 339,
+            "cliente_nombre": "CODINA IRIS NELLY ALICIA ",
+            "localidad": "San Javier y Yacanto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8112,
+            "cliente_nombre": "COHEN ESTELA MONICA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8004,
+            "cliente_nombre": "COLLINI DANIEL ARMANDO",
+            "localidad": "San Javier y Yacanto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8108,
+            "cliente_nombre": "CORNEJO CRISTIAN ALEJANDRO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8017,
+            "cliente_nombre": "CUELLO VIVIANA",
+            "localidad": "San Pedro",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7862,
+            "cliente_nombre": "DA SILVA MARIA ELENA ",
+            "localidad": "La Población",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1219,
+            "cliente_nombre": "DAMBOLENA EMILIANO DANIEL",
+            "localidad": "Villa Sarmiento",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 414,
+            "cliente_nombre": "DEL VALLE GONZALEZ SONIA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 723,
+            "cliente_nombre": "DEL VALLE VIVIANA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8076,
+            "cliente_nombre": "DGB SRL",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1387,
+            "cliente_nombre": "DIAZ MAURICIO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 773,
+            "cliente_nombre": "DOMINGUE Z STEFANIA GUADALUPE",
+            "localidad": "Las Rabonas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8148,
+            "cliente_nombre": "DOMINGUEZ JUAN CARLOS BENANCIO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 977,
+            "cliente_nombre": "ECCHER JUAN PABLO",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 348,
+            "cliente_nombre": "EGEA CARLOS MAXIMILIANO ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 442,
+            "cliente_nombre": "EMPRENDIMIENTOS DEL VALLE S.A.S.",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 331,
+            "cliente_nombre": "ESCUDERO CEFERINA ALBINA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8136,
+            "cliente_nombre": "ESCUDERO ESTELA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8128,
+            "cliente_nombre": "ESCUDERO JUAN RICARDO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1163,
+            "cliente_nombre": "ESPINDOLA EXEQUIEL",
+            "localidad": "Los Hornillos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8229,
+            "cliente_nombre": "ESPINOSA SOLEDAD",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1187,
+            "cliente_nombre": "ESTEVES MARIANO MATEO",
+            "localidad": "Villa Yacanto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8096,
+            "cliente_nombre": "FALCON FEDERICO MARTIN ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8022,
+            "cliente_nombre": "FALCON MAYKA VALERIA",
+            "localidad": "Sarmiento",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8216,
+            "cliente_nombre": "FARES LUCAS MATIAS",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1119,
+            "cliente_nombre": "FERNANDES SILVIA ADRIANA",
+            "localidad": "Las Tapias",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8065,
+            "cliente_nombre": "FERNANDEZ ESTELA 66",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1155,
+            "cliente_nombre": "FERNANDEZ GLORIA LUCERO",
+            "localidad": "Villa Sarmiento",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1170,
+            "cliente_nombre": "FERNANDEZ ROQUE  WALTER",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1150,
+            "cliente_nombre": "FERREYRA MERCEDES ANABEL",
+            "localidad": "San Javier y Yacanto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8193,
+            "cliente_nombre": "FIGUEROA NATALIA ROMINA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1279,
+            "cliente_nombre": "FLORES MANUEL CARLOS",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8213,
+            "cliente_nombre": "FREIRE EFRAIN ARGENTINO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 658,
+            "cliente_nombre": "FRESNO FERNANDO ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8156,
+            "cliente_nombre": "FRIGERIO MARIA DANIELA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8155,
+            "cliente_nombre": "GALDEANO DAVID ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8247,
+            "cliente_nombre": "GALLARDO CESAR ALBERTO ",
+            "localidad": "Sarmiento",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8221,
+            "cliente_nombre": "GALLARDO HECTOR DANIEL",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1382,
+            "cliente_nombre": "GALLARDO IGNACIO OSCAR",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1153,
+            "cliente_nombre": "GALLARDO JORGE SEBASTIAN",
+            "localidad": "Luyaba",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 360,
+            "cliente_nombre": "GALLARDO JULIO GONZALO ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8099,
+            "cliente_nombre": "GARAY WALTWER ERVAR",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 555,
+            "cliente_nombre": "GARNICA LORENA PAOLA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 653,
+            "cliente_nombre": "GAVILAN MIGUEL ANGEL ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8146,
+            "cliente_nombre": "GIL MONICA RUTH ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8083,
+            "cliente_nombre": "GOMEZ ARIEL MARCELO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1258,
+            "cliente_nombre": "GOMEZ NOELIA DE LAS MERCEDES",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8206,
+            "cliente_nombre": "GONZALEZ ALEJANDRA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 332,
+            "cliente_nombre": "GONZALEZ CARLOS MARIANO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8175,
+            "cliente_nombre": "GONZALEZ ELIANA DEL VALLE",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 343,
+            "cliente_nombre": "GONZALEZ GINES ANDRES ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 776,
+            "cliente_nombre": "GONZALEZ MARIA JUDITH",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8121,
+            "cliente_nombre": "GONZALEZ MARIA YANINA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8241,
+            "cliente_nombre": "GONZALEZ MIRTA DEL VALLE",
+            "localidad": "Sarmiento",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7895,
+            "cliente_nombre": "GUERDIA RAUL",
+            "localidad": "Luyaba",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8151,
+            "cliente_nombre": "HAM SRL",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8179,
+            "cliente_nombre": "HERRERA JOSE ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 934,
+            "cliente_nombre": "HORMAECHE LILIA BEATRIZ ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8244,
+            "cliente_nombre": "HUGO MARCELO ORTIZ",
+            "localidad": "Sarmiento",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 452,
+            "cliente_nombre": "JIMENA DANIELA FUNES",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1171,
+            "cliente_nombre": "JIMENEZ ANGELICA RUTH",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8182,
+            "cliente_nombre": "JOSE LUIS SUAREZ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7857,
+            "cliente_nombre": "JUAN BRINGAS",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8227,
+            "cliente_nombre": "JUAN OSVALDO MUÑOZ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 809,
+            "cliente_nombre": "KUIBIDA RUBEN DARIO ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8005,
+            "cliente_nombre": "LA BANCA IVANA ",
+            "localidad": "San Javier y Yacanto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1199,
+            "cliente_nombre": "LAGOS HECTOR ORLANDO",
+            "localidad": "Cruz de Caña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 877,
+            "cliente_nombre": "LEDESMA GERARDO DANIEL",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8180,
+            "cliente_nombre": "LEYRIA LULIANA BEATRIZ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7882,
+            "cliente_nombre": "LIGORRIA SILVIA ELENA ",
+            "localidad": "Las Tapias",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8127,
+            "cliente_nombre": "LOPEZ ELIANA MARIELA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 494,
+            "cliente_nombre": "LOPEZ MIGUEL ANGEL ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8118,
+            "cliente_nombre": "LOPEZ MONICA FABIANA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8107,
+            "cliente_nombre": "LOPEZ SILVIA CARINA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1332,
+            "cliente_nombre": "LUCERO BRISA TAMARA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8239,
+            "cliente_nombre": "LUCERO CRISTIAN OMAR ",
+            "localidad": "Sarmiento",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8245,
+            "cliente_nombre": "LUCIA ALBINA LEDESMA",
+            "localidad": "Sarmiento",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 833,
+            "cliente_nombre": "LUNA MARIA DE LOS ANGELES",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8124,
+            "cliente_nombre": "MACHUCA FABIAN EDUARDO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 764,
+            "cliente_nombre": "MAIDANA LAURA BEATRIZ",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8223,
+            "cliente_nombre": "MALDONADO MARIA ROSA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8081,
+            "cliente_nombre": "MALDONADO PABLO ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 928,
+            "cliente_nombre": "MALLEA LUCAS MATIAS",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1200,
+            "cliente_nombre": "MANZANO ALDO RUBEN",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8174,
+            "cliente_nombre": "MARCHIORI ROMINA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 367,
+            "cliente_nombre": "MARTIN EMILIANO ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1139,
+            "cliente_nombre": "MARTINEZ CECILIA LORENA",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7864,
+            "cliente_nombre": "MARTINEZ FRANSISCO RAUL ",
+            "localidad": "La Población",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8089,
+            "cliente_nombre": "MARTINO LUCAS ERNESTO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8187,
+            "cliente_nombre": "MAXIMILIANO EZEQUIEL CHENONES",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1222,
+            "cliente_nombre": "MERELES MARIA ANDREA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1285,
+            "cliente_nombre": "MERLO CALVO TOMAS URIEL",
+            "localidad": "San Pedro",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1295,
+            "cliente_nombre": "MERLO CARLOS ROBERTO",
+            "localidad": "Villa Sarmiento",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1243,
+            "cliente_nombre": "MERLO MACARENA",
+            "localidad": "Las Tapias",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 659,
+            "cliente_nombre": "MIGUEL ANGEL GAVILAN",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8093,
+            "cliente_nombre": "MIGUEL PATRICIA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1190,
+            "cliente_nombre": "MILITELLO PABLO JAVIER",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7885,
+            "cliente_nombre": "MIRTA NOEMI SORIA",
+            "localidad": "Las Tapias",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8084,
+            "cliente_nombre": "MOLINA EDUARDO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8219,
+            "cliente_nombre": "MOLINA JORGE DOMINGO  ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8242,
+            "cliente_nombre": "MOLINA RUBEN CIPRIANO",
+            "localidad": "Sarmiento",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8122,
+            "cliente_nombre": "MONTES MARIA PAZ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1228,
+            "cliente_nombre": "MONTOYA INDOLFO ALEJANDRO",
+            "localidad": "Cruz de Caña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8016,
+            "cliente_nombre": "MONTOYA MARTIN DANIEL ",
+            "localidad": "San Pedro",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8188,
+            "cliente_nombre": "MORALES CARLOS EDUARDO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7847,
+            "cliente_nombre": "MORALES CARRERAS DIANA JESICA ",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8173,
+            "cliente_nombre": "MORALES MARIA SOLEDAD ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8074,
+            "cliente_nombre": "MORALES MIGUEL ANGEL",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8178,
+            "cliente_nombre": "MORENO MAURICIO ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8009,
+            "cliente_nombre": "MURUA DANIEL ALEJANDRO",
+            "localidad": "San Javier y Yacanto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1360,
+            "cliente_nombre": "MURUA ELIAS NICOLAS",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8018,
+            "cliente_nombre": "MURUA FRANCO JAVIER ",
+            "localidad": "San Pedro",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8007,
+            "cliente_nombre": "NARANJO VICTORIA ",
+            "localidad": "San Javier y Yacanto",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8201,
+            "cliente_nombre": "NICOLAS ADRIAN TROZZI DIAZ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8145,
+            "cliente_nombre": "NICOLETTI WALTER EDUARDO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1224,
+            "cliente_nombre": "NIEVAS DEL VALLE",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8226,
+            "cliente_nombre": "OCHOA ROSANA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 688,
+            "cliente_nombre": "OLIDEN EMILSE NAHIR ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1086,
+            "cliente_nombre": "OLMEDO FABIANA MABEL",
+            "localidad": "Quebrada de los Pozos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 852,
+            "cliente_nombre": "OLMEDO LEANDRO ERNESTO",
+            "localidad": "Los Pozos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 430,
+            "cliente_nombre": "ORDOÑES EZEQUIEL DAVID ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8176,
+            "cliente_nombre": "ORDOÑES JOEL ISAIAS",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 433,
+            "cliente_nombre": "ORTEGA LILIANA BEATRIZ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 906,
+            "cliente_nombre": "OVIEDO ADELA DEL CARMEN",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 778,
+            "cliente_nombre": "OVIEDO GLADI ANTONIA",
+            "localidad": "San José",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8181,
+            "cliente_nombre": "OVIEDO JUAN ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 369,
+            "cliente_nombre": "OVIEDO LAURA LILIANA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8200,
+            "cliente_nombre": "OYOLA CLAUDIA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 705,
+            "cliente_nombre": "OYOLA FABIO GERMAN ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1188,
+            "cliente_nombre": "PACHECO JOSE ALBERTO",
+            "localidad": "Luyaba",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8246,
+            "cliente_nombre": "PACHECO JUAN CARLOS",
+            "localidad": "Sarmiento",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1168,
+            "cliente_nombre": "PACHECO MIGUEL ALEJANDRO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8087,
+            "cliente_nombre": "PALACIOS ARIEL ALEJANDRO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8150,
+            "cliente_nombre": "PALACIOS ARIEL ALEJANDRO ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8104,
+            "cliente_nombre": "PALACIOS MARINA ELIZABETH",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8164,
+            "cliente_nombre": "PALACIOS MIGUEL ANGEL",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8218,
+            "cliente_nombre": "PALACIOS RICARDO EMANUEL",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8191,
+            "cliente_nombre": "PALACIOS ROBERTO OMAR",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1106,
+            "cliente_nombre": "PALMA MARIA EVA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1084,
+            "cliente_nombre": "PEREYRA ANGELA ESTHER",
+            "localidad": "Los Hornillos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8214,
+            "cliente_nombre": "PEREYRA CRISTINA RAMONA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8169,
+            "cliente_nombre": "PEREYRA MARIO ROBERTO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8075,
+            "cliente_nombre": "PEREZ OLGA MELANIA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 880,
+            "cliente_nombre": "PORRAS CARLOS ANDRES",
+            "localidad": "San Pedro",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8158,
+            "cliente_nombre": "PRADO SUSANA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1393,
+            "cliente_nombre": "QUIROGA CLAUDIO MARCELO",
+            "localidad": "San Pedro",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 767,
+            "cliente_nombre": "RAMIREZ ELSA",
+            "localidad": "Las Chacras",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1216,
+            "cliente_nombre": "RAMIREZ NILDA CAROLINA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1311,
+            "cliente_nombre": "RAMIREZ VIVIAN LORENA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8165,
+            "cliente_nombre": "RAMON GUSTAVO ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1227,
+            "cliente_nombre": "RECALDE MARIANO JAVIER",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8149,
+            "cliente_nombre": "REQUELME MARIO SEBASTIAN",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1005,
+            "cliente_nombre": "REYNOSO ROSA ANABEL",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 806,
+            "cliente_nombre": "RIOS JULIETA PABLA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8088,
+            "cliente_nombre": "RIVADERA FUENTES LIDIA VERONICA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8071,
+            "cliente_nombre": "ROBLEDO CAROLINA MARIBEL SUSANA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 401,
+            "cliente_nombre": "RODRIGUEZ FACUNDO MARTIN ",
+            "localidad": "Luyaba",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8097,
+            "cliente_nombre": "RODRIGUEZ MOSCATELLI MARIA VIRGINIA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8082,
+            "cliente_nombre": "RODRIGUEZ VERONICA AMELIA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8240,
+            "cliente_nombre": "ROJAS ESTELLA",
+            "localidad": "Sarmiento",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8243,
+            "cliente_nombre": "ROJO CESAR ",
+            "localidad": "Sarmiento",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 777,
+            "cliente_nombre": "ROMERO EMILCE",
+            "localidad": "Cruz de Caña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8224,
+            "cliente_nombre": "ROMERO FLAVIA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8186,
+            "cliente_nombre": "ROMERO FLAVIA EMILCE ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8115,
+            "cliente_nombre": "ROMERO HUGO FERNANDO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 364,
+            "cliente_nombre": "ROMERO MARIBEL ANDREA",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7863,
+            "cliente_nombre": "ROSALES MARIA JULIETA ",
+            "localidad": "La Población",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1300,
+            "cliente_nombre": "SALA ISAAC",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1162,
+            "cliente_nombre": "SALAS DAINA AIME",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8194,
+            "cliente_nombre": "SALAS HECTOR FABIAN ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8120,
+            "cliente_nombre": "SANCHEZ JOSE LORENZO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8143,
+            "cliente_nombre": "SANCHEZ MARIA BEATRIZ ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1362,
+            "cliente_nombre": "SANCHEZ MAURICIO RICARDO",
+            "localidad": "San Pedro",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1105,
+            "cliente_nombre": "SANCHEZ NORMA BEATRIZ",
+            "localidad": "San Pedro",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 864,
+            "cliente_nombre": "SILVA FACUNDO MANUEL ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 75,
+            "cliente_nombre": "SOSA LAZARTER ANGELES VICTORIA",
+            "localidad": "Las Tapias",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1202,
+            "cliente_nombre": "SOTELO RAUL ALBERTO",
+            "localidad": "Las Tapias",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1237,
+            "cliente_nombre": "SPRINGER VIVIANA LORENA",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8160,
+            "cliente_nombre": "SUAREZ ROSA LILIANA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8199,
+            "cliente_nombre": "TELLO HUGO OSCAR ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1203,
+            "cliente_nombre": "TOMASSINI VALERIA ROXANA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 730,
+            "cliente_nombre": "TORRES EMILSE NOEMI",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 871,
+            "cliente_nombre": "TORRES JOHANA PAOLA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8184,
+            "cliente_nombre": "TOSO CLAUDIO MIGUEL ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1104,
+            "cliente_nombre": "TULA NESTOR ADRIAN",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1276,
+            "cliente_nombre": "URQUIZA GARCIA MALENA LUCILA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1206,
+            "cliente_nombre": "URQUIZA RAMON ANGEL",
+            "localidad": "Cruz de Caña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1277,
+            "cliente_nombre": "URQUIZA VIVIANA ELIZABETH",
+            "localidad": "Cruz de Caña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8133,
+            "cliente_nombre": "VAN KEMENADE GASTON",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8144,
+            "cliente_nombre": "VARGAS JUAN MARCELO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 567,
+            "cliente_nombre": "VDH S.A.S",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7889,
+            "cliente_nombre": "VELASCO PATRICIA",
+            "localidad": "Los Hornillos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1082,
+            "cliente_nombre": "VELASCO PATRICIA ALEJANDRA",
+            "localidad": "Los Hornillos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8228,
+            "cliente_nombre": "VELASCO VICTOR HUGO ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1406,
+            "cliente_nombre": "VELAZCO PATRICIA ALEJANDRA",
+            "localidad": "Los Hornillos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8234,
+            "cliente_nombre": "VIGNOLO JOAQUIN IGNACIO",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8154,
+            "cliente_nombre": "VILLARREAL UBALDO MICAEL",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1094,
+            "cliente_nombre": "VIOTTI PICCIRILLO ANGEL MAXIMILIANO",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1229,
+            "cliente_nombre": "WENDY JACQUELINE",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7893,
+            "cliente_nombre": "ZAMORA JESOS ANTONIO",
+            "localidad": "Luyaba",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8166,
+            "cliente_nombre": "ZARATE EDITH",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          }
+        ],
+        "pct_cobertura": 0.0448,
+        "segmento": "TRADICIONAL",
+        "sin_cobertura": 277
+      }
+    ],
+    "vendedor_id": "V9"
+  }
+}

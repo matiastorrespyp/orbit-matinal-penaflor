@@ -1,0 +1,210 @@
+{
+  "_meta": {
+    "endpoint_equivalente": "/api/gerencia/real_ayer_segmento",
+    "generated_at": "2026-07-06T17:54:18-03:00",
+    "source_files": [
+      "04_DATASETS_ORBIT/mod_ccc_segmento.csv",
+      "09_CONFIG/vendedores_activos.csv"
+    ],
+    "http_status": 200,
+    "count": 2,
+    "count_type": "dict_keys",
+    "checksum_sha256": "c9f38a73f4501562e8fa09786afc186347f4e6edd65a69e99812346305c2809b",
+    "fase": "1-precompute-paralelo",
+    "uso": "COMPARAR contra /api vivo; NO usar en producción"
+  },
+  "payload": {
+    "generado_en": "2026-07-06 17:54:18",
+    "vendedores": [
+      {
+        "segmentos": [
+          {
+            "botellas_vendidas": 3,
+            "clientes_con_compra": 1,
+            "coberturas_logradas": 1,
+            "segmento": "TRADICIONAL",
+            "venta_neta": 9520.37
+          },
+          {
+            "botellas_vendidas": 0,
+            "clientes_con_compra": 0,
+            "coberturas_logradas": 0,
+            "segmento": "ON_PREMISE_VTK",
+            "venta_neta": 0.0
+          }
+        ],
+        "vendedor_id": "V3",
+        "vendedor_nombre": "NADIA GAMBINO",
+        "venta_total_ayer": 9520.37
+      },
+      {
+        "segmentos": [
+          {
+            "botellas_vendidas": 0,
+            "clientes_con_compra": 0,
+            "coberturas_logradas": 0,
+            "segmento": "TRADICIONAL",
+            "venta_neta": 0.0
+          },
+          {
+            "botellas_vendidas": 0,
+            "clientes_con_compra": 0,
+            "coberturas_logradas": 0,
+            "segmento": "AUTOSERVICIO",
+            "venta_neta": 0.0
+          },
+          {
+            "botellas_vendidas": 0,
+            "clientes_con_compra": 0,
+            "coberturas_logradas": 0,
+            "segmento": "ON_PREMISE_VTK",
+            "venta_neta": 0.0
+          }
+        ],
+        "vendedor_id": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL",
+        "venta_total_ayer": 0.0
+      },
+      {
+        "segmentos": [
+          {
+            "botellas_vendidas": 0,
+            "clientes_con_compra": 0,
+            "coberturas_logradas": 0,
+            "segmento": "TRADICIONAL",
+            "venta_neta": 0.0
+          },
+          {
+            "botellas_vendidas": 0,
+            "clientes_con_compra": 0,
+            "coberturas_logradas": 0,
+            "segmento": "AUTOSERVICIO",
+            "venta_neta": 0.0
+          },
+          {
+            "botellas_vendidas": 0,
+            "clientes_con_compra": 0,
+            "coberturas_logradas": 0,
+            "segmento": "ON_PREMISE_VTK",
+            "venta_neta": 0.0
+          }
+        ],
+        "vendedor_id": "V6",
+        "vendedor_nombre": "PEYRONEL ANDREA",
+        "venta_total_ayer": 0.0
+      },
+      {
+        "segmentos": [
+          {
+            "botellas_vendidas": 0,
+            "clientes_con_compra": 0,
+            "coberturas_logradas": 0,
+            "segmento": "TRADICIONAL",
+            "venta_neta": 0.0
+          },
+          {
+            "botellas_vendidas": 0,
+            "clientes_con_compra": 0,
+            "coberturas_logradas": 0,
+            "segmento": "AUTOSERVICIO",
+            "venta_neta": 0.0
+          },
+          {
+            "botellas_vendidas": 0,
+            "clientes_con_compra": 0,
+            "coberturas_logradas": 0,
+            "segmento": "ON_PREMISE_VTK",
+            "venta_neta": 0.0
+          }
+        ],
+        "vendedor_id": "V7",
+        "vendedor_nombre": "JOFRE GUILLERMO",
+        "venta_total_ayer": 0.0
+      },
+      {
+        "segmentos": [
+          {
+            "botellas_vendidas": 110,
+            "clientes_con_compra": 7,
+            "coberturas_logradas": 7,
+            "segmento": "TRADICIONAL",
+            "venta_neta": 452228.43
+          },
+          {
+            "botellas_vendidas": 771,
+            "clientes_con_compra": 7,
+            "coberturas_logradas": 7,
+            "segmento": "AUTOSERVICIO",
+            "venta_neta": 4197548.28
+          },
+          {
+            "botellas_vendidas": 212,
+            "clientes_con_compra": 1,
+            "coberturas_logradas": 1,
+            "segmento": "ON_PREMISE_VTK",
+            "venta_neta": 1179027.51
+          }
+        ],
+        "vendedor_id": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA",
+        "venta_total_ayer": 5828804.22
+      },
+      {
+        "segmentos": [
+          {
+            "botellas_vendidas": 0,
+            "clientes_con_compra": 0,
+            "coberturas_logradas": 0,
+            "segmento": "TRADICIONAL",
+            "venta_neta": 0.0
+          },
+          {
+            "botellas_vendidas": 0,
+            "clientes_con_compra": 0,
+            "coberturas_logradas": 0,
+            "segmento": "AUTOSERVICIO",
+            "venta_neta": 0.0
+          },
+          {
+            "botellas_vendidas": 0,
+            "clientes_con_compra": 0,
+            "coberturas_logradas": 0,
+            "segmento": "ON_PREMISE_VTK",
+            "venta_neta": 0.0
+          }
+        ],
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO",
+        "venta_total_ayer": 0.0
+      },
+      {
+        "segmentos": [
+          {
+            "botellas_vendidas": 135,
+            "clientes_con_compra": 5,
+            "coberturas_logradas": 5,
+            "segmento": "TRADICIONAL",
+            "venta_neta": 763427.88
+          },
+          {
+            "botellas_vendidas": 33,
+            "clientes_con_compra": 1,
+            "coberturas_logradas": 1,
+            "segmento": "AUTOSERVICIO",
+            "venta_neta": 145596.06
+          },
+          {
+            "botellas_vendidas": 12,
+            "clientes_con_compra": 1,
+            "coberturas_logradas": 1,
+            "segmento": "ON_PREMISE_VTK",
+            "venta_neta": 76075.61
+          }
+        ],
+        "vendedor_id": "V10",
+        "vendedor_nombre": "ORTEGA MILAGROS",
+        "venta_total_ayer": 985099.55
+      }
+    ]
+  }
+}

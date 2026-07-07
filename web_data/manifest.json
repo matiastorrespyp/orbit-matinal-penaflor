@@ -1,0 +1,539 @@
+{
+  "phase": "fase-1-precompute",
+  "generated_at": "2026-07-06T17:54:20-03:00",
+  "descripcion": "Capa PARALELA de precómputo (Grupo A / bajo riesgo). JSON para comparar contra la salida viva de /api/...; NO usados en producción. server_orbit.py NO modificado.",
+  "isolation": {
+    "orbit_db_path": "C:\\Users\\usuario\\AppData\\Local\\Temp\\orbit_fase1_we0jq_zh\\throwaway.db",
+    "orbit_plan_backup_dir": "C:\\Users\\usuario\\AppData\\Local\\Temp\\orbit_fase1_we0jq_zh\\plan",
+    "gsheets_enabled": false,
+    "nota": "orbit.db de producción y Google Sheets NO tocados."
+  },
+  "vendedores_activos": [
+    "V3",
+    "V4",
+    "V6",
+    "V7",
+    "V8",
+    "V9",
+    "V10"
+  ],
+  "total_generados": 44,
+  "total_errores": 0,
+  "duracion_seg": 5.25,
+  "entries": [
+    {
+      "file": "web_data/gastos_accion.json",
+      "endpoint": "/api/gastos_accion",
+      "http_status": 200,
+      "count": 6,
+      "count_type": "dict_keys",
+      "checksum_sha256": "b035475bf2eaba7b0073d8cd6502e289b35300d2acb661aeba61df827daecc9b",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_gastos_accion.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_planes_autoservicio.json",
+      "endpoint": "/api/gerencia/planes_autoservicio",
+      "http_status": 200,
+      "count": 4,
+      "count_type": "dict_keys",
+      "checksum_sha256": "eb9e4d81876b35df087d506ce247f38e930737930321f0d9f51936b850e46a4c",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_gastos_accion.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_planes_as.json",
+      "endpoint": "/api/gerencia/planes_as",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "818452f70622ff316f18e461d0a53f31d069a1772d62eee05fe5d77ce1242c83",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_planes_as.csv",
+        "04_DATASETS_ORBIT/mod_sincargos_envios.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_innovaciones_segmento.json",
+      "endpoint": "/api/gerencia/innovaciones_segmento",
+      "http_status": 200,
+      "count": 6,
+      "count_type": "dict_keys",
+      "checksum_sha256": "98105b86d16dc027b22e3fe0398712e9d20c886cb2a37b1a4fbd88ca912f259c",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_11t_empresa.json",
+      "endpoint": "/api/gerencia/11t_empresa",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "214bf5825131b82064cb44c8b701874389b1e2561f8c27ea996f26f51a660924",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_11_titulares.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_11t_acum.json",
+      "endpoint": "/api/gerencia/11t_acum",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "058f52941e1607a2790d5877f9f6e2976d6fbacea797b5690871424cce2f29d5",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_11t_acum.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_cobertura_segmento.json",
+      "endpoint": "/api/gerencia/cobertura_segmento",
+      "http_status": 200,
+      "count": 2,
+      "count_type": "dict_keys",
+      "checksum_sha256": "1211578c900069e46959604010b2283569676a678f9253eea91520af2d59d73d",
+      "source_files": [
+        "04_DATASETS_ORBIT/clientes_dia.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_cobertura_acum.json",
+      "endpoint": "/api/gerencia/cobertura_acum",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "973983ec1cf8e65bcd44689f25ab18f0efecf7f82efb6c251e606d7e1b252a5f",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_cobertura_acum.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_real_ayer_segmento.json",
+      "endpoint": "/api/gerencia/real_ayer_segmento",
+      "http_status": 200,
+      "count": 2,
+      "count_type": "dict_keys",
+      "checksum_sha256": "c9f38a73f4501562e8fa09786afc186347f4e6edd65a69e99812346305c2809b",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_ccc_segmento.csv",
+        "09_CONFIG/vendedores_activos.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_cobertura_acum__V3.json",
+      "endpoint": "/api/vendedor/V3/cobertura_acum",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "6fe78feabd7df3deb010d0c6a4f6df7db50308a63758d5ee2628411ac2d6b877",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
+        "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_cobertura_acum__V4.json",
+      "endpoint": "/api/vendedor/V4/cobertura_acum",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "82eb1d5791e5a96226f8ee0c311ec0a76951cb67900d8d20dcac47b86229a859",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
+        "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_cobertura_acum__V6.json",
+      "endpoint": "/api/vendedor/V6/cobertura_acum",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "69495f70834ea9bc68aebe47d9169295ec512c3eb044025a60bd03e1714286c5",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
+        "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_cobertura_acum__V7.json",
+      "endpoint": "/api/vendedor/V7/cobertura_acum",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "84583582db8a3569a335002845c8299c27e7d370496a7dee547e779bafd20f08",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
+        "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_cobertura_acum__V8.json",
+      "endpoint": "/api/vendedor/V8/cobertura_acum",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "98b9b0f5d5b7d8b23be6ff21dec881038a58741f70a4ed671d713dcefc156b10",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
+        "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_cobertura_acum__V9.json",
+      "endpoint": "/api/vendedor/V9/cobertura_acum",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "5a6461cfb6b4d39c3ff95cc6bba921e746f484be01705b6b458df54c34386820",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
+        "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_cobertura_acum__V10.json",
+      "endpoint": "/api/vendedor/V10/cobertura_acum",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "ad29e7718815a02a38083dd43ee6e9c21b31337dcf043ec829354def9f7a9db9",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
+        "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_planes_as__V3.json",
+      "endpoint": "/api/vendedor/V3/planes_as",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "a0e7f354713835c100218ae186fa88ea75761193e9bd35e4eacb42a84d96f9b2",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_planes_as.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_planes_as__V4.json",
+      "endpoint": "/api/vendedor/V4/planes_as",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "7918241e2fc0a3acf27b8de06a4f52316832c151c1ebf75f2b953a1d66e02e08",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_planes_as.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_planes_as__V6.json",
+      "endpoint": "/api/vendedor/V6/planes_as",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "1710371a040b353169f59025dfef89c3590ef89fdc1443907a463de56e8fe964",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_planes_as.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_planes_as__V7.json",
+      "endpoint": "/api/vendedor/V7/planes_as",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "6d53be2eac3cad7bf474c75725ba8a7105fbe44989f9daddc7564be785d5ceec",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_planes_as.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_planes_as__V8.json",
+      "endpoint": "/api/vendedor/V8/planes_as",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "d573a16b3e8d639d6c471f5264725efc9da9edae8705613f1093e16774b26ec9",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_planes_as.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_planes_as__V9.json",
+      "endpoint": "/api/vendedor/V9/planes_as",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "d7c42c428cb49d22512fbacc5dd2398d677603ba1ae0de7a05d56fcea99560fc",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_planes_as.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_planes_as__V10.json",
+      "endpoint": "/api/vendedor/V10/planes_as",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "4f3658be5820ebf9e1762e09fa1cbd587520a5db1ab59faaf05966fbbc077262",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_planes_as.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_innovaciones_segmento__V3.json",
+      "endpoint": "/api/vendedor/V3/innovaciones_segmento",
+      "http_status": 200,
+      "count": 6,
+      "count_type": "dict_keys",
+      "checksum_sha256": "e1f6946ef0cb38d73c6e06734490df151a7d24bb3f574a77caa6abe898300528",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_innovaciones_segmento__V4.json",
+      "endpoint": "/api/vendedor/V4/innovaciones_segmento",
+      "http_status": 200,
+      "count": 6,
+      "count_type": "dict_keys",
+      "checksum_sha256": "9bafc10275ff7cb722f8e78ebc6b0af2e50fcf25844fe8590b48559613096e91",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_innovaciones_segmento__V6.json",
+      "endpoint": "/api/vendedor/V6/innovaciones_segmento",
+      "http_status": 200,
+      "count": 6,
+      "count_type": "dict_keys",
+      "checksum_sha256": "0010e5f118a12d01427f9ea559aebc64a3045a3a15b0b0a1fdb7572f2259522d",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_innovaciones_segmento__V7.json",
+      "endpoint": "/api/vendedor/V7/innovaciones_segmento",
+      "http_status": 200,
+      "count": 6,
+      "count_type": "dict_keys",
+      "checksum_sha256": "1f9dabf92d99ef88e1078512dc612726442927ca326a950a77f89a9350e00a48",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_innovaciones_segmento__V8.json",
+      "endpoint": "/api/vendedor/V8/innovaciones_segmento",
+      "http_status": 200,
+      "count": 6,
+      "count_type": "dict_keys",
+      "checksum_sha256": "c9b716a22f66d5fb227317e4e386d3c899fae2ef72b8b16c670c3c8d7cbff7a6",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_innovaciones_segmento__V9.json",
+      "endpoint": "/api/vendedor/V9/innovaciones_segmento",
+      "http_status": 200,
+      "count": 6,
+      "count_type": "dict_keys",
+      "checksum_sha256": "9e455fe3998d57d802504cb4ced41b17b3e94306292e84d76195a31764bfe131",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_innovaciones_segmento__V10.json",
+      "endpoint": "/api/vendedor/V10/innovaciones_segmento",
+      "http_status": 200,
+      "count": 6,
+      "count_type": "dict_keys",
+      "checksum_sha256": "af9a6b9816c4b95fc54aabad01fa1c6deade86c74a3c6e660ad661d0733fe7ae",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_plan_innovaciones__V3.json",
+      "endpoint": "/api/vendedor/V3/plan_innovaciones",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "578cb1d4d170e8539b919ed01f676560a0d5d513de25bc75f7ba5bc270e5dbb2",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv",
+        "04_DATASETS_ORBIT/clientes_dia.csv",
+        "05_MASTER_DATA/clientes_master.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_plan_innovaciones__V4.json",
+      "endpoint": "/api/vendedor/V4/plan_innovaciones",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "24852f36c2576090871ce9d25e071a2b1870e811f1d1ea12686a91d01eed0e5f",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv",
+        "04_DATASETS_ORBIT/clientes_dia.csv",
+        "05_MASTER_DATA/clientes_master.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_plan_innovaciones__V6.json",
+      "endpoint": "/api/vendedor/V6/plan_innovaciones",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "275c07f722701f5c8ee9db8c553d72e3535d277babf046975b33ee849c3d2270",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv",
+        "04_DATASETS_ORBIT/clientes_dia.csv",
+        "05_MASTER_DATA/clientes_master.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_plan_innovaciones__V7.json",
+      "endpoint": "/api/vendedor/V7/plan_innovaciones",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "53b4e4087bd259a8d163098babbfc0a9489e160af76cb8acc406fbe58c1ab0d3",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv",
+        "04_DATASETS_ORBIT/clientes_dia.csv",
+        "05_MASTER_DATA/clientes_master.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_plan_innovaciones__V8.json",
+      "endpoint": "/api/vendedor/V8/plan_innovaciones",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "83ed9606df71b9d2c3282d7f3e1d5b589e9fc7bc8dea94498102c0b3d936aae2",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv",
+        "04_DATASETS_ORBIT/clientes_dia.csv",
+        "05_MASTER_DATA/clientes_master.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_plan_innovaciones__V9.json",
+      "endpoint": "/api/vendedor/V9/plan_innovaciones",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "427bf895d5f69673ab423783597aa1e188b6245f965482389ab04908fa500310",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv",
+        "04_DATASETS_ORBIT/clientes_dia.csv",
+        "05_MASTER_DATA/clientes_master.csv"
+      ]
+    },
+    {
+      "file": "web_data/vendedor_plan_innovaciones__V10.json",
+      "endpoint": "/api/vendedor/V10/plan_innovaciones",
+      "http_status": 200,
+      "count": 5,
+      "count_type": "dict_keys",
+      "checksum_sha256": "96cf751fb4099123c7f075ed0884115a9f9af96d3722fe4d2288104a29685e73",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv",
+        "04_DATASETS_ORBIT/clientes_dia.csv",
+        "05_MASTER_DATA/clientes_master.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_11t_vendedor__V3.json",
+      "endpoint": "/api/gerencia/11t_vendedor?vendedor=V3",
+      "http_status": 200,
+      "count": 6,
+      "count_type": "dict_keys",
+      "checksum_sha256": "6e69be1982e26b80a8c7ad96bd31c1db4431289d4bb6a76a73391dfe8515be26",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_11_titulares.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_11t_vendedor__V4.json",
+      "endpoint": "/api/gerencia/11t_vendedor?vendedor=V4",
+      "http_status": 200,
+      "count": 6,
+      "count_type": "dict_keys",
+      "checksum_sha256": "af521e2b419081fd67cbf1ac229c66d9e4ed44b428d1c8e0cf005a2714bb421f",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_11_titulares.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_11t_vendedor__V6.json",
+      "endpoint": "/api/gerencia/11t_vendedor?vendedor=V6",
+      "http_status": 200,
+      "count": 6,
+      "count_type": "dict_keys",
+      "checksum_sha256": "d467e3de0e8e449f2d229310d78c185109777812eccd624346ab0c8fc89a3406",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_11_titulares.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_11t_vendedor__V7.json",
+      "endpoint": "/api/gerencia/11t_vendedor?vendedor=V7",
+      "http_status": 200,
+      "count": 6,
+      "count_type": "dict_keys",
+      "checksum_sha256": "d8f7fb296eaae2a7d82410e06d3a1ecf7827e5cb3030da9b79c79b2f3fc87f7d",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_11_titulares.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_11t_vendedor__V8.json",
+      "endpoint": "/api/gerencia/11t_vendedor?vendedor=V8",
+      "http_status": 200,
+      "count": 6,
+      "count_type": "dict_keys",
+      "checksum_sha256": "83859713e61e947fd7de209ce876ef4e6a5cabd6d6848496ec5520010012355e",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_11_titulares.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_11t_vendedor__V9.json",
+      "endpoint": "/api/gerencia/11t_vendedor?vendedor=V9",
+      "http_status": 200,
+      "count": 6,
+      "count_type": "dict_keys",
+      "checksum_sha256": "7ed97a3186cdf229cb4f698674db06918df661a7ce408194304ea849fa83c397",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_11_titulares.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_11t_vendedor__V10.json",
+      "endpoint": "/api/gerencia/11t_vendedor?vendedor=V10",
+      "http_status": 200,
+      "count": 6,
+      "count_type": "dict_keys",
+      "checksum_sha256": "31926108a86b523916e1dc54129c1955b043e6a7ff6296f82f079dcf8035495e",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_11_titulares.csv"
+      ]
+    }
+  ],
+  "errores": [],
+  "pendientes": [
+    {
+      "endpoint": "/api/gerencia/cobertura_acum_faltantes",
+      "motivo": "requiere ?segmento= (enumerar segmentos)"
+    }
+  ]
+}

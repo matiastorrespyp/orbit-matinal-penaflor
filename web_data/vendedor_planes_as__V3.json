@@ -1,0 +1,22 @@
+{
+  "_meta": {
+    "endpoint_equivalente": "/api/vendedor/V3/planes_as",
+    "generated_at": "2026-07-06T17:54:18-03:00",
+    "source_files": [
+      "04_DATASETS_ORBIT/mod_planes_as.csv"
+    ],
+    "http_status": 200,
+    "count": 5,
+    "count_type": "dict_keys",
+    "checksum_sha256": "a0e7f354713835c100218ae186fa88ea75761193e9bd35e4eacb42a84d96f9b2",
+    "fase": "1-precompute-paralelo",
+    "uso": "COMPARAR contra /api vivo; NO usar en producción"
+  },
+  "payload": {
+    "clientes": [],
+    "fuente": "mod_planes_as.csv",
+    "generado_en": "2026-07-06 17:54:18",
+    "total_clientes": 0,
+    "vendedor_id": "V3"
+  }
+}

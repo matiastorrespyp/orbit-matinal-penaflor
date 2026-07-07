@@ -1,0 +1,2137 @@
+{
+  "_meta": {
+    "endpoint_equivalente": "/api/vendedor/V7/cobertura_acum",
+    "generated_at": "2026-07-06T17:54:18-03:00",
+    "source_files": [
+      "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
+      "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
+    ],
+    "http_status": 200,
+    "count": 5,
+    "count_type": "dict_keys",
+    "checksum_sha256": "84583582db8a3569a335002845c8299c27e7d370496a7dee547e779bafd20f08",
+    "fase": "1-precompute-paralelo",
+    "uso": "COMPARAR contra /api vivo; NO usar en producción"
+  },
+  "payload": {
+    "fecha_calculo": "2026-07-06",
+    "fuente": "mod_cobertura_acum.csv",
+    "generado_en": "2026-07-06 17:54:18",
+    "segmentos": [
+      {
+        "cartera": 23,
+        "cubiertos": 1,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 1090,
+            "cliente_nombre": "ALLENDE NICOLAS HERNAN",
+            "localidad": "San Lorenzo",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 27,
+            "cliente_nombre": "FONTANA LUCHESI MELINA",
+            "localidad": "Mina Clavero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1189,
+            "cliente_nombre": "GOMEZ ROMERO ELBA GUADALUPE",
+            "localidad": "Panaholma",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7963,
+            "cliente_nombre": "GUZMAN HUGO CLAUDIO",
+            "localidad": "Nono",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8053,
+            "cliente_nombre": "IRRAZABAL EDGARDO JOSE ANTONIO",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7913,
+            "cliente_nombre": "LOPEZ EDITH GABRIELA",
+            "localidad": "Mina Clavero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8040,
+            "cliente_nombre": "MIDEY RUTH ELIZABETH",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1316,
+            "cliente_nombre": "MJE SAS",
+            "localidad": "Mina Clavero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7909,
+            "cliente_nombre": "NAHUELANCA GABRIELA DAIANA ",
+            "localidad": "Mina Clavero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7928,
+            "cliente_nombre": "OLMEDO DIEGO IVAN ",
+            "localidad": "Mina Clavero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7888,
+            "cliente_nombre": "PEREYRA PABLO NAHUEL",
+            "localidad": "Los Hornillos",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 580,
+            "cliente_nombre": "PINO XIMENA ANAHI ",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7964,
+            "cliente_nombre": "QUINTERO CHAVES FRANCO EMANUEL ",
+            "localidad": "Nono",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 70,
+            "cliente_nombre": "RIOS LUCRECIA",
+            "localidad": "Mina Clavero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8029,
+            "cliente_nombre": "ROJAS MELISA MARIBEL 63",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 588,
+            "cliente_nombre": "SOSA SOFIA LUISINA",
+            "localidad": "Mina Clavero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 71,
+            "cliente_nombre": "TORRES GUIDO ALEXIS",
+            "localidad": "Mina Clavero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7947,
+            "cliente_nombre": "VAZQUEZ CAROLINA EDITH MABEL",
+            "localidad": "Mina Clavero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7945,
+            "cliente_nombre": "VAZQUEZ CRSTIAN DANIEL ",
+            "localidad": "Mina Clavero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7877,
+            "cliente_nombre": "VERON NASARIA ",
+            "localidad": "Villa de las Rosas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7999,
+            "cliente_nombre": "WALTER IVAN ROMERO",
+            "localidad": "SAN CARLOS",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7921,
+            "cliente_nombre": "ZORI NICOLAS ALBERTO 2",
+            "localidad": "Mina Clavero",
+            "umbral": 6
+          }
+        ],
+        "pct_cobertura": 0.0435,
+        "segmento": "AUTOSERVICIO",
+        "sin_cobertura": 22
+      },
+      {
+        "cartera": 7,
+        "cubiertos": 0,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 402,
+            "cliente_nombre": "CONSUMIDOR FINAL",
+            "localidad": "La Paz",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1126,
+            "cliente_nombre": "FERREYRA CESAR ADRIAN",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1114,
+            "cliente_nombre": "MAGLIANESI JUAN AGUSTIN",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 570,
+            "cliente_nombre": "MARCO DAMIAN VALLEJO",
+            "localidad": "Villa de las Rosas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 917,
+            "cliente_nombre": "QUIROGA LUCIANO DANIEL ",
+            "localidad": "Mina Clavero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 436,
+            "cliente_nombre": "ROSSI BRUNO JAVIER",
+            "localidad": "Villa de las Rosas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7934,
+            "cliente_nombre": "ZAMORA BUSTOS NICOLAS EMILIANO",
+            "localidad": "Mina Clavero",
+            "umbral": 6
+          }
+        ],
+        "pct_cobertura": 0.0,
+        "segmento": "ON_PREMISE",
+        "sin_cobertura": 7
+      },
+      {
+        "cartera": 271,
+        "cubiertos": 2,
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 7883,
+            "cliente_nombre": " BAYARRI SERGIO ALEJANDRO",
+            "localidad": "Las Tapias",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7953,
+            "cliente_nombre": " LOPEZ ESTER DEL VALLE",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 382,
+            "cliente_nombre": " LUJAN DEBORA ADRIANA",
+            "localidad": "Los Hornillos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 445,
+            "cliente_nombre": " ZARATE MARIA LUISA",
+            "localidad": "Los Cerrillos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7966,
+            "cliente_nombre": "ADUR CECILIA LUJAN NOEMI",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7982,
+            "cliente_nombre": "AGUERO ROXANA ",
+            "localidad": "Panaholma",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 704,
+            "cliente_nombre": "AGUILERA LAURA BEATRIZ ",
+            "localidad": "Las Tapias",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7924,
+            "cliente_nombre": "AGUILERA MAXIMILIANO",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7891,
+            "cliente_nombre": "ALLENDE MARIANO GABRIEL",
+            "localidad": "Los Hornillos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7828,
+            "cliente_nombre": "ALLENDE SILVINA NATALIA",
+            "localidad": "Ambul",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7840,
+            "cliente_nombre": "ALTAMIRANO EDGAR",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7932,
+            "cliente_nombre": "ALTAMIRANO LEONARDO DANIEL",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7858,
+            "cliente_nombre": "ALTAMIRANO MARIA BELEN",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8036,
+            "cliente_nombre": "ALTAMIRANO OSCAR",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7908,
+            "cliente_nombre": "ALVAREZ DAMIAN OSCAR",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7904,
+            "cliente_nombre": "ALVAREZ OMAR RUBEN 63",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7851,
+            "cliente_nombre": "ANDRADA SILVIA INES",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7846,
+            "cliente_nombre": "ARGAÑARAZ MARIEL ALEJANDRA",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7996,
+            "cliente_nombre": "ARIAS JAVIER ",
+            "localidad": "San Carlos Minas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7915,
+            "cliente_nombre": "BARBOSA DANIEL CARLOS",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8031,
+            "cliente_nombre": "BARCO LUCIANO",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7980,
+            "cliente_nombre": "BARRERAS MATEO",
+            "localidad": "Panaholma",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8052,
+            "cliente_nombre": "BARROS ANDREA FABIANA ",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7843,
+            "cliente_nombre": "BAZAN LUCILA MABEL",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 795,
+            "cliente_nombre": "BECERRA CATALINA DEL ROSARIO",
+            "localidad": "Las Tapias",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7865,
+            "cliente_nombre": "BECERRA MARTIN ",
+            "localidad": "La Ramada",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8028,
+            "cliente_nombre": "BENEGAS ELIANA 63",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8047,
+            "cliente_nombre": "BENEGAS JOAQUIN KEVIN",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7918,
+            "cliente_nombre": "BENEGAS MARIA ANTONIA",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8035,
+            "cliente_nombre": "BENEGAS SERGIO RUBEN",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 514,
+            "cliente_nombre": "BERTAMONI CONRADO ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7937,
+            "cliente_nombre": "BONCHE S.A.S.",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7831,
+            "cliente_nombre": "BOTTINO VALERIA LUCRECIA 63",
+            "localidad": "Arroyo Los Patos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7880,
+            "cliente_nombre": "BRAULIO CEFERINO BUSTOS",
+            "localidad": "Las Tapias",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8038,
+            "cliente_nombre": "BRIZUELA MARIA ",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7973,
+            "cliente_nombre": "BUFFA ANA PAULA ",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8614,
+            "cliente_nombre": "BUSTAMANTE JUAN ",
+            "localidad": "San Vicente",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8027,
+            "cliente_nombre": "BUSTOS LUCIANA 63",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7956,
+            "cliente_nombre": "CAMPOS HECTOR CELSO",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7952,
+            "cliente_nombre": "CAMPOS MALANIE PRISCILA ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7879,
+            "cliente_nombre": "CAPORELLI FEDERICO PEDRO",
+            "localidad": "Las Tapias",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7940,
+            "cliente_nombre": "CARLOMAGNO GERARDO ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8215,
+            "cliente_nombre": "CARRANZA VERONICA CECILIA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8041,
+            "cliente_nombre": "CARRIZO MIGUEL ",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7873,
+            "cliente_nombre": "CASAS JIJON MELINE",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 381,
+            "cliente_nombre": "CASTILLO NANCY NOEMI ",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7998,
+            "cliente_nombre": "CASTRO PABLO ",
+            "localidad": "San Carlos Minas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8023,
+            "cliente_nombre": "CHARRAS ANA CARINA ",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 582,
+            "cliente_nombre": "CHEN MIN ",
+            "localidad": "Los Hornillos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7886,
+            "cliente_nombre": "CHEN XINGLIANG",
+            "localidad": "Los Hornillos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7968,
+            "cliente_nombre": "CHEN ZHUMING",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8062,
+            "cliente_nombre": "CLADERA ROBERTO ",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8019,
+            "cliente_nombre": "COMUNA DE SAN VICENTE",
+            "localidad": "San Vicente",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 822,
+            "cliente_nombre": "CONEJERO GASTON ANDRES ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7887,
+            "cliente_nombre": "CORDOBA GABRIEL ",
+            "localidad": "Los Hornillos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7954,
+            "cliente_nombre": "CORNEJO ANA LAURA",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7925,
+            "cliente_nombre": "CORNEJO CRISTIAN ARIEL",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 645,
+            "cliente_nombre": "CORNEJO MARIO OSVALDO ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8045,
+            "cliente_nombre": "CUELLO ALEJANDRO ALBERTO",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7938,
+            "cliente_nombre": "CUELLO KEVIN",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1111,
+            "cliente_nombre": "CUELLO VERONICA GABRIELA",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1177,
+            "cliente_nombre": "DALBORGO S.A.S",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1112,
+            "cliente_nombre": "DE LA VEGA LIDIA ALICIA",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1210,
+            "cliente_nombre": "DEL VALLE VIVIANA",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7839,
+            "cliente_nombre": "DOGLIO CRISTIAN",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8039,
+            "cliente_nombre": "DOMINGUEZ CABRERA SANDRA NOEMI",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7870,
+            "cliente_nombre": "DOMINGUEZ GUADALUPE ESTEFANIA ",
+            "localidad": "Las Rabonas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7975,
+            "cliente_nombre": "DOMINGUEZ PABLO",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8012,
+            "cliente_nombre": "DOMINGUEZ SANDRA ",
+            "localidad": "San Lorenzo",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7871,
+            "cliente_nombre": "EDGARDO GUILLERMO CORNEC",
+            "localidad": "Las Rabonas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8033,
+            "cliente_nombre": "ESCALANTE VANESA ANALIA",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7898,
+            "cliente_nombre": "ESDH SA",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7995,
+            "cliente_nombre": "ESTEVES MIGUEL ",
+            "localidad": "San Carlos Minas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7912,
+            "cliente_nombre": "FANY ANDREA PEREYRA",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7950,
+            "cliente_nombre": "FARIAS GUSTAVO FABIAN",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 954,
+            "cliente_nombre": "FAVIO ENRIQUE BAZAN",
+            "localidad": "Salsacate",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7986,
+            "cliente_nombre": "FAZEKAS LORENCIA ",
+            "localidad": "Salsacate",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7900,
+            "cliente_nombre": "FERNANDEZ ROQUE 63",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7853,
+            "cliente_nombre": "FERNANDEZ ROQUE WALTER",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 55,
+            "cliente_nombre": "FERRERO FABIA EZEQUIEL",
+            "localidad": "Los Hornillos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7841,
+            "cliente_nombre": "FERREYRA CESAR ADRIAN",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7977,
+            "cliente_nombre": "FERREYRA MANUEL",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8030,
+            "cliente_nombre": "FIAMBRERIA MARCOLETA",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1356,
+            "cliente_nombre": "FLORES ALICIA ADELA",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1175,
+            "cliente_nombre": "FONSECA DANIELA CELESTE",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1344,
+            "cliente_nombre": "FONSECA MARIA ESTER",
+            "localidad": "Las Calles",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 489,
+            "cliente_nombre": "GABRIELA ALEJANDRA AGUERO",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8126,
+            "cliente_nombre": "GALDEANO ANA GABRIELA",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7830,
+            "cliente_nombre": "GALLARDO ALEJANDRA ",
+            "localidad": "Ambul",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7936,
+            "cliente_nombre": "GALLARDO JESICA MABEL",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7935,
+            "cliente_nombre": "GALLARDO JESICA MABEL ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7899,
+            "cliente_nombre": "GALLARDO JESICA MABEL 63",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7930,
+            "cliente_nombre": "GALLARDO MARIA CLAUDIA ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8046,
+            "cliente_nombre": "GALLARDO TOMAS ALEJANDRO",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 846,
+            "cliente_nombre": "GARNICA CARLOS ALBERTO ",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7983,
+            "cliente_nombre": "GARRIDO ANTONIA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7905,
+            "cliente_nombre": "GATICA ENZO EMILIANO 63",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 569,
+            "cliente_nombre": "GATTO HECTOR RUBEN",
+            "localidad": "Las Rabonas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7974,
+            "cliente_nombre": "GELPI FEDORCZUK HECTOR ESTEBAN ",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7990,
+            "cliente_nombre": "GENTA HECTOR REINALDO ",
+            "localidad": "Salsacate",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7991,
+            "cliente_nombre": "GENTA MONICA DIANA ",
+            "localidad": "Salsacate",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 867,
+            "cliente_nombre": "GIMENEZ BRUSSA JULIO RODRIGO",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7868,
+            "cliente_nombre": "GODOY LUCIANO",
+            "localidad": "Las Chacras",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7978,
+            "cliente_nombre": "GOMEZ ALDANA ",
+            "localidad": "Panaholma",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8037,
+            "cliente_nombre": "GOMEZ GABRIELA ELIZABETH",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7931,
+            "cliente_nombre": "GOMEZ MIGUEL",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7922,
+            "cliente_nombre": "GOMEZ SANDRA",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7943,
+            "cliente_nombre": "GOMEZ TERESA ADRIANA ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7836,
+            "cliente_nombre": "GONZALEZ OSVALDO 63",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7845,
+            "cliente_nombre": "GUARDIA MATIAS ",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7911,
+            "cliente_nombre": "GUERRERO PABLO LUCIANO",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7854,
+            "cliente_nombre": "GUSTAVO JAVIER ESPOSITO",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7837,
+            "cliente_nombre": "GUZMAN MARIA",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7969,
+            "cliente_nombre": "HAUKE CLAUDIA ALEJANDRA ",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8042,
+            "cliente_nombre": "HEREDIA JESSICA ",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7981,
+            "cliente_nombre": "HERNANDEZ CLAUDIO ",
+            "localidad": "Panaholma",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7878,
+            "cliente_nombre": "HERRERA GUSTAVO ",
+            "localidad": "Las Tapias",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7848,
+            "cliente_nombre": "HUANG CHUNHUA",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7850,
+            "cliente_nombre": "HUMBERTO JAVIER FERNANDO ALTAMIRANO",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7890,
+            "cliente_nombre": "JONATHAN JOSE DELGADO",
+            "localidad": "Los Hornillos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 672,
+            "cliente_nombre": "JOSE IGNACIOHAUKE FONSECA",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7944,
+            "cliente_nombre": "JULIO RICARDO VAZQUEZ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8057,
+            "cliente_nombre": "KELLER PEDRO ANTONIO",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7914,
+            "cliente_nombre": "LACAVA GUILLERMO ALFREDO",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7958,
+            "cliente_nombre": "LASPINA NELIDA BEATRIZ ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 478,
+            "cliente_nombre": "LEON MATEO",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 708,
+            "cliente_nombre": "LEON MICAELA LILIANA ",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7979,
+            "cliente_nombre": "LEYRA GUSTAVO FABIAN ",
+            "localidad": "Panaholma",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7919,
+            "cliente_nombre": "LLANES CRISTIAN JORGE",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8050,
+            "cliente_nombre": "LLANOS ALEXIS GASTON",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 908,
+            "cliente_nombre": "LLANTEN VICTOR RAMON EZEQUIEL",
+            "localidad": "San Lorenzo",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8051,
+            "cliente_nombre": "LOPEZ ANGEL ",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8026,
+            "cliente_nombre": "LOPEZ ANGEL 63",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1121,
+            "cliente_nombre": "LOPEZ BARRERA TOBIAS",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7951,
+            "cliente_nombre": "LOPEZ EZEQUIEL FERNANDO",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 412,
+            "cliente_nombre": "LOPEZ HUGO HERNAN ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7971,
+            "cliente_nombre": "LOPEZ JOSE BALTAZAR ",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 636,
+            "cliente_nombre": "LOPEZ MOLINA ANDREA ANABEL ",
+            "localidad": "Quebrada de los Pozos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7933,
+            "cliente_nombre": "LOPEZ OSVALDO BALDOMERO",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8048,
+            "cliente_nombre": "LOPEZ RAUL ROLANDO",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7866,
+            "cliente_nombre": "LUCERO ANDRES ",
+            "localidad": "Las Chacras",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 641,
+            "cliente_nombre": "LUJAN JOSE GABRIEL",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7920,
+            "cliente_nombre": "LUJAN LEANDRO EZEQUIEL",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8064,
+            "cliente_nombre": "LUNA MARIA DE LOS ANGELES ",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 621,
+            "cliente_nombre": "MACCHIAVELLO FEDERICO EZEQUIEL ",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7859,
+            "cliente_nombre": "MACHUCA LORENA SOLEDAD ",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8236,
+            "cliente_nombre": "MAGRIS RITA",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8238,
+            "cliente_nombre": "MAIDANA LAURA BEATRIZ",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7970,
+            "cliente_nombre": "MALDONADO BRIANA AILEN",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8013,
+            "cliente_nombre": "MALDONADO LEONARDO DAVID",
+            "localidad": "San Lorenzo",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8233,
+            "cliente_nombre": "MALLEA LUCAS MATIAS  63",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 632,
+            "cliente_nombre": "MAMANI CARMEN DEL ROSARIO ",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7955,
+            "cliente_nombre": "MANZANEL ARIEL SEBASTIAN",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7906,
+            "cliente_nombre": "MARCHETTI LUIS EMILIO  63",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7855,
+            "cliente_nombre": "MARIA FERNANDA COSTARELLI GONZALEZ",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7829,
+            "cliente_nombre": "MARIA GUILLERMINA RODRIGUEZ",
+            "localidad": "Ambul",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8000,
+            "cliente_nombre": "MARIO NICOLAS PAREDES",
+            "localidad": "San Carlos Minas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 341,
+            "cliente_nombre": "MARTINEZ CECILIA LORENA ",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7959,
+            "cliente_nombre": "MARTINEZ ROMERO JESUS ARIEL ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8024,
+            "cliente_nombre": "MARZO ANGEL HERNANDO 63",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7927,
+            "cliente_nombre": "MASIERO WALTER",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7849,
+            "cliente_nombre": "MATIAS ALEJANDRO LOYOLA",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7856,
+            "cliente_nombre": "MAURICIO LEONARDO NAVARRO",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7997,
+            "cliente_nombre": "MEJUCA ARGENTINA ",
+            "localidad": "San Carlos Minas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7989,
+            "cliente_nombre": "MELIAN CLAUDIA ",
+            "localidad": "Salsacate",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1274,
+            "cliente_nombre": "MENSEGUEZ LAURA JANI",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7949,
+            "cliente_nombre": "MERLO CINTIA CAROLINA",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8061,
+            "cliente_nombre": "MIRIAM ESTER FERRERO",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 1.0,
+            "cliente_id": 330,
+            "cliente_nombre": "MJE S.A.S.",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1176,
+            "cliente_nombre": "MOLEKA S.A.S",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8044,
+            "cliente_nombre": "MOLINA CESAR EMANUEL ",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1120,
+            "cliente_nombre": "MOLINA RECALDE CAMILA",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1140,
+            "cliente_nombre": "MOLINA RECALDE CAMILA",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 904,
+            "cliente_nombre": "MONTOYA PAMELA SOLEDAD",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7860,
+            "cliente_nombre": "MORAN MARIA ANTONELLA ",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8058,
+            "cliente_nombre": "MORAN MARISA ALEJANDRA ",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 384,
+            "cliente_nombre": "MUNICIPALIDAD DE SAN JOSE",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8202,
+            "cliente_nombre": "MURUA PATRICIA NANCY",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1123,
+            "cliente_nombre": "MURUA SARA BEATRIZ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7832,
+            "cliente_nombre": "MURUA VERONICA",
+            "localidad": "Arroyo Los Patos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7884,
+            "cliente_nombre": "MUÑOZ HECTOR MANUEL",
+            "localidad": "Las Tapias",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7881,
+            "cliente_nombre": "MUÑOZ NORMA ",
+            "localidad": "Las Tapias",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7926,
+            "cliente_nombre": "NAYER HERNAN",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7835,
+            "cliente_nombre": "NEIFERT JUAN GABRIEL ",
+            "localidad": "Arroyo Los Patos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1116,
+            "cliente_nombre": "NIEVAS MARIA BELEN",
+            "localidad": "Arroyo Los Patos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7897,
+            "cliente_nombre": "NUÐEZ CARLOS JULIO 63",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7948,
+            "cliente_nombre": "OCHOA FRANSISCO NICOMEDES ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 193,
+            "cliente_nombre": "OLMEDO DIEGO IVAN",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 649,
+            "cliente_nombre": "OLMEDO IVANA MARICEL ",
+            "localidad": "Quebrada de los Pozos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7875,
+            "cliente_nombre": "OVIEDO ADELA ",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8237,
+            "cliente_nombre": "OVIEDO DANTE MARCELO",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8060,
+            "cliente_nombre": "OVIEDO JOSE ALBERTO",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7976,
+            "cliente_nombre": "OVIEDO LILIANA INES ",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8235,
+            "cliente_nombre": "OVIEDO MARCOS GABRIEL",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8231,
+            "cliente_nombre": "OVIERO CLAUDIA ALEJANDRA",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7834,
+            "cliente_nombre": "PABLO BECERRA",
+            "localidad": "Arroyo Los Patos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7994,
+            "cliente_nombre": "PABLO RODRIGO FRIAS",
+            "localidad": "San Carlos Minas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8002,
+            "cliente_nombre": "PAIZ ARMANDO GUSTAVO",
+            "localidad": "San Carlos Minas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7967,
+            "cliente_nombre": "PALLERO MARIA DE LOS ANGELES",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1102,
+            "cliente_nombre": "PARIS VALERIA",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1236,
+            "cliente_nombre": "PEDERNERA GUSTAVO FABIAN",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 737,
+            "cliente_nombre": "PEDERNERA JOSE DAVID ",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8043,
+            "cliente_nombre": "PEDRO JOSE BOCANEGRA",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7961,
+            "cliente_nombre": "PERASSI CAROLINA RITA DEL VALLE 63",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 522,
+            "cliente_nombre": "PEREYRA PABLO NICOLAS",
+            "localidad": "Arroyo Los Patos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 882,
+            "cliente_nombre": "PEREYRA SANTOS GASTON",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7903,
+            "cliente_nombre": "PEREYRA SILVIA INES 63",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8055,
+            "cliente_nombre": "PEREZ ALEJANDRA ",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1230,
+            "cliente_nombre": "PEREZ BRITOS ANA FRANCISCA",
+            "localidad": "Ambul",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 424,
+            "cliente_nombre": "PERRONE NELSON DARIO ",
+            "localidad": "Arroyo Los Patos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 186,
+            "cliente_nombre": "PINO MARIA VICTORIA",
+            "localidad": "Los Hornillos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7901,
+            "cliente_nombre": "PINO XIMENA ANAHI   63",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7957,
+            "cliente_nombre": "PLAZA FERNANDEZ JOEL SACARIAS ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7833,
+            "cliente_nombre": "PONCE CESAR DAMIAN",
+            "localidad": "Arroyo Los Patos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8032,
+            "cliente_nombre": "PONCE SILVIA",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1079,
+            "cliente_nombre": "PORRO CABRERA HORACIO IVAN",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 774,
+            "cliente_nombre": "PORRO CABRERA HORACIO IVAN",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7965,
+            "cliente_nombre": "PUESTO VIEJO SRL",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7852,
+            "cliente_nombre": "QUINTERO ARIANA",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7907,
+            "cliente_nombre": "RACCUGLIA RUBEN GEREMIAS 63",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7929,
+            "cliente_nombre": "RAMIREZ CARMEN GRACIELA",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7867,
+            "cliente_nombre": "RAMIREZ ELSA ",
+            "localidad": "Las Chacras",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8232,
+            "cliente_nombre": "RAMIREZ PABLO EZEQUIEL",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1101,
+            "cliente_nombre": "RAMOS MAYRA AILEN",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8003,
+            "cliente_nombre": "RIOS LAURA DANIELA",
+            "localidad": "San Carlos Minas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 72,
+            "cliente_nombre": "RIOS LUCRECIA-SUCURSAL",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 354,
+            "cliente_nombre": "RIVAROLA EDGARDO GUILLERMO ",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1115,
+            "cliente_nombre": "RIVAROLA JESUS ORLANDO",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7838,
+            "cliente_nombre": "RIVAROLA RICARDO",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8054,
+            "cliente_nombre": "RIVAROLA SANDRA VANESA ",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 866,
+            "cliente_nombre": "RODRIGUEZ FISHER CAROLINA DEL MILAGRO ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8034,
+            "cliente_nombre": "RODRIGUEZ FLAVIA SOLEDAD",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7842,
+            "cliente_nombre": "RODRIGUEZ JUAN ORLANDO ",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7844,
+            "cliente_nombre": "RODRIGUEZ SUSANA",
+            "localidad": "La Paz",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7876,
+            "cliente_nombre": "ROMERO CAMILA ",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 425,
+            "cliente_nombre": "ROMERO EMILCE ",
+            "localidad": "Cruz de Caña",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7972,
+            "cliente_nombre": "ROMO VERONICA ANALIA",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7942,
+            "cliente_nombre": "ROSANA ELIZABETH BRUSCHI",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7827,
+            "cliente_nombre": "RUGGIERI LUCIANA ",
+            "localidad": "Santa María de Punilla",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 574,
+            "cliente_nombre": "SALAS DAINA AIME",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1110,
+            "cliente_nombre": "SANCHEZ ELSA DANIELA",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8056,
+            "cliente_nombre": "SANCHEZ IVAN ",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7946,
+            "cliente_nombre": "SEGOVIA JAVIER ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7987,
+            "cliente_nombre": "SERGIO RAUL BRITO",
+            "localidad": "Salsacate",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8001,
+            "cliente_nombre": "SOSA ADA MARIA",
+            "localidad": "San Carlos Minas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7992,
+            "cliente_nombre": "SOSA EMILIANO NICOLAS ",
+            "localidad": "Salsacate",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 93,
+            "cliente_nombre": "SOSA MARIA BELEN",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 372,
+            "cliente_nombre": "SOSA RAMIRO MANUEL ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 481,
+            "cliente_nombre": "SOSA SANDRA MARCELA",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1232,
+            "cliente_nombre": "SUAYA JOEL ALEJANDRO",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8067,
+            "cliente_nombre": "SUMI S.A.",
+            "localidad": "Villa Dolores",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1343,
+            "cliente_nombre": "TEJEDA TALIA SOL",
+            "localidad": "Las Calles",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 270,
+            "cliente_nombre": "TOLEDO ISMAEL VICTORIANO",
+            "localidad": "Salsacate",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1087,
+            "cliente_nombre": "TORRES PEDRO JOSEMIR",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1088,
+            "cliente_nombre": "TORRES PEDRO JOSEMIR",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 256,
+            "cliente_nombre": "TROBIANO LOURDES BEATRIZ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7916,
+            "cliente_nombre": "VAZQUEZ JULIO RICARDO",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7910,
+            "cliente_nombre": "VAZQUEZ MAXIMILIANO",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7872,
+            "cliente_nombre": "VELAZQUEZ MARTA ELENA",
+            "localidad": "Villa de las Rosas",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7917,
+            "cliente_nombre": "VILLAREAL DARIO",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8025,
+            "cliente_nombre": "VILLARREAL DARIO  63",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 357,
+            "cliente_nombre": "YURRITA LAURA SOLEDAD ",
+            "localidad": "Nono",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1172,
+            "cliente_nombre": "ZALAZAR MIRTA NOEMI",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7993,
+            "cliente_nombre": "ZAPATA RUTH JANET ",
+            "localidad": "Salsacate",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7941,
+            "cliente_nombre": "ZARATE JOSE ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 461,
+            "cliente_nombre": "ZAZU EMANUEL DAVID ",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7902,
+            "cliente_nombre": "ZAZU EMANUEL DAVID 63",
+            "localidad": "Mina Clavero",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7985,
+            "cliente_nombre": "ZUCARIA JORGE RAUL",
+            "localidad": "Quebrada de los Pozos",
+            "umbral": 3
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7988,
+            "cliente_nombre": "ZULMA NANCY ZAMORA",
+            "localidad": "Salsacate",
+            "umbral": 3
+          }
+        ],
+        "pct_cobertura": 0.0074,
+        "segmento": "TRADICIONAL",
+        "sin_cobertura": 269
+      }
+    ],
+    "vendedor_id": "V7"
+  }
+}
