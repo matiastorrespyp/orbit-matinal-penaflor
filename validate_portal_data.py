@@ -48,6 +48,16 @@ import tempfile
 import datetime
 from pathlib import Path
 
+# La consola de Windows (cp1252) no puede encodear algunos glifos (p.ej. ✔) y el print de
+# cierre rompía con UnicodeEncodeError DESPUÉS de haber escrito ya los reportes, devolviendo
+# exit code ≠ 0 aunque la validación fuera correcta. Reconfigurar stdout/stderr a UTF-8
+# tolerante elimina el crash sin cambiar ningún dato ni la lógica de validación.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 BASE = Path(__file__).resolve().parent
 OUT_DIR = BASE / "web_data"
 MANIFEST = OUT_DIR / "manifest.json"

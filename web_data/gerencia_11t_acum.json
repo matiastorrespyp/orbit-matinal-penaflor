@@ -1,21 +1,21 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/gerencia/11t_acum",
-    "generated_at": "2026-07-06T17:54:18-03:00",
+    "generated_at": "2026-07-07T17:06:33-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_11t_acum.csv"
     ],
     "http_status": 200,
     "count": 5,
     "count_type": "dict_keys",
-    "checksum_sha256": "058f52941e1607a2790d5877f9f6e2976d6fbacea797b5690871424cce2f29d5",
+    "checksum_sha256": "9479604d842f78e65af89b77a9aaf942efab603d3cb77909101327a17477ada0",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
   "payload": {
     "fecha_calculo": "2026-07-06",
     "fuente": "mod_11t_acum.csv",
-    "generado_en": "2026-07-06 17:54:18",
+    "generado_en": "2026-07-07 17:06:33",
     "por_marca": [
       {
         "cartera": 1840,

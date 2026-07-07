@@ -1,10 +1,10 @@
 {
   "phase": "fase-1-validation",
-  "generated_at": "2026-07-06T18:05:06-03:00",
+  "generated_at": "2026-07-07T17:12:29-03:00",
   "certificado": true,
   "isolation": {
-    "orbit_db_path": "C:\\Users\\usuario\\AppData\\Local\\Temp\\orbit_fase1_val_ayzqbab8\\throwaway.db",
-    "orbit_plan_backup_dir": "C:\\Users\\usuario\\AppData\\Local\\Temp\\orbit_fase1_val_ayzqbab8\\plan",
+    "orbit_db_path": "C:\\Users\\usuario\\AppData\\Local\\Temp\\orbit_fase1_val_1pu2004l\\throwaway.db",
+    "orbit_plan_backup_dir": "C:\\Users\\usuario\\AppData\\Local\\Temp\\orbit_fase1_val_1pu2004l\\plan",
     "gsheets_enabled": false,
     "nota": "orbit.db de producción y Google Sheets NO tocados."
   },
@@ -13,8 +13,8 @@
   ],
   "nota_meta": "El bloque _meta de cada archivo se excluye por diseño (no es payload productivo).",
   "totals": {
-    "validated": 44,
-    "ok": 44,
+    "validated": 48,
+    "ok": 48,
     "diff": 0,
     "http_errors": 0,
     "missing_files": 0
@@ -410,6 +410,42 @@
     {
       "endpoint": "/api/gerencia/11t_vendedor?vendedor=V10",
       "file": "web_data/gerencia_11t_vendedor__V10.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/cobertura_acum_faltantes?segmento=AUTOSERVICIO",
+      "file": "web_data/gerencia_cobertura_acum_faltantes__autoservicio.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/cobertura_acum_faltantes?segmento=MAYORISTA",
+      "file": "web_data/gerencia_cobertura_acum_faltantes__mayorista.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/cobertura_acum_faltantes?segmento=ON_PREMISE",
+      "file": "web_data/gerencia_cobertura_acum_faltantes__on_premise.json",
+      "status": "OK",
+      "http_status": 200,
+      "num_diffs": 0,
+      "diff_sample": [],
+      "error": null
+    },
+    {
+      "endpoint": "/api/gerencia/cobertura_acum_faltantes?segmento=TRADICIONAL",
+      "file": "web_data/gerencia_cobertura_acum_faltantes__tradicional.json",
       "status": "OK",
       "http_status": 200,
       "num_diffs": 0,

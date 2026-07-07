@@ -1,20 +1,20 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/gerencia/11t_vendedor?vendedor=V6",
-    "generated_at": "2026-07-06T17:54:20-03:00",
+    "generated_at": "2026-07-07T17:06:36-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_11_titulares.csv"
     ],
     "http_status": 200,
     "count": 6,
     "count_type": "dict_keys",
-    "checksum_sha256": "d467e3de0e8e449f2d229310d78c185109777812eccd624346ab0c8fc89a3406",
+    "checksum_sha256": "f3ea0e80e74b4619d45c55e8c76f04e96b63023774b714cac3b1296d83570661",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
   "payload": {
     "fuente": "mod_11_titulares.csv",
-    "generado_en": "2026-07-06 17:54:20",
+    "generado_en": "2026-07-07 17:06:36",
     "marcas": [
       {
         "con": 1,

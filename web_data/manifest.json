@@ -1,10 +1,10 @@
 {
   "phase": "fase-1-precompute",
-  "generated_at": "2026-07-06T17:54:20-03:00",
+  "generated_at": "2026-07-07T17:06:37-03:00",
   "descripcion": "Capa PARALELA de precómputo (Grupo A / bajo riesgo). JSON para comparar contra la salida viva de /api/...; NO usados en producción. server_orbit.py NO modificado.",
   "isolation": {
-    "orbit_db_path": "C:\\Users\\usuario\\AppData\\Local\\Temp\\orbit_fase1_we0jq_zh\\throwaway.db",
-    "orbit_plan_backup_dir": "C:\\Users\\usuario\\AppData\\Local\\Temp\\orbit_fase1_we0jq_zh\\plan",
+    "orbit_db_path": "C:\\Users\\usuario\\AppData\\Local\\Temp\\orbit_fase1_pwn5dh0c\\throwaway.db",
+    "orbit_plan_backup_dir": "C:\\Users\\usuario\\AppData\\Local\\Temp\\orbit_fase1_pwn5dh0c\\plan",
     "gsheets_enabled": false,
     "nota": "orbit.db de producción y Google Sheets NO tocados."
   },
@@ -17,9 +17,9 @@
     "V9",
     "V10"
   ],
-  "total_generados": 44,
+  "total_generados": 48,
   "total_errores": 0,
-  "duracion_seg": 5.25,
+  "duracion_seg": 5.03,
   "entries": [
     {
       "file": "web_data/gastos_accion.json",
@@ -27,7 +27,7 @@
       "http_status": 200,
       "count": 6,
       "count_type": "dict_keys",
-      "checksum_sha256": "b035475bf2eaba7b0073d8cd6502e289b35300d2acb661aeba61df827daecc9b",
+      "checksum_sha256": "156370beef52fc99168f8bab0d21c0c4d4a4445c8d4dbfa5cf1e76278e085046",
       "source_files": [
         "04_DATASETS_ORBIT/mod_gastos_accion.csv"
       ]
@@ -49,7 +49,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "818452f70622ff316f18e461d0a53f31d069a1772d62eee05fe5d77ce1242c83",
+      "checksum_sha256": "02cce54a5cea6018ed9a75dfc82be83634995ae0d2e8d84eb8b09453d63ac3de",
       "source_files": [
         "04_DATASETS_ORBIT/mod_planes_as.csv",
         "04_DATASETS_ORBIT/mod_sincargos_envios.csv"
@@ -61,7 +61,7 @@
       "http_status": 200,
       "count": 6,
       "count_type": "dict_keys",
-      "checksum_sha256": "98105b86d16dc027b22e3fe0398712e9d20c886cb2a37b1a4fbd88ca912f259c",
+      "checksum_sha256": "645d778f6c583d60729de7bf67e841430cf1bf263670d712a90db4fedb99031b",
       "source_files": [
         "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
       ]
@@ -72,7 +72,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "214bf5825131b82064cb44c8b701874389b1e2561f8c27ea996f26f51a660924",
+      "checksum_sha256": "543a5b59c0f5581aed17a794afa9525cd2ca3997fdcc449da8b37e500181d209",
       "source_files": [
         "04_DATASETS_ORBIT/mod_11_titulares.csv"
       ]
@@ -83,7 +83,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "058f52941e1607a2790d5877f9f6e2976d6fbacea797b5690871424cce2f29d5",
+      "checksum_sha256": "9479604d842f78e65af89b77a9aaf942efab603d3cb77909101327a17477ada0",
       "source_files": [
         "04_DATASETS_ORBIT/mod_11t_acum.csv"
       ]
@@ -94,7 +94,7 @@
       "http_status": 200,
       "count": 2,
       "count_type": "dict_keys",
-      "checksum_sha256": "1211578c900069e46959604010b2283569676a678f9253eea91520af2d59d73d",
+      "checksum_sha256": "91887b0affb5d03d9940f129f7c13ab34b025a535f1da26f73a4bad28c93bb74",
       "source_files": [
         "04_DATASETS_ORBIT/clientes_dia.csv"
       ]
@@ -105,7 +105,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "973983ec1cf8e65bcd44689f25ab18f0efecf7f82efb6c251e606d7e1b252a5f",
+      "checksum_sha256": "ccd0a0e5eda465ab2d0468a25de1991b74fc135809ae851259c33e42f0b986d9",
       "source_files": [
         "04_DATASETS_ORBIT/mod_cobertura_acum.csv"
       ]
@@ -116,7 +116,7 @@
       "http_status": 200,
       "count": 2,
       "count_type": "dict_keys",
-      "checksum_sha256": "c9f38a73f4501562e8fa09786afc186347f4e6edd65a69e99812346305c2809b",
+      "checksum_sha256": "f68d311b4d33c94872caa5ed5d578ce644deb87c92fbd6e156b5cba3eacd5a16",
       "source_files": [
         "04_DATASETS_ORBIT/mod_ccc_segmento.csv",
         "09_CONFIG/vendedores_activos.csv"
@@ -128,7 +128,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "6fe78feabd7df3deb010d0c6a4f6df7db50308a63758d5ee2628411ac2d6b877",
+      "checksum_sha256": "1b121feb63a16461e7e184adea19d4bd6a58e041dc07a6599fe4516963c423b2",
       "source_files": [
         "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
         "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
@@ -140,7 +140,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "82eb1d5791e5a96226f8ee0c311ec0a76951cb67900d8d20dcac47b86229a859",
+      "checksum_sha256": "8efbe2084104d12f8bb9e09fea962040dd3673d16a93bf5b019a62eb11398069",
       "source_files": [
         "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
         "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
@@ -152,7 +152,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "69495f70834ea9bc68aebe47d9169295ec512c3eb044025a60bd03e1714286c5",
+      "checksum_sha256": "aee923ae831533dc4d51c0ba60a30f20bf6eaeca42d658fcb5d2c2ebd84f917d",
       "source_files": [
         "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
         "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
@@ -164,7 +164,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "84583582db8a3569a335002845c8299c27e7d370496a7dee547e779bafd20f08",
+      "checksum_sha256": "091da0e04560a770bba65f824c94f660405de89361ead96c1302c2b11ca3a92c",
       "source_files": [
         "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
         "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
@@ -176,7 +176,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "98b9b0f5d5b7d8b23be6ff21dec881038a58741f70a4ed671d713dcefc156b10",
+      "checksum_sha256": "ba45603fad2b329b62aad362b22460444dda7e14e06604c8356a57b4af704756",
       "source_files": [
         "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
         "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
@@ -188,7 +188,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "5a6461cfb6b4d39c3ff95cc6bba921e746f484be01705b6b458df54c34386820",
+      "checksum_sha256": "e40e82d8325f0583105ed1a21fbe42f645e2d37b94f4f1c799b315cbe376b1a4",
       "source_files": [
         "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
         "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
@@ -200,7 +200,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "ad29e7718815a02a38083dd43ee6e9c21b31337dcf043ec829354def9f7a9db9",
+      "checksum_sha256": "040217a4a82fcfdc8a3bb93e64060a1afcd33b7cc1b26daca139b62acc2e9392",
       "source_files": [
         "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
         "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
@@ -212,7 +212,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "a0e7f354713835c100218ae186fa88ea75761193e9bd35e4eacb42a84d96f9b2",
+      "checksum_sha256": "f61cb4a94b6b5bc1e1e15ec51c151a44984d28265b155692dba6611c1552d871",
       "source_files": [
         "04_DATASETS_ORBIT/mod_planes_as.csv"
       ]
@@ -223,7 +223,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "7918241e2fc0a3acf27b8de06a4f52316832c151c1ebf75f2b953a1d66e02e08",
+      "checksum_sha256": "c451312c2ab4820978e3999b50113edd7c562fea8c104f6d5ce4f471793f2c0e",
       "source_files": [
         "04_DATASETS_ORBIT/mod_planes_as.csv"
       ]
@@ -234,7 +234,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "1710371a040b353169f59025dfef89c3590ef89fdc1443907a463de56e8fe964",
+      "checksum_sha256": "8852b44ae60eb357576394a9a704159b346bfdbf2f0c7238afeebd994c2c31b6",
       "source_files": [
         "04_DATASETS_ORBIT/mod_planes_as.csv"
       ]
@@ -245,7 +245,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "6d53be2eac3cad7bf474c75725ba8a7105fbe44989f9daddc7564be785d5ceec",
+      "checksum_sha256": "b6081a5e755ef4f8d4d5afd1c41daa9d48ad6534ccb516930c7be663def5a186",
       "source_files": [
         "04_DATASETS_ORBIT/mod_planes_as.csv"
       ]
@@ -256,7 +256,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "d573a16b3e8d639d6c471f5264725efc9da9edae8705613f1093e16774b26ec9",
+      "checksum_sha256": "d74ac848f0253f3c53795db6fa27b6af0e792fc479c22ef2ea6d939155332f05",
       "source_files": [
         "04_DATASETS_ORBIT/mod_planes_as.csv"
       ]
@@ -267,7 +267,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "d7c42c428cb49d22512fbacc5dd2398d677603ba1ae0de7a05d56fcea99560fc",
+      "checksum_sha256": "fe78280ecefbf3d37f0760e3aced1201f5ff1fae30c659f26d630f5ec6507b89",
       "source_files": [
         "04_DATASETS_ORBIT/mod_planes_as.csv"
       ]
@@ -278,7 +278,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "4f3658be5820ebf9e1762e09fa1cbd587520a5db1ab59faaf05966fbbc077262",
+      "checksum_sha256": "cbaba968a228418fbdd2d6ab09798b385165bdb1cb4b20531c4a36bdda0702fe",
       "source_files": [
         "04_DATASETS_ORBIT/mod_planes_as.csv"
       ]
@@ -289,7 +289,7 @@
       "http_status": 200,
       "count": 6,
       "count_type": "dict_keys",
-      "checksum_sha256": "e1f6946ef0cb38d73c6e06734490df151a7d24bb3f574a77caa6abe898300528",
+      "checksum_sha256": "b4f7510d7e1e838a464d42f70f4bcce19112b554853e89b3090122e324c52608",
       "source_files": [
         "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
       ]
@@ -300,7 +300,7 @@
       "http_status": 200,
       "count": 6,
       "count_type": "dict_keys",
-      "checksum_sha256": "9bafc10275ff7cb722f8e78ebc6b0af2e50fcf25844fe8590b48559613096e91",
+      "checksum_sha256": "2a10ad79cdbc5de734b7ae31d5106f7caea92dbcff9aab3f10107f575d865c2e",
       "source_files": [
         "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
       ]
@@ -311,7 +311,7 @@
       "http_status": 200,
       "count": 6,
       "count_type": "dict_keys",
-      "checksum_sha256": "0010e5f118a12d01427f9ea559aebc64a3045a3a15b0b0a1fdb7572f2259522d",
+      "checksum_sha256": "f3e7c43108b8c2641f188dc38430377c2cea148611de5ffcd730597444497f8c",
       "source_files": [
         "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
       ]
@@ -322,7 +322,7 @@
       "http_status": 200,
       "count": 6,
       "count_type": "dict_keys",
-      "checksum_sha256": "1f9dabf92d99ef88e1078512dc612726442927ca326a950a77f89a9350e00a48",
+      "checksum_sha256": "3d200e75d565223548d28bd227b3893fa5b803455b75f6b72c8903a2b0da4125",
       "source_files": [
         "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
       ]
@@ -333,7 +333,7 @@
       "http_status": 200,
       "count": 6,
       "count_type": "dict_keys",
-      "checksum_sha256": "c9b716a22f66d5fb227317e4e386d3c899fae2ef72b8b16c670c3c8d7cbff7a6",
+      "checksum_sha256": "fc2f7c8b0935eac3928624a98b2267c07ca6de653ba2adb505b4e223185a7e99",
       "source_files": [
         "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
       ]
@@ -344,7 +344,7 @@
       "http_status": 200,
       "count": 6,
       "count_type": "dict_keys",
-      "checksum_sha256": "9e455fe3998d57d802504cb4ced41b17b3e94306292e84d76195a31764bfe131",
+      "checksum_sha256": "cf8c24975213f35f4e595319d7d27643805811cf7292d904731d04d3d44e89d7",
       "source_files": [
         "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
       ]
@@ -355,7 +355,7 @@
       "http_status": 200,
       "count": 6,
       "count_type": "dict_keys",
-      "checksum_sha256": "af9a6b9816c4b95fc54aabad01fa1c6deade86c74a3c6e660ad661d0733fe7ae",
+      "checksum_sha256": "d7c2858208476acd7f9c78a2e497ec9771aeec8dd7ae947d60a5549780b20b1f",
       "source_files": [
         "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
       ]
@@ -366,7 +366,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "578cb1d4d170e8539b919ed01f676560a0d5d513de25bc75f7ba5bc270e5dbb2",
+      "checksum_sha256": "cab042ddc21f445f39471d502ec1d4931c1300041a8bd25ec1eb85f12e037578",
       "source_files": [
         "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv",
         "04_DATASETS_ORBIT/clientes_dia.csv",
@@ -379,7 +379,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "24852f36c2576090871ce9d25e071a2b1870e811f1d1ea12686a91d01eed0e5f",
+      "checksum_sha256": "e7ecbc4498bd065a9dba9554fab2d0092de8e5683f72d23149e48ee701906f32",
       "source_files": [
         "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv",
         "04_DATASETS_ORBIT/clientes_dia.csv",
@@ -392,7 +392,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "275c07f722701f5c8ee9db8c553d72e3535d277babf046975b33ee849c3d2270",
+      "checksum_sha256": "c879329667bff4c770d3f69346bc61575a261b0814b4f911cf4768b03f333a73",
       "source_files": [
         "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv",
         "04_DATASETS_ORBIT/clientes_dia.csv",
@@ -405,7 +405,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "53b4e4087bd259a8d163098babbfc0a9489e160af76cb8acc406fbe58c1ab0d3",
+      "checksum_sha256": "eab58e44b91659588816b177ee65462f6da54b1174fdd7fc39c7dd3c05ec98e2",
       "source_files": [
         "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv",
         "04_DATASETS_ORBIT/clientes_dia.csv",
@@ -418,7 +418,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "83ed9606df71b9d2c3282d7f3e1d5b589e9fc7bc8dea94498102c0b3d936aae2",
+      "checksum_sha256": "c936a8c3e302826b21c7c88da71c4b583b71401f534a4311402c7e91d473797c",
       "source_files": [
         "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv",
         "04_DATASETS_ORBIT/clientes_dia.csv",
@@ -431,7 +431,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "427bf895d5f69673ab423783597aa1e188b6245f965482389ab04908fa500310",
+      "checksum_sha256": "3f3e09d76e69411af2fd05cec907c935e54512caa3d81bf2b15c922694217e99",
       "source_files": [
         "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv",
         "04_DATASETS_ORBIT/clientes_dia.csv",
@@ -444,7 +444,7 @@
       "http_status": 200,
       "count": 5,
       "count_type": "dict_keys",
-      "checksum_sha256": "96cf751fb4099123c7f075ed0884115a9f9af96d3722fe4d2288104a29685e73",
+      "checksum_sha256": "2071bb5f74465956833cb07d563aeefd4f872dabc412b97bbd162007e220dd9f",
       "source_files": [
         "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv",
         "04_DATASETS_ORBIT/clientes_dia.csv",
@@ -457,7 +457,7 @@
       "http_status": 200,
       "count": 6,
       "count_type": "dict_keys",
-      "checksum_sha256": "6e69be1982e26b80a8c7ad96bd31c1db4431289d4bb6a76a73391dfe8515be26",
+      "checksum_sha256": "618b5fef86b56c98cc58daca04822f9906a0e8fc08daaa3b459acd46badb7525",
       "source_files": [
         "04_DATASETS_ORBIT/mod_11_titulares.csv"
       ]
@@ -468,7 +468,7 @@
       "http_status": 200,
       "count": 6,
       "count_type": "dict_keys",
-      "checksum_sha256": "af521e2b419081fd67cbf1ac229c66d9e4ed44b428d1c8e0cf005a2714bb421f",
+      "checksum_sha256": "6ce455451e67416f97e1c127edecd4c26ca5c0e6c422bad9e2c967fb1e315b72",
       "source_files": [
         "04_DATASETS_ORBIT/mod_11_titulares.csv"
       ]
@@ -479,7 +479,7 @@
       "http_status": 200,
       "count": 6,
       "count_type": "dict_keys",
-      "checksum_sha256": "d467e3de0e8e449f2d229310d78c185109777812eccd624346ab0c8fc89a3406",
+      "checksum_sha256": "f3ea0e80e74b4619d45c55e8c76f04e96b63023774b714cac3b1296d83570661",
       "source_files": [
         "04_DATASETS_ORBIT/mod_11_titulares.csv"
       ]
@@ -490,7 +490,7 @@
       "http_status": 200,
       "count": 6,
       "count_type": "dict_keys",
-      "checksum_sha256": "d8f7fb296eaae2a7d82410e06d3a1ecf7827e5cb3030da9b79c79b2f3fc87f7d",
+      "checksum_sha256": "b73fde1d3358b62a873001575c0be226c028b89c70adb90bda73215e2ae109cf",
       "source_files": [
         "04_DATASETS_ORBIT/mod_11_titulares.csv"
       ]
@@ -501,7 +501,7 @@
       "http_status": 200,
       "count": 6,
       "count_type": "dict_keys",
-      "checksum_sha256": "83859713e61e947fd7de209ce876ef4e6a5cabd6d6848496ec5520010012355e",
+      "checksum_sha256": "cd478145e72ea3cc7dacb9af71e6d41d86f2f51accd77ed082e52ba3dd332028",
       "source_files": [
         "04_DATASETS_ORBIT/mod_11_titulares.csv"
       ]
@@ -512,7 +512,7 @@
       "http_status": 200,
       "count": 6,
       "count_type": "dict_keys",
-      "checksum_sha256": "7ed97a3186cdf229cb4f698674db06918df661a7ce408194304ea849fa83c397",
+      "checksum_sha256": "f3f535db2e2b6ed381a209a3a0b250719d40cedfd7744579ed007bc612c5cc62",
       "source_files": [
         "04_DATASETS_ORBIT/mod_11_titulares.csv"
       ]
@@ -523,17 +523,56 @@
       "http_status": 200,
       "count": 6,
       "count_type": "dict_keys",
-      "checksum_sha256": "31926108a86b523916e1dc54129c1955b043e6a7ff6296f82f079dcf8035495e",
+      "checksum_sha256": "04e126409ca3fe362f75d8b082130a66b01f16950001695b6ae8963069477c1c",
       "source_files": [
         "04_DATASETS_ORBIT/mod_11_titulares.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_cobertura_acum_faltantes__autoservicio.json",
+      "endpoint": "/api/gerencia/cobertura_acum_faltantes?segmento=AUTOSERVICIO",
+      "http_status": 200,
+      "count": 4,
+      "count_type": "dict_keys",
+      "checksum_sha256": "9ac0ca40ff177d1d3fc30b6e007fc0017cb41ea8430226f225340ac42cfaec80",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_cobertura_acum_faltantes__mayorista.json",
+      "endpoint": "/api/gerencia/cobertura_acum_faltantes?segmento=MAYORISTA",
+      "http_status": 200,
+      "count": 4,
+      "count_type": "dict_keys",
+      "checksum_sha256": "83203124bee11352c4011d2da9c202163ac894e16b47228cb97f49644aa440a2",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_cobertura_acum_faltantes__on_premise.json",
+      "endpoint": "/api/gerencia/cobertura_acum_faltantes?segmento=ON_PREMISE",
+      "http_status": 200,
+      "count": 4,
+      "count_type": "dict_keys",
+      "checksum_sha256": "10cd10f93145dd89be47a7f9ec070556323b8aef9fee7d235b1a05771c47cbec",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
+      ]
+    },
+    {
+      "file": "web_data/gerencia_cobertura_acum_faltantes__tradicional.json",
+      "endpoint": "/api/gerencia/cobertura_acum_faltantes?segmento=TRADICIONAL",
+      "http_status": 200,
+      "count": 4,
+      "count_type": "dict_keys",
+      "checksum_sha256": "018b01218fa01c4d13f68c025f380de0ba668dfe13db0bcdb15d5650a34984b3",
+      "source_files": [
+        "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
       ]
     }
   ],
   "errores": [],
-  "pendientes": [
-    {
-      "endpoint": "/api/gerencia/cobertura_acum_faltantes",
-      "motivo": "requiere ?segmento= (enumerar segmentos)"
-    }
-  ]
+  "pendientes": []
 }

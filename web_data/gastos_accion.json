@@ -1,14 +1,14 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/gastos_accion",
-    "generated_at": "2026-07-06T17:54:15-03:00",
+    "generated_at": "2026-07-07T17:06:32-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_gastos_accion.csv"
     ],
     "http_status": 200,
     "count": 6,
     "count_type": "dict_keys",
-    "checksum_sha256": "b035475bf2eaba7b0073d8cd6502e289b35300d2acb661aeba61df827daecc9b",
+    "checksum_sha256": "156370beef52fc99168f8bab0d21c0c4d4a4445c8d4dbfa5cf1e76278e085046",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
@@ -205,7 +205,7 @@
         "vendedor_nombre": "ALVAREZ VANESA  KAFF"
       }
     ],
-    "generado_en": "2026-07-06 17:54:15",
+    "generado_en": "2026-07-07 17:06:32",
     "modo_datos": "REAL",
     "resumen": {
       "acciones_csv": 6,

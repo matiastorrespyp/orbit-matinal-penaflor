@@ -1,7 +1,7 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/vendedor/V8/cobertura_acum",
-    "generated_at": "2026-07-06T17:54:18-03:00",
+    "generated_at": "2026-07-07T17:06:33-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
       "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
@@ -9,14 +9,14 @@
     "http_status": 200,
     "count": 5,
     "count_type": "dict_keys",
-    "checksum_sha256": "98b9b0f5d5b7d8b23be6ff21dec881038a58741f70a4ed671d713dcefc156b10",
+    "checksum_sha256": "ba45603fad2b329b62aad362b22460444dda7e14e06604c8356a57b4af704756",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
   "payload": {
     "fecha_calculo": "2026-07-06",
     "fuente": "mod_cobertura_acum.csv",
-    "generado_en": "2026-07-06 17:54:18",
+    "generado_en": "2026-07-07 17:06:33",
     "segmentos": [
       {
         "cartera": 31,

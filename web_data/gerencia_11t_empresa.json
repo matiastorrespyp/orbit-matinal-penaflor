@@ -1,20 +1,20 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/gerencia/11t_empresa",
-    "generated_at": "2026-07-06T17:54:17-03:00",
+    "generated_at": "2026-07-07T17:06:33-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_11_titulares.csv"
     ],
     "http_status": 200,
     "count": 5,
     "count_type": "dict_keys",
-    "checksum_sha256": "214bf5825131b82064cb44c8b701874389b1e2561f8c27ea996f26f51a660924",
+    "checksum_sha256": "543a5b59c0f5581aed17a794afa9525cd2ca3997fdcc449da8b37e500181d209",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
   "payload": {
     "fuente": "mod_11_titulares.csv",
-    "generado_en": "2026-07-06 17:54:17",
+    "generado_en": "2026-07-07 17:06:33",
     "marcas": [
       {
         "con": 5,

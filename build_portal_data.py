@@ -46,6 +46,7 @@ import hashlib
 import tempfile
 import shutil
 import datetime
+import urllib.parse
 from pathlib import Path
 
 BASE = Path(__file__).resolve().parent
@@ -55,6 +56,15 @@ _AR_TZ = datetime.timezone(datetime.timedelta(hours=-3))
 
 def _now_iso() -> str:
     return datetime.datetime.now(_AR_TZ).isoformat(timespec="seconds")
+
+
+def _slug(val: str) -> str:
+    """Nombre de archivo seguro y estable a partir de un valor de query (p.ej. un segmento).
+    'ON PREMISE' -> 'on_premise'. No se usa para la URL (esa va url-encodeada)."""
+    s = "".join(ch.lower() if ch.isalnum() else "_" for ch in str(val))
+    while "__" in s:
+        s = s.replace("__", "_")
+    return s.strip("_") or "sin_valor"
 
 
 # ---------------------------------------------------------------------------
@@ -139,12 +149,34 @@ PER_VENDOR_QUERY = [
          source_files=_p("mod_11_titulares.csv")),
 ]
 
-# Pendientes conocidos (requieren enumerar valores de query; se cubren en una pasada
-# posterior de Fase 1). Se registran en el manifest para trazabilidad.
-PENDING = [
-    dict(endpoint="/api/gerencia/cobertura_acum_faltantes",
-         motivo="requiere ?segmento= (enumerar segmentos)"),
+# --- Fase 1.2: endpoints con query arg ENUMERABLE desde los datos ---
+# Se genera UN JSON por VALOR. El set de valores NO se hardcodea: se deriva de la MISMA
+# fuente y de la MISMA lógica del server (se reutiliza srv.read_csv + el helper real del
+# endpoint), de modo que respeta exclusiones V2/V5/V20 y no reimplementa ninguna regla
+# comercial. Cada valor se consulta url-encodeado y se valida contra el endpoint vivo.
+def _enum_segmentos_cobertura_faltantes():
+    """Segmentos que realmente producen faltantes tras exclusiones, tomados del propio server.
+    Reusa srv._cobertura_faltantes_rows (misma normalización, mismo filtro V2/V5/V20)."""
+    try:
+        det = srv.read_csv(srv.DATASETS / "mod_cobertura_acum_detalle.csv")
+        rows = srv._cobertura_faltantes_rows(det)   # {(vid, seg): [...]}, ya excluye V2/V5/V20
+        return sorted({seg for (_vid, seg) in rows.keys() if seg})
+    except Exception as e:
+        print(f"  [!] no se pudieron enumerar segmentos de cobertura_acum_faltantes: "
+              f"{type(e).__name__}: {e}")
+        return []
+
+PER_QUERY_ENUM = [
+    dict(name="gerencia_cobertura_acum_faltantes",
+         url_t="/api/gerencia/cobertura_acum_faltantes?segmento={val}",
+         param="segmento",
+         enumerator=_enum_segmentos_cobertura_faltantes,
+         source_files=_p("mod_cobertura_acum_detalle.csv")),
 ]
+
+# Pendientes conocidos que TODAVÍA no se pueden certificar (se registran en el manifest).
+# El drill-down por segmento de cobertura_acum_faltantes pasó a PER_QUERY_ENUM (Fase 1.2).
+PENDING = []
 
 
 # ---------------------------------------------------------------------------
@@ -235,6 +267,21 @@ def main() -> int:
         for vid in VENDEDORES:
             run(f"{ep['name']}__{vid}", ep["url_t"].format(vid=vid), ep["source_files"])
 
+    print("\n-- Endpoints con query args (valores enumerados desde datos) --")
+    pendientes_runtime = []
+    for ep in PER_QUERY_ENUM:
+        valores = ep["enumerator"]()
+        if not valores:
+            pendientes_runtime.append(dict(endpoint=ep["url_t"],
+                                           motivo="enumeración vacía: sin valores en los datos"))
+            print(f"  [!] {ep['name']:37s} sin valores para enumerar -> pendiente")
+            continue
+        print(f"  ({ep['param']}: {', '.join(valores)})")
+        for val in valores:
+            enc = urllib.parse.quote(str(val), safe="")     # URL segura; el server la decodifica
+            url = ep["url_t"].format(val=enc)
+            run(f"{ep['name']}__{_slug(val)}", url, ep["source_files"])
+
     manifest = {
         "phase": "fase-1-precompute",
         "generated_at": _now_iso(),
@@ -253,7 +300,7 @@ def main() -> int:
         "duracion_seg": round(time.time() - t0, 2),
         "entries": entries,
         "errores": errors,
-        "pendientes": PENDING,
+        "pendientes": PENDING + pendientes_runtime,
     }
     (OUT_DIR / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")

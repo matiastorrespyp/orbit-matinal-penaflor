@@ -1,0 +1,1304 @@
+{
+  "_meta": {
+    "endpoint_equivalente": "/api/gerencia/cobertura_acum_faltantes?segmento=ON_PREMISE",
+    "generated_at": "2026-07-07T17:06:36-03:00",
+    "source_files": [
+      "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
+    ],
+    "http_status": 200,
+    "count": 4,
+    "count_type": "dict_keys",
+    "checksum_sha256": "10cd10f93145dd89be47a7f9ec070556323b8aef9fee7d235b1a05771c47cbec",
+    "fase": "1-precompute-paralelo",
+    "uso": "COMPARAR contra /api vivo; NO usar en producción"
+  },
+  "payload": {
+    "fuente": "mod_cobertura_acum_detalle.csv",
+    "generado_en": "2026-07-07 17:06:36",
+    "por_vendedor": [
+      {
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 1304,
+            "cliente_nombre": "611 LOGISTICA SA",
+            "localidad": "Córdoba",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3700,
+            "cliente_nombre": "BIANCO HUGO",
+            "localidad": "Porteña",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4453,
+            "cliente_nombre": "BORTOLON RUBEN Y URQUIZA S.R.L",
+            "localidad": "Porteña",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 391,
+            "cliente_nombre": "BORTOLON Y URQUIZA COMB. SRL",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1159,
+            "cliente_nombre": "BRITEZ FLORENCIA ARIANA-SUC",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4499,
+            "cliente_nombre": "BRUERA OSCAR Y CIA- S.R.L.",
+            "localidad": "Porteña",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 28,
+            "cliente_nombre": "BRUNA ENRIQUE ANGEL",
+            "localidad": "Brinkmann",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 421,
+            "cliente_nombre": "BUSTAMANTE SILVIA NOEMI",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 712,
+            "cliente_nombre": "CARIONI RUBEN",
+            "localidad": "Brinkmann",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 194,
+            "cliente_nombre": "CASA BENJAMIN SARTORI S.R.L.",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 108,
+            "cliente_nombre": "CRICKA SHOP",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 200,
+            "cliente_nombre": "DANIELE OMAR JUAN Y DANIELE  A",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4405,
+            "cliente_nombre": "DELLA TORRE LUIS ALBERTO ",
+            "localidad": "Porteña",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3533,
+            "cliente_nombre": "DEMARIA GERMAN DARIO",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 612,
+            "cliente_nombre": "DURANDO HNOS. FREYRE S.A.S.",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 202,
+            "cliente_nombre": "EMPRESA TRANSPORTE MORTEROS",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1012,
+            "cliente_nombre": "GONZALEZ JORGE ANDRES",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2151,
+            "cliente_nombre": "HERRERA NADIA VANESA",
+            "localidad": "Porteña",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 470,
+            "cliente_nombre": "MAIDANA MAURO DAMIAN ",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2,
+            "cliente_nombre": "MARTIN ROVAI BOLAÑEZ",
+            "localidad": "Brinkmann",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 349,
+            "cliente_nombre": "MC COMBUSTIBLES S.R.L.",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 561,
+            "cliente_nombre": "MOLARDO FACUNDO - PILETA",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 363,
+            "cliente_nombre": "MOLINA AGUSTIN NAHUEL (CAFETERIA OTILIA)",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 498,
+            "cliente_nombre": "NIVOLI MARISA ALEJANDRA",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 215,
+            "cliente_nombre": "OLIVERO PATRICIA SOLEDAD ",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 271,
+            "cliente_nombre": "OSCAR BRUERA Y CIA S.R.L.",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 85,
+            "cliente_nombre": "OSTERTAG EZEQUIEL DAVID",
+            "localidad": "Porteña",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 148,
+            "cliente_nombre": "PANADERIA Y CONFITERIA EL BUEN GUSTO DE GIUDTINA S",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 244,
+            "cliente_nombre": "POLO S.R.L.",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 396,
+            "cliente_nombre": "ROSSO HUGO DANIEL",
+            "localidad": "Brinkmann",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2316,
+            "cliente_nombre": "STEIMBACH JORGE LUIS",
+            "localidad": "Porteña",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2792,
+            "cliente_nombre": "SUCESION DE PORTA MIGUEL ANGEL",
+            "localidad": "Morteros",
+            "umbral": 6
+          }
+        ],
+        "vendedor_id": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL"
+      },
+      {
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 463,
+            "cliente_nombre": " RAIRERI CECILIA",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2230,
+            "cliente_nombre": "AGUIRRE DAMIAN",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2044,
+            "cliente_nombre": "AGUIRRE IOHANNA ELISABETH",
+            "localidad": "La Puerta",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 550,
+            "cliente_nombre": "AGUIRRE RAUL ARMANDO",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 278,
+            "cliente_nombre": "AVENATTI LUCIO MAURICIO ",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 267,
+            "cliente_nombre": "BERTOLA MARCELA",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 92,
+            "cliente_nombre": "BORDA BOSSANA LUIS ESTEBAN",
+            "localidad": "Villa Fontana",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 192,
+            "cliente_nombre": "BRUNETTI DANTE RAUL ",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 28010,
+            "cliente_nombre": "BRUNO YULIANA",
+            "localidad": "La Para",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1256,
+            "cliente_nombre": "CERDA NORMA FABIANA-EST DAPSA",
+            "localidad": "Miramar",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 488,
+            "cliente_nombre": "DEGANI RONALD GERMAN",
+            "localidad": "Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 754,
+            "cliente_nombre": "DIAZ DANIEL IVAN ",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2924,
+            "cliente_nombre": "DIAZ RAUL ENRIQUE",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2641,
+            "cliente_nombre": "EDGARDO BERNABE LERDA",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 177,
+            "cliente_nombre": "FANTINI Y CIA SA (2)",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2629,
+            "cliente_nombre": "FARCHETTO MAURICIO RAFAEL",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1365,
+            "cliente_nombre": "FENOGLIO MELISA",
+            "localidad": "Miramar",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 235,
+            "cliente_nombre": "GALLARDO AGUSTIN",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 191,
+            "cliente_nombre": "GAVIGLIO ANDREA DE LOURDES",
+            "localidad": "Marull",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2868,
+            "cliente_nombre": "GUIPONI MIRIAN BELKY",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2659,
+            "cliente_nombre": "HAAS GERMAN",
+            "localidad": "Miramar",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1066,
+            "cliente_nombre": "MAMANI FITA MIRIAN MARISOL",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2238,
+            "cliente_nombre": "MAPELLI MARTA BEATRIZ",
+            "localidad": "Miramar",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 753,
+            "cliente_nombre": "MARCHETTI JOAQUIN DARIO ",
+            "localidad": "Miramar",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2146,
+            "cliente_nombre": "MUSA CRISTIAN ALEJANDRO",
+            "localidad": "La Puerta",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 178,
+            "cliente_nombre": "NIEVAS GABRIELA DEL VALLE",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 23,
+            "cliente_nombre": "NOVILLO MARIA DEL CARMEN",
+            "localidad": "Obispo Trejo",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 266,
+            "cliente_nombre": "PORCHETTO DANIEL",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1003,
+            "cliente_nombre": "ROLLAN ALFREDO RAUL",
+            "localidad": "Obispo Trejo",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2064,
+            "cliente_nombre": "SANTA ROSA COMBUSTIBLE",
+            "localidad": "Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2865,
+            "cliente_nombre": "SANTA ROSA COMBUSTIBLES SRL",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2200,
+            "cliente_nombre": "SCUBIN JUAN",
+            "localidad": "Marull",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2557,
+            "cliente_nombre": "YUNOT MARIA ELENA",
+            "localidad": "Balnearia",
+            "umbral": 6
+          }
+        ],
+        "vendedor_id": "V6",
+        "vendedor_nombre": "PEYRONEL ANDREA"
+      },
+      {
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 402,
+            "cliente_nombre": "CONSUMIDOR FINAL",
+            "localidad": "La Paz",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1126,
+            "cliente_nombre": "FERREYRA CESAR ADRIAN",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1114,
+            "cliente_nombre": "MAGLIANESI JUAN AGUSTIN",
+            "localidad": "Villa Cura Brochero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 570,
+            "cliente_nombre": "MARCO DAMIAN VALLEJO",
+            "localidad": "Villa de las Rosas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 917,
+            "cliente_nombre": "QUIROGA LUCIANO DANIEL ",
+            "localidad": "Mina Clavero",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 436,
+            "cliente_nombre": "ROSSI BRUNO JAVIER",
+            "localidad": "Villa de las Rosas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 7934,
+            "cliente_nombre": "ZAMORA BUSTOS NICOLAS EMILIANO",
+            "localidad": "Mina Clavero",
+            "umbral": 6
+          }
+        ],
+        "vendedor_id": "V7",
+        "vendedor_nombre": "JOFRE GUILLERMO AGUSTIN"
+      },
+      {
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 1400,
+            "cliente_nombre": "ANGIOLINI DIEGO MIGUEL",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 106,
+            "cliente_nombre": "APIS SILVANA MIRTA",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 110,
+            "cliente_nombre": "ASOC SOC BOMBEROS VOLUNTARIOS DE SAN FRANCISCO",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 805,
+            "cliente_nombre": "AYMAR MARIA SUSANA ",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 759,
+            "cliente_nombre": "BALLARIO GABRIELA SUSANA ",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1283,
+            "cliente_nombre": "BARBERO RAMIRO",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1378,
+            "cliente_nombre": "BARREDO ALVARO JESUS",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 46,
+            "cliente_nombre": "BATTAN CARLOS RUBEN",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1428,
+            "cliente_nombre": "BENEDETTO LORENA PAOLA",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1320,
+            "cliente_nombre": "BIANCOTTI MARCELO",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 682,
+            "cliente_nombre": "BLASHB S.R.L.",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 711,
+            "cliente_nombre": "BRISSIO LUCAS",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 125,
+            "cliente_nombre": "BUSTOS JORGE ALBERTO-BAR CANTINA",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 689,
+            "cliente_nombre": "CARRIZO NICOLAS MANUEL ",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30048,
+            "cliente_nombre": "CASTAGNO MAURO ANDRES",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 350,
+            "cliente_nombre": "CASTRO DARIO FABIAN",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 848,
+            "cliente_nombre": "CAVAGLIA EMANUEL",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1399,
+            "cliente_nombre": "DIVISION ESPECTACULOS S.A.",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 635,
+            "cliente_nombre": "FRANCONE GASTON NICOLAS ",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1368,
+            "cliente_nombre": "GRUPO RONDA S.A.S. S.A.S.",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 37,
+            "cliente_nombre": "LA CAJA BUSINESS S.R.L.",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 237,
+            "cliente_nombre": "LAZZURI SOLANGE LISETTE",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 323,
+            "cliente_nombre": "LOTUSRB S.A.S.",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 103,
+            "cliente_nombre": "MARI GABRIEL ANTONIO",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1396,
+            "cliente_nombre": "MARTINA MAURICIO ALBERTO",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1439,
+            "cliente_nombre": "MIL NUEVE 82 S.R.L.",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 692,
+            "cliente_nombre": "MIRANDA SEBASTIAN LEONARDO ",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 876,
+            "cliente_nombre": "NAVARRO RAUL MIGUEL ",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1437,
+            "cliente_nombre": "NAVARRO ROMINA SOLEDAD",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 147,
+            "cliente_nombre": "OITANA LUCAS DARIO",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30058,
+            "cliente_nombre": "OITTANA MARTIN ANDRES ",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 320,
+            "cliente_nombre": "RABINO JOSE JUAN ",
+            "localidad": "La Playosa",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 611,
+            "cliente_nombre": "RAM LUDUEÑA ALEJANDRO JAVIER ",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1275,
+            "cliente_nombre": "REALE NICOLAS",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1407,
+            "cliente_nombre": "RINALDI JULIAN AGUSTIN",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 30004,
+            "cliente_nombre": "ROBERTO J COLOMBATTI E HIJOS S R L",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1013,
+            "cliente_nombre": "RUELLA FRANCISCO-CHIQUI PUB",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 476,
+            "cliente_nombre": "SABENA BLANCA ESTHER ISABEL ",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 910,
+            "cliente_nombre": "SARMIENTO MARTIN EZEQUIEL ",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 26,
+            "cliente_nombre": "SPERANZA MELISA ROCIO BELEN",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1182,
+            "cliente_nombre": "TEDESCHI TOMAS * TOMI´S DRINKS",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1010,
+            "cliente_nombre": "VARELA ROBERTO CARLOS -ALEPH",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1109,
+            "cliente_nombre": "VINOTECA-DEPOSITO",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1381,
+            "cliente_nombre": "ZALAZAR DANIEL WALTER",
+            "localidad": "San Francisco",
+            "umbral": 6
+          }
+        ],
+        "vendedor_id": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 1226,
+            "cliente_nombre": "ACOSTA JOSE ANDRES",
+            "localidad": "Luyaba",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1195,
+            "cliente_nombre": "AGUERO HUGO ANTONIO",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8066,
+            "cliente_nombre": "APELLGRAN S.A.S.",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8103,
+            "cliente_nombre": "ARDANAZ VIVIANA LETICIA CAROLINA",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1278,
+            "cliente_nombre": "ASIS ABRAMO EMIR",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1410,
+            "cliente_nombre": "ASIS ABRAMO JULIETA",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1234,
+            "cliente_nombre": "BRAMAJO GASTON JAZIEL",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 937,
+            "cliente_nombre": "CALAMANTE CIRO FELIPE",
+            "localidad": "Villa de las Rosas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1417,
+            "cliente_nombre": "CASTRO LARA",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1265,
+            "cliente_nombre": "CEBALLOS NATALIA KARINA",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1215,
+            "cliente_nombre": "CRUZ MONICA RAQUEL",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 798,
+            "cliente_nombre": "DIAZ FRANKLIN ORLANDO ",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1186,
+            "cliente_nombre": "DONIGIAN-FUNES 2009 SAS",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1213,
+            "cliente_nombre": "ESCALANTE DIEGO MATIAS",
+            "localidad": "San Pedro",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1100,
+            "cliente_nombre": "GALLARDO HORACIO EZEQUIEL",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1280,
+            "cliente_nombre": "GALLARDO HORACIO EZEQUIEL",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1299,
+            "cliente_nombre": "GALLARDO HORACIO EZEQUIEL",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1416,
+            "cliente_nombre": "GODOY ROSA LIDIA",
+            "localidad": "La Paz",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1192,
+            "cliente_nombre": "LOUREIRO DANIEL OSCAR",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1281,
+            "cliente_nombre": "MACIAS MIGUEL ANGEL",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1408,
+            "cliente_nombre": "MONTANI MIRKO",
+            "localidad": "La Paz",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 738,
+            "cliente_nombre": "MURUAM DIEGO NEHUEN",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1209,
+            "cliente_nombre": "PONCE ANITA RAQUEL",
+            "localidad": "Los Hornillos",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1204,
+            "cliente_nombre": "QUIROGA LUCAS MAXIMILIANO",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1425,
+            "cliente_nombre": "REICH GERMAN RAUL",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1409,
+            "cliente_nombre": "RODRIGUEZ MOSCATELLI MARIA VIRGINIA",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1208,
+            "cliente_nombre": "ROMERO MIGUEL ALEJANDRO",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1296,
+            "cliente_nombre": "SOSA MIGUEL ANGEL",
+            "localidad": "Las Tapias",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 8072,
+            "cliente_nombre": "SUMI",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 713,
+            "cliente_nombre": "TEALDI MARA GISELA",
+            "localidad": "San Pedro",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1096,
+            "cliente_nombre": "VALLEJO MARCO DAMIAN",
+            "localidad": "Villa de las Rosas",
+            "umbral": 6
+          }
+        ],
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
+      },
+      {
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 1367,
+            "cliente_nombre": "ACOSTA ANGEL DAVID",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1033,
+            "cliente_nombre": "ALFONZO FERNANDEZ CLAUDIO DANIEL",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 3524,
+            "cliente_nombre": "ALMADA SONIA MARCEL",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 219,
+            "cliente_nombre": "ARMAN MARIA FLORENCIA",
+            "localidad": "El Tío",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2161,
+            "cliente_nombre": "ARROYITO SERVICIOS",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1347,
+            "cliente_nombre": "ASCARATE MARIANA-HELADERIA MAYO",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2828,
+            "cliente_nombre": "BALSUAR 3 S.R.L.",
+            "localidad": "Devoto",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2325,
+            "cliente_nombre": "BARALE BARBARA DAYANA",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2615,
+            "cliente_nombre": "BRUNO SUSANA TERESA",
+            "localidad": "La Francia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 505,
+            "cliente_nombre": "CARABAJAL GABRIEL ALEJANDRO",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1138,
+            "cliente_nombre": "CASTILLO MATEO-CARNICERIA",
+            "localidad": "El Tío",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 49,
+            "cliente_nombre": "CEIRANO JONATHAN ANTONIO ",
+            "localidad": "Tránsito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2421,
+            "cliente_nombre": "CISNEROS ALEJANDRO ALBERTO",
+            "localidad": "Piquillín",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1129,
+            "cliente_nombre": "DALMASSO MARCELO ATILIO",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2977,
+            "cliente_nombre": "DON EDUARDO SRL",
+            "localidad": "Devoto",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 314,
+            "cliente_nombre": "GEN COMBUSTIBLES SRL",
+            "localidad": "Santiago Temple",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 136,
+            "cliente_nombre": "GIORDANINO LORENA DEL VALLE",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 259,
+            "cliente_nombre": "GRUPO BARUCH S.R.L.",
+            "localidad": "La Francia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1242,
+            "cliente_nombre": "GRUPO COMDECOR - CENTRO",
+            "localidad": "Santiago Temple",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 241,
+            "cliente_nombre": "GRUPO COMDECOR- RUTA",
+            "localidad": "Santiago Temple",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1173,
+            "cliente_nombre": "HURTADO MARIA",
+            "localidad": "Tránsito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 389,
+            "cliente_nombre": "LA ESTACION RESTO-BAR S.A.S.",
+            "localidad": "La Francia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1108,
+            "cliente_nombre": "MONTES DANIEL ALBERTO",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2110,
+            "cliente_nombre": "SANCHEZ ACICLA",
+            "localidad": "Tránsito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 731,
+            "cliente_nombre": "SERENO MARIA ANGELICA ",
+            "localidad": "Devoto",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 290,
+            "cliente_nombre": "STRUMIA ARIEL JOSE",
+            "localidad": "Piquillín",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 957,
+            "cliente_nombre": "TALI ROXMERI MENDOZA",
+            "localidad": "Santiago Temple",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1307,
+            "cliente_nombre": "TEMPAXION SAS",
+            "localidad": "Santiago Temple",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1181,
+            "cliente_nombre": "TIJUANA BEBIDAS  SOCIEDAD POR  ACCIONES SIMPLIFICADAS",
+            "localidad": "Arroyito",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 2603,
+            "cliente_nombre": "TORANZO MAGDALI YAMIR",
+            "localidad": "Devoto",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 133,
+            "cliente_nombre": "URQUIZA LORENA",
+            "localidad": "Arroyito",
+            "umbral": 6
+          }
+        ],
+        "vendedor_id": "V10",
+        "vendedor_nombre": "ORTEGA MILAGROS DESIREE"
+      }
+    ],
+    "segmento": "ON_PREMISE"
+  }
+}

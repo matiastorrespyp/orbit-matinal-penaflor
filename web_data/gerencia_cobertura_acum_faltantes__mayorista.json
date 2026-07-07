@@ -1,0 +1,158 @@
+{
+  "_meta": {
+    "endpoint_equivalente": "/api/gerencia/cobertura_acum_faltantes?segmento=MAYORISTA",
+    "generated_at": "2026-07-07T17:06:36-03:00",
+    "source_files": [
+      "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
+    ],
+    "http_status": 200,
+    "count": 4,
+    "count_type": "dict_keys",
+    "checksum_sha256": "83203124bee11352c4011d2da9c202163ac894e16b47228cb97f49644aa440a2",
+    "fase": "1-precompute-paralelo",
+    "uso": "COMPARAR contra /api vivo; NO usar en producción"
+  },
+  "payload": {
+    "fuente": "mod_cobertura_acum_detalle.csv",
+    "generado_en": "2026-07-07 17:06:36",
+    "por_vendedor": [
+      {
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 216,
+            "cliente_nombre": "PEDROTTI DIST. S.R.L.",
+            "localidad": "Morteros",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 905,
+            "cliente_nombre": "PEDROTTI DIST. S.R.L.-SUC",
+            "localidad": "Brinkmann",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1000,
+            "cliente_nombre": "PEDROTTI DISTRIBUCIONES",
+            "localidad": "Freyre",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 4502,
+            "cliente_nombre": "PEDROTTI DISTRIBUCIONES",
+            "localidad": "Porteña",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 310,
+            "cliente_nombre": "VSB DISTRIBUCIONES S.R.L",
+            "localidad": "Villa Esquiú",
+            "umbral": 6
+          }
+        ],
+        "vendedor_id": "V4",
+        "vendedor_nombre": "GRIBAUDO ANGEL"
+      },
+      {
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 2446,
+            "cliente_nombre": "BOCCO EMANUEL ",
+            "localidad": "Balnearia",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1009,
+            "cliente_nombre": "FULL DISTRIBUIDORA",
+            "localidad": "Santa Rosa de Río Primero",
+            "umbral": 6
+          }
+        ],
+        "vendedor_id": "V6",
+        "vendedor_nombre": "PEYRONEL ANDREA"
+      },
+      {
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 733,
+            "cliente_nombre": "APONTE LILIANA DEL VALLE ",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 15,
+            "cliente_nombre": "BELTRAMO, DUTTO Y DUTTO S.R.L.",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 938,
+            "cliente_nombre": "CAREGLIO HERMANOS SRL",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 678,
+            "cliente_nombre": "DANGUISE DISTRIBUCIONES S.R.L.",
+            "localidad": "San Francisco",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1142,
+            "cliente_nombre": "INGA KEVIN DANIEL",
+            "localidad": "Las Varillas",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 1239,
+            "cliente_nombre": "STETTLER PABLO DAVID",
+            "localidad": "San Francisco",
+            "umbral": 6
+          }
+        ],
+        "vendedor_id": "V8",
+        "vendedor_nombre": "ALVAREZ VANESA  KAFF"
+      },
+      {
+        "faltantes": [
+          {
+            "botellas": 0.0,
+            "cliente_id": 8077,
+            "cliente_nombre": "AMMANN ARAYA MARIELA BEATRIZ",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 403,
+            "cliente_nombre": "LOPEZ HNOS S R L",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          },
+          {
+            "botellas": 0.0,
+            "cliente_id": 451,
+            "cliente_nombre": "RETINTO S. R. L.",
+            "localidad": "Villa Dolores",
+            "umbral": 6
+          }
+        ],
+        "vendedor_id": "V9",
+        "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
+      }
+    ],
+    "segmento": "MAYORISTA"
+  }
+}

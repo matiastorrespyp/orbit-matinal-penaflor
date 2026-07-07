@@ -1,7 +1,7 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/gerencia/planes_as",
-    "generated_at": "2026-07-06T17:54:17-03:00",
+    "generated_at": "2026-07-07T17:06:33-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_planes_as.csv",
       "04_DATASETS_ORBIT/mod_sincargos_envios.csv"
@@ -9,7 +9,7 @@
     "http_status": 200,
     "count": 5,
     "count_type": "dict_keys",
-    "checksum_sha256": "818452f70622ff316f18e461d0a53f31d069a1772d62eee05fe5d77ce1242c83",
+    "checksum_sha256": "02cce54a5cea6018ed9a75dfc82be83634995ae0d2e8d84eb8b09453d63ac3de",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
@@ -1196,7 +1196,7 @@
     ],
     "fecha_calculo": "2026-07-06",
     "fuente": "mod_planes_as.csv",
-    "generado_en": "2026-07-06 17:54:17",
+    "generado_en": "2026-07-07 17:06:33",
     "total_clientes": 31
   }
 }

@@ -1,14 +1,14 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/gerencia/cobertura_segmento",
-    "generated_at": "2026-07-06T17:54:18-03:00",
+    "generated_at": "2026-07-07T17:06:33-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/clientes_dia.csv"
     ],
     "http_status": 200,
     "count": 2,
     "count_type": "dict_keys",
-    "checksum_sha256": "1211578c900069e46959604010b2283569676a678f9253eea91520af2d59d73d",
+    "checksum_sha256": "91887b0affb5d03d9940f129f7c13ab34b025a535f1da26f73a4bad28c93bb74",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
@@ -175,6 +175,6 @@
         "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
       }
     ],
-    "generado_en": "2026-07-06 17:54:18"
+    "generado_en": "2026-07-07 17:06:33"
   }
 }
