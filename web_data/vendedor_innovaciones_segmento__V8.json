@@ -1,21 +1,21 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/vendedor/V8/innovaciones_segmento",
-    "generated_at": "2026-07-07T17:06:34-03:00",
+    "generated_at": "2026-07-07T20:55:37-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
     ],
     "http_status": 200,
     "count": 6,
     "count_type": "dict_keys",
-    "checksum_sha256": "fc2f7c8b0935eac3928624a98b2267c07ca6de653ba2adb505b4e223185a7e99",
+    "checksum_sha256": "abefa88b895eb2253286ecfc637da84c4b619c8eba20d9fb4a373654fdab634b",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
   "payload": {
-    "fecha_ejecucion": "2026-07-06",
+    "fecha_ejecucion": "2026-07-07",
     "fuente": "mod_innovaciones_segmento.csv",
-    "generado_en": "2026-07-07 17:06:34",
+    "generado_en": "2026-07-07 20:55:37",
     "productos": [
       {
         "clientes_cartera": 167,
@@ -2316,7 +2316,7 @@
       },
       {
         "clientes_cartera": 167,
-        "clientes_compraron": 2,
+        "clientes_compraron": 5,
         "clientes_faltantes": [
           30,
           53,
@@ -2328,9 +2328,7 @@
           98,
           113,
           198,
-          208,
           227,
-          272,
           365,
           393,
           398,
@@ -2437,7 +2435,6 @@
           1414,
           1424,
           1430,
-          1431,
           1432,
           4719,
           4758,
@@ -2484,7 +2481,7 @@
           30125,
           30397
         ],
-        "pct_cobertura": 0.012,
+        "pct_cobertura": 0.0299,
         "producto_codigo": 74814,
         "producto_nombre": "CAZADOR MALBEC 6X750",
         "segmento": "ALMACEN"
@@ -2668,7 +2665,7 @@
       },
       {
         "clientes_cartera": 167,
-        "clientes_compraron": 0,
+        "clientes_compraron": 2,
         "clientes_faltantes": [
           30,
           53,
@@ -2778,7 +2775,6 @@
           1165,
           1166,
           1251,
-          1257,
           1291,
           1293,
           1319,
@@ -2790,7 +2786,6 @@
           1414,
           1424,
           1430,
-          1431,
           1432,
           4719,
           4758,
@@ -2838,7 +2833,7 @@
           30125,
           30397
         ],
-        "pct_cobertura": 0.0,
+        "pct_cobertura": 0.012,
         "producto_codigo": 74816,
         "producto_nombre": "CAZADOR BLANCO DULCE 6X750",
         "segmento": "ALMACEN"
@@ -3199,7 +3194,7 @@
       },
       {
         "clientes_cartera": 167,
-        "clientes_compraron": 0,
+        "clientes_compraron": 1,
         "clientes_faltantes": [
           30,
           53,
@@ -3213,7 +3208,6 @@
           198,
           208,
           227,
-          272,
           365,
           393,
           398,
@@ -3369,7 +3363,7 @@
           30125,
           30397
         ],
-        "pct_cobertura": 0.0,
+        "pct_cobertura": 0.006,
         "producto_codigo": 74840,
         "producto_nombre": "TRAPICHE DULCE COSECHA TINTO 6X750",
         "segmento": "ALMACEN"

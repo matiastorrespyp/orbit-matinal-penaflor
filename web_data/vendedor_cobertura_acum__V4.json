@@ -1,7 +1,7 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/vendedor/V4/cobertura_acum",
-    "generated_at": "2026-07-07T17:06:33-03:00",
+    "generated_at": "2026-07-07T20:55:37-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
       "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
@@ -9,18 +9,18 @@
     "http_status": 200,
     "count": 5,
     "count_type": "dict_keys",
-    "checksum_sha256": "8efbe2084104d12f8bb9e09fea962040dd3673d16a93bf5b019a62eb11398069",
+    "checksum_sha256": "f7b78ca660aa3e0ef2e523e3cc3d36fa888e3c79a577fb366b3b001d4b7edb4c",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
   "payload": {
-    "fecha_calculo": "2026-07-06",
+    "fecha_calculo": "2026-07-07",
     "fuente": "mod_cobertura_acum.csv",
-    "generado_en": "2026-07-07 17:06:33",
+    "generado_en": "2026-07-07 20:55:37",
     "segmentos": [
       {
         "cartera": 45,
-        "cubiertos": 5,
+        "cubiertos": 7,
         "faltantes": [
           {
             "botellas": 0.0,
@@ -45,23 +45,9 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 188,
-            "cliente_nombre": "BARRERA RAUL OMAR",
-            "localidad": "Morteros",
-            "umbral": 6
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 206,
             "cliente_nombre": "BIDERBOST JOSE MARIA",
             "localidad": "Brinkmann",
-            "umbral": 6
-          },
-          {
-            "botellas": 0.0,
-            "cliente_id": 304,
-            "cliente_nombre": "CLEMENTE C Y J S.A.S.",
-            "localidad": "Morteros",
             "umbral": 6
           },
           {
@@ -303,9 +289,9 @@
             "umbral": 6
           }
         ],
-        "pct_cobertura": 0.1111,
+        "pct_cobertura": 0.1556,
         "segmento": "AUTOSERVICIO",
-        "sin_cobertura": 40
+        "sin_cobertura": 38
       },
       {
         "cartera": 5,

@@ -1,7 +1,7 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/vendedor/V7/cobertura_acum",
-    "generated_at": "2026-07-07T17:06:33-03:00",
+    "generated_at": "2026-07-07T20:55:37-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
       "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
@@ -9,14 +9,14 @@
     "http_status": 200,
     "count": 5,
     "count_type": "dict_keys",
-    "checksum_sha256": "091da0e04560a770bba65f824c94f660405de89361ead96c1302c2b11ca3a92c",
+    "checksum_sha256": "01a3867f027293f87ac6f8985ff17e68d2a22c6e5a2a05c150574245d4c95418",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
   "payload": {
-    "fecha_calculo": "2026-07-06",
+    "fecha_calculo": "2026-07-07",
     "fuente": "mod_cobertura_acum.csv",
-    "generado_en": "2026-07-07 17:06:33",
+    "generado_en": "2026-07-07 20:55:37",
     "segmentos": [
       {
         "cartera": 23,
@@ -241,7 +241,7 @@
       },
       {
         "cartera": 271,
-        "cubiertos": 2,
+        "cubiertos": 3,
         "faltantes": [
           {
             "botellas": 0.0,
@@ -989,13 +989,6 @@
             "botellas": 0.0,
             "cliente_id": 7922,
             "cliente_nombre": "GOMEZ SANDRA",
-            "localidad": "Mina Clavero",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
-            "cliente_id": 7943,
-            "cliente_nombre": "GOMEZ TERESA ADRIANA ",
             "localidad": "Mina Clavero",
             "umbral": 3
           },
@@ -2127,9 +2120,9 @@
             "umbral": 3
           }
         ],
-        "pct_cobertura": 0.0074,
+        "pct_cobertura": 0.0111,
         "segmento": "TRADICIONAL",
-        "sin_cobertura": 269
+        "sin_cobertura": 268
       }
     ],
     "vendedor_id": "V7"

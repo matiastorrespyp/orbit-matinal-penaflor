@@ -1,20 +1,20 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/gerencia/cobertura_acum_faltantes?segmento=TRADICIONAL",
-    "generated_at": "2026-07-07T17:06:37-03:00",
+    "generated_at": "2026-07-07T20:55:40-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
     ],
     "http_status": 200,
     "count": 4,
     "count_type": "dict_keys",
-    "checksum_sha256": "018b01218fa01c4d13f68c025f380de0ba668dfe13db0bcdb15d5650a34984b3",
+    "checksum_sha256": "05cdc8e3582a4107089f690063392232eee6beb5b5649a0591112b44bba163b2",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
   "payload": {
     "fuente": "mod_cobertura_acum_detalle.csv",
-    "generado_en": "2026-07-07 17:06:37",
+    "generado_en": "2026-07-07 20:55:40",
     "por_vendedor": [
       {
         "faltantes": [
@@ -1069,13 +1069,6 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 855,
-            "cliente_nombre": "LENCINAS FERNANDA BEATRIZ ",
-            "localidad": "San Francisco",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 7052,
             "cliente_nombre": "LEURINO VALENTINA INES",
             "localidad": "San Francisco",
@@ -1666,13 +1659,6 @@
             "botellas": 0.0,
             "cliente_id": 477,
             "cliente_nombre": "ROSA JORGE DIEGO ",
-            "localidad": "San Francisco",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
-            "cliente_id": 7427,
-            "cliente_nombre": "ROSTAGNO DAVID HERNAN",
             "localidad": "San Francisco",
             "umbral": 3
           },
@@ -3552,13 +3538,6 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 3227,
-            "cliente_nombre": "BARRAZA RITA DEL VALLE",
-            "localidad": "Santa Rosa de Río Primero",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 383,
             "cliente_nombre": "BEARZI EVELINA ROXANA",
             "localidad": "Balnearia",
@@ -3646,13 +3625,6 @@
             "cliente_id": 195,
             "cliente_nombre": "CABRAL ANDRES JAVIER",
             "localidad": "Marull",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
-            "cliente_id": 1426,
-            "cliente_nombre": "CAMARGO JUAN CRUZ",
-            "localidad": "Santa Rosa de Río Primero",
             "umbral": 3
           },
           {
@@ -3891,13 +3863,6 @@
             "cliente_id": 1292,
             "cliente_nombre": "GALIMBERTI DAIANA MARIA",
             "localidad": "Miramar",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
-            "cliente_id": 400,
-            "cliente_nombre": "GARAY SOLEDAD ANDREA",
-            "localidad": "Obispo Trejo",
             "umbral": 3
           },
           {
@@ -4189,20 +4154,6 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 3645,
-            "cliente_nombre": "MICOL LUIS MARCELO",
-            "localidad": "Marull",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
-            "cliente_id": 2162,
-            "cliente_nombre": "MONDINO VANESA PAOLA",
-            "localidad": "La Para",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 2804,
             "cliente_nombre": "MONJES MARIA ROSA",
             "localidad": "Río Primero",
@@ -4238,23 +4189,9 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 2437,
-            "cliente_nombre": "NAVARRO MAURICIO GABRIEL",
-            "localidad": "Marull",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 1160,
             "cliente_nombre": "NAVILLE WALTER, RENZO, ROGER Y CAROLINA S.A.",
             "localidad": "La Puerta",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
-            "cliente_id": 2896,
-            "cliente_nombre": "NIEVA ANDRES SEBASTIAN",
-            "localidad": "Santa Rosa de Río Primero",
             "umbral": 3
           },
           {
@@ -4290,13 +4227,6 @@
             "cliente_id": 1377,
             "cliente_nombre": "ORTIZ LAURA",
             "localidad": "Río Primero",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
-            "cliente_id": 25,
-            "cliente_nombre": "PACHECO HECTOR GABRIEL",
-            "localidad": "Obispo Trejo",
             "umbral": 3
           },
           {
@@ -4406,13 +4336,6 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 2886,
-            "cliente_nombre": "PUCCI DANIEL",
-            "localidad": "Santa Rosa de Río Primero",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 293,
             "cliente_nombre": "RENJIFO CAROLINA",
             "localidad": "Río Primero",
@@ -4514,13 +4437,6 @@
             "cliente_id": 945,
             "cliente_nombre": "SILVERIO ZARATE",
             "localidad": "Río Primero",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
-            "cliente_id": 2540,
-            "cliente_nombre": "SISTERNA ANDREA DEL VALLE",
-            "localidad": "La Para",
             "umbral": 3
           },
           {
@@ -4653,13 +4569,6 @@
             "botellas": 0.0,
             "cliente_id": 1207,
             "cliente_nombre": "VILLAFAÑE LAUTARO",
-            "localidad": "Santa Rosa de Río Primero",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
-            "cliente_id": 2862,
-            "cliente_nombre": "VILLARRUEL JOSE DANIEL",
             "localidad": "Santa Rosa de Río Primero",
             "umbral": 3
           },
@@ -5443,13 +5352,6 @@
             "botellas": 0.0,
             "cliente_id": 7922,
             "cliente_nombre": "GOMEZ SANDRA",
-            "localidad": "Mina Clavero",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
-            "cliente_id": 7943,
-            "cliente_nombre": "GOMEZ TERESA ADRIANA ",
             "localidad": "Mina Clavero",
             "umbral": 3
           },
@@ -6973,13 +6875,6 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 208,
-            "cliente_nombre": "FERRERO MATIAS",
-            "localidad": "San Francisco",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 54,
             "cliente_nombre": "FERREYRA MARIA PAULA",
             "localidad": "San Francisco",
@@ -7015,13 +6910,6 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 1431,
-            "cliente_nombre": "FRARE MELINA SOLEDAD",
-            "localidad": "Seeber",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 7622,
             "cliente_nombre": "GABRIEL FIXMAN",
             "localidad": "San Francisco",
@@ -7046,13 +6934,6 @@
             "cliente_id": 393,
             "cliente_nombre": "GALLEGOS OSCAR ALBERTO",
             "localidad": "Las Varillas",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
-            "cliente_id": 1257,
-            "cliente_nombre": "GAMBINO EMILIANO DANIEL",
-            "localidad": "Seeber",
             "umbral": 3
           },
           {
@@ -7736,13 +7617,6 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 272,
-            "cliente_nombre": "URQUIA OMAR MARCELO",
-            "localidad": "San Francisco",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 1157,
             "cliente_nombre": "VACA LORENA DEL VALLE",
             "localidad": "Las Varillas",
@@ -7917,13 +7791,6 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 715,
-            "cliente_nombre": "ALVAREZ EMILSE SOLEDAD",
-            "localidad": "Villa Dolores",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 1271,
             "cliente_nombre": "ALVAREZ MARIA DANIELA",
             "localidad": "Villa Dolores",
@@ -8053,13 +7920,6 @@
             "cliente_id": 1217,
             "cliente_nombre": "BENEDETTI RUBEN DARIO",
             "localidad": "Villa de las Rosas",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
-            "cliente_id": 1043,
-            "cliente_nombre": "BENGOLEA MARIAS NELLY",
-            "localidad": "Villa Dolores",
             "umbral": 3
           },
           {
@@ -8204,13 +8064,6 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 8163,
-            "cliente_nombre": "CARDINALI FACUNDO GABRIEL",
-            "localidad": "Villa Dolores",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 8222,
             "cliente_nombre": "CARLOS MANUEL AGUERO",
             "localidad": "Villa Dolores",
@@ -8322,7 +8175,7 @@
             "umbral": 3
           },
           {
-            "botellas": 0.0,
+            "botellas": 2.0,
             "cliente_id": 8212,
             "cliente_nombre": "CLIENTE MOSTRADOR V20",
             "localidad": "Villa Dolores",
@@ -9513,13 +9366,6 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 8194,
-            "cliente_nombre": "SALAS HECTOR FABIAN ",
-            "localidad": "Villa Dolores",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 8120,
             "cliente_nombre": "SANCHEZ JOSE LORENZO",
             "localidad": "Villa Dolores",
@@ -9592,13 +9438,6 @@
             "botellas": 0.0,
             "cliente_id": 1203,
             "cliente_nombre": "TOMASSINI VALERIA ROXANA",
-            "localidad": "Villa Dolores",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
-            "cliente_id": 730,
-            "cliente_nombre": "TORRES EMILSE NOEMI",
             "localidad": "Villa Dolores",
             "umbral": 3
           },

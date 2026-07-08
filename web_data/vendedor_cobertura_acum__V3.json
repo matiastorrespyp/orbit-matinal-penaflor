@@ -1,7 +1,7 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/vendedor/V3/cobertura_acum",
-    "generated_at": "2026-07-07T17:06:33-03:00",
+    "generated_at": "2026-07-07T20:55:37-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
       "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
@@ -9,18 +9,18 @@
     "http_status": 200,
     "count": 5,
     "count_type": "dict_keys",
-    "checksum_sha256": "1b121feb63a16461e7e184adea19d4bd6a58e041dc07a6599fe4516963c423b2",
+    "checksum_sha256": "f1a897181fc40746514df47878069d21fd7cabbce6a0388838bd635343d489cf",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
   "payload": {
-    "fecha_calculo": "2026-07-06",
+    "fecha_calculo": "2026-07-07",
     "fuente": "mod_cobertura_acum.csv",
-    "generado_en": "2026-07-07 17:06:33",
+    "generado_en": "2026-07-07 20:55:37",
     "segmentos": [
       {
         "cartera": 284,
-        "cubiertos": 4,
+        "cubiertos": 6,
         "faltantes": [
           {
             "botellas": 0.0,
@@ -1060,13 +1060,6 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 855,
-            "cliente_nombre": "LENCINAS FERNANDA BEATRIZ ",
-            "localidad": "San Francisco",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 7052,
             "cliente_nombre": "LEURINO VALENTINA INES",
             "localidad": "San Francisco",
@@ -1662,13 +1655,6 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 7427,
-            "cliente_nombre": "ROSTAGNO DAVID HERNAN",
-            "localidad": "San Francisco",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 1336,
             "cliente_nombre": "ROSTAGNO RAFAEL ERNESTO",
             "localidad": "San Francisco",
@@ -1983,9 +1969,9 @@
             "umbral": 3
           }
         ],
-        "pct_cobertura": 0.0141,
+        "pct_cobertura": 0.0211,
         "segmento": "TRADICIONAL",
-        "sin_cobertura": 280
+        "sin_cobertura": 278
       }
     ],
     "vendedor_id": "V3"

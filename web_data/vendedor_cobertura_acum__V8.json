@@ -1,7 +1,7 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/vendedor/V8/cobertura_acum",
-    "generated_at": "2026-07-07T17:06:33-03:00",
+    "generated_at": "2026-07-07T20:55:37-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
       "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
@@ -9,14 +9,14 @@
     "http_status": 200,
     "count": 5,
     "count_type": "dict_keys",
-    "checksum_sha256": "ba45603fad2b329b62aad362b22460444dda7e14e06604c8356a57b4af704756",
+    "checksum_sha256": "9b4364186403fdaa7582562c694e0f79ac2dd4c6a6e4ad55aad1e5de3417125a",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
   "payload": {
-    "fecha_calculo": "2026-07-06",
+    "fecha_calculo": "2026-07-07",
     "fuente": "mod_cobertura_acum.csv",
-    "generado_en": "2026-07-07 17:06:33",
+    "generado_en": "2026-07-07 20:55:37",
     "segmentos": [
       {
         "cartera": 31,
@@ -199,7 +199,7 @@
       },
       {
         "cartera": 47,
-        "cubiertos": 3,
+        "cubiertos": 4,
         "faltantes": [
           {
             "botellas": 0.0,
@@ -455,13 +455,6 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 1013,
-            "cliente_nombre": "RUELLA FRANCISCO-CHIQUI PUB",
-            "localidad": "San Francisco",
-            "umbral": 6
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 476,
             "cliente_nombre": "SABENA BLANCA ESTHER ISABEL ",
             "localidad": "Las Varillas",
@@ -510,13 +503,13 @@
             "umbral": 6
           }
         ],
-        "pct_cobertura": 0.0638,
+        "pct_cobertura": 0.0851,
         "segmento": "ON_PREMISE",
-        "sin_cobertura": 44
+        "sin_cobertura": 43
       },
       {
         "cartera": 189,
-        "cubiertos": 17,
+        "cubiertos": 21,
         "faltantes": [
           {
             "botellas": 0.0,
@@ -905,13 +898,6 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 208,
-            "cliente_nombre": "FERRERO MATIAS",
-            "localidad": "San Francisco",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 54,
             "cliente_nombre": "FERREYRA MARIA PAULA",
             "localidad": "San Francisco",
@@ -947,13 +933,6 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 1431,
-            "cliente_nombre": "FRARE MELINA SOLEDAD",
-            "localidad": "Seeber",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 7622,
             "cliente_nombre": "GABRIEL FIXMAN",
             "localidad": "San Francisco",
@@ -978,13 +957,6 @@
             "cliente_id": 393,
             "cliente_nombre": "GALLEGOS OSCAR ALBERTO",
             "localidad": "Las Varillas",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
-            "cliente_id": 1257,
-            "cliente_nombre": "GAMBINO EMILIANO DANIEL",
-            "localidad": "Seeber",
             "umbral": 3
           },
           {
@@ -1668,13 +1640,6 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 272,
-            "cliente_nombre": "URQUIA OMAR MARCELO",
-            "localidad": "San Francisco",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 1157,
             "cliente_nombre": "VACA LORENA DEL VALLE",
             "localidad": "Las Varillas",
@@ -1723,9 +1688,9 @@
             "umbral": 3
           }
         ],
-        "pct_cobertura": 0.0899,
+        "pct_cobertura": 0.1111,
         "segmento": "TRADICIONAL",
-        "sin_cobertura": 172
+        "sin_cobertura": 168
       }
     ],
     "vendedor_id": "V8"

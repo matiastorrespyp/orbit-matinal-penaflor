@@ -1,14 +1,14 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/vendedor/V10/planes_as",
-    "generated_at": "2026-07-07T17:06:34-03:00",
+    "generated_at": "2026-07-07T20:55:37-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_planes_as.csv"
     ],
     "http_status": 200,
     "count": 5,
     "count_type": "dict_keys",
-    "checksum_sha256": "cbaba968a228418fbdd2d6ab09798b385165bdb1cb4b20531c4a36bdda0702fe",
+    "checksum_sha256": "bfacee8249a5e322e9fd1da1fe6b9c7fae6170b7dae312b5927017d4c0c41c73",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
@@ -254,7 +254,7 @@
       }
     ],
     "fuente": "mod_planes_as.csv",
-    "generado_en": "2026-07-07 17:06:34",
+    "generado_en": "2026-07-07 20:55:37",
     "total_clientes": 7,
     "vendedor_id": "V10"
   }

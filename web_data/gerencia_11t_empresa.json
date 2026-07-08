@@ -1,31 +1,31 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/gerencia/11t_empresa",
-    "generated_at": "2026-07-07T17:06:33-03:00",
+    "generated_at": "2026-07-07T20:55:37-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_11_titulares.csv"
     ],
     "http_status": 200,
     "count": 5,
     "count_type": "dict_keys",
-    "checksum_sha256": "543a5b59c0f5581aed17a794afa9525cd2ca3997fdcc449da8b37e500181d209",
+    "checksum_sha256": "414485db723630999e6cf059d11eb08c592720725dfd3fc59bdd7245f233a6f5",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
   "payload": {
     "fuente": "mod_11_titulares.csv",
-    "generado_en": "2026-07-07 17:06:33",
+    "generado_en": "2026-07-07 20:55:37",
     "marcas": [
       {
-        "con": 5,
-        "marca": "DADA",
-        "pct": 10.9,
+        "con": 1,
+        "marca": "SMIRNOFF",
+        "pct": 14.3,
         "por_vendedor": {
           "V10": {
-            "con": 1,
-            "pct": 20.0,
-            "sin": 4,
-            "total": 5
+            "con": 0,
+            "pct": 0.0,
+            "sin": 1,
+            "total": 1
           },
           "V3": {
             "con": 0,
@@ -36,149 +36,98 @@
           "V4": {
             "con": 0,
             "pct": 0.0,
-            "sin": 13,
-            "total": 13
+            "sin": 0,
+            "total": 0
           },
           "V6": {
-            "con": 1,
-            "pct": 10.0,
-            "sin": 9,
-            "total": 10
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
           },
           "V7": {
             "con": 0,
             "pct": 0.0,
-            "sin": 5,
-            "total": 5
+            "sin": 0,
+            "total": 0
           },
           "V8": {
-            "con": 3,
-            "pct": 37.5,
+            "con": 1,
+            "pct": 16.7,
             "sin": 5,
-            "total": 8
+            "total": 6
           },
           "V9": {
             "con": 0,
             "pct": 0.0,
-            "sin": 5,
-            "total": 5
+            "sin": 0,
+            "total": 0
           }
         },
-        "sin": 41,
-        "total": 46
+        "sin": 6,
+        "total": 7
       },
       {
         "con": 3,
-        "marca": "FINCA LAS MORAS",
-        "pct": 6.5,
+        "marca": "DADA",
+        "pct": 7.1,
         "por_vendedor": {
           "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 3,
+            "total": 3
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V6": {
             "con": 1,
-            "pct": 20.0,
+            "pct": 14.3,
+            "sin": 6,
+            "total": 7
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V8": {
+            "con": 2,
+            "pct": 33.3,
             "sin": 4,
-            "total": 5
-          },
-          "V3": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 0,
-            "total": 0
-          },
-          "V4": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 13,
-            "total": 13
-          },
-          "V6": {
-            "con": 1,
-            "pct": 10.0,
-            "sin": 9,
-            "total": 10
-          },
-          "V7": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 5,
-            "total": 5
-          },
-          "V8": {
-            "con": 1,
-            "pct": 12.5,
-            "sin": 7,
-            "total": 8
+            "total": 6
           },
           "V9": {
             "con": 0,
             "pct": 0.0,
-            "sin": 5,
-            "total": 5
-          }
-        },
-        "sin": 43,
-        "total": 46
-      },
-      {
-        "con": 2,
-        "marca": "ALARIS",
-        "pct": 4.3,
-        "por_vendedor": {
-          "V10": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 5,
-            "total": 5
-          },
-          "V3": {
-            "con": 0,
-            "pct": 0.0,
             "sin": 0,
             "total": 0
-          },
-          "V4": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 13,
-            "total": 13
-          },
-          "V6": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 10,
-            "total": 10
-          },
-          "V7": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 5,
-            "total": 5
-          },
-          "V8": {
-            "con": 2,
-            "pct": 22.2,
-            "sin": 7,
-            "total": 9
-          },
-          "V9": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 5,
-            "total": 5
           }
         },
-        "sin": 45,
-        "total": 47
+        "sin": 39,
+        "total": 42
       },
       {
         "con": 2,
-        "marca": "ANTARES",
-        "pct": 4.3,
+        "marca": "SMF ICE",
+        "pct": 4.8,
         "por_vendedor": {
           "V10": {
-            "con": 2,
-            "pct": 40.0,
+            "con": 0,
+            "pct": 0.0,
             "sin": 3,
-            "total": 5
+            "total": 3
           },
           "V3": {
             "con": 0,
@@ -187,349 +136,196 @@
             "total": 0
           },
           "V4": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 13,
-            "total": 13
-          },
-          "V6": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 10,
-            "total": 10
-          },
-          "V7": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 5,
-            "total": 5
-          },
-          "V8": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 8,
-            "total": 8
-          },
-          "V9": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 5,
-            "total": 5
-          }
-        },
-        "sin": 44,
-        "total": 46
-      },
-      {
-        "con": 2,
-        "marca": "LOS ARBOLES",
-        "pct": 4.3,
-        "por_vendedor": {
-          "V10": {
-            "con": 2,
-            "pct": 40.0,
-            "sin": 3,
-            "total": 5
-          },
-          "V3": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 0,
-            "total": 0
-          },
-          "V4": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 13,
-            "total": 13
-          },
-          "V6": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 10,
-            "total": 10
-          },
-          "V7": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 5,
-            "total": 5
-          },
-          "V8": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 8,
-            "total": 8
-          },
-          "V9": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 5,
-            "total": 5
-          }
-        },
-        "sin": 44,
-        "total": 46
-      },
-      {
-        "con": 11,
-        "marca": "ALMA MORA",
-        "pct": 3.1,
-        "por_vendedor": {
-          "V10": {
-            "con": 4,
-            "pct": 9.3,
-            "sin": 39,
-            "total": 43
-          },
-          "V3": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 50,
-            "total": 50
-          },
-          "V4": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 52,
-            "total": 52
-          },
-          "V6": {
-            "con": 2,
-            "pct": 2.8,
-            "sin": 69,
-            "total": 71
-          },
-          "V7": {
             "con": 1,
-            "pct": 1.7,
-            "sin": 59,
-            "total": 60
+            "pct": 7.7,
+            "sin": 12,
+            "total": 13
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 7,
+            "total": 7
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
           },
           "V8": {
-            "con": 4,
-            "pct": 7.4,
-            "sin": 50,
-            "total": 54
+            "con": 1,
+            "pct": 16.7,
+            "sin": 5,
+            "total": 6
           },
           "V9": {
             "con": 0,
             "pct": 0.0,
-            "sin": 23,
-            "total": 23
+            "sin": 0,
+            "total": 0
           }
         },
-        "sin": 342,
-        "total": 353
+        "sin": 40,
+        "total": 42
+      },
+      {
+        "con": 1,
+        "marca": "FINCA LAS MORAS",
+        "pct": 2.4,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 3,
+            "total": 3
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 1,
+            "pct": 7.7,
+            "sin": 12,
+            "total": 13
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 7,
+            "total": 7
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 6,
+            "total": 6
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          }
+        },
+        "sin": 41,
+        "total": 42
       },
       {
         "con": 1,
         "marca": "GORDON'S FLAVOURS",
+        "pct": 2.4,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 3,
+            "total": 3
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 7,
+            "total": 7
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V8": {
+            "con": 1,
+            "pct": 16.7,
+            "sin": 5,
+            "total": 6
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          }
+        },
+        "sin": 41,
+        "total": 42
+      },
+      {
+        "con": 1,
+        "marca": "LOS ARBOLES",
+        "pct": 2.4,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 3,
+            "total": 3
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 7,
+            "total": 7
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V8": {
+            "con": 1,
+            "pct": 16.7,
+            "sin": 5,
+            "total": 6
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          }
+        },
+        "sin": 41,
+        "total": 42
+      },
+      {
+        "con": 9,
+        "marca": "ALMA MORA",
         "pct": 2.2,
-        "por_vendedor": {
-          "V10": {
-            "con": 1,
-            "pct": 20.0,
-            "sin": 4,
-            "total": 5
-          },
-          "V3": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 0,
-            "total": 0
-          },
-          "V4": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 13,
-            "total": 13
-          },
-          "V6": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 10,
-            "total": 10
-          },
-          "V7": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 5,
-            "total": 5
-          },
-          "V8": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 8,
-            "total": 8
-          },
-          "V9": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 5,
-            "total": 5
-          }
-        },
-        "sin": 45,
-        "total": 46
-      },
-      {
-        "con": 1,
-        "marca": "SMF ICE",
-        "pct": 2.2,
-        "por_vendedor": {
-          "V10": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 5,
-            "total": 5
-          },
-          "V3": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 0,
-            "total": 0
-          },
-          "V4": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 13,
-            "total": 13
-          },
-          "V6": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 10,
-            "total": 10
-          },
-          "V7": {
-            "con": 1,
-            "pct": 20.0,
-            "sin": 4,
-            "total": 5
-          },
-          "V8": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 8,
-            "total": 8
-          },
-          "V9": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 5,
-            "total": 5
-          }
-        },
-        "sin": 45,
-        "total": 46
-      },
-      {
-        "con": 1,
-        "marca": "SMIRNOFF FLAVOURS",
-        "pct": 2.1,
-        "por_vendedor": {
-          "V10": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 5,
-            "total": 5
-          },
-          "V3": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 0,
-            "total": 0
-          },
-          "V4": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 13,
-            "total": 13
-          },
-          "V6": {
-            "con": 1,
-            "pct": 10.0,
-            "sin": 9,
-            "total": 10
-          },
-          "V7": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 5,
-            "total": 5
-          },
-          "V8": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 9,
-            "total": 9
-          },
-          "V9": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 5,
-            "total": 5
-          }
-        },
-        "sin": 46,
-        "total": 47
-      },
-      {
-        "con": 4,
-        "marca": "TRAPICHE RESERVA",
-        "pct": 1.1,
-        "por_vendedor": {
-          "V10": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 43,
-            "total": 43
-          },
-          "V3": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 50,
-            "total": 50
-          },
-          "V4": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 53,
-            "total": 53
-          },
-          "V6": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 73,
-            "total": 73
-          },
-          "V7": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 60,
-            "total": 60
-          },
-          "V8": {
-            "con": 4,
-            "pct": 7.4,
-            "sin": 50,
-            "total": 54
-          },
-          "V9": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 23,
-            "total": 23
-          }
-        },
-        "sin": 352,
-        "total": 356
-      },
-      {
-        "con": 1,
-        "marca": "DON DAVID",
-        "pct": 0.3,
         "por_vendedor": {
           "V10": {
             "con": 1,
@@ -538,44 +334,401 @@
             "total": 43
           },
           "V3": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 50,
-            "total": 50
+            "con": 2,
+            "pct": 2.7,
+            "sin": 72,
+            "total": 74
           },
           "V4": {
             "con": 0,
             "pct": 0.0,
-            "sin": 52,
-            "total": 52
+            "sin": 64,
+            "total": 64
           },
           "V6": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 71,
-            "total": 71
+            "con": 1,
+            "pct": 2.3,
+            "sin": 43,
+            "total": 44
           },
           "V7": {
             "con": 0,
             "pct": 0.0,
-            "sin": 60,
-            "total": 60
+            "sin": 132,
+            "total": 132
           },
           "V8": {
+            "con": 4,
+            "pct": 10.5,
+            "sin": 34,
+            "total": 38
+          },
+          "V9": {
+            "con": 1,
+            "pct": 8.3,
+            "sin": 11,
+            "total": 12
+          }
+        },
+        "sin": 398,
+        "total": 407
+      },
+      {
+        "con": 1,
+        "marca": "SMIRNOFF FLAVOURS",
+        "pct": 2.0,
+        "por_vendedor": {
+          "V10": {
             "con": 0,
             "pct": 0.0,
-            "sin": 53,
-            "total": 53
+            "sin": 4,
+            "total": 4
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 7,
+            "total": 7
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V8": {
+            "con": 1,
+            "pct": 8.3,
+            "sin": 11,
+            "total": 12
           },
           "V9": {
             "con": 0,
             "pct": 0.0,
-            "sin": 22,
-            "total": 22
+            "sin": 0,
+            "total": 0
           }
         },
-        "sin": 350,
-        "total": 351
+        "sin": 48,
+        "total": 49
+      },
+      {
+        "con": 5,
+        "marca": "CAZADOR",
+        "pct": 1.4,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 39,
+            "total": 39
+          },
+          "V3": {
+            "con": 1,
+            "pct": 1.4,
+            "sin": 73,
+            "total": 74
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 51,
+            "total": 51
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 37,
+            "total": 37
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 119,
+            "total": 119
+          },
+          "V8": {
+            "con": 4,
+            "pct": 15.4,
+            "sin": 22,
+            "total": 26
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 12,
+            "total": 12
+          }
+        },
+        "sin": 353,
+        "total": 358
+      },
+      {
+        "con": 4,
+        "marca": "DON DAVID",
+        "pct": 1.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 42,
+            "total": 42
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 74,
+            "total": 74
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 64,
+            "total": 64
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 44,
+            "total": 44
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 132,
+            "total": 132
+          },
+          "V8": {
+            "con": 4,
+            "pct": 12.5,
+            "sin": 28,
+            "total": 32
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 12,
+            "total": 12
+          }
+        },
+        "sin": 396,
+        "total": 400
+      },
+      {
+        "con": 3,
+        "marca": "TRAPICHE RESERVA",
+        "pct": 0.7,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 42,
+            "total": 42
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 74,
+            "total": 74
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 64,
+            "total": 64
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 44,
+            "total": 44
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 132,
+            "total": 132
+          },
+          "V8": {
+            "con": 3,
+            "pct": 8.8,
+            "sin": 31,
+            "total": 34
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 12,
+            "total": 12
+          }
+        },
+        "sin": 399,
+        "total": 402
+      },
+      {
+        "con": 1,
+        "marca": "FOND DE CAVE",
+        "pct": 0.3,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 39,
+            "total": 39
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 74,
+            "total": 74
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 51,
+            "total": 51
+          },
+          "V6": {
+            "con": 1,
+            "pct": 2.7,
+            "sin": 36,
+            "total": 37
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 119,
+            "total": 119
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 26,
+            "total": 26
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 12,
+            "total": 12
+          }
+        },
+        "sin": 357,
+        "total": 358
+      },
+      {
+        "con": 0,
+        "marca": "ALARIS",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 4,
+            "total": 4
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 7,
+            "total": 7
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 12,
+            "total": 12
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          }
+        },
+        "sin": 49,
+        "total": 49
+      },
+      {
+        "con": 0,
+        "marca": "ANTARES",
+        "pct": 0.0,
+        "por_vendedor": {
+          "V10": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 3,
+            "total": 3
+          },
+          "V3": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V4": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 7,
+            "total": 7
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 13,
+            "total": 13
+          },
+          "V8": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 6,
+            "total": 6
+          },
+          "V9": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          }
+        },
+        "sin": 42,
+        "total": 42
       },
       {
         "con": 0,
@@ -597,27 +750,27 @@
           "V4": {
             "con": 0,
             "pct": 0.0,
-            "sin": 1,
-            "total": 1
+            "sin": 0,
+            "total": 0
           },
           "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V8": {
             "con": 0,
             "pct": 0.0,
             "sin": 2,
             "total": 2
           },
-          "V7": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 0,
-            "total": 0
-          },
-          "V8": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 1,
-            "total": 1
-          },
           "V9": {
             "con": 0,
             "pct": 0.0,
@@ -625,59 +778,8 @@
             "total": 0
           }
         },
-        "sin": 4,
-        "total": 4
-      },
-      {
-        "con": 0,
-        "marca": "CAZADOR",
-        "pct": 0.0,
-        "por_vendedor": {
-          "V10": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 38,
-            "total": 38
-          },
-          "V3": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 50,
-            "total": 50
-          },
-          "V4": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 39,
-            "total": 39
-          },
-          "V6": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 61,
-            "total": 61
-          },
-          "V7": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 55,
-            "total": 55
-          },
-          "V8": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 45,
-            "total": 45
-          },
-          "V9": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 17,
-            "total": 17
-          }
-        },
-        "sin": 305,
-        "total": 305
+        "sin": 2,
+        "total": 2
       },
       {
         "con": 0,
@@ -699,14 +801,14 @@
           "V4": {
             "con": 0,
             "pct": 0.0,
-            "sin": 1,
-            "total": 1
+            "sin": 0,
+            "total": 0
           },
           "V6": {
             "con": 0,
             "pct": 0.0,
-            "sin": 2,
-            "total": 2
+            "sin": 0,
+            "total": 0
           },
           "V7": {
             "con": 0,
@@ -717,8 +819,8 @@
           "V8": {
             "con": 0,
             "pct": 0.0,
-            "sin": 1,
-            "total": 1
+            "sin": 2,
+            "total": 2
           },
           "V9": {
             "con": 0,
@@ -727,8 +829,8 @@
             "total": 0
           }
         },
-        "sin": 4,
-        "total": 4
+        "sin": 2,
+        "total": 2
       },
       {
         "con": 0,
@@ -750,27 +852,27 @@
           "V4": {
             "con": 0,
             "pct": 0.0,
-            "sin": 1,
-            "total": 1
+            "sin": 0,
+            "total": 0
           },
           "V6": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V7": {
+            "con": 0,
+            "pct": 0.0,
+            "sin": 0,
+            "total": 0
+          },
+          "V8": {
             "con": 0,
             "pct": 0.0,
             "sin": 2,
             "total": 2
           },
-          "V7": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 0,
-            "total": 0
-          },
-          "V8": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 1,
-            "total": 1
-          },
           "V9": {
             "con": 0,
             "pct": 0.0,
@@ -778,59 +880,8 @@
             "total": 0
           }
         },
-        "sin": 4,
-        "total": 4
-      },
-      {
-        "con": 0,
-        "marca": "FOND DE CAVE",
-        "pct": 0.0,
-        "por_vendedor": {
-          "V10": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 38,
-            "total": 38
-          },
-          "V3": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 50,
-            "total": 50
-          },
-          "V4": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 39,
-            "total": 39
-          },
-          "V6": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 61,
-            "total": 61
-          },
-          "V7": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 55,
-            "total": 55
-          },
-          "V8": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 45,
-            "total": 45
-          },
-          "V9": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 18,
-            "total": 18
-          }
-        },
-        "sin": 306,
-        "total": 306
+        "sin": 2,
+        "total": 2
       },
       {
         "con": 0,
@@ -840,48 +891,48 @@
           "V10": {
             "con": 0,
             "pct": 0.0,
-            "sin": 38,
-            "total": 38
+            "sin": 39,
+            "total": 39
           },
           "V3": {
             "con": 0,
             "pct": 0.0,
-            "sin": 50,
-            "total": 50
+            "sin": 74,
+            "total": 74
           },
           "V4": {
             "con": 0,
             "pct": 0.0,
-            "sin": 40,
-            "total": 40
+            "sin": 51,
+            "total": 51
           },
           "V6": {
             "con": 0,
             "pct": 0.0,
-            "sin": 63,
-            "total": 63
+            "sin": 37,
+            "total": 37
           },
           "V7": {
             "con": 0,
             "pct": 0.0,
-            "sin": 55,
-            "total": 55
+            "sin": 119,
+            "total": 119
           },
           "V8": {
             "con": 0,
             "pct": 0.0,
-            "sin": 46,
-            "total": 46
+            "sin": 28,
+            "total": 28
           },
           "V9": {
             "con": 0,
             "pct": 0.0,
-            "sin": 17,
-            "total": 17
+            "sin": 12,
+            "total": 12
           }
         },
-        "sin": 309,
-        "total": 309
+        "sin": 360,
+        "total": 360
       },
       {
         "con": 0,
@@ -891,8 +942,8 @@
           "V10": {
             "con": 0,
             "pct": 0.0,
-            "sin": 0,
-            "total": 0
+            "sin": 1,
+            "total": 1
           },
           "V3": {
             "con": 0,
@@ -921,8 +972,8 @@
           "V8": {
             "con": 0,
             "pct": 0.0,
-            "sin": 1,
-            "total": 1
+            "sin": 6,
+            "total": 6
           },
           "V9": {
             "con": 0,
@@ -931,8 +982,8 @@
             "total": 0
           }
         },
-        "sin": 1,
-        "total": 1
+        "sin": 7,
+        "total": 7
       },
       {
         "con": 0,
@@ -942,48 +993,48 @@
           "V10": {
             "con": 0,
             "pct": 0.0,
-            "sin": 38,
-            "total": 38
+            "sin": 40,
+            "total": 40
           },
           "V3": {
             "con": 0,
             "pct": 0.0,
-            "sin": 50,
-            "total": 50
+            "sin": 74,
+            "total": 74
           },
           "V4": {
             "con": 0,
             "pct": 0.0,
-            "sin": 40,
-            "total": 40
+            "sin": 51,
+            "total": 51
           },
           "V6": {
             "con": 0,
             "pct": 0.0,
-            "sin": 63,
-            "total": 63
+            "sin": 37,
+            "total": 37
           },
           "V7": {
             "con": 0,
             "pct": 0.0,
-            "sin": 55,
-            "total": 55
+            "sin": 119,
+            "total": 119
           },
           "V8": {
             "con": 0,
             "pct": 0.0,
-            "sin": 47,
-            "total": 47
+            "sin": 34,
+            "total": 34
           },
           "V9": {
             "con": 0,
             "pct": 0.0,
-            "sin": 17,
-            "total": 17
+            "sin": 12,
+            "total": 12
           }
         },
-        "sin": 310,
-        "total": 310
+        "sin": 367,
+        "total": 367
       },
       {
         "con": 0,
@@ -993,8 +1044,8 @@
           "V10": {
             "con": 0,
             "pct": 0.0,
-            "sin": 0,
-            "total": 0
+            "sin": 1,
+            "total": 1
           },
           "V3": {
             "con": 0,
@@ -1005,14 +1056,14 @@
           "V4": {
             "con": 0,
             "pct": 0.0,
-            "sin": 1,
-            "total": 1
+            "sin": 0,
+            "total": 0
           },
           "V6": {
             "con": 0,
             "pct": 0.0,
-            "sin": 2,
-            "total": 2
+            "sin": 0,
+            "total": 0
           },
           "V7": {
             "con": 0,
@@ -1023,8 +1074,8 @@
           "V8": {
             "con": 0,
             "pct": 0.0,
-            "sin": 2,
-            "total": 2
+            "sin": 8,
+            "total": 8
           },
           "V9": {
             "con": 0,
@@ -1033,8 +1084,8 @@
             "total": 0
           }
         },
-        "sin": 5,
-        "total": 5
+        "sin": 9,
+        "total": 9
       },
       {
         "con": 0,
@@ -1044,48 +1095,48 @@
           "V10": {
             "con": 0,
             "pct": 0.0,
-            "sin": 38,
-            "total": 38
+            "sin": 40,
+            "total": 40
           },
           "V3": {
             "con": 0,
             "pct": 0.0,
-            "sin": 50,
-            "total": 50
+            "sin": 74,
+            "total": 74
           },
           "V4": {
             "con": 0,
             "pct": 0.0,
-            "sin": 39,
-            "total": 39
+            "sin": 51,
+            "total": 51
           },
           "V6": {
             "con": 0,
             "pct": 0.0,
-            "sin": 61,
-            "total": 61
+            "sin": 37,
+            "total": 37
           },
           "V7": {
             "con": 0,
             "pct": 0.0,
-            "sin": 55,
-            "total": 55
+            "sin": 119,
+            "total": 119
           },
           "V8": {
             "con": 0,
             "pct": 0.0,
-            "sin": 46,
-            "total": 46
+            "sin": 32,
+            "total": 32
           },
           "V9": {
             "con": 0,
             "pct": 0.0,
-            "sin": 17,
-            "total": 17
+            "sin": 12,
+            "total": 12
           }
         },
-        "sin": 306,
-        "total": 306
+        "sin": 365,
+        "total": 365
       },
       {
         "con": 0,
@@ -1107,14 +1158,14 @@
           "V4": {
             "con": 0,
             "pct": 0.0,
-            "sin": 1,
-            "total": 1
+            "sin": 0,
+            "total": 0
           },
           "V6": {
             "con": 0,
             "pct": 0.0,
-            "sin": 2,
-            "total": 2
+            "sin": 0,
+            "total": 0
           },
           "V7": {
             "con": 0,
@@ -1125,8 +1176,8 @@
           "V8": {
             "con": 0,
             "pct": 0.0,
-            "sin": 1,
-            "total": 1
+            "sin": 2,
+            "total": 2
           },
           "V9": {
             "con": 0,
@@ -1135,8 +1186,8 @@
             "total": 0
           }
         },
-        "sin": 4,
-        "total": 4
+        "sin": 2,
+        "total": 2
       },
       {
         "con": 0,
@@ -1146,8 +1197,8 @@
           "V10": {
             "con": 0,
             "pct": 0.0,
-            "sin": 0,
-            "total": 0
+            "sin": 1,
+            "total": 1
           },
           "V3": {
             "con": 0,
@@ -1176,8 +1227,8 @@
           "V8": {
             "con": 0,
             "pct": 0.0,
-            "sin": 1,
-            "total": 1
+            "sin": 6,
+            "total": 6
           },
           "V9": {
             "con": 0,
@@ -1186,8 +1237,8 @@
             "total": 0
           }
         },
-        "sin": 1,
-        "total": 1
+        "sin": 7,
+        "total": 7
       },
       {
         "con": 0,
@@ -1197,48 +1248,48 @@
           "V10": {
             "con": 0,
             "pct": 0.0,
-            "sin": 38,
-            "total": 38
+            "sin": 39,
+            "total": 39
           },
           "V3": {
             "con": 0,
             "pct": 0.0,
-            "sin": 50,
-            "total": 50
+            "sin": 74,
+            "total": 74
           },
           "V4": {
             "con": 0,
             "pct": 0.0,
-            "sin": 39,
-            "total": 39
+            "sin": 51,
+            "total": 51
           },
           "V6": {
             "con": 0,
             "pct": 0.0,
-            "sin": 61,
-            "total": 61
+            "sin": 37,
+            "total": 37
           },
           "V7": {
             "con": 0,
             "pct": 0.0,
-            "sin": 55,
-            "total": 55
+            "sin": 119,
+            "total": 119
           },
           "V8": {
             "con": 0,
             "pct": 0.0,
-            "sin": 45,
-            "total": 45
+            "sin": 26,
+            "total": 26
           },
           "V9": {
             "con": 0,
             "pct": 0.0,
-            "sin": 17,
-            "total": 17
+            "sin": 12,
+            "total": 12
           }
         },
-        "sin": 305,
-        "total": 305
+        "sin": 358,
+        "total": 358
       },
       {
         "con": 0,
@@ -1248,99 +1299,48 @@
           "V10": {
             "con": 0,
             "pct": 0.0,
-            "sin": 38,
-            "total": 38
-          },
-          "V3": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 50,
-            "total": 50
-          },
-          "V4": {
-            "con": 0,
-            "pct": 0.0,
             "sin": 40,
             "total": 40
           },
-          "V6": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 63,
-            "total": 63
-          },
-          "V7": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 55,
-            "total": 55
-          },
-          "V8": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 47,
-            "total": 47
-          },
-          "V9": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 17,
-            "total": 17
-          }
-        },
-        "sin": 310,
-        "total": 310
-      },
-      {
-        "con": 0,
-        "marca": "SMIRNOFF",
-        "pct": 0.0,
-        "por_vendedor": {
-          "V10": {
-            "con": 0,
-            "pct": 0.0,
-            "sin": 0,
-            "total": 0
-          },
           "V3": {
             "con": 0,
             "pct": 0.0,
-            "sin": 0,
-            "total": 0
+            "sin": 74,
+            "total": 74
           },
           "V4": {
             "con": 0,
             "pct": 0.0,
-            "sin": 0,
-            "total": 0
+            "sin": 51,
+            "total": 51
           },
           "V6": {
             "con": 0,
             "pct": 0.0,
-            "sin": 0,
-            "total": 0
+            "sin": 37,
+            "total": 37
           },
           "V7": {
             "con": 0,
             "pct": 0.0,
-            "sin": 0,
-            "total": 0
+            "sin": 119,
+            "total": 119
           },
           "V8": {
             "con": 0,
             "pct": 0.0,
-            "sin": 1,
-            "total": 1
+            "sin": 34,
+            "total": 34
           },
           "V9": {
             "con": 0,
             "pct": 0.0,
-            "sin": 0,
-            "total": 0
+            "sin": 12,
+            "total": 12
           }
         },
-        "sin": 1,
-        "total": 1
+        "sin": 367,
+        "total": 367
       },
       {
         "con": 0,
@@ -1350,8 +1350,8 @@
           "V10": {
             "con": 0,
             "pct": 0.0,
-            "sin": 0,
-            "total": 0
+            "sin": 1,
+            "total": 1
           },
           "V3": {
             "con": 0,
@@ -1362,14 +1362,14 @@
           "V4": {
             "con": 0,
             "pct": 0.0,
-            "sin": 1,
-            "total": 1
+            "sin": 0,
+            "total": 0
           },
           "V6": {
             "con": 0,
             "pct": 0.0,
-            "sin": 2,
-            "total": 2
+            "sin": 0,
+            "total": 0
           },
           "V7": {
             "con": 0,
@@ -1380,8 +1380,8 @@
           "V8": {
             "con": 0,
             "pct": 0.0,
-            "sin": 2,
-            "total": 2
+            "sin": 8,
+            "total": 8
           },
           "V9": {
             "con": 0,
@@ -1390,8 +1390,8 @@
             "total": 0
           }
         },
-        "sin": 5,
-        "total": 5
+        "sin": 9,
+        "total": 9
       },
       {
         "con": 0,
@@ -1401,48 +1401,48 @@
           "V10": {
             "con": 0,
             "pct": 0.0,
-            "sin": 38,
-            "total": 38
+            "sin": 39,
+            "total": 39
           },
           "V3": {
             "con": 0,
             "pct": 0.0,
-            "sin": 50,
-            "total": 50
+            "sin": 74,
+            "total": 74
           },
           "V4": {
             "con": 0,
             "pct": 0.0,
-            "sin": 40,
-            "total": 40
+            "sin": 51,
+            "total": 51
           },
           "V6": {
             "con": 0,
             "pct": 0.0,
-            "sin": 63,
-            "total": 63
+            "sin": 37,
+            "total": 37
           },
           "V7": {
             "con": 0,
             "pct": 0.0,
-            "sin": 55,
-            "total": 55
+            "sin": 119,
+            "total": 119
           },
           "V8": {
             "con": 0,
             "pct": 0.0,
-            "sin": 46,
-            "total": 46
+            "sin": 28,
+            "total": 28
           },
           "V9": {
             "con": 0,
             "pct": 0.0,
-            "sin": 17,
-            "total": 17
+            "sin": 12,
+            "total": 12
           }
         },
-        "sin": 309,
-        "total": 309
+        "sin": 360,
+        "total": 360
       }
     ],
     "total_marcas": 28,

@@ -1,7 +1,7 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/vendedor/V9/cobertura_acum",
-    "generated_at": "2026-07-07T17:06:34-03:00",
+    "generated_at": "2026-07-07T20:55:37-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_cobertura_acum.csv",
       "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
@@ -9,14 +9,14 @@
     "http_status": 200,
     "count": 5,
     "count_type": "dict_keys",
-    "checksum_sha256": "e40e82d8325f0583105ed1a21fbe42f645e2d37b94f4f1c799b315cbe376b1a4",
+    "checksum_sha256": "bb86affd9e6016695d12bfd916224db552a4c64c7ceb772aa333ed2d23266b5c",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
   "payload": {
-    "fecha_calculo": "2026-07-06",
+    "fecha_calculo": "2026-07-07",
     "fuente": "mod_cobertura_acum.csv",
-    "generado_en": "2026-07-07 17:06:34",
+    "generado_en": "2026-07-07 20:55:37",
     "segmentos": [
       {
         "cartera": 28,
@@ -453,7 +453,7 @@
       },
       {
         "cartera": 290,
-        "cubiertos": 13,
+        "cubiertos": 18,
         "faltantes": [
           {
             "botellas": 0.0,
@@ -572,13 +572,6 @@
             "cliente_id": 1355,
             "cliente_nombre": "ALTAMIRANO TAMARA VALERIA",
             "localidad": "La Travesía",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
-            "cliente_id": 715,
-            "cliente_nombre": "ALVAREZ EMILSE SOLEDAD",
-            "localidad": "Villa Dolores",
             "umbral": 3
           },
           {
@@ -712,13 +705,6 @@
             "cliente_id": 1217,
             "cliente_nombre": "BENEDETTI RUBEN DARIO",
             "localidad": "Villa de las Rosas",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
-            "cliente_id": 1043,
-            "cliente_nombre": "BENGOLEA MARIAS NELLY",
-            "localidad": "Villa Dolores",
             "umbral": 3
           },
           {
@@ -863,13 +849,6 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 8163,
-            "cliente_nombre": "CARDINALI FACUNDO GABRIEL",
-            "localidad": "Villa Dolores",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 8222,
             "cliente_nombre": "CARLOS MANUEL AGUERO",
             "localidad": "Villa Dolores",
@@ -981,7 +960,7 @@
             "umbral": 3
           },
           {
-            "botellas": 0.0,
+            "botellas": 2.0,
             "cliente_id": 8212,
             "cliente_nombre": "CLIENTE MOSTRADOR V20",
             "localidad": "Villa Dolores",
@@ -2172,13 +2151,6 @@
           },
           {
             "botellas": 0.0,
-            "cliente_id": 8194,
-            "cliente_nombre": "SALAS HECTOR FABIAN ",
-            "localidad": "Villa Dolores",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
             "cliente_id": 8120,
             "cliente_nombre": "SANCHEZ JOSE LORENZO",
             "localidad": "Villa Dolores",
@@ -2251,13 +2223,6 @@
             "botellas": 0.0,
             "cliente_id": 1203,
             "cliente_nombre": "TOMASSINI VALERIA ROXANA",
-            "localidad": "Villa Dolores",
-            "umbral": 3
-          },
-          {
-            "botellas": 0.0,
-            "cliente_id": 730,
-            "cliente_nombre": "TORRES EMILSE NOEMI",
             "localidad": "Villa Dolores",
             "umbral": 3
           },
@@ -2395,9 +2360,9 @@
             "umbral": 3
           }
         ],
-        "pct_cobertura": 0.0448,
+        "pct_cobertura": 0.0621,
         "segmento": "TRADICIONAL",
-        "sin_cobertura": 277
+        "sin_cobertura": 272
       }
     ],
     "vendedor_id": "V9"

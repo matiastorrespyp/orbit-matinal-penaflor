@@ -1,97 +1,97 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/gerencia/11t_vendedor?vendedor=V3",
-    "generated_at": "2026-07-07T17:06:36-03:00",
+    "generated_at": "2026-07-07T20:55:39-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_11_titulares.csv"
     ],
     "http_status": 200,
     "count": 6,
     "count_type": "dict_keys",
-    "checksum_sha256": "618b5fef86b56c98cc58daca04822f9906a0e8fc08daaa3b459acd46badb7525",
+    "checksum_sha256": "8ce2764d6594e84c5173e6870aca2d8606e8f7762fd7cd05b4b21312406b3812",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
   "payload": {
     "fuente": "mod_11_titulares.csv",
-    "generado_en": "2026-07-07 17:06:36",
+    "generado_en": "2026-07-07 20:55:39",
     "marcas": [
       {
-        "con": 0,
+        "con": 2,
         "marca": "ALMA MORA",
-        "pct": 0.0,
-        "sin": 50,
-        "total": 50
+        "pct": 2.7,
+        "sin": 72,
+        "total": 74
       },
       {
-        "con": 0,
+        "con": 1,
         "marca": "CAZADOR",
-        "pct": 0.0,
-        "sin": 50,
-        "total": 50
+        "pct": 1.4,
+        "sin": 73,
+        "total": 74
       },
       {
         "con": 0,
         "marca": "DON DAVID",
         "pct": 0.0,
-        "sin": 50,
-        "total": 50
+        "sin": 74,
+        "total": 74
       },
       {
         "con": 0,
         "marca": "FOND DE CAVE",
         "pct": 0.0,
-        "sin": 50,
-        "total": 50
+        "sin": 74,
+        "total": 74
       },
       {
         "con": 0,
         "marca": "FOND DE CAVE RVA",
         "pct": 0.0,
-        "sin": 50,
-        "total": 50
+        "sin": 74,
+        "total": 74
       },
       {
         "con": 0,
         "marca": "JW BLACK",
         "pct": 0.0,
-        "sin": 50,
-        "total": 50
+        "sin": 74,
+        "total": 74
       },
       {
         "con": 0,
         "marca": "JW RED",
         "pct": 0.0,
-        "sin": 50,
-        "total": 50
+        "sin": 74,
+        "total": 74
       },
       {
         "con": 0,
         "marca": "MASCOTA",
         "pct": 0.0,
-        "sin": 50,
-        "total": 50
+        "sin": 74,
+        "total": 74
       },
       {
         "con": 0,
         "marca": "NC ESPUMANTES",
         "pct": 0.0,
-        "sin": 50,
-        "total": 50
+        "sin": 74,
+        "total": 74
       },
       {
         "con": 0,
         "marca": "TRAPICHE MEDALLA",
         "pct": 0.0,
-        "sin": 50,
-        "total": 50
+        "sin": 74,
+        "total": 74
       },
       {
         "con": 0,
         "marca": "TRAPICHE RESERVA",
         "pct": 0.0,
-        "sin": 50,
-        "total": 50
+        "sin": 74,
+        "total": 74
       }
     ],
     "total_marcas": 11,

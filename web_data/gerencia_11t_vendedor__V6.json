@@ -1,198 +1,156 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/gerencia/11t_vendedor?vendedor=V6",
-    "generated_at": "2026-07-07T17:06:36-03:00",
+    "generated_at": "2026-07-07T20:55:39-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_11_titulares.csv"
     ],
     "http_status": 200,
     "count": 6,
     "count_type": "dict_keys",
-    "checksum_sha256": "f3ea0e80e74b4619d45c55e8c76f04e96b63023774b714cac3b1296d83570661",
+    "checksum_sha256": "09e4f8fa34d3a55077767ef519a3422857835b581e9ca6ad99cddcc6cf800cf3",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
   "payload": {
     "fuente": "mod_11_titulares.csv",
-    "generado_en": "2026-07-07 17:06:36",
+    "generado_en": "2026-07-07 20:55:39",
     "marcas": [
       {
         "con": 1,
         "marca": "DADA",
-        "pct": 10.0,
-        "sin": 9,
-        "total": 10
+        "pct": 14.3,
+        "sin": 6,
+        "total": 7
       },
       {
         "con": 1,
-        "marca": "FINCA LAS MORAS",
-        "pct": 10.0,
-        "sin": 9,
-        "total": 10
+        "marca": "FOND DE CAVE",
+        "pct": 2.7,
+        "sin": 36,
+        "total": 37
       },
       {
         "con": 1,
-        "marca": "SMIRNOFF FLAVOURS",
-        "pct": 10.0,
-        "sin": 9,
-        "total": 10
-      },
-      {
-        "con": 2,
         "marca": "ALMA MORA",
-        "pct": 2.8,
-        "sin": 69,
-        "total": 71
+        "pct": 2.3,
+        "sin": 43,
+        "total": 44
       },
       {
         "con": 0,
         "marca": "ALARIS",
         "pct": 0.0,
-        "sin": 10,
-        "total": 10
+        "sin": 7,
+        "total": 7
       },
       {
         "con": 0,
         "marca": "ANTARES",
         "pct": 0.0,
-        "sin": 10,
-        "total": 10
-      },
-      {
-        "con": 0,
-        "marca": "BLEND EXTREMOS",
-        "pct": 0.0,
-        "sin": 2,
-        "total": 2
+        "sin": 7,
+        "total": 7
       },
       {
         "con": 0,
         "marca": "CAZADOR",
         "pct": 0.0,
-        "sin": 61,
-        "total": 61
-      },
-      {
-        "con": 0,
-        "marca": "COSTA&PAMPA",
-        "pct": 0.0,
-        "sin": 2,
-        "total": 2
+        "sin": 37,
+        "total": 37
       },
       {
         "con": 0,
         "marca": "DON DAVID",
         "pct": 0.0,
-        "sin": 71,
-        "total": 71
+        "sin": 44,
+        "total": 44
       },
       {
         "con": 0,
-        "marca": "EL ESTECO",
+        "marca": "FINCA LAS MORAS",
         "pct": 0.0,
-        "sin": 2,
-        "total": 2
-      },
-      {
-        "con": 0,
-        "marca": "FOND DE CAVE",
-        "pct": 0.0,
-        "sin": 61,
-        "total": 61
+        "sin": 7,
+        "total": 7
       },
       {
         "con": 0,
         "marca": "FOND DE CAVE RVA",
         "pct": 0.0,
-        "sin": 63,
-        "total": 63
+        "sin": 37,
+        "total": 37
       },
       {
         "con": 0,
         "marca": "GORDON'S FLAVOURS",
         "pct": 0.0,
-        "sin": 10,
-        "total": 10
+        "sin": 7,
+        "total": 7
       },
       {
         "con": 0,
         "marca": "JW BLACK",
         "pct": 0.0,
-        "sin": 63,
-        "total": 63
-      },
-      {
-        "con": 0,
-        "marca": "JW GOLD",
-        "pct": 0.0,
-        "sin": 2,
-        "total": 2
+        "sin": 37,
+        "total": 37
       },
       {
         "con": 0,
         "marca": "JW RED",
         "pct": 0.0,
-        "sin": 61,
-        "total": 61
-      },
-      {
-        "con": 0,
-        "marca": "LA MASCOTA",
-        "pct": 0.0,
-        "sin": 2,
-        "total": 2
+        "sin": 37,
+        "total": 37
       },
       {
         "con": 0,
         "marca": "LOS ARBOLES",
         "pct": 0.0,
-        "sin": 10,
-        "total": 10
+        "sin": 7,
+        "total": 7
       },
       {
         "con": 0,
         "marca": "MASCOTA",
         "pct": 0.0,
-        "sin": 61,
-        "total": 61
+        "sin": 37,
+        "total": 37
       },
       {
         "con": 0,
         "marca": "NC ESPUMANTES",
         "pct": 0.0,
-        "sin": 63,
-        "total": 63
+        "sin": 37,
+        "total": 37
       },
       {
         "con": 0,
         "marca": "SMF ICE",
         "pct": 0.0,
-        "sin": 10,
-        "total": 10
+        "sin": 7,
+        "total": 7
       },
       {
         "con": 0,
-        "marca": "TANQUERAY",
+        "marca": "SMIRNOFF FLAVOURS",
         "pct": 0.0,
-        "sin": 2,
-        "total": 2
+        "sin": 7,
+        "total": 7
       },
       {
         "con": 0,
         "marca": "TRAPICHE MEDALLA",
         "pct": 0.0,
-        "sin": 63,
-        "total": 63
+        "sin": 37,
+        "total": 37
       },
       {
         "con": 0,
         "marca": "TRAPICHE RESERVA",
         "pct": 0.0,
-        "sin": 73,
-        "total": 73
+        "sin": 44,
+        "total": 44
       }
     ],
-    "total_marcas": 25,
+    "total_marcas": 19,
     "vendedor": "V6",
     "vendedor_nombre": "PEYRONEL ANDREA"
   }

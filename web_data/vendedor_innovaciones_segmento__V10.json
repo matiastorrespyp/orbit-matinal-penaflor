@@ -1,21 +1,21 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/vendedor/V10/innovaciones_segmento",
-    "generated_at": "2026-07-07T17:06:34-03:00",
+    "generated_at": "2026-07-07T20:55:37-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
     ],
     "http_status": 200,
     "count": 6,
     "count_type": "dict_keys",
-    "checksum_sha256": "d7c2858208476acd7f9c78a2e497ec9771aeec8dd7ae947d60a5549780b20b1f",
+    "checksum_sha256": "8d0668afb19e6ae4f74ee124966a328144c2aee2d986339bcbc0875f7a365af0",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
   "payload": {
-    "fecha_ejecucion": "2026-07-06",
+    "fecha_ejecucion": "2026-07-07",
     "fuente": "mod_innovaciones_segmento.csv",
-    "generado_en": "2026-07-07 17:06:34",
+    "generado_en": "2026-07-07 20:55:37",
     "productos": [
       {
         "clientes_cartera": 169,

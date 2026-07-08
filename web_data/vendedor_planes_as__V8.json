@@ -1,14 +1,14 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/vendedor/V8/planes_as",
-    "generated_at": "2026-07-07T17:06:34-03:00",
+    "generated_at": "2026-07-07T20:55:37-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_planes_as.csv"
     ],
     "http_status": 200,
     "count": 5,
     "count_type": "dict_keys",
-    "checksum_sha256": "d74ac848f0253f3c53795db6fa27b6af0e792fc479c22ef2ea6d939155332f05",
+    "checksum_sha256": "86d2113fa1041a26a0eb1c587bdf415b7fec93bc523ec5f28fe1be7611813165",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
@@ -55,7 +55,7 @@
         "dcto_plan": 0.0,
         "direccion": "SAENZ PEÑA 770",
         "envios": [],
-        "escala_actual": 0,
+        "escala_actual": 2,
         "escala_max": 5,
         "pf_disponible": 1,
         "pf_enviado": 0,
@@ -80,7 +80,7 @@
         "sc_smf_flavours": 0,
         "sc_total_ganado": 4,
         "tope": 0,
-        "total_facturado": 256128.91
+        "total_facturado": 566356.73
       },
       {
         "cant_cajas": 0,
@@ -225,7 +225,7 @@
         "dcto_plan": 0.0,
         "direccion": "9 DE SEPTIEMBRE 359",
         "envios": [],
-        "escala_actual": 0,
+        "escala_actual": 1,
         "escala_max": 5,
         "pf_disponible": 1,
         "pf_enviado": 0,
@@ -250,7 +250,7 @@
         "sc_smf_flavours": 0,
         "sc_total_ganado": 5,
         "tope": 0,
-        "total_facturado": 117724.81
+        "total_facturado": 270596.39
       },
       {
         "cant_cajas": 0,
@@ -560,7 +560,7 @@
       }
     ],
     "fuente": "mod_planes_as.csv",
-    "generado_en": "2026-07-07 17:06:34",
+    "generado_en": "2026-07-07 20:55:37",
     "total_clientes": 16,
     "vendedor_id": "V8"
   }

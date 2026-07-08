@@ -1,20 +1,20 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/gerencia/cobertura_acum_faltantes?segmento=MAYORISTA",
-    "generated_at": "2026-07-07T17:06:36-03:00",
+    "generated_at": "2026-07-07T20:55:40-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_cobertura_acum_detalle.csv"
     ],
     "http_status": 200,
     "count": 4,
     "count_type": "dict_keys",
-    "checksum_sha256": "83203124bee11352c4011d2da9c202163ac894e16b47228cb97f49644aa440a2",
+    "checksum_sha256": "bb8180245ca65beff9687cf99c34400defc371e649b9990be9a32cd3860c7386",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
   "payload": {
     "fuente": "mod_cobertura_acum_detalle.csv",
-    "generado_en": "2026-07-07 17:06:36",
+    "generado_en": "2026-07-07 20:55:40",
     "por_vendedor": [
       {
         "faltantes": [

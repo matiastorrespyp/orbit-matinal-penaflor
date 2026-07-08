@@ -1,14 +1,14 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/gerencia/cobertura_acum",
-    "generated_at": "2026-07-07T17:06:33-03:00",
+    "generated_at": "2026-07-07T20:55:37-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_cobertura_acum.csv"
     ],
     "http_status": 200,
     "count": 5,
     "count_type": "dict_keys",
-    "checksum_sha256": "ccd0a0e5eda465ab2d0468a25de1991b74fc135809ae851259c33e42f0b986d9",
+    "checksum_sha256": "e7309e8c81e9ee4ff82c212fe07b7dc90440f69b6271dac7303f9f865c1697a6",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
@@ -19,18 +19,18 @@
       "vendedor_id": "V20",
       "vendedor_nombre": "Depósito (venta directa)"
     },
-    "fecha_calculo": "2026-07-06",
+    "fecha_calculo": "2026-07-07",
     "fuente": "mod_cobertura_acum.csv",
-    "generado_en": "2026-07-07 17:06:33",
+    "generado_en": "2026-07-07 20:55:37",
     "por_vendedor": [
       {
         "segmentos": [
           {
             "cartera": 284,
-            "cubiertos": 4,
-            "pct_cobertura": 0.0141,
+            "cubiertos": 6,
+            "pct_cobertura": 0.0211,
             "segmento": "TRADICIONAL",
-            "sin_cobertura": 280
+            "sin_cobertura": 278
           }
         ],
         "vendedor_id": "V3",
@@ -40,10 +40,10 @@
         "segmentos": [
           {
             "cartera": 45,
-            "cubiertos": 5,
-            "pct_cobertura": 0.1111,
+            "cubiertos": 7,
+            "pct_cobertura": 0.1556,
             "segmento": "AUTOSERVICIO",
-            "sin_cobertura": 40
+            "sin_cobertura": 38
           },
           {
             "cartera": 5,
@@ -74,10 +74,10 @@
         "segmentos": [
           {
             "cartera": 37,
-            "cubiertos": 2,
-            "pct_cobertura": 0.0541,
+            "cubiertos": 4,
+            "pct_cobertura": 0.1081,
             "segmento": "AUTOSERVICIO",
-            "sin_cobertura": 35
+            "sin_cobertura": 33
           },
           {
             "cartera": 2,
@@ -88,17 +88,17 @@
           },
           {
             "cartera": 34,
-            "cubiertos": 1,
-            "pct_cobertura": 0.0294,
+            "cubiertos": 3,
+            "pct_cobertura": 0.0882,
             "segmento": "ON_PREMISE",
-            "sin_cobertura": 33
+            "sin_cobertura": 31
           },
           {
             "cartera": 189,
-            "cubiertos": 9,
-            "pct_cobertura": 0.0476,
+            "cubiertos": 20,
+            "pct_cobertura": 0.1058,
             "segmento": "TRADICIONAL",
-            "sin_cobertura": 180
+            "sin_cobertura": 169
           }
         ],
         "vendedor_id": "V6",
@@ -122,10 +122,10 @@
           },
           {
             "cartera": 271,
-            "cubiertos": 2,
-            "pct_cobertura": 0.0074,
+            "cubiertos": 3,
+            "pct_cobertura": 0.0111,
             "segmento": "TRADICIONAL",
-            "sin_cobertura": 269
+            "sin_cobertura": 268
           }
         ],
         "vendedor_id": "V7",
@@ -149,17 +149,17 @@
           },
           {
             "cartera": 47,
-            "cubiertos": 3,
-            "pct_cobertura": 0.0638,
+            "cubiertos": 4,
+            "pct_cobertura": 0.0851,
             "segmento": "ON_PREMISE",
-            "sin_cobertura": 44
+            "sin_cobertura": 43
           },
           {
             "cartera": 189,
-            "cubiertos": 17,
-            "pct_cobertura": 0.0899,
+            "cubiertos": 21,
+            "pct_cobertura": 0.1111,
             "segmento": "TRADICIONAL",
-            "sin_cobertura": 172
+            "sin_cobertura": 168
           }
         ],
         "vendedor_id": "V8",
@@ -190,10 +190,10 @@
           },
           {
             "cartera": 290,
-            "cubiertos": 13,
-            "pct_cobertura": 0.0448,
+            "cubiertos": 18,
+            "pct_cobertura": 0.0621,
             "segmento": "TRADICIONAL",
-            "sin_cobertura": 277
+            "sin_cobertura": 272
           }
         ],
         "vendedor_id": "V9",

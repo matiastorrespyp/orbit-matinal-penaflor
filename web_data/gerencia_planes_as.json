@@ -1,7 +1,7 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/gerencia/planes_as",
-    "generated_at": "2026-07-07T17:06:33-03:00",
+    "generated_at": "2026-07-07T20:55:37-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_planes_as.csv",
       "04_DATASETS_ORBIT/mod_sincargos_envios.csv"
@@ -9,7 +9,7 @@
     "http_status": 200,
     "count": 5,
     "count_type": "dict_keys",
-    "checksum_sha256": "02cce54a5cea6018ed9a75dfc82be83634995ae0d2e8d84eb8b09453d63ac3de",
+    "checksum_sha256": "94e5815849c7661ca46645fd593787afc18fb7f1736f706995f486e0da950e6e",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
@@ -61,7 +61,7 @@
         "dia_visita": "Mi",
         "direccion": "SAENZ PEÑA 770",
         "envios": [],
-        "escala_actual": 0,
+        "escala_actual": 2,
         "escala_max": 5,
         "localidad": "San Francisco",
         "pf_disponible": 1,
@@ -87,7 +87,7 @@
         "sc_smf_flavours": 0,
         "sc_total_ganado": 4,
         "tope": 0,
-        "total_facturado": 256128.91,
+        "total_facturado": 566356.73,
         "vendedor_id": "V8",
         "vendedor_nombre": "ALVAREZ VANESA  KAFF"
       },
@@ -403,7 +403,7 @@
         "dia_visita": "Mi",
         "direccion": "9 DE SEPTIEMBRE 359",
         "envios": [],
-        "escala_actual": 0,
+        "escala_actual": 1,
         "escala_max": 5,
         "localidad": "San Francisco",
         "pf_disponible": 1,
@@ -429,7 +429,7 @@
         "sc_smf_flavours": 0,
         "sc_total_ganado": 5,
         "tope": 0,
-        "total_facturado": 117724.81,
+        "total_facturado": 270596.39,
         "vendedor_id": "V8",
         "vendedor_nombre": "ALVAREZ VANESA  KAFF"
       },
@@ -1194,9 +1194,9 @@
         "vendedor_nombre": "SANCHEZ FERNANDO JAVIER"
       }
     ],
-    "fecha_calculo": "2026-07-06",
+    "fecha_calculo": "2026-07-07",
     "fuente": "mod_planes_as.csv",
-    "generado_en": "2026-07-07 17:06:33",
+    "generado_en": "2026-07-07 20:55:37",
     "total_clientes": 31
   }
 }

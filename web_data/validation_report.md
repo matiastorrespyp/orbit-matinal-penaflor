@@ -1,6 +1,6 @@
 # Validación Fase 1 — Orbit Peñaflor
 
-- **Fecha:** 2026-07-07T17:12:29-03:00
+- **Fecha:** 2026-07-07T20:56:08-03:00
 - **Certificado:** ✅ SÍ — la capa precomputada es idéntica a producción
 - **Volátiles ignorados en payload:** `generado_en`
 - **Aislamiento:** gsheets_enabled=False (orbit.db real y Sheets NO tocados)

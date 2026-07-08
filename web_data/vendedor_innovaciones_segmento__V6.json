@@ -1,21 +1,21 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/vendedor/V6/innovaciones_segmento",
-    "generated_at": "2026-07-07T17:06:34-03:00",
+    "generated_at": "2026-07-07T20:55:37-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
     ],
     "http_status": 200,
     "count": 6,
     "count_type": "dict_keys",
-    "checksum_sha256": "f3e7c43108b8c2641f188dc38430377c2cea148611de5ffcd730597444497f8c",
+    "checksum_sha256": "9b93167da020d7cc76e5f0b31a0a87ee9a86ce39da5730195c6678a91394849a",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
   "payload": {
-    "fecha_ejecucion": "2026-07-06",
+    "fecha_ejecucion": "2026-07-07",
     "fuente": "mod_innovaciones_segmento.csv",
-    "generado_en": "2026-07-07 17:06:34",
+    "generado_en": "2026-07-07 20:55:37",
     "productos": [
       {
         "clientes_cartera": 144,
@@ -3642,7 +3642,7 @@
       },
       {
         "clientes_cartera": 37,
-        "clientes_compraron": 0,
+        "clientes_compraron": 1,
         "clientes_faltantes": [
           14,
           59,
@@ -3657,7 +3657,6 @@
           1441,
           2038,
           2130,
-          2334,
           2392,
           2420,
           2602,
@@ -3682,7 +3681,7 @@
           3521,
           3522
         ],
-        "pct_cobertura": 0.0,
+        "pct_cobertura": 0.027,
         "producto_codigo": 42376,
         "producto_nombre": "DON DAVID RED BLEND 6X750",
         "segmento": "AUTOSERVICIO"
@@ -3924,7 +3923,7 @@
       },
       {
         "clientes_cartera": 37,
-        "clientes_compraron": 0,
+        "clientes_compraron": 1,
         "clientes_faltantes": [
           14,
           59,
@@ -3939,7 +3938,6 @@
           1441,
           2038,
           2130,
-          2334,
           2392,
           2420,
           2602,
@@ -3964,7 +3962,7 @@
           3521,
           3522
         ],
-        "pct_cobertura": 0.0,
+        "pct_cobertura": 0.027,
         "producto_codigo": 74786,
         "producto_nombre": "EL BAUTISMO CABERNET 6X750",
         "segmento": "AUTOSERVICIO"
@@ -4018,7 +4016,7 @@
       },
       {
         "clientes_cartera": 37,
-        "clientes_compraron": 0,
+        "clientes_compraron": 1,
         "clientes_faltantes": [
           14,
           59,
@@ -4033,7 +4031,6 @@
           1441,
           2038,
           2130,
-          2334,
           2392,
           2420,
           2602,
@@ -4058,7 +4055,7 @@
           3521,
           3522
         ],
-        "pct_cobertura": 0.0,
+        "pct_cobertura": 0.027,
         "producto_codigo": 74814,
         "producto_nombre": "CAZADOR MALBEC 6X750",
         "segmento": "AUTOSERVICIO"
@@ -4253,7 +4250,7 @@
       },
       {
         "clientes_cartera": 37,
-        "clientes_compraron": 0,
+        "clientes_compraron": 1,
         "clientes_faltantes": [
           14,
           59,
@@ -4268,7 +4265,6 @@
           1441,
           2038,
           2130,
-          2334,
           2392,
           2420,
           2602,
@@ -4293,7 +4289,7 @@
           3521,
           3522
         ],
-        "pct_cobertura": 0.0,
+        "pct_cobertura": 0.027,
         "producto_codigo": 74840,
         "producto_nombre": "TRAPICHE DULCE COSECHA TINTO 6X750",
         "segmento": "AUTOSERVICIO"

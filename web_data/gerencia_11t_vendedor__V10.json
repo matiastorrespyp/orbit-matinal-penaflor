@@ -1,66 +1,24 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/gerencia/11t_vendedor?vendedor=V10",
-    "generated_at": "2026-07-07T17:06:36-03:00",
+    "generated_at": "2026-07-07T20:55:39-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_11_titulares.csv"
     ],
     "http_status": 200,
     "count": 6,
     "count_type": "dict_keys",
-    "checksum_sha256": "04e126409ca3fe362f75d8b082130a66b01f16950001695b6ae8963069477c1c",
+    "checksum_sha256": "3a3d9f3847b0201272bd9e77eea84fab511c8c22ea0f55ffde4f1de8d9cc14d4",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
   "payload": {
     "fuente": "mod_11_titulares.csv",
-    "generado_en": "2026-07-07 17:06:36",
+    "generado_en": "2026-07-07 20:55:39",
     "marcas": [
       {
-        "con": 2,
-        "marca": "ANTARES",
-        "pct": 40.0,
-        "sin": 3,
-        "total": 5
-      },
-      {
-        "con": 2,
-        "marca": "LOS ARBOLES",
-        "pct": 40.0,
-        "sin": 3,
-        "total": 5
-      },
-      {
         "con": 1,
-        "marca": "DADA",
-        "pct": 20.0,
-        "sin": 4,
-        "total": 5
-      },
-      {
-        "con": 1,
-        "marca": "FINCA LAS MORAS",
-        "pct": 20.0,
-        "sin": 4,
-        "total": 5
-      },
-      {
-        "con": 1,
-        "marca": "GORDON'S FLAVOURS",
-        "pct": 20.0,
-        "sin": 4,
-        "total": 5
-      },
-      {
-        "con": 4,
         "marca": "ALMA MORA",
-        "pct": 9.3,
-        "sin": 39,
-        "total": 43
-      },
-      {
-        "con": 1,
-        "marca": "DON DAVID",
         "pct": 2.3,
         "sin": 42,
         "total": 43
@@ -69,88 +27,165 @@
         "con": 0,
         "marca": "ALARIS",
         "pct": 0.0,
-        "sin": 5,
-        "total": 5
+        "sin": 4,
+        "total": 4
+      },
+      {
+        "con": 0,
+        "marca": "ANTARES",
+        "pct": 0.0,
+        "sin": 3,
+        "total": 3
       },
       {
         "con": 0,
         "marca": "CAZADOR",
         "pct": 0.0,
-        "sin": 38,
-        "total": 38
+        "sin": 39,
+        "total": 39
+      },
+      {
+        "con": 0,
+        "marca": "DADA",
+        "pct": 0.0,
+        "sin": 3,
+        "total": 3
+      },
+      {
+        "con": 0,
+        "marca": "DON DAVID",
+        "pct": 0.0,
+        "sin": 42,
+        "total": 42
+      },
+      {
+        "con": 0,
+        "marca": "FINCA LAS MORAS",
+        "pct": 0.0,
+        "sin": 3,
+        "total": 3
       },
       {
         "con": 0,
         "marca": "FOND DE CAVE",
         "pct": 0.0,
-        "sin": 38,
-        "total": 38
+        "sin": 39,
+        "total": 39
       },
       {
         "con": 0,
         "marca": "FOND DE CAVE RVA",
         "pct": 0.0,
-        "sin": 38,
-        "total": 38
+        "sin": 39,
+        "total": 39
+      },
+      {
+        "con": 0,
+        "marca": "GORDON'S FLAVOURS",
+        "pct": 0.0,
+        "sin": 3,
+        "total": 3
+      },
+      {
+        "con": 0,
+        "marca": "GORDONS",
+        "pct": 0.0,
+        "sin": 1,
+        "total": 1
       },
       {
         "con": 0,
         "marca": "JW BLACK",
         "pct": 0.0,
-        "sin": 38,
-        "total": 38
+        "sin": 40,
+        "total": 40
+      },
+      {
+        "con": 0,
+        "marca": "JW GOLD",
+        "pct": 0.0,
+        "sin": 1,
+        "total": 1
       },
       {
         "con": 0,
         "marca": "JW RED",
         "pct": 0.0,
-        "sin": 38,
-        "total": 38
+        "sin": 40,
+        "total": 40
+      },
+      {
+        "con": 0,
+        "marca": "LOS ARBOLES",
+        "pct": 0.0,
+        "sin": 3,
+        "total": 3
+      },
+      {
+        "con": 0,
+        "marca": "LOS INTOCABLES",
+        "pct": 0.0,
+        "sin": 1,
+        "total": 1
       },
       {
         "con": 0,
         "marca": "MASCOTA",
         "pct": 0.0,
-        "sin": 38,
-        "total": 38
+        "sin": 39,
+        "total": 39
       },
       {
         "con": 0,
         "marca": "NC ESPUMANTES",
         "pct": 0.0,
-        "sin": 38,
-        "total": 38
+        "sin": 40,
+        "total": 40
       },
       {
         "con": 0,
         "marca": "SMF ICE",
         "pct": 0.0,
-        "sin": 5,
-        "total": 5
+        "sin": 3,
+        "total": 3
+      },
+      {
+        "con": 0,
+        "marca": "SMIRNOFF",
+        "pct": 0.0,
+        "sin": 1,
+        "total": 1
       },
       {
         "con": 0,
         "marca": "SMIRNOFF FLAVOURS",
         "pct": 0.0,
-        "sin": 5,
-        "total": 5
+        "sin": 4,
+        "total": 4
+      },
+      {
+        "con": 0,
+        "marca": "TANQUERAY",
+        "pct": 0.0,
+        "sin": 1,
+        "total": 1
       },
       {
         "con": 0,
         "marca": "TRAPICHE MEDALLA",
         "pct": 0.0,
-        "sin": 38,
-        "total": 38
+        "sin": 39,
+        "total": 39
       },
       {
         "con": 0,
         "marca": "TRAPICHE RESERVA",
         "pct": 0.0,
-        "sin": 43,
-        "total": 43
+        "sin": 42,
+        "total": 42
       }
     ],
-    "total_marcas": 19,
+    "total_marcas": 24,
     "vendedor": "V10",
     "vendedor_nombre": "ORTEGA MILAGROS DESIREE"
   }

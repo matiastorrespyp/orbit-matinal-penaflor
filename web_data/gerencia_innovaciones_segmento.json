@@ -1,14 +1,14 @@
 {
   "_meta": {
     "endpoint_equivalente": "/api/gerencia/innovaciones_segmento",
-    "generated_at": "2026-07-07T17:06:33-03:00",
+    "generated_at": "2026-07-07T20:55:37-03:00",
     "source_files": [
       "04_DATASETS_ORBIT/mod_innovaciones_segmento.csv"
     ],
     "http_status": 200,
     "count": 6,
     "count_type": "dict_keys",
-    "checksum_sha256": "645d778f6c583d60729de7bf67e841430cf1bf263670d712a90db4fedb99031b",
+    "checksum_sha256": "4a8d2d182d608dab3138abbea1756cd1c7eee517f6761389d0123af7a5c6cc60",
     "fase": "1-precompute-paralelo",
     "uso": "COMPARAR contra /api vivo; NO usar en producción"
   },
@@ -20,9 +20,9 @@
         "producto_nombre": "CAZADOR MALBEC 6X750"
       }
     ],
-    "fecha_ejecucion": "2026-07-06",
+    "fecha_ejecucion": "2026-07-07",
     "fuente": "mod_innovaciones_segmento.csv",
-    "generado_en": "2026-07-07 17:06:33",
+    "generado_en": "2026-07-07 20:55:37",
     "por_vendedor": [
       {
         "productos": [
@@ -25007,7 +25007,7 @@
           },
           {
             "clientes_cartera": 37,
-            "clientes_compraron": 0,
+            "clientes_compraron": 1,
             "clientes_faltantes": [
               14,
               59,
@@ -25022,7 +25022,6 @@
               1441,
               2038,
               2130,
-              2334,
               2392,
               2420,
               2602,
@@ -25047,7 +25046,7 @@
               3521,
               3522
             ],
-            "pct_cobertura": 0.0,
+            "pct_cobertura": 0.027,
             "producto_codigo": 42376,
             "producto_nombre": "DON DAVID RED BLEND 6X750",
             "segmento": "AUTOSERVICIO"
@@ -25289,7 +25288,7 @@
           },
           {
             "clientes_cartera": 37,
-            "clientes_compraron": 0,
+            "clientes_compraron": 1,
             "clientes_faltantes": [
               14,
               59,
@@ -25304,7 +25303,6 @@
               1441,
               2038,
               2130,
-              2334,
               2392,
               2420,
               2602,
@@ -25329,7 +25327,7 @@
               3521,
               3522
             ],
-            "pct_cobertura": 0.0,
+            "pct_cobertura": 0.027,
             "producto_codigo": 74786,
             "producto_nombre": "EL BAUTISMO CABERNET 6X750",
             "segmento": "AUTOSERVICIO"
@@ -25383,7 +25381,7 @@
           },
           {
             "clientes_cartera": 37,
-            "clientes_compraron": 0,
+            "clientes_compraron": 1,
             "clientes_faltantes": [
               14,
               59,
@@ -25398,7 +25396,6 @@
               1441,
               2038,
               2130,
-              2334,
               2392,
               2420,
               2602,
@@ -25423,7 +25420,7 @@
               3521,
               3522
             ],
-            "pct_cobertura": 0.0,
+            "pct_cobertura": 0.027,
             "producto_codigo": 74814,
             "producto_nombre": "CAZADOR MALBEC 6X750",
             "segmento": "AUTOSERVICIO"
@@ -25618,7 +25615,7 @@
           },
           {
             "clientes_cartera": 37,
-            "clientes_compraron": 0,
+            "clientes_compraron": 1,
             "clientes_faltantes": [
               14,
               59,
@@ -25633,7 +25630,6 @@
               1441,
               2038,
               2130,
-              2334,
               2392,
               2420,
               2602,
@@ -25658,7 +25654,7 @@
               3521,
               3522
             ],
-            "pct_cobertura": 0.0,
+            "pct_cobertura": 0.027,
             "producto_codigo": 74840,
             "producto_nombre": "TRAPICHE DULCE COSECHA TINTO 6X750",
             "segmento": "AUTOSERVICIO"
@@ -38058,7 +38054,7 @@
           },
           {
             "clientes_cartera": 167,
-            "clientes_compraron": 2,
+            "clientes_compraron": 5,
             "clientes_faltantes": [
               30,
               53,
@@ -38070,9 +38066,7 @@
               98,
               113,
               198,
-              208,
               227,
-              272,
               365,
               393,
               398,
@@ -38179,7 +38173,6 @@
               1414,
               1424,
               1430,
-              1431,
               1432,
               4719,
               4758,
@@ -38226,7 +38219,7 @@
               30125,
               30397
             ],
-            "pct_cobertura": 0.012,
+            "pct_cobertura": 0.0299,
             "producto_codigo": 74814,
             "producto_nombre": "CAZADOR MALBEC 6X750",
             "segmento": "ALMACEN"
@@ -38410,7 +38403,7 @@
           },
           {
             "clientes_cartera": 167,
-            "clientes_compraron": 0,
+            "clientes_compraron": 2,
             "clientes_faltantes": [
               30,
               53,
@@ -38520,7 +38513,6 @@
               1165,
               1166,
               1251,
-              1257,
               1291,
               1293,
               1319,
@@ -38532,7 +38524,6 @@
               1414,
               1424,
               1430,
-              1431,
               1432,
               4719,
               4758,
@@ -38580,7 +38571,7 @@
               30125,
               30397
             ],
-            "pct_cobertura": 0.0,
+            "pct_cobertura": 0.012,
             "producto_codigo": 74816,
             "producto_nombre": "CAZADOR BLANCO DULCE 6X750",
             "segmento": "ALMACEN"
@@ -38941,7 +38932,7 @@
           },
           {
             "clientes_cartera": 167,
-            "clientes_compraron": 0,
+            "clientes_compraron": 1,
             "clientes_faltantes": [
               30,
               53,
@@ -38955,7 +38946,6 @@
               198,
               208,
               227,
-              272,
               365,
               393,
               398,
@@ -39111,7 +39101,7 @@
               30125,
               30397
             ],
-            "pct_cobertura": 0.0,
+            "pct_cobertura": 0.006,
             "producto_codigo": 74840,
             "producto_nombre": "TRAPICHE DULCE COSECHA TINTO 6X750",
             "segmento": "ALMACEN"
@@ -51938,8 +51928,8 @@
       },
       {
         "clientes_cartera": 193,
-        "clientes_compraron": 0,
-        "pct_cobertura": 0.0,
+        "clientes_compraron": 1,
+        "pct_cobertura": 0.0052,
         "producto_codigo": 42376,
         "producto_nombre": "DON DAVID RED BLEND 6X750",
         "segmento": "AUTOSERVICIO"
@@ -52178,8 +52168,8 @@
       },
       {
         "clientes_cartera": 193,
-        "clientes_compraron": 0,
-        "pct_cobertura": 0.0,
+        "clientes_compraron": 1,
+        "pct_cobertura": 0.0052,
         "producto_codigo": 74786,
         "producto_nombre": "EL BAUTISMO CABERNET 6X750",
         "segmento": "AUTOSERVICIO"
@@ -52246,92 +52236,92 @@
         "pct_cobertura": 0.0,
         "producto_codigo": 74813,
         "producto_nombre": "DADA EXTRA BRUT 6X750",
+        "segmento": "ON_PREMISE"
+      },
+      {
+        "clientes_cartera": 1450,
+        "clientes_compraron": 5,
+        "pct_cobertura": 0.0034,
+        "producto_codigo": 74814,
+        "producto_nombre": "CAZADOR MALBEC 6X750",
+        "segmento": "ALMACEN"
+      },
+      {
+        "clientes_cartera": 193,
+        "clientes_compraron": 3,
+        "pct_cobertura": 0.0155,
+        "producto_codigo": 74814,
+        "producto_nombre": "CAZADOR MALBEC 6X750",
+        "segmento": "AUTOSERVICIO"
+      },
+      {
+        "clientes_cartera": 194,
+        "clientes_compraron": 0,
+        "pct_cobertura": 0.0,
+        "producto_codigo": 74814,
+        "producto_nombre": "CAZADOR MALBEC 6X750",
+        "segmento": "KIOSCO"
+      },
+      {
+        "clientes_cartera": 17,
+        "clientes_compraron": 0,
+        "pct_cobertura": 0.0,
+        "producto_codigo": 74814,
+        "producto_nombre": "CAZADOR MALBEC 6X750",
+        "segmento": "MAYORISTA"
+      },
+      {
+        "clientes_cartera": 185,
+        "clientes_compraron": 0,
+        "pct_cobertura": 0.0,
+        "producto_codigo": 74814,
+        "producto_nombre": "CAZADOR MALBEC 6X750",
+        "segmento": "ON_PREMISE"
+      },
+      {
+        "clientes_cartera": 1450,
+        "clientes_compraron": 0,
+        "pct_cobertura": 0.0,
+        "producto_codigo": 74815,
+        "producto_nombre": "CAZADOR CAB. SAU 6X750",
+        "segmento": "ALMACEN"
+      },
+      {
+        "clientes_cartera": 193,
+        "clientes_compraron": 0,
+        "pct_cobertura": 0.0,
+        "producto_codigo": 74815,
+        "producto_nombre": "CAZADOR CAB. SAU 6X750",
+        "segmento": "AUTOSERVICIO"
+      },
+      {
+        "clientes_cartera": 194,
+        "clientes_compraron": 0,
+        "pct_cobertura": 0.0,
+        "producto_codigo": 74815,
+        "producto_nombre": "CAZADOR CAB. SAU 6X750",
+        "segmento": "KIOSCO"
+      },
+      {
+        "clientes_cartera": 17,
+        "clientes_compraron": 0,
+        "pct_cobertura": 0.0,
+        "producto_codigo": 74815,
+        "producto_nombre": "CAZADOR CAB. SAU 6X750",
+        "segmento": "MAYORISTA"
+      },
+      {
+        "clientes_cartera": 185,
+        "clientes_compraron": 0,
+        "pct_cobertura": 0.0,
+        "producto_codigo": 74815,
+        "producto_nombre": "CAZADOR CAB. SAU 6X750",
         "segmento": "ON_PREMISE"
       },
       {
         "clientes_cartera": 1450,
         "clientes_compraron": 2,
         "pct_cobertura": 0.0014,
-        "producto_codigo": 74814,
-        "producto_nombre": "CAZADOR MALBEC 6X750",
-        "segmento": "ALMACEN"
-      },
-      {
-        "clientes_cartera": 193,
-        "clientes_compraron": 2,
-        "pct_cobertura": 0.0104,
-        "producto_codigo": 74814,
-        "producto_nombre": "CAZADOR MALBEC 6X750",
-        "segmento": "AUTOSERVICIO"
-      },
-      {
-        "clientes_cartera": 194,
-        "clientes_compraron": 0,
-        "pct_cobertura": 0.0,
-        "producto_codigo": 74814,
-        "producto_nombre": "CAZADOR MALBEC 6X750",
-        "segmento": "KIOSCO"
-      },
-      {
-        "clientes_cartera": 17,
-        "clientes_compraron": 0,
-        "pct_cobertura": 0.0,
-        "producto_codigo": 74814,
-        "producto_nombre": "CAZADOR MALBEC 6X750",
-        "segmento": "MAYORISTA"
-      },
-      {
-        "clientes_cartera": 185,
-        "clientes_compraron": 0,
-        "pct_cobertura": 0.0,
-        "producto_codigo": 74814,
-        "producto_nombre": "CAZADOR MALBEC 6X750",
-        "segmento": "ON_PREMISE"
-      },
-      {
-        "clientes_cartera": 1450,
-        "clientes_compraron": 0,
-        "pct_cobertura": 0.0,
-        "producto_codigo": 74815,
-        "producto_nombre": "CAZADOR CAB. SAU 6X750",
-        "segmento": "ALMACEN"
-      },
-      {
-        "clientes_cartera": 193,
-        "clientes_compraron": 0,
-        "pct_cobertura": 0.0,
-        "producto_codigo": 74815,
-        "producto_nombre": "CAZADOR CAB. SAU 6X750",
-        "segmento": "AUTOSERVICIO"
-      },
-      {
-        "clientes_cartera": 194,
-        "clientes_compraron": 0,
-        "pct_cobertura": 0.0,
-        "producto_codigo": 74815,
-        "producto_nombre": "CAZADOR CAB. SAU 6X750",
-        "segmento": "KIOSCO"
-      },
-      {
-        "clientes_cartera": 17,
-        "clientes_compraron": 0,
-        "pct_cobertura": 0.0,
-        "producto_codigo": 74815,
-        "producto_nombre": "CAZADOR CAB. SAU 6X750",
-        "segmento": "MAYORISTA"
-      },
-      {
-        "clientes_cartera": 185,
-        "clientes_compraron": 0,
-        "pct_cobertura": 0.0,
-        "producto_codigo": 74815,
-        "producto_nombre": "CAZADOR CAB. SAU 6X750",
-        "segmento": "ON_PREMISE"
-      },
-      {
-        "clientes_cartera": 1450,
-        "clientes_compraron": 0,
-        "pct_cobertura": 0.0,
         "producto_codigo": 74816,
         "producto_nombre": "CAZADOR BLANCO DULCE 6X750",
         "segmento": "ALMACEN"
@@ -52450,16 +52440,16 @@
       },
       {
         "clientes_cartera": 1450,
-        "clientes_compraron": 0,
-        "pct_cobertura": 0.0,
+        "clientes_compraron": 1,
+        "pct_cobertura": 0.0007,
         "producto_codigo": 74840,
         "producto_nombre": "TRAPICHE DULCE COSECHA TINTO 6X750",
         "segmento": "ALMACEN"
       },
       {
         "clientes_cartera": 193,
-        "clientes_compraron": 0,
-        "pct_cobertura": 0.0,
+        "clientes_compraron": 1,
+        "pct_cobertura": 0.0052,
         "producto_codigo": 74840,
         "producto_nombre": "TRAPICHE DULCE COSECHA TINTO 6X750",
         "segmento": "AUTOSERVICIO"
