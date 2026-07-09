@@ -13,6 +13,13 @@ def _now_ar():
     return datetime.now(_ARG_TZ).strftime("%Y-%m-%d %H:%M:%S")
 
 import os, shutil, csv as _csv, threading
+
+# M1 (mount embebido en Orbit Home): con PENAFLOR_SKIP_BOOT=1, importar este módulo NO ejecuta
+# el bloque STARTUP (backup/init/restore/export) ni lanza el hilo de warmup: sólo deja el objeto
+# Flask `app` importable de forma segura para montarlo bajo /penaflor. El standalone (sin la
+# variable) se comporta EXACTAMENTE igual que antes. No cambia lógica comercial ni endpoints.
+_PENAFLOR_SKIP_BOOT = os.environ.get("PENAFLOR_SKIP_BOOT", "").strip() == "1"
+
 app = Flask(__name__, static_folder=None)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0   # sin cache en portal.html
 
@@ -126,8 +133,32 @@ def export_planificacion_csv():
 #   GSHEETS_SPREADSHEET_ID   = id del spreadsheet (cadena en la URL)
 #   GSHEETS_SHEET_NAME       = nombre de la pestaña (default "planificaciones")
 #   GSHEETS_CREDENTIALS_JSON = JSON del service account (o base64 del JSON)
-_GSHEETS_SPREADSHEET_ID = os.environ.get("GSHEETS_SPREADSHEET_ID", "").strip()
-_GSHEETS_SHEET_NAME     = os.environ.get("GSHEETS_SHEET_NAME", "planificaciones").strip() or "planificaciones"
+#
+# M1 — variables NAMESPACED por proveedor (aislamiento en proceso compartido tipo Orbit Home,
+# para no mezclar la planilla de Peñaflor con la de otro módulo, p.ej. PepsiCo):
+#   Preferencia:  PENAFLOR_GSHEETS_<X>  ->  GSHEETS_<X>  (fallback legacy, SOLO standalone).
+#   Modo estricto (PENAFLOR_REQUIRE_NAMESPACED_GSHEETS=1): usa SOLO PENAFLOR_GSHEETS_*; NUNCA
+#   cae a las genéricas. Si faltan -> config incompleta controlada (no rompe el import).
+# El standalone actual (sin variables nuevas) sigue leyendo GSHEETS_* igual que antes.
+_PENAFLOR_REQUIRE_NS_GSHEETS = os.environ.get("PENAFLOR_REQUIRE_NAMESPACED_GSHEETS", "").strip() == "1"
+
+
+def _penv(name, default=""):
+    """Lee una variable de Sheets priorizando el prefijo PENAFLOR_GSHEETS_.
+    - Si existe PENAFLOR_GSHEETS_<name> -> la usa.
+    - Si no, y NO estamos en modo estricto -> cae a la genérica GSHEETS_<name> (compat standalone).
+    - En modo estricto -> NO mira la genérica (aislamiento total) y devuelve `default`.
+    Devuelve el valor .strip()eado. No expone ni loguea el contenido (puede ser un secreto)."""
+    v = os.environ.get("PENAFLOR_GSHEETS_" + name, "").strip()
+    if v:
+        return v
+    if _PENAFLOR_REQUIRE_NS_GSHEETS:
+        return default
+    return os.environ.get("GSHEETS_" + name, "").strip() or default
+
+
+_GSHEETS_SPREADSHEET_ID = _penv("SPREADSHEET_ID")
+_GSHEETS_SHEET_NAME     = _penv("SHEET_NAME", "planificaciones") or "planificaciones"
 _GSHEETS_SCOPES         = ["https://www.googleapis.com/auth/spreadsheets"]
 
 # Orden canónico de columnas en la hoja (orden aprobado).
@@ -147,8 +178,9 @@ def _gsheet_cell(v):
     return "" if v is None else v
 
 def _gsheets_credentials_info():
-    """Devuelve el dict de credenciales del service account o None."""
-    raw = os.environ.get("GSHEETS_CREDENTIALS_JSON", "").strip()
+    """Devuelve el dict de credenciales del service account o None.
+    Lee vía _penv: prioriza PENAFLOR_GSHEETS_CREDENTIALS_JSON; en modo estricto NO usa la genérica."""
+    raw = _penv("CREDENTIALS_JSON")
     if not raw:
         return None
     try:
@@ -163,6 +195,43 @@ def _gsheets_credentials_info():
 def gsheets_enabled():
     """True si hay id de hoja y credenciales configuradas."""
     return bool(_GSHEETS_SPREADSHEET_ID) and _gsheets_credentials_info() is not None
+
+
+def get_gsheets_config():
+    """M1 — estado NO sensible de la config de Sheets (para diagnóstico/mount). No expone
+    valores: sólo banderas de presencia, el origen efectivo y qué variables faltan (por NOMBRE).
+    Útil para que Orbit Home confirme el aislamiento sin leer secretos."""
+    strict = _PENAFLOR_REQUIRE_NS_GSHEETS
+    sid_ns  = bool(os.environ.get("PENAFLOR_GSHEETS_SPREADSHEET_ID", "").strip())
+    sid_leg = bool(os.environ.get("GSHEETS_SPREADSHEET_ID", "").strip())
+    cred_ns  = bool(os.environ.get("PENAFLOR_GSHEETS_CREDENTIALS_JSON", "").strip())
+    cred_leg = bool(os.environ.get("GSHEETS_CREDENTIALS_JSON", "").strip())
+    name_ns = bool(os.environ.get("PENAFLOR_GSHEETS_SHEET_NAME", "").strip())
+    # Origen efectivo del spreadsheet_id (la señal más relevante de aislamiento).
+    if sid_ns:
+        source = "PENAFLOR_GSHEETS"
+    elif sid_leg and not strict:
+        source = "GSHEETS_LEGACY"
+    else:
+        source = "missing"
+    id_ok   = sid_ns or (sid_leg and not strict)
+    cred_ok = cred_ns or (cred_leg and not strict)
+    missing = []
+    if not id_ok:
+        missing.append("PENAFLOR_GSHEETS_SPREADSHEET_ID" if strict else "GSHEETS_SPREADSHEET_ID")
+    if not cred_ok:
+        missing.append("PENAFLOR_GSHEETS_CREDENTIALS_JSON" if strict else "GSHEETS_CREDENTIALS_JSON")
+    if strict and not name_ns:
+        missing.append("PENAFLOR_GSHEETS_SHEET_NAME")
+    return {
+        "configured": gsheets_enabled(),
+        "source": source,
+        "strict": strict,
+        "skip_boot": _PENAFLOR_SKIP_BOOT,
+        "missing": missing,
+        "spreadsheet_id_present": id_ok,
+        "credentials_present": cred_ok,
+    }
 
 def _gsheets_get_worksheet():
     """Devuelve (worksheet, None) o (None, mensaje_error). Crea la pestaña/header si falta."""
@@ -8115,11 +8184,15 @@ def gerencia_cierres_historicos():
 
 
 # ====== STARTUP (gunicorn + __main__) ======
-# Se ejecuta cuando gunicorn importa el módulo, no solo en __main__
-backup_orbit_db()         # 1. copia orbit.db antes de cualquier cambio
-init_db()                 # 2. crea/migra tablas
-restore_planificacion_if_empty()  # 3. recupera desde CSV si la tabla quedó vacía
-export_planificacion_csv()        # 4. actualiza CSV de seguridad con estado actual
+# Se ejecuta cuando gunicorn importa el módulo, no solo en __main__.
+# M1: bajo PENAFLOR_SKIP_BOOT=1 (mount embebido en Orbit Home) NO se ejecuta NADA de esto al
+# importar -> importar `server_orbit` no escribe SQLite/CSV ni toca el filesystem. En standalone
+# (variable ausente) el arranque es idéntico al de siempre.
+if not _PENAFLOR_SKIP_BOOT:
+    backup_orbit_db()         # 1. copia orbit.db antes de cualquier cambio
+    init_db()                 # 2. crea/migra tablas
+    restore_planificacion_if_empty()  # 3. recupera desde CSV si la tabla quedó vacía
+    export_planificacion_csv()        # 4. actualiza CSV de seguridad con estado actual
 
 
 def _warm_caches():
@@ -8136,7 +8209,9 @@ def _warm_caches():
             pass
 
 
-threading.Thread(target=_warm_caches, name="orbit-warmup", daemon=True).start()
+# M1: el warmup (cómputo pandas pesado en background) tampoco corre en modo embebido.
+if not _PENAFLOR_SKIP_BOOT:
+    threading.Thread(target=_warm_caches, name="orbit-warmup", daemon=True).start()
 
 if __name__ == "__main__":
     print("\n===== ORBIT SERVER v3 =====")
