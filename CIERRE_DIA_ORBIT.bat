@@ -18,21 +18,13 @@ echo Verificando estado Git antes de iniciar...
 echo.
 
 REM ── Bloquear SOLO cambios funcionales (fuera de rutas operativas permitidas).
-REM    Rutas operativas que SI pueden estar modificadas antes del cierre:
-REM      01_INPUTS/{resultado.xlsx, ventas.csv, ventas_acumulada.csv, clientes.xlsx,
-REM                 ventas-clubfaro.csv, INNOVACIONES/, Planes AASS/, ACCIONES COMERCIALES/}
-REM      02_HISTORY/  04_DATASETS_ORBIT/
+REM    La clasificacion POR RUTA vive en check_git_cierre.py (arbol 01_INPUTS/,
+REM    02_HISTORY/, 04_DATASETS_ORBIT/, 06_APP_DATA/, 07_CIERRES_MENSUALES/ = operativo).
 REM    Cualquier .py, .bat, portal.html, config u otro archivo fuera de eso FRENA el cierre.
-set "FUNC_PEND="
-for /f "delims=" %%i in ('git status --porcelain -- . ":(exclude)01_INPUTS/resultado.xlsx" ":(exclude)01_INPUTS/ventas.csv" ":(exclude)01_INPUTS/ventas_acumulada.csv" ":(exclude)01_INPUTS/ventas_mes.csv" ":(exclude)01_INPUTS/clientes.xlsx" ":(exclude)01_INPUTS/ventas-clubfaro.csv" ":(exclude)01_INPUTS/dadatinto.csv" ":(exclude)01_INPUTS/DADAVERANOOBJ.xlsx" ":(exclude)01_INPUTS/incentivo_club_faro*.xlsx" ":(exclude)01_INPUTS/INNOVACIONES" ":(exclude)01_INPUTS/Planes AASS" ":(exclude)01_INPUTS/ACCIONES COMERCIALES" ":(exclude)02_HISTORY" ":(exclude)04_DATASETS_ORBIT"') do set "FUNC_PEND=1"
-
-if defined FUNC_PEND (
+python "%ROOT%\check_git_cierre.py"
+if errorlevel 1 (
     echo ============================================================
-    echo ERROR: Hay cambios FUNCIONALES pendientes fuera de las rutas operativas.
-    echo Codigo .py, .bat, portal.html o configuracion sin commitear.
     echo Commitea o resolve esos cambios ANTES de cerrar el dia.
-    echo.
-    git status --short
     echo ============================================================
     pause
     exit /b 1
@@ -176,16 +168,10 @@ git add "01_INPUTS/ACCIONES COMERCIALES/*/acciones_comerciales_*.csv"
 
 REM ── Abortar si quedan cambios FUERA del allowlist operativo (desarrollo colado).
 REM    Los archivos operativos ya quedaron staged por los git add de arriba.
-set "FUERA_ALLOW="
-for /f "delims=" %%i in ('git status --porcelain -- . ":(exclude)01_INPUTS/resultado.xlsx" ":(exclude)01_INPUTS/ventas.csv" ":(exclude)01_INPUTS/ventas_acumulada.csv" ":(exclude)01_INPUTS/ventas_mes.csv" ":(exclude)01_INPUTS/clientes.xlsx" ":(exclude)01_INPUTS/ventas-clubfaro.csv" ":(exclude)01_INPUTS/dadatinto.csv" ":(exclude)01_INPUTS/DADAVERANOOBJ.xlsx" ":(exclude)01_INPUTS/incentivo_club_faro*.xlsx" ":(exclude)01_INPUTS/INNOVACIONES" ":(exclude)01_INPUTS/Planes AASS" ":(exclude)01_INPUTS/ACCIONES COMERCIALES" ":(exclude)02_HISTORY" ":(exclude)04_DATASETS_ORBIT"') do set "FUERA_ALLOW=1"
-if defined FUERA_ALLOW (
+python "%ROOT%\check_git_cierre.py"
+if errorlevel 1 (
     echo.
-    echo ============================================================
-    echo ERROR: Quedaron cambios fuera de las rutas operativas permitidas.
     echo No se hace commit ni push para no mezclar desarrollo con cierre.
-    echo.
-    git status --short
-    echo ============================================================
     goto fin_error
 )
 

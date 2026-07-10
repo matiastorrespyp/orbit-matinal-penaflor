@@ -1,5 +1,16 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-10 - fix guard Git del cierre (clasificar por ruta)
+
+### HECHO
+- [x] Nuevo `check_git_cierre.py` (stdlib): clasifica cambios Git POR RUTA. Operativo = `01_INPUTS/`, `02_HISTORY/`, `04_DATASETS_ORBIT/`, `06_APP_DATA/`, `07_CIERRES_MENSUALES/`; el resto bloquea. Normaliza rutas/renombrados, muestra 2 grupos, exit 0/1. Autotest: `python check_git_cierre.py --test`.
+- [x] `CIERRE_DIA_ORBIT.bat` y `CIERRE_MES_ORBIT.bat` reemplazan sus 2 chequeos inline por `python "%ROOT%\check_git_cierre.py"`. Antes usaban una lista blanca de archivos y `Stock/stock.xlsx` (input nuevo) frenaba el cierre.
+- [x] Validado 18 casos + 6 escenarios del plan.
+
+### PENDIENTE
+- [ ] **Commitear** `check_git_cierre.py` + los dos `.bat` + CHANGELOG/NEXT_TASK antes del próximo cierre (mientras `check_git_cierre.py` esté untracked, el guard lo marca como funcional y frena — correcto).
+- [ ] Al retomar el cierre: correr `CIERRE_DIA_ORBIT.bat` con solo inputs de `01_INPUTS` modificados y confirmar que avanza (ya no aborta por `Stock/stock.xlsx`).
+
 ## Sesion 2026-07-09 - M1: import-safe + Sheets namespaced (integración Orbit Home)
 
 ### HECHO

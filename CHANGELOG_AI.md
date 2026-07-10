@@ -1,5 +1,12 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-10 - fix(cierre): guard Git clasifica por RUTA, no por lista de archivos
+
+- **Causa raíz:** el guard Git de `CIERRE_DIA_ORBIT.bat` (y `CIERRE_MES_ORBIT.bat`) clasificaba lo operativo con una **lista blanca de archivos concretos** dentro de `01_INPUTS` (`resultado.xlsx`, `ventas.csv`, …). Un input operativo nuevo no enumerado — `01_INPUTS/Stock/stock.xlsx` — caía fuera del allowlist y disparaba `FUNC_PEND=1`, abortando el cierre como si fuera un cambio funcional. El `git status --short` del error mostraba los 7 archivos (status plano), enmascarando que el único gatillo real era `Stock/stock.xlsx`.
+- **Cambio:** nueva función reutilizable de clasificación **por ruta** en `check_git_cierre.py` (stdlib pura, sin dependencias). Trata como operativo todo el árbol `01_INPUTS/`, `02_HISTORY/`, `04_DATASETS_ORBIT/`, `06_APP_DATA/` (JSON del portal) y `07_CIERRES_MENSUALES/`; cualquier otra ruta (`.py`, `.bat`, `portal.html`, `render.yaml`, config, etc.) sigue bloqueando. Normaliza rutas (quita XY de porcelain, `\`→`/`, comillas, `ruta -> ruta` de renombrados). Muestra dos grupos (operativos permitidos / funcionales bloqueantes) y sale 0/1. Los dos `.bat` reemplazan sus dos chequeos inline (`git status --porcelain -- . :(exclude)…`) por `python check_git_cierre.py`.
+- **Validado:** `python check_git_cierre.py --test` (18 casos, TODAS OK) + los 6 escenarios del plan (solo 01_INPUTS→permite; ventas.csv+.py→bloquea solo el .py; 06_APP_DATA json→permite; portal.html/.bat/render.yaml→bloquea; separadores `/` y `\`; estados unstaged/staged/`??`/`R `). Estado real del repo: los 7 inputs → operativos; único bloqueante = `check_git_cierre.py` sin commitear (correcto: el guard debe frenar hasta que el propio código nuevo se commitee).
+- **Sin tocar:** ningún archivo dentro de `01_INPUTS`, ni lógica comercial, cálculos, fuentes de ventas ni publicación. Sigue bloqueando cambios reales de código/config.
+
 ## 2026-07-09 - feat(orbit-home M1): server_orbit import-safe + Sheets namespaced (PENAFLOR_GSHEETS_*)
 
 - **Contexto:** preparar Peñaflor para montarse embebido bajo Orbit Home (`/penaflor`). El preflight M0 dio NO-GO por dos bloqueos que resuelve este cambio: (1) importar `server_orbit.py` disparaba tareas de arranque; (2) leía solo `GSHEETS_*` genéricas (riesgo de mezclar la planilla con la de PepsiCo en un proceso compartido). **Cambio quirúrgico y reversible; NO toca lógica comercial, endpoints, cálculos ni UI.** El standalone se comporta igual que siempre.
