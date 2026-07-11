@@ -1,5 +1,12 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-11 - fix(cierre): guard de rama — el cierre exige estar en master
+
+- **Causa raíz de un desfasaje en producción:** `CIERRE_DIA_ORBIT.bat` **da por sentado que estás parado en `master`**. No hace `git checkout master`; hace `git commit` (rama actual) y luego `git push origin master`. Trabajando orbit-home en la rama `feat/m1-import-safe-gsheets-namespace`, el cierre del 10/07 committeó el dato en esa rama y el `git push origin master` fue un **no-op silencioso** (empuja la `master` local, que nunca recibió el commit) → salió "Everything up-to-date" con éxito y **Render nunca recibió el dato**. Producción quedó en el cierre del 08/07; como el 09/07 es feriado, el motor calculaba "siguiente día operativo" = viernes 10 y el portal mostraba VI en vez de SA. Corregido en caliente con cherry-pick de `15d36a8` a master (commit `d1f9fd0`, pusheado).
+- **Cambio:** guard de rama al inicio de `CIERRE_DIA_ORBIT.bat` (después de `cd /d %ROOT%`, antes de todo lo demás). Lee `git rev-parse --abbrev-ref HEAD`; si la rama actual **no es `master`** (comparación `if /I`, case-insensitive) aborta con `exit /b 1` y un mensaje claro ("Estás en la rama X, hacé `git checkout master`"). No toca la lógica de datos, publicación ni nada de orbit-home; es ortogonal.
+- **Validado:** replicada la lógica del guard en un `.bat` aislado corriendo desde `feat/m1-import-safe-gsheets-namespace` → detecta la rama y aborta (exit 1), correcto. En master la comparación deja pasar. Archivo verificado en **CRLF** puro (253 CRLF, 0 LF suelto; `.gitattributes` fuerza `*.bat text eol=crlf`) para no romper los `if/else` de cmd.
+- **Sin tocar:** `01_INPUTS`, datasets, `server_orbit.py`, `portal.html`, la lógica de cierre/publicación. Solo se agregó el bloque guard en el `.bat`.
+
 ## 2026-07-10 - fix(cierre): guard Git clasifica por RUTA, no por lista de archivos
 
 - **Causa raíz:** el guard Git de `CIERRE_DIA_ORBIT.bat` (y `CIERRE_MES_ORBIT.bat`) clasificaba lo operativo con una **lista blanca de archivos concretos** dentro de `01_INPUTS` (`resultado.xlsx`, `ventas.csv`, …). Un input operativo nuevo no enumerado — `01_INPUTS/Stock/stock.xlsx` — caía fuera del allowlist y disparaba `FUNC_PEND=1`, abortando el cierre como si fuera un cambio funcional. El `git status --short` del error mostraba los 7 archivos (status plano), enmascarando que el único gatillo real era `Stock/stock.xlsx`.
