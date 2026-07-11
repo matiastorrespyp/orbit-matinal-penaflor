@@ -14,6 +14,26 @@ set "PORTAL=https://orbit-matinal-penaflor.onrender.com"
 
 cd /d "%ROOT%"
 
+REM ── Guard de rama: el cierre DEBE correr sobre master (Render deploya master).
+REM    Si estas parado en otra rama (p.ej. trabajando orbit-home), el commit del
+REM    cierre cae en esa rama y "git push origin master" es un no-op silencioso:
+REM    Render NO avanza el dia. Este guard lo frena antes de tocar nada.
+set "RAMA_ACTUAL="
+for /f "delims=" %%b in ('git rev-parse --abbrev-ref HEAD') do set "RAMA_ACTUAL=%%b"
+if /I not "%RAMA_ACTUAL%"=="master" (
+    echo ============================================================
+    echo ERROR: Estas en la rama "%RAMA_ACTUAL%", no en master.
+    echo.
+    echo El cierre publica a master y Render deploya master. Corriendo
+    echo desde otra rama, el dato NO llega a produccion aunque el push
+    echo diga OK. Cambia a master antes de cerrar el dia:
+    echo.
+    echo     git checkout master
+    echo ============================================================
+    pause
+    exit /b 1
+)
+
 echo Verificando estado Git antes de iniciar...
 echo.
 
