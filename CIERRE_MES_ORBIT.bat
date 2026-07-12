@@ -16,23 +16,13 @@ echo Verificando estado Git antes de iniciar...
 echo.
 
 REM -- Bloquear SOLO cambios funcionales (fuera de rutas operativas permitidas).
-REM    Rutas operativas que SI pueden estar modificadas antes del cierre de mes:
-REM      01_INPUTS/{cierres mes/, resultado.xlsx, ventas.csv, ventas_mes.csv,
-REM                 ventas_acumulada.csv, clientes.xlsx, ventas-clubfaro.csv,
-REM                 objetivo 11T.xlsx, INNOVACIONES/, Planes AASS/, PLANES_AS/,
-REM                 ACCIONES COMERCIALES/}
-REM      02_HISTORY/  04_DATASETS_ORBIT/
+REM    La clasificacion POR RUTA vive en check_git_cierre.py (arbol 01_INPUTS/,
+REM    02_HISTORY/, 04_DATASETS_ORBIT/, 06_APP_DATA/, 07_CIERRES_MENSUALES/ = operativo).
 REM    Cualquier .py, .bat, portal.html, config u otro archivo fuera de eso FRENA el cierre.
-set "FUNC_PEND="
-for /f "delims=" %%i in ('git status --porcelain -- . ":(exclude)01_INPUTS/cierres mes" ":(exclude)01_INPUTS/resultado.xlsx" ":(exclude)01_INPUTS/ventas.csv" ":(exclude)01_INPUTS/ventas_mes.csv" ":(exclude)01_INPUTS/ventas_acumulada.csv" ":(exclude)01_INPUTS/clientes.xlsx" ":(exclude)01_INPUTS/ventas-clubfaro.csv" ":(exclude)01_INPUTS/objetivo 11T.xlsx" ":(exclude)01_INPUTS/INNOVACIONES" ":(exclude)01_INPUTS/Planes AASS" ":(exclude)01_INPUTS/PLANES_AS" ":(exclude)01_INPUTS/ACCIONES COMERCIALES" ":(exclude)02_HISTORY" ":(exclude)04_DATASETS_ORBIT"') do set "FUNC_PEND=1"
-
-if defined FUNC_PEND (
+python "%ROOT%\check_git_cierre.py"
+if errorlevel 1 (
     echo ============================================================
-    echo ERROR: Hay cambios FUNCIONALES pendientes fuera de las rutas operativas.
-    echo Codigo .py, .bat, portal.html o configuracion sin commitear.
     echo Commitea o resolve esos cambios ANTES de cerrar el mes.
-    echo.
-    git status --short
     echo ============================================================
     pause
     exit /b 1
@@ -117,16 +107,10 @@ git add "01_INPUTS/cierres mes/"
 REM -- Abortar si quedan cambios FUERA del allowlist operativo (desarrollo colado).
 REM    El cierre de mes solo versiona 01_INPUTS/cierres mes/; los inputs fuente
 REM    del mes pueden quedar modificados sin frenar (no se commitean aca).
-set "FUERA_ALLOW="
-for /f "delims=" %%i in ('git status --porcelain -- . ":(exclude)01_INPUTS/cierres mes" ":(exclude)01_INPUTS/resultado.xlsx" ":(exclude)01_INPUTS/ventas.csv" ":(exclude)01_INPUTS/ventas_mes.csv" ":(exclude)01_INPUTS/ventas_acumulada.csv" ":(exclude)01_INPUTS/clientes.xlsx" ":(exclude)01_INPUTS/ventas-clubfaro.csv" ":(exclude)01_INPUTS/objetivo 11T.xlsx" ":(exclude)01_INPUTS/INNOVACIONES" ":(exclude)01_INPUTS/Planes AASS" ":(exclude)01_INPUTS/PLANES_AS" ":(exclude)01_INPUTS/ACCIONES COMERCIALES" ":(exclude)02_HISTORY" ":(exclude)04_DATASETS_ORBIT"') do set "FUERA_ALLOW=1"
-if defined FUERA_ALLOW (
+python "%ROOT%\check_git_cierre.py"
+if errorlevel 1 (
     echo.
-    echo ============================================================
-    echo ERROR: Quedaron cambios fuera de las rutas operativas permitidas.
     echo No se hace commit ni push para no mezclar desarrollo con cierre.
-    echo.
-    git status --short
-    echo ============================================================
     goto fin_error
 )
 

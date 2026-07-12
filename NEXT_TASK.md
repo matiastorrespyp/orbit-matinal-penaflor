@@ -1,5 +1,30 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-10 - fix guard Git del cierre (clasificar por ruta)
+
+### HECHO
+- [x] Nuevo `check_git_cierre.py` (stdlib): clasifica cambios Git POR RUTA. Operativo = `01_INPUTS/`, `02_HISTORY/`, `04_DATASETS_ORBIT/`, `06_APP_DATA/`, `07_CIERRES_MENSUALES/`; el resto bloquea. Normaliza rutas/renombrados, muestra 2 grupos, exit 0/1. Autotest: `python check_git_cierre.py --test`.
+- [x] `CIERRE_DIA_ORBIT.bat` y `CIERRE_MES_ORBIT.bat` reemplazan sus 2 chequeos inline por `python "%ROOT%\check_git_cierre.py"`. Antes usaban una lista blanca de archivos y `Stock/stock.xlsx` (input nuevo) frenaba el cierre.
+- [x] Validado 18 casos + 6 escenarios del plan.
+
+### PENDIENTE
+- [ ] **Commitear** `check_git_cierre.py` + los dos `.bat` + CHANGELOG/NEXT_TASK antes del próximo cierre (mientras `check_git_cierre.py` esté untracked, el guard lo marca como funcional y frena — correcto).
+- [ ] Al retomar el cierre: correr `CIERRE_DIA_ORBIT.bat` con solo inputs de `01_INPUTS` modificados y confirmar que avanza (ya no aborta por `Stock/stock.xlsx`).
+
+## Sesion 2026-07-09 - M1: import-safe + Sheets namespaced (integración Orbit Home)
+
+### HECHO
+- [x] **`PENAFLOR_SKIP_BOOT=1`** (`server_orbit.py`): importar el módulo NO ejecuta backup/init/restore/export ni el hilo de warmup. Deja `app` importable sin tocar el filesystem. Standalone (sin la variable) = idéntico.
+- [x] **Sheets namespaced** (`_penv`): prioriza `PENAFLOR_GSHEETS_*`, fallback `GSHEETS_*` solo en standalone. **`PENAFLOR_REQUIRE_NAMESPACED_GSHEETS=1`** = modo estricto: SOLO `PENAFLOR_GSHEETS_*`, nunca la genérica. Nuevo `get_gsheets_config()` (diagnóstico no sensible).
+- [x] Validado (subprocesos, exit 0): matriz env (legacy/estricto/namespaced/ambas), import-safe (sin side effects), standalone preservado (dry-run a tmp), sin fuga de secretos. `py_compile` OK. Solo `server_orbit.py` modificado.
+- [x] Rama `feat/m1-import-safe-gsheets-namespace`. **NO se pushea `master`** (autoDeploy en Render).
+
+### PENDIENTE / PRÓXIMO (roadmap mount Peñaflor en Orbit Home)
+- [ ] **M2 — 2º cerrojo de sesión**: cookie firmada `penaflor_sess` (`Path=/penaflor`, distinguir gerencia/vendedor). Hoy `/api/login` devuelve JSON sin cookie/`secret_key` (auth client-side, `USERS` hardcodeado). Se implementa en Orbit Home (adapter), sin tocar este repo.
+- [ ] **M3 — bundling + deps**: llevar un server fino de Peñaflor al deploy de Orbit Home (sin Excel crudo; idealmente tras precompute JSON) + agregar `pandas`/`numpy` al `requirements.txt` de Orbit Home.
+- [ ] **M4 — wiring**: `DispatcherMiddleware` sobre `server_orbit:app` bajo `/penaflor` en local, importándolo con `PENAFLOR_SKIP_BOOT=1` + `PENAFLOR_REQUIRE_NAMESPACED_GSHEETS=1`, aplicando el shim de rutas de Orbit Home (`rewrite_penaflor_html_for_mount`). Solo local; NO Render.
+- [ ] **Cuando se monte:** setear en Orbit Home `PENAFLOR_GSHEETS_SPREADSHEET_ID` / `_SHEET_NAME` / `_CREDENTIALS_JSON` (spreadsheet DISTINTO al de PepsiCo) + `PENAFLOR_REQUIRE_NAMESPACED_GSHEETS=1`. Sin esas variables, Peñaflor embebido queda con Sheets deshabilitado (controlado), nunca lee la planilla de PepsiCo.
+
 ## Sesion 2026-07-06 - 11T por superficie + CCC empresa vs objetivo
 
 ### HECHO
