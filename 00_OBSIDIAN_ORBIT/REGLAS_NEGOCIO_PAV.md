@@ -15,8 +15,26 @@ V1, V2, V5 y V20 se excluyen de **todos** los reportes, filtros, sumas y denomin
 - En `clientes.xlsx`: filtrar `CodVendedor not in {1, 2, 5, 20}`.
 - **V20 = DEPOSITO**: venta directa de depósito, no es vendedor de ruta. **V1**: no es vendedor de ruta (agregado 2026-06-18; se colaba en el 11T en vivo).
 
-### EMPRESA — solo Peñaflor (regla agregada 2026-06-18)
-`ventas.csv` y `ventas_acumulada.csv` MEZCLAN dos distribuidores en la columna `Empresa`: `'Empresa'` (Peñaflor, ~60%) y `'P&P LOGISTICA S.R.L'` (~40%). **Todos los KPIs de Peñaflor deben filtrar `Empresa == 'Empresa'`** y excluir P&P. No filtrarlo infla los conteos ~15-35% (fue la causa raíz del sobreconteo del 11T). Ya lo aplican: FARO, cierre, 11T (card/zona/ruta/generador) e **Innovaciones** (segmento + plan AS + oportunidades, ambos perfiles; impacto −25% en clientes_compraron).
+### EMPRESA — se mide SIEMPRE con las dos razones sociales (regla corregida 2026-07-13)
+**NUNCA filtrar por la columna `Empresa`.** `P&P LOGISTICA S.R.L` **NO es otro distribuidor: es nuestra segunda razón social.** La columna `Proveedor` es `GRUPO PEÑAFLOR SA` en el **100%** de las filas de ventas, facture quien facture. **Todo lo que medimos es con ambas empresas** (confirmado por el usuario 2026-07-13).
+
+**Esta regla reemplaza a la del 2026-06-18** ("solo Peñaflor, excluir P&P"), que era incorrecta:
+- Filtrar `Empresa == 'Empresa'` **borraba a los clientes facturados vía P&P**: en julio 2026, **135 de los 229 clientes con compra**. Rutas enteras se caían — **V6 perdía 30 de sus 34 clientes (88%)** y **V10, 35 de 40**.
+- Parecía validar en junio porque **la razón social "Empresa" era la que facturaba a casi todos** (8.558 filas vs 5.762 de P&P) y ningún cliente se caía del CCC. En julio **el mix se dio vuelta** (P&P 630 vs Empresa 421) y el CCC se partió al medio.
+- **La razón social que emite la factura no puede decidir si el cliente cuenta.**
+
+**Qué rompía (medido, antes → después de sacar el filtro):**
+| Métrica | Antes | Real |
+|---|---|---|
+| 11T — Alma Mora | 29 | **75** (Peñaflor reporta 55) |
+| 11T — Smirnoff Ice | 9 | **48** |
+| CCC empresa — Tradicionales | 79 | **194** |
+| Acciones — inversión real | $4.267.780 | **$5.205.236** |
+| Innovaciones — CCC | 45 | **90** (V10: 2 → 15) |
+
+**Dónde está escrita la regla:** bloque **`_LEEME_EMPRESA`** en `server_orbit.py`, junto a `_VENDEDORES_EXCLUIDOS`. Se eliminó el filtro de los **13 puntos** que lo tenían: 11T (`once_titulares`, `once_titulares_zona`, `_leer_ventas_acum_cierre`, `_cierre_once_titulares`, `generar_11t_acum`), `gerencia_ccc_empresa`, `_acc_preparar_from_df` (acciones + alertas de descuentos), `vendedor_ruta`, `vendedor_oportunidades_innovacion`, `gerencia_cierre_mes`, `_cierre_ccc_por_vend_segmento`, `generar_innovaciones_segmento`, `generar_innovaciones_plan_as`. **Sell out y cobertura nunca filtraron — ya estaban bien.**
+
+**Si aparece un `Empresa == 'Empresa'` nuevo en el código, es un bug.** Única excepción legítima: un corte donde la razón social **es** el dato pedido (ej. conciliar facturación por entidad).
 
 ### V3 — Nadia Gambino — SOLO Tradicional almacén/despensa/kiosco
 V3 trabaja **únicamente** el canal Tradicional, subsegmentos **Almacén / Despensa / Kiosco** (NO Autoservicio, NO On Premise/Vinoteca, NO Mayorista, NI tradicionales que no sean almacén/despensa/kiosco como fiambrería/panadería). Aplica a **TODO su perfil** (ampliado 2026-06-18):
