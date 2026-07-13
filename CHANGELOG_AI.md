@@ -1,5 +1,21 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-13 - fix(global): se elimina el filtro `Empresa` de TODAS las métricas — medimos con las dos razones sociales
+
+- **Pedido del usuario, después del fix del 11T:** *"revisá si en otra parte de Peñaflor ocurre el mismo problema. **Todo lo que medimos es con ambas empresas**"*.
+- **Auditoría:** quedaban **8 puntos** filtrando `Empresa == 'Empresa'` (ninguno en `tools/` ni en los legacy). Todos rotos por la misma causa: **P&P Logística es nuestra segunda razón social**, no otro distribuidor (`Proveedor = GRUPO PEÑAFLOR SA` en el 100% de las filas).
+- **Cambio — filtro eliminado en los 8:**
+  - `server_orbit.py`: `gerencia_ccc_empresa()` (`/api/gerencia/ccc_empresa`), `_acc_preparar_from_df()` (**acciones comerciales**, alimenta `/api/gerencia/acciones_mes` y las alertas de descuentos), `vendedor_ruta()` (`/api/vendedor/<id>/ruta`), `vendedor_oportunidades_innovacion()`, `gerencia_cierre_mes()` (`/api/gerencia/cierre_mes`) y `_cierre_ccc_por_vend_segmento()`.
+  - `generar_datasets_acum.py`: `generar_innovaciones_segmento()` y `generar_innovaciones_plan_as()`.
+  - Nuevo bloque **`_LEEME_EMPRESA`** en `server_orbit.py` (junto a `_VENDEDORES_EXCLUIDOS`): la regla queda escrita **una sola vez** y las 8 llamadas la referencian, para que nadie vuelva a agregar el filtro.
+- **Impacto medido (endpoints reales, antes → después):**
+  - **CCC empresa** (`/api/gerencia/ccc_empresa`): Tradicionales **79 → 194** (obj. 845), On Premise 3 → 9, Vinotecas 3 → 5, On Premise Noche 3 → 5, Autoservicios 2 → 5. **Estaba mostrando el 40% del CCC real.**
+  - **Acciones comerciales** (`/api/gerencia/acciones_mes`): clientes alcanzados **83 → 191**, importe neto **$28.268.671 → $41.035.953**, **inversión real $4.267.780 → $5.205.236**, litros 3.673 → 5.362. La inversión en acciones venía **subvaluada ~$1M**.
+  - **Innovaciones** (`mod_innovaciones_segmento.csv`): CCC **45 → 90**. V10 Ortega **2 → 15**, V7 Jofre 1 → 6, V6 Peyronel 4 → 10.
+- **Validado:** `py_compile` OK; los endpoints responden 200; `grep` confirma **0 filtros de `Empresa`** vivos. Datasets regenerados con backup (`99_BACKUPS_ORBIT/20260713_200755`, log en `99_LOGS_ORBIT/`): de los 9, **solo cambió `mod_innovaciones_segmento.csv`**.
+- **Bug preexistente detectado (NO tocado, queda en `NEXT_TASK.md`):** `/api/vendedor/<id>/ruta` devuelve **0 clientes en todos los vendedores y todos los días** — antes y después del cambio. El match es `clientes.xlsx::DiasVisita == dia`; el formato del maestro no coincide. No lo causó este cambio.
+- **Sin tocar:** `01_INPUTS`, `portal.html`, objetivos, reglas comerciales.
+
 ## 2026-07-13 - fix(11T): el CCC acumulado mostraba la mitad — P&P Logística no es otro distribuidor
 
 - **Pedido:** la tarjeta **11 Titulares acumulada** del dashboard no coincide con el reporte de Peñaflor (que se arma **con nuestros propios archivos**). Ellos ven: Alma Mora 55, Dada 58, Finca Las Moras 38, Los Arboles 34, Alaris 30, Smirnoff Ice 29, Smirnoff Flavours 28, Don David 11, Trapiche Reserva 10, Gordon's 6, Antares 0. Nuestra tarjeta mostraba **≈ la mitad** (Alma Mora 29, Dada 28, Ice 9).

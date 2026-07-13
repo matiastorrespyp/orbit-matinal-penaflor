@@ -493,6 +493,16 @@ def read_csv(path):
 _VENDEDORES_EXCLUIDOS = {1, 2, 5, 20}
 _VENDEDORES_ACTIVOS_PLAN = {"V3","V4","V6","V7","V8","V9","V10"}
 
+# _LEEME_EMPRESA — NO filtrar por la columna `Empresa` en ninguna métrica.
+# `P&P LOGISTICA S.R.L` NO es otro distribuidor: es nuestra segunda razón social. En las
+# ventas, `Proveedor` es `GRUPO PEÑAFLOR SA` en el 100% de las filas, facture quien facture.
+# Medimos SIEMPRE con las dos empresas (confirmado por el usuario 2026-07-13).
+# Filtrar `Empresa == 'Empresa'` borraba los clientes facturados vía P&P — en julio 2026,
+# 135 de 229 clientes con compra: V6 perdía 30 de sus 34 y V10 35 de sus 40. Rompía el 11T
+# (CCC a la mitad), el CCC empresa (Autoservicios daba 2 contra un objetivo de 145),
+# innovaciones, acciones, la ruta del vendedor y el cierre.
+# La única excepción legítima es un corte donde la razón social ES el dato pedido.
+
 def _parse_num_ar(valor):
     """Parsea número en formato argentino (punto=miles, coma=decimal)."""
     try:
@@ -2239,8 +2249,9 @@ def _objetivos_ccc_empresa():
 @app.route("/api/gerencia/ccc_empresa")
 def gerencia_ccc_empresa():
     """CCC del mes vivo (cobertura) total empresa vs objetivo por canal.
-    Real: ventas.csv (mes actual, neto>0, solo Peñaflor, excluye V1/V2/V5/V20), clientes únicos
-    por canal (Ramo). Objetivo: 01_INPUTS/objccc.xlsx."""
+    Real: ventas.csv (mes actual, neto>0, excluye V1/V2/V5/V20), clientes únicos por canal
+    (Ramo). NO se filtra por Empresa: P&P Logística es nuestra 2da razón social (ver
+    `_LEEME_EMPRESA`). Objetivo: 01_INPUTS/objccc.xlsx."""
     obj_map = _objetivos_ccc_empresa()
     ccc_map = {}
     total_ccc = 0
@@ -2250,8 +2261,6 @@ def gerencia_ccc_empresa():
             v = pd.read_csv(vpath, sep=";", encoding="latin1", low_memory=False)
             v["imp"] = pd.to_numeric(
                 v["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
-            if "Empresa" in v.columns:
-                v = v[v["Empresa"].astype(str).str.strip() == "Empresa"]
             v = v[~v["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS)]
             v = v[v["imp"] > 0]
             if not v.empty:
@@ -4350,8 +4359,7 @@ def _acc_preparar_from_df(df):
         return pd.DataFrame()
     df = df.copy()
     df.columns = [c.strip() for c in df.columns]
-    if "Empresa" in df.columns:
-        df = df[df["Empresa"].astype(str).str.strip() == "Empresa"]
+    # No se filtra por Empresa: medimos con las dos razones sociales (ver _LEEME_EMPRESA).
     cod2cat, cod2seg, cod2lxu, cod2linea = _cargar_maestro_04D()
     def _n(s):
         return pd.to_numeric(s.astype(str).str.replace(".", "", regex=False).str.replace(",", ".", regex=False),
@@ -6015,9 +6023,8 @@ def vendedor_ruta(vid):
         try:
             v = pd.read_csv(vpath, sep=";", encoding="latin1", engine="python")
             v["imp"] = pd.to_numeric(v["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
-            # Solo Peñaflor (excluye P&P Logística) y vendedores no de ruta (V1/V2/V5/V20)
-            if "Empresa" in v.columns:
-                v = v[v["Empresa"].astype(str).str.strip() == "Empresa"]
+            # No se filtra por Empresa (ver _LEEME_EMPRESA). Sí se excluyen los vendedores
+            # que no son de ruta (V1/V2/V5/V20).
             v = v[(v["imp"] > 0) & (~v["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS))]
             v["cli"] = pd.to_numeric(v["Cliente"], errors="coerce")
             bought_clients = set(v["cli"].dropna().astype(int))
@@ -6125,8 +6132,7 @@ def vendedor_oportunidades_innovacion(vid):
     except Exception:
         return jsonify(vacio), 200
     vac["imp"] = pd.to_numeric(vac["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
-    if "Empresa" in vac.columns:  # solo Peñaflor, excluye P&P Logística
-        vac = vac[vac["Empresa"].astype(str).str.strip() == "Empresa"]
+    # No se filtra por Empresa (ver _LEEME_EMPRESA)
     vac = vac[(vac["imp"] > 0) & (vac["CodVendedor"].astype(str).apply(clean_code) == cn)]
     if vac.empty:
         return jsonify(vacio), 200
@@ -6919,10 +6925,8 @@ def gerencia_cierre_mes():
             vac["importe"]  = vac["ImporteNetoItem"].apply(_parse_num_ar)
             vac["vend_cod"] = pd.to_numeric(vac["CodVendedor"], errors="coerce")
             mes_ini = datetime(año, mes, 1)
-            # Filtrar solo ventas Peñaflor (Empresa='Empresa'), no P&P Logística
-            empresa_ok = (vac["Empresa"] == "Empresa") if "Empresa" in vac.columns else pd.Series(True, index=vac.index)
+            # No se filtra por Empresa (ver _LEEME_EMPRESA)
             vac = vac[
-                empresa_ok &
                 (vac["fecha"] >= mes_ini) & (vac["fecha"] <= fecha_cierre) &
                 (vac["importe"] > 0) & (~vac["vend_cod"].isin(_VENDEDORES_EXCLUIDOS))
             ].copy()
@@ -7327,14 +7331,11 @@ def _cierre_archivos_mes(periodo):
 
 def _cierre_ccc_por_vend_segmento(vmes_df):
     """CCC (clientes únicos, neto>0) por vendedor × segmento desde ventas_mes del cierre.
-    Solo Peñaflor (Empresa=='Empresa'). V2/V5/V20 ya excluidos por _leer_ventas_mes_csv."""
+    No filtra por Empresa (ver _LEEME_EMPRESA). V2/V5/V20 ya excluidos por _leer_ventas_mes_csv."""
     out = {}
     if vmes_df.empty:
         return out
-    df = vmes_df
-    if "Empresa" in df.columns:
-        df = df[df["Empresa"].astype(str).str.strip() == "Empresa"]
-    df = df.copy()
+    df = vmes_df.copy()
     df["_cli"]  = pd.to_numeric(df["Cliente"], errors="coerce")
     df["_vend"] = pd.to_numeric(df["CodVendedor"], errors="coerce")
     df["_seg"]  = [

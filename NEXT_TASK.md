@@ -1,5 +1,18 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-13 - Filtro `Empresa`: eliminado de TODAS las métricas
+
+### REGLA QUE QUEDA (la más importante de la sesión)
+- **NUNCA filtrar por la columna `Empresa`.** `P&P LOGISTICA S.R.L` es **nuestra segunda razón social**, no otro distribuidor: `Proveedor = GRUPO PEÑAFLOR SA` en el **100%** de las filas. **Todo se mide con las dos empresas** (confirmado por el usuario). La regla está escrita en el bloque **`_LEEME_EMPRESA`** de `server_orbit.py` (junto a `_VENDEDORES_EXCLUIDOS`) — si aparece un `Empresa == 'Empresa'` nuevo, es un bug.
+
+### HECHO
+- [x] Filtro eliminado en **8 puntos**: `gerencia_ccc_empresa`, `_acc_preparar_from_df` (acciones), `vendedor_ruta`, `vendedor_oportunidades_innovacion`, `gerencia_cierre_mes`, `_cierre_ccc_por_vend_segmento`, `generar_innovaciones_segmento`, `generar_innovaciones_plan_as` (+ los 5 del 11T del commit anterior).
+- [x] Impacto: **CCC empresa** Tradicionales 79 → 194; **acciones** inversión real $4.267.780 → **$5.205.236** (clientes 83 → 191); **innovaciones** CCC 45 → 90 (V10 Ortega 2 → 15).
+- [x] Datasets regenerados con backup (`99_BACKUPS_ORBIT/20260713_200755`); solo cambió `mod_innovaciones_segmento.csv`.
+
+### PENDIENTE - bug preexistente detectado en la auditoría
+- [ ] **`/api/vendedor/<id>/ruta` devuelve 0 clientes** para todos los vendedores y todos los días (`?dia=Lu..Vi`) — **antes y después** de este cambio, no lo causó el fix. El filtro es `clientes.xlsx::DiasVisita == dia` (`server_orbit.py:6001`): el formato de `DiasVisita` en el maestro no matchea el `dia` que se pasa. Revisar qué valores trae realmente la columna.
+
 ## Sesion 2026-07-13 - 11 Titulares: CCC acumulado (P&P Logística)
 
 ### HECHO
