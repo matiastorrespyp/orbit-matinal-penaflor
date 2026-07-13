@@ -2360,11 +2360,14 @@ def _mask_superficie_11t(df):
 @app.route("/api/gerencia/once_titulares")
 def gerencia_once_titulares():
     """11 Titulares: CCC acumulado vs objetivo CCC.
-    REGLA (corregida 2026-06-18 contra reporte de la empresa):
+    REGLA:
       - Período = TRIMESTRE calendario en curso (ene-mar / abr-jun / jul-sep / oct-dic);
         en julio arranca de cero. Se filtra por FechaComprobante >= inicio del trimestre.
-      - Solo ventas PEÑAFLOR (Empresa == 'Empresa'); se EXCLUYE P&P LOGISTICA (otro
-        distribuidor) — antes se sumaba e inflaba el CCC ~15-35%.
+      - NO se filtra por Empresa (corregido 2026-07-13 contra reporte de Peñaflor). P&P
+        Logística es nuestra segunda razón social, no otro distribuidor: Proveedor =
+        GRUPO PEÑAFLOR SA en el 100% de las filas. El filtro Empresa=='Empresa' anterior
+        borraba 135 de 229 clientes con compra (V6 y V10 perdían el 88% de su cartera) y
+        dejaba el CCC en la mitad del que reporta Peñaflor.
       - CCC = clientes únicos con compra válida (neto>0) por marca titular; excluye V2/V5/V20.
     Fuente primaria : ventas_acumulada.csv.
     Fuente fallback : mod_11_titulares.csv  (tiene_flag = 1).
@@ -2413,12 +2416,8 @@ def gerencia_once_titulares():
             vac = pd.read_csv(vac_path, sep=";", encoding="latin1", low_memory=False)
             vac["ImporteNetoItem"] = pd.to_numeric(
                 vac["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
-            # Ruta: solo Peñaflor (excluye P&P Logística), excluye V1/V2/V5, neto>0.
-            # V20 (Depósito) se CONSERVA aunque facture vía P&P, para su CCC aparte
-            # (mismo criterio que el sell out / conciliación con el proveedor).
-            if "Empresa" in vac.columns:
-                vac = vac[(vac["Empresa"].astype(str).str.strip() == "Empresa")
-                          | (vac["CodVendedor"] == 20)]
+            # Ruta: excluye V1/V2/V5, neto>0. No se filtra por Empresa (ver docstring).
+            # V20 (Depósito) se CONSERVA para su CCC aparte.
             vac = vac[~vac["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS - {20})]
             vac = vac[vac["ImporteNetoItem"] > 0]
             vac = vac[_mask_superficie_11t(vac)]   # 11T mide solo AS + Almacén + Kiosco
@@ -2572,9 +2571,7 @@ def gerencia_once_titulares_zona():
         vac = pd.read_csv(vac_path, sep=";", encoding="latin1", low_memory=False)
         vac["ImporteNetoItem"] = pd.to_numeric(
             vac["ImporteNetoItem"].astype(str).str.replace(",",".",regex=False), errors="coerce")
-        # Solo Peñaflor (excluye P&P Logística) — igual criterio que /api/gerencia/once_titulares
-        if "Empresa" in vac.columns:
-            vac = vac[vac["Empresa"].astype(str).str.strip() == "Empresa"]
+        # No se filtra por Empresa — igual criterio que /api/gerencia/once_titulares
         vac = vac[~vac["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS)]
         vac = vac[vac["ImporteNetoItem"] > 0]
         vac = vac[_mask_superficie_11t(vac)]   # 11T mide solo AS + Almacén + Kiosco
@@ -7426,8 +7423,8 @@ def _cierre_objetivos_avance(files):
 _VACUM_CIERRE_CACHE = {}
 def _leer_ventas_acum_cierre(path):
     """Lee ventas_acumulada_<MMAAAA>.csv del cierre (sep=';', latin1) con caché.
-    Mismo criterio que /api/gerencia/once_titulares: solo Peñaflor (Empresa=='Empresa',
-    excluye P&P Logística), excluye V2/V5/V20 y filtra neto>0."""
+    Mismo criterio que /api/gerencia/once_titulares: NO filtra por Empresa (P&P Logística
+    es nuestra segunda razón social), excluye V2/V5/V20 y filtra neto>0."""
     try:
         key = (str(path), os.path.getmtime(path))
     except OSError:
@@ -7438,8 +7435,6 @@ def _leer_ventas_acum_cierre(path):
         df.columns = [c.strip() for c in df.columns]
         df["ImporteNetoItem"] = pd.to_numeric(
             df["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
-        if "Empresa" in df.columns:
-            df = df[df["Empresa"].astype(str).str.strip() == "Empresa"]
         cv = pd.to_numeric(df["CodVendedor"], errors="coerce")
         df = df[(~cv.isin(_VENDEDORES_EXCLUIDOS)) & (df["ImporteNetoItem"] > 0)].copy()
         _VACUM_CIERRE_CACHE[key] = df
@@ -7467,15 +7462,12 @@ def _cierre_once_titulares(files):
 
     ccc_map = {}
     # Fuente bimestral (ventas_acumulada) si está; si no, ventas_mes (1 mes). Ambos lectores
-    # ya filtran neto>0, excluyen V2/V5/V20 y SOLO Peñaflor (Empresa=='Empresa', sin P&P
-    # Logística) — igual criterio que el dashboard /api/gerencia/once_titulares.
+    # ya filtran neto>0 y excluyen V2/V5/V20. No se filtra por Empresa (P&P Logística es
+    # nuestra segunda razón social) — igual criterio que /api/gerencia/once_titulares.
     src_acum = files.get("ventas_acumulada")
     df = _leer_ventas_acum_cierre(src_acum) if src_acum is not None else _leer_ventas_mes_cacheado(files["ventas_mes"])
     if not df.empty:
         df = df.copy()
-        # Garantizar solo Peñaflor con cualquier fuente (el lector de ventas_mes no filtra Empresa)
-        if "Empresa" in df.columns:
-            df = df[df["Empresa"].astype(str).str.strip() == "Empresa"]
         df = df[_mask_superficie_11t(df)]   # 11T mide solo AS + Almacén + Kiosco
         # 1) match por Código Art. exacto (matriz oficial); 2) fallback texto de Marca
         df["mo"] = _marca_11t_por_codigo(df)

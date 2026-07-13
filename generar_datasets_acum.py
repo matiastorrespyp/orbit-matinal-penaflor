@@ -664,9 +664,10 @@ def generar_11t_acum(ventas, clientes):
     cart = cart[~((cart["vendedor_codigo"] == 3) & (cart["segmento_11t"] == "AUTOSERVICIO"))]
 
     v = ventas[ventas["ImporteNetoItem"] > 0].copy()
-    # Solo Peñaflor (excluye P&P Logística): el 11T es de la compañía Peñaflor
-    if "Empresa" in v.columns:
-        v = v[v["Empresa"].astype(str).str.strip() == "Empresa"]
+    # NO se filtra por Empresa: P&P Logística es nuestra segunda razón social, no otro
+    # distribuidor (Proveedor = GRUPO PEÑAFLOR SA en el 100% de las filas). Filtrar por
+    # Empresa=='Empresa' borraba los clientes facturados vía P&P — en julio 2026, 135 de
+    # 229 clientes con compra, rutas enteras (V6 y V10 perdían el 88% de su cartera).
     v["marca_upper"] = v["Marca"].astype(str).str.upper().str.strip()
     v["marca_objetivo"] = v["marca_upper"].map(ALIAS_LOOKUP)
     v_valid = v[v["marca_objetivo"].notna()].copy()

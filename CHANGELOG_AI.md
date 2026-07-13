@@ -1,5 +1,18 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-13 - fix(11T): el CCC acumulado mostraba la mitad — P&P Logística no es otro distribuidor
+
+- **Pedido:** la tarjeta **11 Titulares acumulada** del dashboard no coincide con el reporte de Peñaflor (que se arma **con nuestros propios archivos**). Ellos ven: Alma Mora 55, Dada 58, Finca Las Moras 38, Los Arboles 34, Alaris 30, Smirnoff Ice 29, Smirnoff Flavours 28, Don David 11, Trapiche Reserva 10, Gordon's 6, Antares 0. Nuestra tarjeta mostraba **≈ la mitad** (Alma Mora 29, Dada 28, Ice 9).
+- **Causa raíz:** el 11T filtraba `Empresa == 'Empresa'` para "excluir P&P Logística (otro distribuidor)". **P&P Logística no es otro distribuidor: es nuestra segunda razón social.** En `ventas_acumulada.csv` la columna **`Proveedor` es `GRUPO PEÑAFLOR SA` en el 100% de las filas** (1051/1051 hoy; 16.884/16.884 en el acumulado de junio). El filtro borraba **135 de los 229 clientes con compra** de julio, es decir, rutas enteras: **V6 perdía 30 de 34 clientes (88%) y V10 35 de 40 (88%)**; V3 75%, V7 79%.
+- **Por qué la regla del 18/06 parecía correcta:** en junio el mix de facturación era **Empresa 8.558 filas vs P&P 5.762** (Empresa mayoritaria, y casi todo cliente tenía al menos una factura por Empresa, así que el CCC no se caía). En julio **se dio vuelta: P&P 630 vs Empresa 421**, y aparecieron 135 clientes que facturan **solo** por P&P → el CCC se partió al medio.
+- **Cambio — se elimina el filtro por `Empresa` en los 4 puntos del 11T:**
+  - `server_orbit.py` → `gerencia_once_titulares()` (tarjeta del dashboard), `gerencia_once_titulares_zona()`, `_leer_ventas_acum_cierre()` y `_cierre_once_titulares()` (cierre de mes).
+  - `generar_datasets_acum.py` → `generar_11t_acum()` (dataset `mod_11t_acum.csv`, vista del vendedor).
+  - **Intacto:** sell out, cobertura, Club FARO, CCC por segmento y planes AS **siguen filtrando por `Empresa`** — no se tocó ninguna otra métrica.
+- **Validado:** `/api/gerencia/once_titulares` (HTTP 200, fuente `ventas_acumulada.csv`) → Alma Mora **29 → 75**, Dada 28 → 71, Finca Las Moras 17 → 50, Smirnoff Ice 9 → 48, Los Arboles 18 → 38. `/api/gerencia/once_titulares_zona` 200 OK. Datasets regenerados con backup previo (`99_BACKUPS_ORBIT/20260713_195908`): de los 9 datasets **solo cambió `mod_11t_acum.csv`** (Alma Mora 25 → 66) — los otros 8 salieron idénticos.
+- **Desvío que queda (documentado, no maquillado):** seguimos **por encima** del reporte de Peñaflor en todas las marcas (Alma Mora 75 vs 55 — 69 si se descuenta hoy; Ice 48 vs 29). **No** se explica por fecha de corte (su Los Arboles equivale a nuestro 10/07 pero su Alma Mora a nuestro 07/07), ni por match estricto de la matriz de códigos, ni por mínimo de botellas, ni por V20: **probados y descartados los cuatro**. Además su **Antares = 0** no es reproducible (tenemos 5-8 clientes con códigos 60017-60022, todos en la matriz oficial). Hace falta el archivo del reporte para reconciliar cliente por cliente → queda en `NEXT_TASK.md`.
+- **Sin tocar:** `01_INPUTS`, `portal.html` (la tarjeta consume el endpoint, no necesitó cambios), objetivos.
+
 ## 2026-07-13 - fix(litros): fuente única `_litros_por_linea` — si falta el litraje, se calcula (nunca 0)
 
 - **Pedido:** los SKUs con `PesoKg = 0` mostraban **0 L** en la ficha de cliente. Regla del usuario: **"evitemos mostrar 0 en un reporte porque falta el cálculo; cuando falte hay que realizarlo"** → inferir los litros desde el maestro 04D.

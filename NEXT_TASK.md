@@ -1,5 +1,20 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-13 - 11 Titulares: CCC acumulado (P&P Logística)
+
+### HECHO
+- [x] **Eliminado el filtro `Empresa == 'Empresa'` del 11T** (4 puntos: `gerencia_once_titulares`, `gerencia_once_titulares_zona`, `_leer_ventas_acum_cierre` + `_cierre_once_titulares`, y `generar_11t_acum`). P&P Logística es **nuestra segunda razón social**, no otro distribuidor: `Proveedor = GRUPO PEÑAFLOR SA` en el **100%** de las filas.
+- [x] Validado: Alma Mora **29 → 75**, Dada 28 → 71, Ice 9 → 48. Datasets regenerados (backup `99_BACKUPS_ORBIT/20260713_195908`); solo cambió `mod_11t_acum.csv`.
+
+### PENDIENTE — reconciliar el desvío que queda contra Peñaflor
+- [ ] **Conseguir el archivo del reporte de Peñaflor** (Excel/PDF, con detalle por cliente si se puede). Sin eso no se cierra el desvío.
+- [ ] Con ese archivo, reconciliar **cliente por cliente y SKU por SKU**. Hoy quedamos **arriba** en todas las marcas (Alma Mora 75 vs 55 — 69 sin contar hoy; Ice 48 vs 29; Los Arboles 38 vs 34).
+- [ ] **Ya probado y descartado** (no repetir): fecha de corte (ninguna fecha única explica el patrón — su Los Arboles ≈ nuestro 10/07 pero su Alma Mora ≈ nuestro 07/07), match estricto por matriz de códigos, mínimo de botellas (3/6) y excluir V20.
+- [ ] **Preguntarles por Antares:** su reporte dice **0** y nosotros tenemos 5-8 clientes con Antares (códigos 60017-60022, todos en la matriz oficial). Ninguno cae en Ramo `AUTOSERVICIO` puro — solo Autoservicio Tradicional / Almacén / Fiambrería / Vinoteca. **O su extracción no capta Antares, o el 11T de Antares se mide en un canal más chico que el resto.** Si es lo segundo, la superficie del 11T sería **por marca**, no única.
+
+### DEUDA DETECTADA (aparte)
+- [ ] `mod_11t_acum.csv` (vista del **vendedor**) solo resuelve **8 marcas** por texto (`ALIAS_LOOKUP`) y queda muy por debajo de la tarjeta de gerencia en Smirnoff Ice (**8 vs 48**): no hace **match por código** contra la matriz oficial ni cubre Smirnoff Flavours / Antares / Gordon's. El drill-down legacy nunca migró al match por código. **Gerencia y vendedor no cuentan igual.**
+
 ## Sesion 2026-07-13 - Ficha cliente: detalle por producto (SKU)
 
 ### HECHO
