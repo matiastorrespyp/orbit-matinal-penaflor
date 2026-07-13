@@ -6,9 +6,10 @@
 - [x] Nuevo formateador `fmtP` en `portal.html` (pesos enteros, miles es-AR, signo antes del `$`). `gPlanVsReal` lo usa en Plan $, Real $, Dif y en el TOTAL. `fmtM` (millones) queda intacto para el resto del portal.
 - [x] Validado contra `/api/matinal/resumen` (11/07): V7 $14.900 y V8 $12.680 antes salían `$0.0M`; ahora se ven completos. TOTAL real $253.778 (antes `$0.3M`).
 - [x] Commiteado y pusheado a `master` → deploy Render.
+- [x] **Planificación también a `fmtP`** (pedido del usuario): los 4 renders de `venta_esperada` — tarjeta por vendedor (`:2257`), tabla "Total Planificación PyP del Día" (`:2307`), fila TOTAL DÍA (`:2318`) y tarjeta "Plan cargado" del vendedor (`:3512`). Validado contra `/api/planificacion` (11/07): TOTAL DÍA `$0.7M` → **$710.000**.
 
-### PENDIENTE
-- [ ] Si aparece el mismo aplastamiento en otra pantalla de **detalle diario** (montos de decenas de miles), reemplazar `fmtM` por `fmtP` ahí también. Candidata: tabla "Total Planificación PyP del Día" (`portal.html`, ~línea 2307) — hoy usa `fmtM` para `venta_esperada`. **No se tocó** (el pedido era solo Plan vs Real); confirmar con el usuario.
+### REGLA QUE QUEDA
+- **`fmtM` = acumulados del mes** (dashboard, avance, objetivos, cierre — escala de millones). **`fmtP` = montos del día** (plan/real diario, decenas de miles). Antes de usar `fmtM` en una pantalla nueva, preguntarse de qué orden es el monto: con `fmtM`, todo lo menor a $50.000 se muestra como `$0.0M`.
 
 ## Sesion 2026-07-10 - fix guard Git del cierre (clasificar por ruta)
 

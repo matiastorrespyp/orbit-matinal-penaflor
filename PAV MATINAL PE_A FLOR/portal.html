@@ -2254,7 +2254,7 @@ async function gPlanificacion(p){
           <span class="chip ${scl}">${r.estado||'enviada'}</span>
         </div>
         ${tsLabel?`<div style="font-size:10px;color:var(--text3);margin-bottom:6px;">📅 Enviado ${tsLabel}</div>`:''}
-        <div class="row-b sm m2 mb8"><span>Venta obj.</span><b>${fmtM(r.venta_esperada)}</b></div>
+        <div class="row-b sm m2 mb8"><span>Venta obj.</span><b>${fmtP(r.venta_esperada)}</b></div>
         <div class="row-b xs m3 mb4"><span>CCC T/A/O</span><span>${r.ccc_tradicional||0}/${r.ccc_autoservicio||0}/${r.ccc_onpremise||0}</span></div>
         <div class="row-b xs m3 mb8"><span>11T plan</span><span>${r.once_t||0}</span></div>
         ${r.acciones?`<div class="xs m3 mb8" style="line-height:1.35;font-style:italic;">"${(r.acciones||'').substring(0,70)}"</div>`:''}
@@ -2304,7 +2304,7 @@ async function gPlanificacion(p){
               const hr=dtE?dtE.split(' ')[1]?.substring(0,5):'–';
               return `<tr>
                 <td><span style="color:${col};font-weight:600;">${r.vendedor_id}</span></td>
-                <td style="text-align:right;">${fmtM(r.venta_esperada||0)}</td>
+                <td style="text-align:right;">${fmtP(r.venta_esperada||0)}</td>
                 <td style="text-align:center;">${r.ccc_tradicional||0}</td>
                 <td style="text-align:center;">${r.ccc_autoservicio||0}</td>
                 <td style="text-align:center;">${r.ccc_onpremise||0}</td>
@@ -2315,7 +2315,7 @@ async function gPlanificacion(p){
           </tbody>
           <tfoot><tr style="border-top:2px solid var(--orbit-magenta);font-weight:700;">
             <td style="color:var(--orbit-magenta);font-size:11px;letter-spacing:.5px;">TOTAL DÍA</td>
-            <td style="text-align:right;color:var(--orbit-magenta);">${fmtM(totVenta)}</td>
+            <td style="text-align:right;color:var(--orbit-magenta);">${fmtP(totVenta)}</td>
             <td style="text-align:center;color:var(--orbit-magenta);">${totT}</td>
             <td style="text-align:center;color:var(--orbit-magenta);">${totA}</td>
             <td style="text-align:center;color:var(--orbit-magenta);">${totO}</td>
@@ -3509,7 +3509,7 @@ function vPlan(){
       <div class="card-hd"><span class="card-title">Plan cargado para ${fechaPlan}</span><span class="chip ${scl}">${(planHoy.estado||'enviada').toUpperCase()}</span></div>
       ${tsV?`<div style="font-size:10px;color:var(--text3);padding:0 14px 6px;">📅 Enviado ${tsV}</div>`:''}
       <div class="card-body">
-        <div class="row-b sm m2 mb8"><span>Venta esperada</span><b>${fmtM(planHoy.venta_esperada)}</b></div>
+        <div class="row-b sm m2 mb8"><span>Venta esperada</span><b>${fmtP(planHoy.venta_esperada)}</b></div>
         <div class="row-b xs m3 mb4"><span>CCC Trad</span><span>${planHoy.ccc_tradicional||0}</span></div>
         ${!esV3?`<div class="row-b xs m3 mb4"><span>CCC Auto</span><span>${planHoy.ccc_autoservicio||0}</span></div>`:''}
         <div class="row-b xs m3 mb4"><span>CCC On Premise</span><span>${planHoy.ccc_onpremise||0}</span></div>

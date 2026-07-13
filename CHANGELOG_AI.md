@@ -1,5 +1,12 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-13 - fix(planificación): `venta_esperada` también en pesos completos
+
+- **Pedido:** extender el `fmtP` de Plan vs Real a la tabla **"Total Planificación PyP del Día"** (quedaba pendiente en el commit anterior).
+- **Alcance:** `venta_esperada` es el **plan del día** (decenas de miles), y se renderizaba con `fmtM` en **4 lugares**. Se pasaron los 4 a `fmtP` para no dejar el mismo número en dos formatos dentro de la misma pantalla: (1) tarjeta por vendedor de Planificación ("Venta obj.", `portal.html:2257`), (2) fila de la tabla "Total Planificación PyP del Día" (`:2307`), (3) su fila **TOTAL DÍA** (`:2318`), y (4) la tarjeta **"Plan cargado para \<fecha\>"** de la app del vendedor ("Venta esperada", `:3512`) — mismo campo, mismo aplastamiento (el vendedor que planificaba $60.000 se veía `$0.1M`).
+- **Validado (server real :8502, `GET /api/planificacion`, plan del 2026-07-11):** V3 `$0.1M` → **$50.000**, V4 `$0.1M` → **$60.000**, V9 `$0.6M` → **$600.000**, TOTAL DÍA `$0.7M` → **$710.000**. `node --check` del bloque `<script>` → OK; 0 usos de `fmtM` restantes sobre `venta_esperada`.
+- **Sin tocar:** `fmtM` sigue intacto y en uso para acumulados del mes (dashboard, avance, objetivos, cierre). Cambio de presentación puro: ni endpoints, ni cálculos, ni `01_INPUTS`.
+
 ## 2026-07-13 - fix(plan vs real): importes en pesos completos (no redondeados a millones)
 
 - **Pedido:** en la pantalla **Plan vs Real** de gerencia, lo planificado y el real vendido en dinero deben verse **abiertos** (valor completo). Un vendedor que vendió menos de $100.000 aparecía en **cero** sin serlo.
