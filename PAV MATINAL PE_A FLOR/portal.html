@@ -1170,6 +1170,9 @@ function fechaPlanObjetivo(){
 
 const fmtM  = n => n ? '$'+(n/1e6).toFixed(1)+'M' : '$0';
 const fmtK  = n => n ? '$'+(n/1e3).toFixed(0)+'K' : '$0';
+/* Importe completo en pesos, sin redondear a millones (Plan vs Real). */
+const fmtP  = n => { const v=Math.round(Number(n)||0);
+                     return (v<0?'-$':'$')+Math.abs(v).toLocaleString('es-AR'); };
 const ini   = n => (n||'').split(' ').filter(Boolean).map(s=>s[0]).slice(0,2).join('').toUpperCase();
 const clamp = (v,a,b) => Math.max(a, Math.min(b, v||0));
 const pcol  = p => p>=70 ? 'ok' : p>=40 ? 'wn' : 'bd';
@@ -3147,9 +3150,9 @@ function gPlanVsReal(p){
             + `<td style="text-align:center;color:var(--ok);font-weight:600;">${v.tiene_real?real:sp}</td>`;
           return `<tr>
             <td><span class="chip" style="color:${col}">${v.vendedor_id}</span><span style="font-size:11px;color:var(--text3);margin-left:4px;">${v.vendedor_nombre.split(' ')[0]}</span></td>
-            <td>${v.tiene_plan?fmtM(v.plan_venta):sp}</td>
-            <td style="font-weight:${v.tiene_real?'600':'400'};color:${v.tiene_real?'var(--text)':'var(--text3)'};">${v.tiene_real?fmtM(v.real_ayer):sp}</td>
-            <td class="${v.tiene_plan&&v.tiene_real?dc:''}">${v.tiene_plan&&v.tiene_real?(v.delta>=0?'+':'')+fmtM(v.delta):sp}</td>
+            <td>${v.tiene_plan?fmtP(v.plan_venta):sp}</td>
+            <td style="font-weight:${v.tiene_real?'600':'400'};color:${v.tiene_real?'var(--text)':'var(--text3)'};">${v.tiene_real?fmtP(v.real_ayer):sp}</td>
+            <td class="${v.tiene_plan&&v.tiene_real?dc:''}">${v.tiene_plan&&v.tiene_real?(v.delta>=0?'+'+fmtP(v.delta):fmtP(v.delta)):sp}</td>
             <td><span class="chip ${pctCl}">${pct}</span></td>
             ${cccCell(v.plan_ccc_trad, v.real_ccc_trad, false)}
             ${cccCell(v.plan_ccc_as,   v.real_ccc_as,   esV3)}
@@ -3161,9 +3164,9 @@ function gPlanVsReal(p){
         <tfoot>
           <tr style="border-top:2px solid var(--bs);background:rgba(255,255,255,.03);font-weight:700;">
             <td><b>TOTAL</b><span style="font-size:9px;color:var(--text3);margin-left:4px;">${conPlan} planes</span></td>
-            <td><b>${fmtM(tPlanV)}</b></td>
-            <td>${tieneReal?'<b>'+fmtM(tRealV)+'</b>':_spt}</td>
-            <td class="${tieneReal?(tDelta>=0?'pvr-pos':'pvr-neg'):''}">${tieneReal?(tDelta>=0?'+':'')+fmtM(tDelta):_spt}</td>
+            <td><b>${fmtP(tPlanV)}</b></td>
+            <td>${tieneReal?'<b>'+fmtP(tRealV)+'</b>':_spt}</td>
+            <td class="${tieneReal?(tDelta>=0?'pvr-pos':'pvr-neg'):''}">${tieneReal?(tDelta>=0?'+'+fmtP(tDelta):fmtP(tDelta)):_spt}</td>
             <td><span class="chip ${tPct==null?'':tPct>=90?'ok':tPct>=60?'wn':'bd'}">${tPct!=null?tPct.toFixed(1)+'%':'–'}</span></td>
             <td style="text-align:center;color:var(--text3);"><b>${tPlanTrad}</b></td>
             <td style="text-align:center;color:var(--ok);">${tieneReal?'<b>'+tRealTrad+'</b>':_spt}</td>

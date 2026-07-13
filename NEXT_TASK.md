@@ -1,5 +1,15 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-13 - Plan vs Real: importes en pesos completos
+
+### HECHO
+- [x] Nuevo formateador `fmtP` en `portal.html` (pesos enteros, miles es-AR, signo antes del `$`). `gPlanVsReal` lo usa en Plan $, Real $, Dif y en el TOTAL. `fmtM` (millones) queda intacto para el resto del portal.
+- [x] Validado contra `/api/matinal/resumen` (11/07): V7 $14.900 y V8 $12.680 antes salían `$0.0M`; ahora se ven completos. TOTAL real $253.778 (antes `$0.3M`).
+- [x] Commiteado y pusheado a `master` → deploy Render.
+
+### PENDIENTE
+- [ ] Si aparece el mismo aplastamiento en otra pantalla de **detalle diario** (montos de decenas de miles), reemplazar `fmtM` por `fmtP` ahí también. Candidata: tabla "Total Planificación PyP del Día" (`portal.html`, ~línea 2307) — hoy usa `fmtM` para `venta_esperada`. **No se tocó** (el pedido era solo Plan vs Real); confirmar con el usuario.
+
 ## Sesion 2026-07-10 - fix guard Git del cierre (clasificar por ruta)
 
 ### HECHO

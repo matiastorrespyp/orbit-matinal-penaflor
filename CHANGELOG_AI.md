@@ -1,5 +1,17 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-13 - fix(plan vs real): importes en pesos completos (no redondeados a millones)
+
+- **Pedido:** en la pantalla **Plan vs Real** de gerencia, lo planificado y el real vendido en dinero deben verse **abiertos** (valor completo). Un vendedor que vendió menos de $100.000 aparecía en **cero** sin serlo.
+- **Causa raíz (`portal.html:1171`):** la tabla usaba el formateador global **`fmtM`** (`n => n ? '$'+(n/1e6).toFixed(1)+'M' : '$0'`), que **redondea a millones con 1 decimal**. Todo monto < $50.000 cae a `$0.0M` y los < $100.000 se aplastan a `$0.1M`/`$0.0M`. No era un problema de datos: el endpoint `/api/matinal/resumen` devolvía el importe exacto; se perdía **solo en el render**.
+- **Cambio (`portal.html`, mínimo y acotado a esta pantalla):**
+  - Nuevo formateador **`fmtP`** junto a `fmtM`/`fmtK`: importe entero en pesos con separador de miles es-AR y signo delante del `$` (`-$238.400`). `null`/`undefined`/`0` → `$0`.
+  - `gPlanVsReal` usa `fmtP` en las **3 columnas de dinero** (Plan $, Real $, Dif) y en la fila **TOTAL** del `tfoot`. El `+` de la diferencia positiva se antepone al `$` (`+$14.900`).
+  - **`fmtM` no se tocó**: sigue igual en dashboard, avance, vendedores, etc. (cambiarlo globalmente rompería la densidad de los KPI).
+  - Sin cambios de CSS: `.pvr-wrap` ya es `overflow-x:auto` y `.pvr-tbl td` es `white-space:nowrap` → los importes largos no rompen el layout.
+- **Validado (server real :8502, `GET /api/matinal/resumen`, plan/real 2026-07-11):** reproducido el bug exacto que reportó el usuario — **V7 real $14.900 y V8 real $12.680 se mostraban como `$0.0M`**; ahora `$14.900` y `$12.680`. V9 `$0.2M` → **$226.198** (plan `$0.6M` → $600.000). TOTAL plan `$0.7M` → **$710.000**, real `$0.3M` → **$253.778**. `node --check` sobre el bloque `<script>` de `portal.html` → OK.
+- **Sin tocar:** `server_orbit.py`, endpoints, cálculos, `01_INPUTS`, datasets. Es un cambio de presentación puro.
+
 ## 2026-07-12 - fix(dashboard): una sola tarjeta de CCC del mes (real/objetivo/avance)
 
 - **Pedido:** el dashboard de gerencia mostraba tres números distintos y confundía — KPI "CCC Compradores Mes" (76), "CCC Empresa · real vs objetivo" y "Cobertura acumulada del mes". Pidió una sola tarjeta de CCC con real, objetivo y avance.
