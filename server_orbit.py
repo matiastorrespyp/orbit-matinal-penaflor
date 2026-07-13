@@ -1325,6 +1325,9 @@ def _cliente_ventas_base():
     df["_importe"] = pd.to_numeric(df.get("ImporteNetoItem"), errors="coerce").fillna(0)
     df["_marca"] = df.get("Marca", pd.Series([""] * len(df), index=df.index)).astype(str).str.strip()
     df["_linea"] = df.get("Linea", pd.Series([""] * len(df), index=df.index)).astype(str).str.strip()
+    df["_articulo"] = df.get("Articulo", pd.Series([""] * len(df), index=df.index)).astype(str).str.strip()
+    df["_codigo"] = df.get("Codigo", pd.Series([""] * len(df), index=df.index)).astype(str).str.strip()
+    df["_botellas"] = pd.to_numeric(df.get("CantBase"), errors="coerce").fillna(0)
     df = df.dropna(subset=["_cli", "_vend", "_fecha"])
     if "NroComprobante" in df.columns and "Codigo" in df.columns:
         df = df.drop_duplicates(subset=["NroComprobante", "Cliente", "Codigo", "CantBase", "ImporteNetoItem"])
@@ -1396,6 +1399,7 @@ def cliente_ficha(cliente_id):
     if vc.empty:
         base.update({
             "marcas_mes": [],
+            "productos_mes": [],
             "ventas_mensuales": [],
             "frecuencia_compra_mensual": 0,
             "fecha_ultima_compra": None,
@@ -1414,9 +1418,11 @@ def cliente_ficha(cliente_id):
 
     marca_col = "_marca"
     marcas = []
+    productos = []
     if not mes_actual.empty:
         mm = (mes_actual.groupby(marca_col, dropna=False)
-              .agg(litros=("_litros", "sum"), importe=("_importe", "sum"))
+              .agg(litros=("_litros", "sum"), importe=("_importe", "sum"),
+                   botellas=("_botellas", "sum"))
               .reset_index())
         for _, r in mm.sort_values("litros", ascending=False).iterrows():
             nombre = str(r[marca_col]).strip() or "Sin marca"
@@ -1424,6 +1430,23 @@ def cliente_ficha(cliente_id):
                 "marca": nombre,
                 "litros": round(float(r["litros"]), 1),
                 "importe": round(float(r["importe"]), 0),
+                "botellas": round(float(r["botellas"]), 1),
+            })
+        # Detalle por producto (SKU) del mes: qué compró exactamente dentro de cada marca
+        # (ej. marca "Dada" → "DADA LATA TINTO VERANO 4X6X355").
+        pm = (mes_actual.groupby(["_marca", "_codigo", "_articulo"], dropna=False)
+              .agg(litros=("_litros", "sum"), importe=("_importe", "sum"),
+                   botellas=("_botellas", "sum"), compras=("_fecha", lambda s: int(s.dt.date.nunique())))
+              .reset_index())
+        for _, r in pm.sort_values("importe", ascending=False).iterrows():
+            productos.append({
+                "marca": str(r["_marca"]).strip() or "Sin marca",
+                "codigo": str(r["_codigo"]).strip(),
+                "producto": str(r["_articulo"]).strip() or "Sin descripción",
+                "botellas": round(float(r["botellas"]), 1),
+                "litros": round(float(r["litros"]), 1),
+                "importe": round(float(r["importe"]), 0),
+                "compras": int(r["compras"]),
             })
 
     mensual = (vc12.groupby("_periodo")
@@ -1462,6 +1485,7 @@ def cliente_ficha(cliente_id):
     base.update({
         "periodo_mes": str(periodo_actual),
         "marcas_mes": marcas,
+        "productos_mes": productos,
         "ventas_mensuales": ventas_mensuales,
         "frecuencia_compra_mensual": round(frecuencia, 1),
         "fecha_ultima_compra": latest.strftime("%Y-%m-%d") if pd.notna(latest) else None,

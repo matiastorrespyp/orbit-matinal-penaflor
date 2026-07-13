@@ -1,5 +1,15 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-13 - Ficha cliente: detalle por producto (SKU)
+
+### HECHO
+- [x] `/api/clientes/<id>/ficha` devuelve **`productos_mes`**: SKUs del mes por `(Marca, Código, Artículo)` con botellas / litros / dinero / compras. `marcas_mes` sigue (compat) + `botellas`.
+- [x] Ficha del portal: sección **"Productos comprados en el mes"** — marca desplegable → tabla de SKUs. Sirve a **gerencia y vendedor** (la ficha es la misma, `renderClienteBuscador`).
+- [x] Validado en navegador (Playwright) en los 2 perfiles: cliente #278 → 7 marcas / 12 SKUs; "Champaña Dada" se abre en DADA ESPUMANTE ROS y DADA 7 SWEET. Toggle OK. Empty-state OK.
+
+### PENDIENTE / A MIRAR
+- [ ] **`PesoKg` = 0 en algunas filas de ventas** (ej. DADA 7 SWEET, GORDON'S PINK GIN): esos SKUs muestran **0 L** aunque tengan botellas e importe. Es un faltante del origen, preexistente (ya afectaba a `marcas_mes` y a cualquier métrica de litros). Definir con el usuario si se infieren litros desde el maestro 04D (`CantBase × lxu`, como hace Sell Out en `:5357`) o se deja tal cual.
+
 ## Sesion 2026-07-13 - Plan vs Real: importes en pesos completos
 
 ### HECHO

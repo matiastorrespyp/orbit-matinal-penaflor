@@ -1,5 +1,17 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-13 - feat(ficha cliente): detalle por producto (SKU) de lo comprado en el mes
+
+- **Pedido:** en la pantalla **Cliente** (gerencia **y** vendedor), al desplegar la consulta de un cliente, ver **qué producto** viene comprando en el mes — no la categoría/marca suelta, sino el SKU (ej. no "Dada" a secas, sino "DADA LATA TINTO VERANO 4X6X355"), y así con todo.
+- **Estado previo:** la ficha (`clienteFicha`, que **comparten los dos perfiles** vía `renderClienteBuscador`) mostraba solo chips de **"Marcas compradas en el mes"** — el endpoint `/api/clientes/<id>/ficha` agrupaba únicamente por columna `Marca` (`marcas_mes`). No había ningún corte por artículo.
+- **Backend (`server_orbit.py`):**
+  - `_cliente_ventas_base()`: se agregan 3 columnas derivadas — `_articulo` (Articulo = descripción del SKU), `_codigo` (Codigo) y `_botellas` (CantBase, ya numérico y en botellas, igual criterio que cobertura en `:3264`).
+  - `cliente_ficha()`: nuevo campo **`productos_mes`** = agrupado por `(Marca, Código, Artículo)` del **mes vigente**, con `botellas`, `litros`, `importe` y `compras` (días distintos), ordenado por importe desc. `marcas_mes` se conserva (compat) y suma `botellas`. Rama sin ventas devuelve `productos_mes: []`.
+- **Frontend (`portal.html`, `clienteFicha`):** la sección pasa a **"Productos comprados en el mes"**: una fila por **marca** (con totales botellas/litros/dinero) **desplegable** — al tocarla se abre/cierra la tabla de sus **SKUs** (Producto + #código, Botellas, Litros, Dinero). Arranca desplegada. Nueva función `clienteToggleMarca(scope,i)` (los selectores llevan `scope` `g`/`v` para no cruzar los dos contenedores). **Un solo cambio cubre los dos perfiles** porque la ficha es la misma.
+- **Validado con navegador real (Playwright, server :8502, cliente #278 AVENATTI, mes 2026-07):** **gerencia y vendedor V6 idénticos** → 7 marcas, **12 SKUs**. Antes se veía solo "Champaña Dada · 22,5 L · $294.449"; ahora se abre en **DADA ESPUMANTE ROS 6X750 (#74473) 30 bot · 22,5 L · $147.225** y **DADA 7 SWEET 6X750 (#74446) 30 bot · $147.225**. Plegado/desplegado por marca verificado (7→6→7 tablas visibles). Empty-state OK (cliente #1278 sin compras → "Sin compras en el mes vigente"). Acentos/ñ correctos (`Champaña Dada` = 0xF1, no mojibake). `py_compile` + `node --check` OK.
+- **Nota de datos:** algunos SKUs muestran **0 L** (ej. DADA 7 SWEET, GORDON'S PINK GIN) porque **`PesoKg` viene 0 en esas filas del origen** — es un dato faltante preexistente (ya afectaba a `marcas_mes`), no se inventa: botellas e importe sí son correctos.
+- **Sin tocar:** cálculos comerciales, CCC, cobertura, objetivos, datasets, `01_INPUTS`. Solo se agregó un corte de lectura en la ficha.
+
 ## 2026-07-13 - fix(planificación): `venta_esperada` también en pesos completos
 
 - **Pedido:** extender el `fmtP` de Plan vs Real a la tabla **"Total Planificación PyP del Día"** (quedaba pendiente en el commit anterior).
