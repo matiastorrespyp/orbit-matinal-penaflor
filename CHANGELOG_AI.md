@@ -1,5 +1,20 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-13 - fix(litros): fuente única `_litros_por_linea` — si falta el litraje, se calcula (nunca 0)
+
+- **Pedido:** los SKUs con `PesoKg = 0` mostraban **0 L** en la ficha de cliente. Regla del usuario: **"evitemos mostrar 0 en un reporte porque falta el cálculo; cuando falte hay que realizarlo"** → inferir los litros desde el maestro 04D.
+- **Causa:** `_cliente_ventas_base()` tomaba litros de **`PesoKg` pelado**. Sell Out, en cambio, ya resolvía bien el problema con una cascada de 3 niveles, pero la lógica estaba **inline dentro de `_sellout_desde_ventas`** y nadie más podía usarla.
+- **Cambio (`server_orbit.py`) — extracción, no lógica nueva:** nuevo helper **`_litros_por_linea(df)`**, fuente única del criterio de litros:
+  1. **`CantBase × (Lts x caja / UxC)` del maestro 04D** (primaria),
+  2. **`PesoKg`** del ERP si el SKU no está en el maestro,
+  3. **ml inferidos del nombre** (`6X750` → 0,75) × `CantBase` como último recurso.
+  `_sellout_desde_ventas` **reemplaza su bloque inline** por una llamada al helper (misma cascada, sin duplicar el criterio) y `_cliente_ventas_base` lo adopta (`_litros = _litros_por_linea(df)`).
+- **Validado (dos frentes):**
+  - **Sell Out no se movió ni un litro:** helper nuevo vs implementación vieja sobre las 881 filas de `ventas.csv` → total **6.953,49 L en ambas**, **máxima diferencia por fila 0,0000000000**, **0 filas distintas**. El refactor es equivalente exacto.
+  - **Ficha #278 (mes 2026-07):** SKUs en 0 L pasan de **2 → 0**. `DADA 7 SWEET 6X750` **0 L → 22,5 L** (30 bot × 0,75 del maestro) y `GORDON'S PINK GIN 6X700` **0 L → 8,4 L** (12 × 0,7). Coherentes con sus hermanos de la misma marca (DADA ESPUMANTE 22,5 L, GORDON'S GIN 8,4 L). Venta del mes del cliente: **324,9 L → 355,8 L** (el importe no cambia). Verificado en navegador (Playwright) en **gerencia y vendedor**: 7 marcas / 12 SKUs, ningún "0 L".
+- **Alcance del cambio de números:** `_cliente_ventas_base` **solo lo usa la ficha** (`/api/clientes/<id>/ficha`) → los litros que suben son los de **venta del mes / promedio 12m / posibilidad de venta de la ficha**, que antes estaban subvaluados. Ninguna otra métrica (CCC, cobertura, 11T, objetivos) usa esta base.
+- **Sin tocar:** `01_INPUTS`, datasets, `portal.html`, cálculos comerciales.
+
 ## 2026-07-13 - feat(ficha cliente): detalle por producto (SKU) de lo comprado en el mes
 
 - **Pedido:** en la pantalla **Cliente** (gerencia **y** vendedor), al desplegar la consulta de un cliente, ver **qué producto** viene comprando en el mes — no la categoría/marca suelta, sino el SKU (ej. no "Dada" a secas, sino "DADA LATA TINTO VERANO 4X6X355"), y así con todo.

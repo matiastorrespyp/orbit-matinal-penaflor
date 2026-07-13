@@ -1302,7 +1302,8 @@ def _clientes_maestro(incluir_deposito=False):
 _CLIENTE_VENTAS_CACHE = {}
 
 def _cliente_ventas_base():
-    """Ventas vivas disponibles para ficha cliente. Usa PesoKg como litros, igual que Sell Out."""
+    """Ventas vivas disponibles para ficha cliente. Litros por la misma cascada que Sell Out
+    (_litros_por_linea: maestro 04D → PesoKg → nombre del artículo)."""
     paths = [INPUTS / "ventas_acumulada.csv", INPUTS / "ventas.csv"]
     key = tuple((str(p), os.path.getmtime(p) if p.exists() else 0) for p in paths)
     df = _CLIENTE_VENTAS_CACHE.get(key)
@@ -1321,7 +1322,7 @@ def _cliente_ventas_base():
     df["_cli"] = pd.to_numeric(df.get("Cliente"), errors="coerce")
     df["_vend"] = pd.to_numeric(df.get("CodVendedor"), errors="coerce")
     df["_fecha"] = pd.to_datetime(df.get("FechaComprobante"), dayfirst=True, errors="coerce")
-    df["_litros"] = pd.to_numeric(df.get("PesoKg"), errors="coerce").fillna(0)
+    df["_litros"] = _litros_por_linea(df)
     df["_importe"] = pd.to_numeric(df.get("ImporteNetoItem"), errors="coerce").fillna(0)
     df["_marca"] = df.get("Marca", pd.Series([""] * len(df), index=df.index)).astype(str).str.strip()
     df["_linea"] = df.get("Linea", pd.Series([""] * len(df), index=df.index)).astype(str).str.strip()
@@ -5334,14 +5335,36 @@ def _cargar_objetivos_sellout() -> dict:
     return out
 
 
+def _litros_por_linea(df: pd.DataFrame) -> pd.Series:
+    """Litros de cada línea de venta, en cascada (fuente única del criterio de litros).
+
+    1) CantBase × (Lts x caja / UxC) del maestro 04D  → primaria
+    2) PesoKg del ERP (ya viene en litros)            → si el SKU no está en el maestro
+    3) ml inferidos del nombre × CantBase (6X750→0,75) → último recurso
+
+    Regla: un reporte no muestra 0 L porque falte el cálculo. Si falta, se calcula.
+    Solo queda en 0 si el artículo no da litros por ninguna de las tres vías.
+    """
+    _, _, cod2lxu, _ = _cargar_maestro_04D()
+    cod = (df["Codigo"].astype(str).str.strip().str.upper().str.replace(r"\.0$", "", regex=True)
+           if "Codigo" in df.columns else pd.Series("", index=df.index))
+    cant = pd.to_numeric(df.get("CantBase"), errors="coerce").fillna(0)
+    litros = cant * cod.map(cod2lxu).fillna(0)
+    peso = pd.to_numeric(df.get("PesoKg"), errors="coerce").fillna(0)
+    litros = litros.where(litros > 0, peso)
+    falta = litros <= 0
+    if falta.any() and "Articulo" in df.columns:
+        inferido = df["Articulo"].apply(_infer_litros_por_nombre) * cant
+        litros = litros.where(~falta, inferido)
+    return litros
+
+
 def _sellout_desde_ventas(df_raw: pd.DataFrame) -> list:
     """
     Calcula sell out en litros por categoría desde un DataFrame de ventas ya filtrado
     (excl V2/V5/V20, importe > 0). Fuente de clasificación: 04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx.
 
-    Litros por línea = CantBase × (Lts x caja / UxC) del maestro 04D.
-    Fallback si sin match en maestro: PesoKg (ya en litros en el ERP).
-    Fallback final: inferir ml del nombre del artículo.
+    Litros: cascada de _litros_por_linea (maestro 04D → PesoKg → nombre del artículo).
 
     Spirits NO están en maestro 04D (son Diageo/P&P) → clasificar por keyword en Artículo:
       Nacional  = SMIRNOFF, GORDON, WHITE HORSE, J&B
@@ -5375,19 +5398,8 @@ def _sellout_desde_ventas(df_raw: pd.DataFrame) -> list:
     # ── Cargar maestro 04D (categoría, segmento, litros/unidad, linea comercial)
     cod2cat_04d, cod2seg_04d, cod2lxu_04d, cod2linea_04d = _cargar_maestro_04D()
 
-    # ── Litros: CantBase × lxu maestro 04D (fuente primaria)
-    #           → PesoKg si sin maestro  → inferir del nombre
-    df["_lxu"] = df["_cod"].map(cod2lxu_04d).fillna(0)
-    df["litros"] = df["CantBase"] * df["_lxu"]
-    # Para productos sin lxu en maestro: usar PesoKg
-    no_lxu = df["litros"] == 0
-    if no_lxu.any():
-        df.loc[no_lxu, "litros"] = df.loc[no_lxu, "PesoKg"]
-    # Para productos con PesoKg=0 también: inferir del nombre
-    still_zero = df["litros"] == 0
-    if still_zero.any() and "Articulo" in df.columns:
-        infer_l = df["Articulo"].apply(_infer_litros_por_nombre) * df["CantBase"]
-        df["litros"] = df["litros"].where(~still_zero, infer_l)
+    # ── Litros: cascada única (maestro 04D → PesoKg → nombre del artículo)
+    df["litros"] = _litros_por_linea(df)
 
     # ── Categoría: maestro 04D → fallback Rubro (where() para evitar loc parcial en pandas 3.x)
     cat_maestro = df["_cod"].map(cod2cat_04d).astype(object)

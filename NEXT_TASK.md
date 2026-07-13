@@ -7,8 +7,10 @@
 - [x] Ficha del portal: sección **"Productos comprados en el mes"** — marca desplegable → tabla de SKUs. Sirve a **gerencia y vendedor** (la ficha es la misma, `renderClienteBuscador`).
 - [x] Validado en navegador (Playwright) en los 2 perfiles: cliente #278 → 7 marcas / 12 SKUs; "Champaña Dada" se abre en DADA ESPUMANTE ROS y DADA 7 SWEET. Toggle OK. Empty-state OK.
 
-### PENDIENTE / A MIRAR
-- [ ] **`PesoKg` = 0 en algunas filas de ventas** (ej. DADA 7 SWEET, GORDON'S PINK GIN): esos SKUs muestran **0 L** aunque tengan botellas e importe. Es un faltante del origen, preexistente (ya afectaba a `marcas_mes` y a cualquier métrica de litros). Definir con el usuario si se infieren litros desde el maestro 04D (`CantBase × lxu`, como hace Sell Out en `:5357`) o se deja tal cual.
+- [x] **Litros faltantes resueltos** (decisión del usuario: *"cuando falte el cálculo hay que realizarlo, no mostrar 0"*): nuevo helper **`_litros_por_linea`** = fuente única de litros (maestro 04D → PesoKg → nombre del artículo). Lo usan la ficha y Sell Out. Sell Out validado **idéntico** (0 filas de diferencia sobre 881); ficha #278: SKUs en 0 L **2 → 0**.
+
+### REGLA QUE QUEDA
+- **Ningún reporte muestra 0 por falta de cálculo.** Si el litraje no viene en el dato, se calcula (maestro 04D → PesoKg → nombre). Para litros, usar siempre **`_litros_por_linea(df)`** — no leer `PesoKg` directo.
 
 ## Sesion 2026-07-13 - Plan vs Real: importes en pesos completos
 
