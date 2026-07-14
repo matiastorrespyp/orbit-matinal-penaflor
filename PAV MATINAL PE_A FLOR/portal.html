@@ -773,6 +773,33 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 .accon-arrow { color:var(--mg); font-weight:700; }
 .accon-gift { color:var(--ok); font-weight:600; }
 
+/* Buscador de producto/marca dentro de Acciones Comerciales (gerencia + vendedor) */
+.accf-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.accf-in {
+  flex:1 1 260px; min-width:0; padding:9px 12px; font-family:var(--f-txt); font-size:13px;
+  color:var(--text); background:var(--surf2); border:1px solid var(--b); border-radius:10px;
+}
+.accf-in:focus { outline:none; border-color:var(--mg); }
+.accf-in::placeholder { color:var(--text3); }
+.accf-sel {
+  padding:9px 10px; font-family:var(--f-txt); font-size:12px; color:var(--text2);
+  background:var(--surf2); border:1px solid var(--b); border-radius:10px; cursor:pointer;
+}
+.accf-sel:focus { outline:none; border-color:var(--mg); }
+.accf-x {
+  padding:9px 13px; font-family:var(--f-txt); font-size:12px; font-weight:600; color:var(--text3);
+  background:transparent; border:1px solid var(--b); border-radius:10px; cursor:pointer;
+}
+.accf-x:hover { color:var(--mg); border-color:var(--mg); }
+.accf-res:not(:empty) { margin-top:9px; font-size:12px; line-height:1.45; }
+.accf-ok { color:var(--text2); }
+.accf-ok b { color:var(--mg); }
+.accf-bad { color:var(--wn); font-weight:600; }
+.accf-warn { margin-top:6px; font-size:11px; color:var(--wn); line-height:1.4; }
+@media (max-width:640px) {
+  .accf-sel, .accf-x { flex:1 1 auto; font-size:11px; }
+}
+
 /* ═══════════════════════════════════════════════════════════
    RESPONSIVE — Mobile & Tablet
 ═══════════════════════════════════════════════════════════ */
@@ -2839,15 +2866,16 @@ function vAlertas(){
   const _fmtARSa=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
 
   if(accs.length){
+    h+=accFiltroHTML('v',_accP);
     h+=`<div class="card" style="margin-bottom:14px;">
       <div class="card-hd">
         <span class="card-title">💰 Acciones Comerciales de ${_accMes||'Junio'}</span>
-        <span class="chip mg">${accs.length} acciones</span>
+        <span class="chip mg" id="accCnt-v">${accs.length+((_accP.acciones_on||[]).length)} acciones</span>
       </div>`;
     accs.forEach((a,i)=>{
       const isLast=i===accs.length-1;
       const tcl=a.tipo==='Sin cargo'?'wn':'ok';
-      h+=`<div style="padding:12px 15px;${isLast?'':'border-bottom:1px solid var(--b);'}">
+      h+=`<div data-acc="${a.id_accion}" style="padding:12px 15px;${isLast?'':'border-bottom:1px solid var(--b);'}">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:5px;">
           <span style="font-size:13px;font-weight:700;line-height:1.35;flex:1;">${a.id_accion} · ${a.segmento||''}</span>
           <span class="chip ${tcl}" style="font-size:10px;flex-shrink:0;white-space:nowrap;">${a.tipo}${a.descuento_pct?(' '+a.descuento_pct+'%'):''}</span>
@@ -2893,6 +2921,135 @@ function vAlertas(){
       </div>`;}).join('');
   }
   document.getElementById('vT-alertas').innerHTML=h;
+}
+
+/* ── Buscador de producto/marca sobre las acciones del mes (gerencia + vendedor) ──
+   El índice producto→acciones lo calcula el backend con el MISMO predicado que usa para
+   la footprint de cada acción (dat.productos). Acá sólo se filtra lo ya renderizado. */
+const _accNorm=s=>String(s??'').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+
+function accIdx(dat){
+  if(dat._idx) return dat._idx;
+  const prods=(dat.productos||[]).map(p=>({
+    codigo:p.codigo, producto:p.producto, marca:p.marca, en_maestro:p.en_maestro!==false,
+    acciones:p.acciones||[],
+    txt:_accNorm([p.codigo,p.producto,p.marca,p.alias,p.linea,p.categoria,p.cat_canon].join(' ')),
+  }));
+  // Acciones ON: no son reglas del catálogo (no tienen predicado); se indexan por los
+  // productos elegibles que trae su propio detalle.
+  const on=(dat.acciones_on||[]).map(a=>{
+    const t=[a.id_accion,a.titulo,a.categoria,a.segmento_lc,(a.canales||[]).join(' ')];
+    (a.grupos||[]).forEach(g=>(g.lineas||[]).forEach(l=>{
+      t.push(l.lc);
+      (l.productos||[]).forEach(p=>t.push(p.codigo,p.descripcion));
+    }));
+    return {id:a.id_accion, txt:_accNorm(t.join(' ')), canales:_accNorm((a.canales||[]).join(' '))};
+  });
+  // Sugerencias: marcas (línea comercial) + productos (descripción).
+  const marcas=[...new Set(prods.map(p=>p.marca).filter(Boolean))].sort();
+  const sug=marcas.concat([...new Set(prods.map(p=>p.producto).filter(Boolean))].sort());
+  dat._idx={prods,on,marcas,sug};
+  return dat._idx;
+}
+
+function accFiltroHTML(scope,dat){
+  const idx=accIdx(dat);
+  if(!idx.prods.length&&!idx.on.length) return '';
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const segs=[...new Set((dat.acciones||[]).map(a=>a.segmento).filter(Boolean))].sort();
+  const tipos=[...new Set((dat.acciones||[]).map(a=>a.tipo).filter(Boolean))].sort();
+  return `<div class="card accf" style="margin-bottom:13px;">
+    <div class="card-body" style="padding:11px 13px;">
+      <div class="accf-row">
+        <input id="accF-${scope}" class="accf-in" list="accFL-${scope}" autocomplete="off"
+          placeholder="🔎 Buscar producto o marca (ej. Alma Mora, Frizze, 74210)"
+          oninput="accFiltroApply('${scope}')">
+        <datalist id="accFL-${scope}">${idx.sug.map(s=>`<option value="${esc(s)}">`).join('')}</datalist>
+        <select id="accS-${scope}" class="accf-sel" onchange="accFiltroApply('${scope}')">
+          <option value="">Todos los segmentos</option>
+          ${segs.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('')}
+        </select>
+        <select id="accT-${scope}" class="accf-sel" onchange="accFiltroApply('${scope}')">
+          <option value="">Descuento y sin cargo</option>
+          ${tipos.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('')}
+        </select>
+        <button class="accf-x" onclick="accFiltroClear('${scope}')">Limpiar</button>
+      </div>
+      <div id="accFR-${scope}" class="accf-res"></div>
+    </div>
+  </div>`;
+}
+
+function accFiltroClear(scope){
+  const i=document.getElementById('accF-'+scope); if(i) i.value='';
+  const s=document.getElementById('accS-'+scope); if(s) s.value='';
+  const t=document.getElementById('accT-'+scope); if(t) t.value='';
+  accFiltroApply(scope);
+}
+
+function accFiltroApply(scope){
+  const dat=scope==='v'?(D.acc_mes_v||{}):(D.acc_mes||{});
+  const idx=accIdx(dat);
+  const q=_accNorm((document.getElementById('accF-'+scope)||{}).value||'').trim();
+  const seg=(document.getElementById('accS-'+scope)||{}).value||'';
+  const tipo=(document.getElementById('accT-'+scope)||{}).value||'';
+  const res=document.getElementById('accFR-'+scope);
+  const toks=q?q.split(/\s+/).filter(Boolean):[];
+
+  // 1) Producto/marca → acciones del catálogo en las que entra (índice del backend).
+  let hits=[], ids=null, onIds=null;
+  if(toks.length){
+    hits=idx.prods.filter(p=>toks.every(t=>p.txt.includes(t)));
+    ids=new Set(hits.flatMap(p=>p.acciones));
+    onIds=new Set(idx.on.filter(o=>toks.every(t=>o.txt.includes(t))).map(o=>o.id));
+  }
+  // 2) Segmento y tipo de acción acotan el resultado.
+  const accs=(dat.acciones||[]).filter(a=>
+    (ids===null||ids.has(a.id_accion)) &&
+    (!seg||a.segmento===seg) && (!tipo||a.tipo===tipo));
+  const visibles=new Set(accs.map(a=>a.id_accion));
+  const onVis=new Set((dat.acciones_on||[]).filter(a=>
+    (onIds===null||onIds.has(a.id_accion)) &&
+    (!tipo||tipo==='Sin cargo') &&
+    (!seg||_accNorm((idx.on.find(o=>o.id===a.id_accion)||{}).canales||'').includes(_accNorm(seg)))
+  ).map(a=>a.id_accion));
+
+  const root=document.getElementById(scope==='v'?'vT-alertas':'gPage')||document;
+  root.querySelectorAll('[data-acc]').forEach(el=>{
+    el.style.display=visibles.has(el.getAttribute('data-acc'))?'':'none';
+  });
+  root.querySelectorAll('[data-accon]').forEach(el=>{
+    el.style.display=onVis.has(el.getAttribute('data-accon'))?'':'none';
+  });
+  const secOn=root.querySelector('.accon-sec');
+  if(secOn) secOn.style.display=onVis.size?'':'none';
+  // Contador del encabezado. Los KPI de arriba (inversión, litros) NO se filtran: son los
+  // totales del mes (deduplicados en el backend); por eso el chip avisa cuando hay filtro.
+  const cnt=document.getElementById('accCnt-'+scope);
+  if(cnt){
+    const n=visibles.size+onVis.size, filtrado=!!(toks.length||seg||tipo);
+    cnt.textContent=`${n} ${n===1?'acción':'acciones'}${filtrado?' · filtrado':''}`;
+  }
+
+  if(!res) return;
+  if(!toks.length&&!seg&&!tipo){ res.innerHTML=''; return; }
+  const total=visibles.size+onVis.size;
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  let msg='';
+  if(toks.length&&!hits.length&&!onIds.size){
+    msg=`<span class="accf-bad">Sin coincidencias: ese producto o marca no figura en el maestro del mes.</span>`;
+  } else if(!total){
+    msg=`<span class="accf-bad">${hits.length?esc(hits[0].marca||hits[0].producto):'La selección'} no entra en ninguna acción${seg||tipo?' con esos filtros':''} de este mes.</span>`;
+  } else {
+    const marcas=[...new Set(hits.map(p=>p.marca).filter(Boolean))].slice(0,4);
+    const det=toks.length?`${hits.length} producto${hits.length===1?'':'s'}${marcas.length?' · '+esc(marcas.join(' · ')):''} → `:'';
+    msg=`<span class="accf-ok">${det}<b>${total}</b> ${total===1?'acción aplica':'acciones aplican'}</span>`;
+  }
+  const faltan=hits.filter(p=>!p.en_maestro);
+  const warn=faltan.length?`<div class="accf-warn">⚠ ${faltan.length} SKU sin categoría en el maestro 04D
+    (${esc(faltan.slice(0,3).map(p=>p.codigo).join(', '))}${faltan.length>3?'…':''}): no entran en las reglas por
+    categoría hasta que se carguen en el maestro.</div>`:'';
+  res.innerHTML=msg+warn;
 }
 
 // Chip de categoria_tarjeta (esquema julio). Si mostrar_detalle_click y hay grupos en
@@ -2976,7 +3133,7 @@ function accOnSectionHTML(scope, dat){
   if(!list.length) return '';
   const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const cards=list.map(a=>`
-    <div class="card">
+    <div class="card" data-accon="${esc(a.id_accion)}">
       <div class="card-hd">
         <span class="card-title" style="font-size:12px;">${esc(a.id_accion)}</span>
         <span class="chip wn" style="font-size:10px;">Sin cargo</span>
@@ -3786,7 +3943,7 @@ function gAccionesComerciales(p){
   const mesNom=dat.mes?((_MN[String(dat.mes).slice(5,7)]||dat.mes)+' '+String(dat.mes).slice(0,4)):'—';
   let html=`<div class="gph">
     <div><div class="gph-title">💰 Acciones Comerciales de ${mesNom}</div>
-    <div class="gph-sub">Fuente: ${dat.fuente||'–'} · ${acc.length} acciones</div></div>
+    <div class="gph-sub">Fuente: ${dat.fuente||'–'} · <span id="accCnt-g">${acc.length+(dat.acciones_on||[]).length} acciones</span></div></div>
   </div>`;
   if(!acc.length){
     html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">💰</div><p>Sin acciones para ${mesNom}.</p></div></div></div>`;
@@ -3806,9 +3963,10 @@ function gAccionesComerciales(p){
     <div class="kcard info"><div class="kl">Clientes alcanzados</div><div class="kv" style="font-size:18px;">${fmtARS(totCli)}</div></div>
     <div class="kcard ok"><div class="kl">Clientes nuevos</div><div class="kv" style="font-size:18px;">${totNue}</div></div>
   </div>`;
+  html+=accFiltroHTML('g',dat);
   const grid=acc.map(a=>{
     const tcl=a.tipo==='Sin cargo'?'wn':'ok';
-    return `<div class="card">
+    return `<div class="card" data-acc="${a.id_accion}">
       <div class="card-hd">
         <span class="card-title" style="font-size:13px;">${a.id_accion}</span>
         <span class="chip ${tcl}" style="font-size:10px;">${a.tipo}${a.descuento_pct?(' '+a.descuento_pct+'%'):''}</span>

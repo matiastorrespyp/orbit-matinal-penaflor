@@ -1,5 +1,36 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-14 - fix(maestro): el 04D estaba congelado y arrastraba TODO — se completa con el maestro del mes
+
+- **Pedido:** *"controla si todo dependia del archivo incompleto y de ser necesario modifica para que el resultado sea siempre correcto"* (a partir del hallazgo del buscador de acciones).
+- **Auditoria — si, casi todo dependia del 04D:** `_acc_preparar_from_df` (acciones + alertas de descuento), `_litros_por_linea` (sell out, ficha de cliente), `_sellout_desde_ventas`, Plan Frizze, ranking de acciones, cierre de mes, `_acc_marcas_maestro`, y el loader **propio** de `generar_datasets_acum.py` (`cargar_maestro_productos`, que ademas descartaba las lineas sin categoria: `Categoria.notna()`).
+- **Causa raiz:** `09_CONFIG/maestro_04D_productos.csv` quedo **congelado en 258 codigos**. Faltan **82 SKU vigentes** que si se venden (Alaris D.Cosecha, Dada Sweet Red, Los Arboles Rosado, Smirnoff BC...). Sin categoria, sin linea comercial y sin litros/caja: **60 lineas de venta del mes ($1.386.829, 2,1% del importe)** no entraban en las reglas por categoria ni en sell out, y aportaban 0 L.
+- **Descartado:** `01_INPUTS/producto activos.xlsx` **no arregla nada** — son los mismos 257 codigos que el 04D y cubre **menos** ventas (115/128 vs 118/128). La fuente correcta es el export mensual **`01_INPUTS/RAW_PRODUCTOS/productos<mes>.xlsx`** (339 codigos, cubre **127/128**, mismo vocabulario de Categoria/Segmento).
+- **Cambio (fuente unica, no parche en el consumidor):**
+  - `server_orbit.py`: nuevo **`_maestro_mes_productos()`** (cacheado por mtime) y **`_cargar_maestro_04D_uncached()` lo usa para COMPLETAR**: el 04D manda donde tiene dato, el mes agrega los codigos faltantes y rellena campos vacios. La caché del wrapper ahora tambien invalida por el mtime del archivo del mes. Maestro: **258 -> 340 codigos**, todos con litros/caja.
+  - `server_orbit.py`: `_acc_preparar_from_df` pasa a calcular litros con la cascada unica **`_litros_por_linea`** (maestro -> PesoKg -> ml del nombre) en vez del `lxu` pelado: una accion no puede mostrar 0 L porque falte el SKU.
+  - `generar_datasets_acum.py`: gemelo **`_maestro_mes_productos()`** + `cargar_maestro_productos()` completa igual (**256 -> 340** codigos).
+- **Impacto medido (dos procesos limpios, con y sin completado):**
+  - **Acciones del mes:** litros **5.362 -> 5.657**, importe $41,04M -> **$41,41M**, inversion real $5.205.236 -> **$5.263.359**, clientes 191 -> 193. Cambian 12 de las 23 acciones.
+  - **Alertas de descuento: 162 -> 151.** Las **11 que desaparecen eran FALSAS**: descuentos normales de 5-8% (dentro de las escalas de ACJ26-001/002) marcados como *"maximo 0% - sin accion aplicable"* solo porque el SKU no estaba en el maestro. Los sobre-descuentos reales del mismo articulo (Alaris D.Cosecha) **siguen alertando**. No aparecio ninguna alerta nueva.
+  - **Sell out litros:** 9.038 -> **9.139 L**. Dataset `mod_sellout_categoria`: +2.054 L, +$1,43M, +14 clientes, y aparece una **categoria entera que faltaba (Vodka, 0 -> 327,6 L)**.
+  - **Datasets:** solo cambian **3** por este fix (`mod_sellout_categoria`, `mod_acciones_ranking` 7 -> 13 filas, `mod_acciones_analisis`); el resto de las diferencias eran deriva normal de inputs mas nuevos. Regenerados con backup en `99_BACKUPS_ORBIT/20260714_104153`.
+  - **Sin cambios (verificado):** 11 Titulares, 11T por zona, Club FARO, Planes AS, cobertura, CCC empresa, busqueda de clientes — no clasifican por el maestro.
+- **Validado:** `py_compile` OK; server local 8502, los 6 endpoints 200 (acciones_mes 0,08 s); Playwright en gerencia / V4 / V3, sin errores JS. El buscador de acciones pasa de **83 SKU "fuera del maestro" a 1**.
+- **Queda 1 solo hueco (documentado):** `20305` SUTER ETIQ MARRON BLANC DE BLANCO ($9.567, 1 linea) no esta en **ningun** maestro. En el portal sus litros salen igual por la cascada; en `mod_sellout_categoria` se sigue descartando por falta de categoria.
+
+## 2026-07-14 - feat(acciones): buscador de producto/marca en Acciones Comerciales (gerencia + vendedor)
+
+- **Pedido:** *"un filtro en la pantalla de acciones comerciales para los dos perfiles, vendedor y gerencia, en donde pueda filtrar un producto o marca y que me aparezcan las acciones comerciales en las que aplica ese producto, segmento, y tipo de accion comercial"*.
+- **Backend (`server_orbit.py`):**
+  - Nuevo **`_acc_universo_productos(v_act)`**: universo de productos = SKUs del maestro de productos activos (`01_INPUTS/RAW_PRODUCTOS/productos<mes>.xlsx`) + los codigos vendidos en el mes (340 en julio). Cada item trae los **cinco argumentos exactos** con los que se evalua el predicado de una accion sobre una linea de venta (categoria canonica y linea comercial **salen del 04D**, igual que `_acc_preparar_from_df`).
+  - **`_acciones_mes_payload_uncached`**: dentro del loop de reglas, **despues** del filtro por vendedor, evalua el **mismo `pred`** de la footprint contra el universo -> indice `producto -> acciones`. Se publica como `payload["productos"]` (codigo, producto, marca, alias, linea, categoria, cat_canon, en_maestro, acciones[]). No se agrego endpoint: viaja en el payload que el portal ya carga.
+  - Costo: ~7.000 evaluaciones de predicado por build, dentro del cache por mtime ya existente. Payload gerencia +87 KB (441 KB), respuesta cacheada 0,06 s.
+- **Portal (`portal.html`):** `accIdx` / `accFiltroHTML` / `accFiltroApply` / `accFiltroClear` + estilos `.accf-*`. Buscador con autocompletado (marcas + productos + codigo) y dos selects (**segmento** y **tipo de accion**), montado en la pantalla de gerencia (`gAccionesComerciales`) y en el bloque de acciones del vendedor (tab Alertas). Filtra las tarjetas ya renderizadas (`data-acc`) y tambien las **Acciones ON** (`data-accon`, indexadas por sus productos elegibles). Los KPI de arriba **no** se filtran (son los totales del mes, deduplicados): el chip avisa `· filtrado`.
+- **Precision, no maquillaje:** el filtro responde con el mismo criterio que la footprint. Si un SKU no entra en ninguna accion lo dice; y si el SKU **no esta en el maestro 04D** muestra la advertencia (`en_maestro=false`) en vez de adivinarle la categoria.
+- **Validado (server local 8502 + Playwright, gerencia / V4 / V3, desktop y mobile, 0 errores JS):** "alma mora" -> 6 acciones de catalogo + 2 ON (ACJ26-001/002/009/015/018/019); codigo exacto `74210` -> las mismas 6; "VDA" -> 10; "frizze" -> 1 (ACJ26-018, Resto de SKU); inexistente -> "Sin coincidencias". **V3** (Nadia, sin autoservicio) ve solo ACJ26-002 en "alma mora": el indice se calcula **despues** del filtro por vendedor.
+- **Hallazgo de datos (no tocado, queda en NEXT_TASK):** **82 de los 339 SKUs activos no estan en el maestro 04D** (47 vigentes: Trapiche 36, Finca Las Moras 8, El Esteco 8, Diageo 8...). Sus ventas hoy quedan **sin categoria y sin litros por caja** -> no matchean las reglas por categoria de acciones y aportan 0 L. Es preexistente; el buscador ahora lo hace visible.
+
 ## 2026-07-13 - fix(global): se elimina el filtro `Empresa` de TODAS las métricas — medimos con las dos razones sociales
 
 - **Pedido del usuario, después del fix del 11T:** *"revisá si en otra parte de Peñaflor ocurre el mismo problema. **Todo lo que medimos es con ambas empresas**"*.

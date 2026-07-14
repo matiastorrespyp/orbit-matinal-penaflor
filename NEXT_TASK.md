@@ -1,5 +1,23 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-14 - Buscador de producto/marca en Acciones Comerciales
+
+### HECHO
+- [x] Indice **producto -> acciones** en el backend (`_acc_universo_productos` + `payload["productos"]`), calculado con el **mismo predicado** que la footprint de cada accion (no es un match de texto sobre la tarjeta).
+- [x] Buscador en las dos pantallas (gerencia y vendedor): producto / marca / codigo + selects de **segmento** y **tipo de accion**. Filtra tarjetas del catalogo y Acciones ON.
+- [x] Validado con Playwright en gerencia, V4 y V3 (desktop + mobile), sin errores de JS.
+
+### HECHO (mismo dia) - el maestro 04D estaba congelado y arrastraba TODO
+- [x] **Auditado:** dependian del 04D las acciones, las alertas de descuento, el sell out, la ficha de cliente, Plan Frizze, el cierre y el loader propio de `generar_datasets_acum.py`.
+- [x] **`producto activos.xlsx` DESCARTADO:** mismos 257 codigos que el 04D y cubre menos ventas (115/128 vs 118/128). La fuente correcta es **`01_INPUTS/RAW_PRODUCTOS/productos<mes>.xlsx`** (339 codigos, cubre 127/128).
+- [x] **Arreglado en la fuente:** `_maestro_mes_productos()` completa el 04D en `server_orbit.py` y en `generar_datasets_acum.py` (**258 -> 340 codigos**). El 04D manda donde tiene dato; el mes tapa los huecos. Litros de acciones pasan a la cascada `_litros_por_linea`.
+- [x] **Impacto:** acciones +295 L y +$58k de inversion real; sell out 9.038 -> 9.139 L (y aparece la categoria **Vodka**, que faltaba entera); **11 falsas alertas de descuento eliminadas** (eran "maximo 0% - sin accion aplicable" por SKU sin maestro). 11T / FARO / Planes AS / cobertura sin cambios. Datasets regenerados (backup `99_BACKUPS_ORBIT/20260714_104153`).
+
+### PENDIENTE
+- [ ] **Subir el export de productos de cada mes** a `01_INPUTS/RAW_PRODUCTOS/productos<mes>.xlsx`. Ahora el maestro depende de el: si falta el del mes, se usa el mas reciente por mtime (fail-safe), pero los SKU nuevos del mes quedarian sin clasificar.
+- [ ] **Codigo `20305`** (SUTER ETIQ MARRON BLANC DE BLANCO, $9.567): no esta en **ningun** maestro. Pedir su alta; hoy se descarta del `mod_sellout_categoria` por no tener categoria.
+- [ ] Evaluar **jubilar el 04D** y dejar el export mensual como maestro unico (hoy el 04D solo aporta 1 codigo que el mes no trae).
+
 ## Sesion 2026-07-13 - Filtro `Empresa`: eliminado de TODAS las métricas
 
 ### REGLA QUE QUEDA (la más importante de la sesión)

@@ -4048,6 +4048,57 @@ def _acc_desc_articulo_map():
     return mapa
 
 
+def _acc_universo_productos(v_act=None):
+    """Universo de productos para el buscador de acciones: SKUs del maestro de productos
+    activos (01_INPUTS/RAW_PRODUCTOS/productos<mes>.xlsx) + los códigos vendidos en el mes.
+
+    Cada item trae `_args`, exactamente los cinco argumentos con los que se evalúa el
+    predicado de una acción sobre una línea de venta (_acc_product_pred): categoría canónica
+    y línea comercial SALEN DEL 04D (igual que _acc_preparar_from_df), no del archivo de
+    productos. Si un código no está en el 04D, su categoría queda vacía y no matchea las
+    reglas por categoría — que es lo que hoy pasa con su venta real. Se marca en_maestro=False
+    en vez de adivinarle la categoría, para que el faltante se vea en lugar de taparse.
+    """
+    cod2cat, _cod2seg, _cod2lxu, cod2linea = _cargar_maestro_04D()
+    desc = _acc_desc_articulo_map()
+    art_ventas, marca_ventas = {}, {}
+    if v_act is not None and not v_act.empty:
+        for cod, art, mar in zip(v_act["_cod"], v_act["_art"], v_act["_marca"]):
+            c = str(cod).strip()
+            if c and c not in art_ventas:
+                art_ventas[c] = str(art or "").strip()
+                marca_ventas[c] = str(mar or "").strip()
+
+    def _clean(x):
+        s = str(x or "").strip()
+        return "" if s.lower() == "nan" else s
+
+    out = []
+    for cod in sorted(set(desc) | set(art_ventas)):
+        d = desc.get(cod, {})
+        linea04 = _clean(cod2linea.get(cod))
+        linea = linea04 or _clean(d.get("linea"))
+        producto = _clean(d.get("descripcion")) or art_ventas.get(cod, "")
+        # marca mostrada = Línea Comercial (marca canónica del maestro). La columna Marca de
+        # ventas se guarda aparte (alias): alimenta el predicado y el buscador, pero no la UI.
+        alias = marca_ventas.get(cod, "")
+        marca = linea or alias
+        cat_canon = _acc_canon_cat(cod2cat.get(cod))   # None si el código no está en el 04D
+        out.append({
+            "codigo": cod,
+            "producto": producto or linea or cod,
+            "marca": marca,
+            "alias": alias if alias.upper() != marca.upper() else "",
+            "linea": linea,
+            "categoria": _clean(cod2cat.get(cod)) or _clean(d.get("categoria")),
+            "cat_canon": cat_canon or "",
+            "en_maestro": cod in cod2cat,
+            "_args": (cat_canon, linea04.upper(), (producto or "").upper(),
+                      (alias or marca).upper(), cod),
+        })
+    return out
+
+
 def _acc_item_cats(txt):
     """Categorías canónicas del maestro que menciona un texto de detalle (para expandir
     items FILTRO_MAESTRO/FILTRO_EXCLUSION a marcas reales)."""
@@ -4377,7 +4428,9 @@ def _acc_preparar_from_df(df):
     out["_desc"] = (out["_vd"] * out["_cant"]).clip(lower=0)
     out["_pct"] = (out["_desc"] / (out["_imp_neto"] + out["_desc"]).replace(0, pd.NA) * 100).fillna(0).round(1)
     out["_lxu"]  = out["_cod"].map(cod2lxu).fillna(0)
-    out["_litros"] = out["_cant"] * out["_lxu"]
+    # Litros por la cascada única (maestro → PesoKg → ml del nombre): un SKU que el maestro no
+    # trae no puede aportar 0 L a una acción. Misma fuente que sell out y la ficha de cliente.
+    out["_litros"] = _litros_por_linea(df)
     out["_cat"]  = out["_cod"].map(cod2cat).map(_acc_canon_cat)
     out["_linea"] = out["_cod"].map(cod2linea).astype(str).str.upper().str.strip()
     out["_art"]  = df.get("Articulo", "").astype(str).str.upper()
@@ -4637,6 +4690,9 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
     _m_cod2cat, _m_cod2seg, _m_cod2lxu, _m_cod2linea = (_cargar_maestro_04D() if detalle_map
                                                         else ({}, {}, {}, {}))
     _desc_art_map = _acc_desc_articulo_map()   # cod -> {descripcion, linea, categoria}
+    # Universo de productos + índice producto -> acciones (buscador de la pantalla).
+    universo = _acc_universo_productos(v_act)
+    prod_hits = {}
 
     def _detalle_clientes(df, nuevos=None):
         if df.empty:
@@ -4713,6 +4769,16 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
                     sub_allowed = {"ALMACEN", "KIOSCO"}
 
         wants_may = "MAYORISTA" in seg_use
+
+        # Índice producto -> acciones: MISMO predicado que la footprint, evaluado contra el
+        # universo de productos (no contra las ventas), para poder responder "¿en qué acciones
+        # entra este producto?" aunque todavía no se haya vendido en el mes. En la vista
+        # vendedor corre después del filtro por vendedor: sólo indexa las acciones que ve él.
+        _rid = str(r.get("id_accion", "")).strip()
+        for u in universo:
+            if pred(*u["_args"]):
+                prod_hits.setdefault(u["codigo"], []).append(_rid)
+
         def _match(df, sub_allowed=sub_allowed, wants_may=wants_may):
             if df.empty:
                 return df
@@ -4857,9 +4923,25 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
         "clientes_nuevos":        int(len(cli_act_union - cli_ant_union)),
         "clientes_con_descuento": int(uni_desc["_cli"].dropna().astype(int).nunique()),
     }
+    # Catálogo de productos del buscador: cada SKU con las acciones en las que entra.
+    # Se incluyen también los SKU sin acción (respuesta honesta a "este producto no está
+    # en ninguna acción del mes") y los que faltan en el maestro 04D (en_maestro=False).
+    productos = [{
+        "codigo":     u["codigo"],
+        "producto":   u["producto"],
+        "marca":      u["marca"],
+        "alias":      u["alias"],
+        "linea":      u["linea"],
+        "categoria":  u["categoria"],
+        "cat_canon":  u["cat_canon"],
+        "en_maestro": u["en_maestro"],
+        "acciones":   prod_hits.get(u["codigo"], []),
+    } for u in universo]
+    productos.sort(key=lambda p: (p["marca"].upper(), p["producto"].upper()))
+
     return {"mes": mes, "fuente": fuente, "periodo": str(per_actual),
             "generado_en": _now_ar(), "acciones": acciones, "totales": totales,
-            "acciones_on": _acc_on_cards()}
+            "acciones_on": _acc_on_cards(), "productos": productos}
 
 
 def _alertas_descuento_mes():
@@ -5189,17 +5271,85 @@ def _infer_litros_por_nombre(nombre: str) -> float:
 
 
 _MAESTRO_04D_CACHE = {}
+_MAESTRO_MES_CACHE = {}
+
+
+def _maestro_mes_productos():
+    """Maestro de productos del MES (01_INPUTS/RAW_PRODUCTOS/productos<mes>.xlsx), en el mismo
+    formato que el 04D: (cod2cat, cod2seg, cod2lxu, cod2linea).
+
+    Existe porque el 04D quedó CONGELADO: tiene 258 códigos y le faltan SKU vigentes que sí se
+    venden (Alaris D.Cosecha, Dada Sweet Red, Los Arboles Rosado, Smirnoff BC...). Sin categoría,
+    línea comercial ni litros/caja, esas líneas de venta no entran en las reglas por categoría de
+    las acciones ni en sell out, y aportan 0 L. Este export es el MISMO maestro, actualizado cada
+    mes (mismo vocabulario de Categoría/Segmento), así que sirve para completar los huecos.
+    Cacheado por (path, mtime). Vacío si no hay archivo del mes."""
+    p = _acc_desc_articulo_file()
+    if p is None:
+        return {}, {}, {}, {}
+    try:
+        key = (str(p), os.path.getmtime(p))
+    except OSError:
+        key = (str(p), 0)
+    cached = _MAESTRO_MES_CACHE.get(key)
+    if cached is not None:
+        return cached
+    cod2cat, cod2seg, cod2lxu, cod2linea = {}, {}, {}, {}
+    try:
+        raw = pd.read_excel(p, header=None, dtype=str)
+        hdr, cols = None, None
+        for i, row in raw.iterrows():
+            vals = [str(x).strip() for x in row.tolist()]
+            if (any(v.startswith("Código Art") or v.startswith("Codigo Art") for v in vals)
+                    and any(v.startswith("Descripci") for v in vals)):
+                hdr, cols = i, vals
+                break
+        if hdr is None:
+            return cod2cat, cod2seg, cod2lxu, cod2linea
+        df = raw.iloc[hdr + 1:].copy()
+        df.columns = cols
+        c_cod = next(c for c in cols if c.startswith("Código Art") or c.startswith("Codigo Art"))
+        c_cat = next((c for c in cols if c.startswith("Categor")), None)
+        c_seg = next((c for c in cols if c.strip().lower() == "segmento"), None)
+        c_lin = next((c for c in cols if c.strip().lower().startswith("linea comercial")), None)
+        c_lxc = next((c for c in cols if "lts" in c.lower() and "caja" in c.lower()), None)
+        c_uxc = next((c for c in cols if "unidad" in c.lower() and "caja" in c.lower()), None)
+        df["_cod"] = (df[c_cod].astype(str).str.strip().str.upper()
+                      .str.replace(r"\.0$", "", regex=True))
+        df = df[df["_cod"].str.len() > 0]
+        df = df[~df["_cod"].str.lower().isin(["nan", "none"])]
+        lxc = pd.to_numeric(df[c_lxc], errors="coerce").fillna(0) if c_lxc else 0
+        uxc = pd.to_numeric(df[c_uxc], errors="coerce").fillna(0) if c_uxc else 0
+        df["_lxu"] = (lxc / uxc).where(uxc > 0, 0.0) if (c_lxc and c_uxc) else 0.0
+        cod2lxu = df.set_index("_cod")["_lxu"].to_dict()
+        if c_cat:
+            cod2cat = df.set_index("_cod")[c_cat].to_dict()
+        if c_seg:
+            cod2seg = df.set_index("_cod")[c_seg].to_dict()
+        if c_lin:
+            cod2linea = df.set_index("_cod")[c_lin].to_dict()
+    except Exception as e:
+        print(f"[WARN] maestro del mes no se pudo leer ({p.name}): {e}")
+        return {}, {}, {}, {}
+    _MAESTRO_MES_CACHE.clear()
+    _MAESTRO_MES_CACHE[key] = (cod2cat, cod2seg, cod2lxu, cod2linea)
+    return _MAESTRO_MES_CACHE[key]
+
+
 def _cargar_maestro_04D():
-    """Wrapper cacheado por mtime del maestro 04D (CSV preferido, xlsx fallback).
-    El cómputo real está en _cargar_maestro_04D_uncached; cachear evita reconstruir
-    los 4 dicts en cada request (lo usan acciones, dashboard, sellout, alertas)."""
+    """Wrapper cacheado por mtime del maestro 04D (CSV preferido, xlsx fallback) COMPLETADO con
+    el maestro del mes. El cómputo real está en _cargar_maestro_04D_uncached; cachear evita
+    reconstruir los 4 dicts en cada request (lo usan acciones, dashboard, sellout, alertas)."""
     csv_path  = CONFIG / "maestro_04D_productos.csv"
     xlsx_path = INPUTS / "04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx"
     src = csv_path if csv_path.exists() else (xlsx_path if xlsx_path.exists() else None)
-    try:
-        key = (str(src), os.path.getmtime(src)) if src else None
-    except OSError:
-        key = None
+    mes_src = _acc_desc_articulo_file()   # el archivo del mes también invalida la caché
+    def _mt(p):
+        try:
+            return os.path.getmtime(p) if p else 0
+        except OSError:
+            return 0
+    key = (str(src), _mt(src), str(mes_src), _mt(mes_src)) if src else None
     if key is not None and key in _MAESTRO_04D_CACHE:
         return _MAESTRO_04D_CACHE[key]
     result = _cargar_maestro_04D_uncached()
@@ -5255,6 +5405,30 @@ def _cargar_maestro_04D_uncached():
             cod2linea = df.set_index("_cod")["Linea Comercial"].to_dict()
     except Exception:
         pass
+
+    # ── Completar con el maestro del mes (ver _maestro_mes_productos).
+    # El 04D MANDA donde tiene dato: el mes sólo agrega los códigos que faltan y rellena los
+    # campos vacíos. Sin esto, un SKU vigente que el 04D no trae se vende "sin categoría y sin
+    # litros": no suma en las acciones por categoría ni en sell out. Un dato que existe no puede
+    # perderse porque el maestro quedó viejo.
+    m_cat, m_seg, m_lxu, m_linea = _maestro_mes_productos()
+    def _vacio(v):
+        s = str(v if v is not None else "").strip()
+        return s == "" or s.lower() == "nan"
+    for cod in m_cat or m_lxu:
+        if _vacio(cod2cat.get(cod)):
+            cod2cat[cod] = m_cat.get(cod, "")
+        if _vacio(cod2seg.get(cod)):
+            cod2seg[cod] = m_seg.get(cod, "")
+        if _vacio(cod2linea.get(cod)):
+            cod2linea[cod] = m_linea.get(cod, "")
+        try:
+            actual = float(cod2lxu.get(cod) or 0)
+        except (TypeError, ValueError):
+            actual = 0.0
+        if actual <= 0:
+            cod2lxu[cod] = float(m_lxu.get(cod, 0) or 0)
+
     return cod2cat, cod2seg, cod2lxu, cod2linea
 
 

@@ -577,14 +577,79 @@ def cargar_planes_as_bbdd():
     return _aplicar_escala(df)
 
 
+def _maestro_mes_productos():
+    """Maestro del MES (01_INPUTS/RAW_PRODUCTOS/productos<mes>.xlsx) con el mismo shape que el
+    04D. El 04D quedó congelado y le faltan SKU vigentes que sí se venden; sin categoría, esas
+    líneas se DESCARTAN del sell out (`Categoria.notna()`) y aportan 0 litros. Devuelve DataFrame
+    vacío si no hay archivo del mes. Ver el gemelo `_maestro_mes_productos` en server_orbit.py."""
+    base = BASE / "01_INPUTS" / "RAW_PRODUCTOS"
+    if not base.exists():
+        return pd.DataFrame()
+    xls = [p for p in base.glob("*.xlsx") if not p.name.startswith("~$")]
+    if not xls:
+        return pd.DataFrame()
+    meses = {1: "enero", 2: "febrero", 3: "marzo", 4: "abril", 5: "mayo", 6: "junio", 7: "julio",
+             8: "agosto", 9: "septiembre", 10: "octubre", 11: "noviembre", 12: "diciembre"}
+    mes = meses.get(datetime.now().month, "")
+    cand = [p for p in xls if mes and mes in p.name.lower()] or xls
+    src = max(cand, key=lambda p: p.stat().st_mtime)
+    try:
+        raw = pd.read_excel(src, header=None, dtype=str)
+        hdr = None
+        for i, row in raw.iterrows():
+            vals = [str(x).strip() for x in row.tolist()]
+            if (any(v.startswith(("Código Art", "Codigo Art")) for v in vals)
+                    and any(v.startswith("Descripci") for v in vals)):
+                hdr = i
+                break
+        if hdr is None:
+            return pd.DataFrame()
+        cols = [str(x).strip() for x in raw.iloc[hdr].tolist()]
+        df = raw.iloc[hdr + 1:].copy()
+        df.columns = cols
+        pick = lambda pred: next((c for c in cols if pred(c)), None)
+        c_cod = pick(lambda c: c.startswith(("Código Art", "Codigo Art")))
+        c_cat = pick(lambda c: c.startswith("Categor"))
+        c_seg = pick(lambda c: c.strip().lower() == "segmento")
+        c_lin = pick(lambda c: c.strip().lower().startswith("linea comercial"))
+        c_des = pick(lambda c: c.startswith("Descripci"))
+        c_lxc = pick(lambda c: "lts" in c.lower() and "caja" in c.lower())
+        c_uxc = pick(lambda c: "unidad" in c.lower() and "caja" in c.lower())
+        out = pd.DataFrame({
+            "Bodega":          df.get("Bodega", ""),
+            "Segmento":        df[c_seg] if c_seg else "",
+            "Linea_Comercial": df[c_lin] if c_lin else "",
+            "Codigo":          pd.to_numeric(df[c_cod], errors="coerce"),
+            "Categoria":       df[c_cat] if c_cat else None,
+            "Descripcion":     df[c_des] if c_des else "",
+            "Lts_caja":        pd.to_numeric(df[c_lxc], errors="coerce").fillna(0) if c_lxc else 0,
+            "UxC":             pd.to_numeric(df[c_uxc], errors="coerce") if c_uxc else None,
+        })
+        return out.dropna(subset=["Codigo"])
+    except Exception as e:
+        print(f"  [WARN] maestro del mes no se pudo leer ({src.name}): {e}")
+        return pd.DataFrame()
+
+
 def cargar_maestro_productos():
+    """Maestro 04D COMPLETADO con el maestro del mes: el 04D manda donde tiene el código, y el
+    export del mes agrega los SKU vigentes que el 04D no trae (si no, sus ventas quedan sin
+    categoría → fuera del sell out → y con 0 litros)."""
     p = BASE / "01_INPUTS" / "04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx"
     df = pd.read_excel(p, header=2)
     df = df.iloc[1:].copy()
     df.columns = ["Bodega", "Segmento", "Linea_Comercial", "Codigo", "Categoria", "Descripcion", "Lts_caja", "UxC"]
     df["Codigo"] = pd.to_numeric(df["Codigo"], errors="coerce")
     df["Lts_caja"] = pd.to_numeric(df["Lts_caja"], errors="coerce").fillna(0)
-    return df.dropna(subset=["Codigo"])
+    df = df.dropna(subset=["Codigo"])
+
+    mes = _maestro_mes_productos()
+    if not mes.empty:
+        faltan = mes[~mes["Codigo"].isin(set(df["Codigo"]))]
+        if len(faltan):
+            print(f"  Maestro 04D: {len(df)} codigos + {len(faltan)} completados desde el maestro del mes")
+            df = pd.concat([df, faltan[df.columns]], ignore_index=True)
+    return df
 
 
 # ─────────────────────────────────────────────
