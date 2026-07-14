@@ -13,7 +13,8 @@ Trazabilidad completa: fuente real → script generador → dataset intermedio �
   ventas_acumuladas.csv ← 11T (período comercial completo)                   mod_11_titulares.csv
   clientes.xlsx                                                               clientes_dia.csv
   resultado.xlsx        ← OBJETIVOS / RECHAZOS
-  04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx  ← clasificación sell out (ambos)
+  04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx  ← clasificación sell out (ambos) — CONGELADO, 258 cods
+  RAW_PRODUCTOS/productos<mes>.xlsx     ← COMPLETA el 04D (339 cods) — obligatorio subirlo cada mes
 
 04_DATASETS_ORBIT/   →  server_orbit.py (Flask)             →  PAV MATINAL PE_A FLOR/
   + 01_INPUTS/                                                  portal.html / index.html
@@ -27,8 +28,9 @@ Trazabilidad completa: fuente real → script generador → dataset intermedio �
 
 | Indicador | Fuente ventas | Fuente clasificación | Filtro fecha |
 |---|---|---|---|
-| Sell Out litros (dashboard) | ventas.csv | **04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx** | Período vigente |
-| Sell Out litros (cierre mes) | ventas_mes.csv | **04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx** | Mes cerrado |
+| Sell Out litros (dashboard) | ventas.csv | **04D + RAW_PRODUCTOS/productos<mes>.xlsx** | Período vigente |
+| Sell Out litros (cierre mes) | ventas_mes.csv | **04D + RAW_PRODUCTOS/productos<mes>.xlsx** | Mes cerrado |
+| Acciones del mes + buscador producto→acción | ventas.csv | **04D + RAW_PRODUCTOS/productos<mes>.xlsx** | Mes vivo |
 | CCC Día | ventas.csv | _clasificar_segmento() | Último día operativo |
 | CCC Mes | ventas.csv | _clasificar_segmento() | Mes calendario |
 | 11T CCC vs objetivo | ventas_acumuladas.csv | objetivo 11T.xlsx | **Sin filtro — acumulado completo** |
@@ -186,7 +188,8 @@ Tarjeta **"📊 Cobertura acumulada del mes"**. Mide cobertura sobre el período
 | ventas_acumuladas.csv | 01_INPUTS/ | ERP Peñaflor | Acumulado período completo | Fuente exclusiva 11T |
 | clientes.xlsx | 01_INPUTS/ | Maestro clientes | Periódica | OK — 2045 clientes |
 | resultado.xlsx | 01_INPUTS/ | ERP objetivos | Mensual | OK — objetivos, acumulado de ventas y rechazos |
-| producto activos.xlsx | 01_INPUTS/ | Catálogo | Periódica | Pendiente auditar |
+| producto activos.xlsx | 01_INPUTS/ | Catálogo | Periódica | ❌ NO usar — misma lista vieja que el 04D (257 cods) y cubre menos ventas |
+| productos<mes>.xlsx | 01_INPUTS/RAW_PRODUCTOS/ | Maestro de productos del mes | **Mensual — obligatorio** | OK — 339 cods, completa el 04D (2026-07-14) |
 
 ---
 

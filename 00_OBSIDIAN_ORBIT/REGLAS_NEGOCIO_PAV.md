@@ -141,9 +141,27 @@ Alma Mora · Trapiche Reserva · Finca Las Moras · Alaris · Don David · Dada 
 
 **Fuente de ventas — Cierre de mes:** `01_INPUTS/ventas_mes.csv` (cierre mensual congelado). Excluir V2, V5, V20.
 
-**Fuente de categoría/segmento/litros por unidad (ambos contextos):** `01_INPUTS/04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx` (header fila 4, hoja Hoja1). Cruce por `Codigo` del artículo.
+**Fuente de categoría/segmento/litros por unidad (ambos contextos):** `01_INPUTS/04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx` (header fila 4, hoja Hoja1) — en producción se lee su versión liviana `09_CONFIG/maestro_04D_productos.csv`. Cruce por `Codigo` del artículo. **Se COMPLETA con el maestro del mes** (ver regla siguiente).
 
 Función en código: `_cargar_maestro_04D()` + `_sellout_desde_ventas(df)` + `_preparar_df_ventas(path)` en `server_orbit.py`.
+
+### El maestro 04D se COMPLETA con el maestro del mes — OBLIGATORIA (2026-07-14)
+
+El 04D quedó **congelado en 258 códigos** y le faltan **82 SKU vigentes que sí se venden** (Alaris D.Cosecha, Dada Sweet Red, Los Arboles Rosado, Smirnoff BC, Trapiche, Finca Las Moras…). La fuente actualizada es el export mensual **`01_INPUTS/RAW_PRODUCTOS/productos<mes>.xlsx`** (339 códigos, cubre 127/128 de lo vendido, mismo vocabulario de Categoría/Segmento, y además trae `Estado`).
+
+**Regla:** el **04D manda donde tiene dato**; el archivo del mes **solo agrega los códigos faltantes y rellena campos vacíos**. Implementado en `_maestro_mes_productos()` → usado por `_cargar_maestro_04D_uncached()` (`server_orbit.py`) y por `cargar_maestro_productos()` (`generar_datasets_acum.py`). Resultado: **340 códigos**, todos con litros/caja.
+
+**Por qué es obligatoria** — un código ausente del maestro sale con `_cat = NaN`, `_linea = ""` y sin litros/caja, y entonces:
+- no matchea las **reglas por categoría** de las acciones (no suma clientes ni inversión),
+- se **descarta** del sell out (`Categoria.notna()`),
+- aporta **0 litros**,
+- y dispara **falsas alertas de descuento** ("máximo 0% — sin acción aplicable").
+
+En julio 2026 eran **60 líneas / $1.386.829 (2,1% del importe)**, una categoría entera fuera del sell out (Vodka) y **11 alertas falsas**.
+
+**Consecuencia operativa:** hay que **subir el export de productos todos los meses** a `01_INPUTS/RAW_PRODUCTOS/`. Si falta el del mes, se usa el más reciente por mtime (fail-safe), pero los SKU nuevos quedan sin clasificar.
+
+**`producto activos.xlsx` NO sirve para esto:** es la misma lista vieja (257 códigos) y cubre **menos** ventas que el 04D (115/128 vs 118/128).
 
 **Spirits en el maestro 04D:**
 Los spirits (códigos 30xxx de Diageo/P&P) **sí están** en el maestro 04D con `Categoria = 'Spirits'` (42 productos). El campo `Segmento` del maestro clasifica directamente en `'Nacional'` o `'Importados'`. El cruce por `Código Art.` funciona igual que para vinos — no se necesita fallback por `Rubro` ni por keywords de nombre.

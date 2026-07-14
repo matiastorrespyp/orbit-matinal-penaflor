@@ -136,3 +136,16 @@ Registro de errores ya diagnosticados, con causa raíz y solución aplicada o pe
 **Estado:** ⏳ Pendiente (anotado en `NEXT_TASK.md`, fuera del alcance de la tarea de 11T).  
 **Solución propuesta:** que `_leer_ventas_mes_csv` **autodetecte** el separador (`;` vs `,`) —o `sep=None`+`engine='python'`— o regenerar `ventas_mes.csv` con coma. La pantalla **Cierre de Mes** queda caída hasta entonces.  
 **Lección:** al comparar "mi versión vs HEAD" cargando módulos desde rutas distintas, verificar que `BASE`/`INPUTS` (derivados de `__file__`) apunten al **mismo** directorio de datos; si no, la comparación es inválida.
+
+---
+
+## ERR-013 — El maestro 04D estaba congelado: ventas sin categoría, 0 litros y alertas de descuento FALSAS
+
+**Detectado:** 2026-07-14 (al construir el buscador de producto→acción, que consulta el maestro de frente)
+**Síntoma:** el buscador marcaba **83 SKU "sin categoría en el maestro"**. Los vendedores recibían alertas de sobre-descuento del tipo *"descuento aplicado 8% / máximo 0,0% — sin acción aplicable"* sobre productos con descuento **normal**.
+**Causa raíz:** `09_CONFIG/maestro_04D_productos.csv` quedó congelado en **258 códigos** y le faltan **82 SKU vigentes que sí se venden** (Alaris D.Cosecha, Dada Sweet Red, Los Arboles Rosado, Smirnoff BC…). Una venta cuyo código no está en el maestro sale con `_cat = NaN`, `_linea = ""` y sin litros/caja → no matchea las reglas por categoría de las acciones, se descarta del sell out (`Categoria.notna()`), aporta **0 L**, y como "no hay acción aplicable" su descuento máximo permitido queda en **0%** → **alerta falsa**. Impacto: **60 líneas / $1.386.829 (2,1% del importe del mes)**.
+**Cómo detectarlo:** si una alerta de descuento dice `máximo 0.0% (sin acción aplicable)` sobre un producto que claramente entra en una acción del mes, el sospechoso es el maestro, no la acción. Verificar con `_cargar_maestro_04D()` si el `Codigo` está.
+**Solución aplicada:** el 04D se **completa** con `01_INPUTS/RAW_PRODUCTOS/productos<mes>.xlsx` (`_maestro_mes_productos()` en `server_orbit.py` y su gemelo en `generar_datasets_acum.py`). El 04D manda donde tiene dato; el mes agrega los faltantes. **258 → 340 códigos.** Alertas 162 → **151** (las 11 eliminadas eran falsas; los sobre-descuentos reales siguen alertando). Sell out 9.038 → 9.139 L y aparece la categoría **Vodka**, que faltaba entera.
+**Trampa:** `producto activos.xlsx` **no** arregla esto — es la misma lista vieja (257 códigos) y cubre menos ventas.
+**Commit:** 9e15b40
+**Estado:** ✅ Resuelto. Pendiente: subir el export de productos **todos los meses** a `RAW_PRODUCTOS/`, y dar de alta el código `20305` (no está en ningún maestro).
