@@ -15,7 +15,7 @@
 
 ### PENDIENTE
 - [ ] **Subir el export de productos de cada mes** a `01_INPUTS/RAW_PRODUCTOS/productos<mes>.xlsx`. Ahora el maestro depende de el: si falta el del mes, se usa el mas reciente por mtime (fail-safe), pero los SKU nuevos del mes quedarian sin clasificar.
-- [ ] **Codigo `20305`** (SUTER ETIQ MARRON BLANC DE BLANCO, $9.567): no esta en **ningun** maestro. Pedir su alta; hoy se descarta del `mod_sellout_categoria` por no tener categoria.
+- [x] **Codigo `20305`** dado de alta en `09_CONFIG/maestro_04D_productos.csv` (Vinos del año / Medio / Etiqueta Marron Suter, 4.5 x 6), copiando la clasificacion de su hermano 20301. De paso: `generar_datasets_acum.py` leia el **xlsx** del 04D y el server el **CSV** — un alta en el CSV no llegaba a los datasets. Ahora ambos leen el CSV.
 - [ ] Evaluar **jubilar el 04D** y dejar el export mensual como maestro unico (hoy el 04D solo aporta 1 codigo que el mes no trae).
 
 ## Sesion 2026-07-13 - Filtro `Empresa`: eliminado de TODAS las métricas

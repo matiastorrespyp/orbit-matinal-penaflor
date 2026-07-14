@@ -631,16 +631,38 @@ def _maestro_mes_productos():
         return pd.DataFrame()
 
 
+def _cargar_04D():
+    """04D en el mismo shape para las dos fuentes. Prefiere el CSV liviano de 09_CONFIG (es el
+    que lee server_orbit y donde se dan de alta los códigos a mano); cae al xlsx si no está.
+    Leer fuentes distintas en el server y en el generador hacía que un alta en el CSV no llegara
+    a los datasets."""
+    csv_path  = BASE / "09_CONFIG" / "maestro_04D_productos.csv"
+    xlsx_path = BASE / "01_INPUTS" / "04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx"
+    if csv_path.exists():
+        c = pd.read_csv(csv_path, dtype=str, encoding="utf-8-sig")
+        c.columns = [x.strip() for x in c.columns]
+        return pd.DataFrame({
+            "Bodega":          "",
+            "Segmento":        c.get("Segmento", ""),
+            "Linea_Comercial": c.get("Linea Comercial", ""),
+            "Codigo":          pd.to_numeric(c["Codigo"], errors="coerce"),
+            "Categoria":       c.get("Categoria"),
+            "Descripcion":     "",
+            "Lts_caja":        pd.to_numeric(c.get("Lts x caja"), errors="coerce").fillna(0),
+            "UxC":             pd.to_numeric(c.get("UxC"), errors="coerce"),
+        })
+    df = pd.read_excel(xlsx_path, header=2).iloc[1:].copy()
+    df.columns = ["Bodega", "Segmento", "Linea_Comercial", "Codigo", "Categoria", "Descripcion", "Lts_caja", "UxC"]
+    df["Codigo"] = pd.to_numeric(df["Codigo"], errors="coerce")
+    df["Lts_caja"] = pd.to_numeric(df["Lts_caja"], errors="coerce").fillna(0)
+    return df
+
+
 def cargar_maestro_productos():
     """Maestro 04D COMPLETADO con el maestro del mes: el 04D manda donde tiene el código, y el
     export del mes agrega los SKU vigentes que el 04D no trae (si no, sus ventas quedan sin
     categoría → fuera del sell out → y con 0 litros)."""
-    p = BASE / "01_INPUTS" / "04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx"
-    df = pd.read_excel(p, header=2)
-    df = df.iloc[1:].copy()
-    df.columns = ["Bodega", "Segmento", "Linea_Comercial", "Codigo", "Categoria", "Descripcion", "Lts_caja", "UxC"]
-    df["Codigo"] = pd.to_numeric(df["Codigo"], errors="coerce")
-    df["Lts_caja"] = pd.to_numeric(df["Lts_caja"], errors="coerce").fillna(0)
+    df = _cargar_04D()
     df = df.dropna(subset=["Codigo"])
 
     mes = _maestro_mes_productos()

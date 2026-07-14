@@ -148,4 +148,6 @@ Registro de errores ya diagnosticados, con causa raíz y solución aplicada o pe
 **Solución aplicada:** el 04D se **completa** con `01_INPUTS/RAW_PRODUCTOS/productos<mes>.xlsx` (`_maestro_mes_productos()` en `server_orbit.py` y su gemelo en `generar_datasets_acum.py`). El 04D manda donde tiene dato; el mes agrega los faltantes. **258 → 340 códigos.** Alertas 162 → **151** (las 11 eliminadas eran falsas; los sobre-descuentos reales siguen alertando). Sell out 9.038 → 9.139 L y aparece la categoría **Vodka**, que faltaba entera.
 **Trampa:** `producto activos.xlsx` **no** arregla esto — es la misma lista vieja (257 códigos) y cubre menos ventas.
 **Commit:** 9e15b40
-**Estado:** ✅ Resuelto. Pendiente: subir el export de productos **todos los meses** a `RAW_PRODUCTOS/`, y dar de alta el código `20305` (no está en ningún maestro).
+**Estado:** ✅ Resuelto. El código `20305` se dio de alta el 2026-07-14 en `09_CONFIG/maestro_04D_productos.csv` (Vinos del año / Medio / Etiqueta Marron Suter). Pendiente: subir el export de productos **todos los meses** a `RAW_PRODUCTOS/`.
+
+> **Ojo — altas a mano:** el alta se hace en `09_CONFIG/maestro_04D_productos.csv` (es el que lee `server_orbit.py`). Hasta el 2026-07-14 `generar_datasets_acum.py` leía el **xlsx**, así que un alta en el CSV **no llegaba a los datasets**. Ya se unificó: ambos leen el CSV.

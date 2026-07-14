@@ -1,5 +1,12 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-14 - data(maestro): alta del codigo 20305 (Suter Etiqueta Marron) + el generador lee el 04D del CSV
+
+- **Pedido:** *"dale de alta el 20305 en el maestro, en la categoria del resto de la marca suter"* (era el unico codigo vendido que no estaba en NINGUN maestro).
+- **Alta (`09_CONFIG/maestro_04D_productos.csv`):** `20305,Vinos del año,Medio,Etiqueta Marron Suter,4.5,6`. Clasificacion copiada de su hermano **20301** (SUTER ETIQ MARRON DNAT, Vinos del año / Medio); la linea comercial coincide con la columna `Marca` con la que 20305 viene en ventas. Litros/caja 4,5 y 6 unidades salen del formato 6X750.
+- **Bug encontrado al hacerlo (`generar_datasets_acum.py`):** el generador leia el **xlsx** del 04D mientras `server_orbit.py` lee el **CSV** de `09_CONFIG` → un alta hecha en el CSV **no llegaba a los datasets**. Nuevo `_cargar_04D()`: prefiere el CSV (la regla vigente del proyecto) y cae al xlsx solo si no esta. Las dos mitades del sistema leen la misma fuente.
+- **Validado:** maestro **340 -> 341** codigos; 20305 clasifica como **VDA / Medio** (lxu 0,75) y entra en **8 acciones** (ACJ26-001/002/009/015/017/018/019/021). El buscador de acciones pasa a **0 SKU fuera del maestro** (era 1). Datasets regenerados con backup (`99_BACKUPS_ORBIT/20260714_111855`): sell out **Vinos del año 14.890,5 -> 14.917,5 L** y +$9.567 de importe — exactamente la venta que quedaba afuera. `py_compile` OK.
+
 ## 2026-07-14 - fix(maestro): el 04D estaba congelado y arrastraba TODO — se completa con el maestro del mes
 
 - **Pedido:** *"controla si todo dependia del archivo incompleto y de ser necesario modifica para que el resultado sea siempre correcto"* (a partir del hallazgo del buscador de acciones).
