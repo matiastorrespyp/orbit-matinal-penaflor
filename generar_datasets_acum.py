@@ -585,7 +585,10 @@ def _maestro_mes_productos():
     base = BASE / "01_INPUTS" / "RAW_PRODUCTOS"
     if not base.exists():
         return pd.DataFrame()
-    xls = [p for p in base.glob("*.xlsx") if not p.name.startswith("~$")]
+    # Ignora los `_NO_USAR_*` (exports viejos/inflados): uno con mtime nuevo seria elegido
+    # como maestro del mes y cuelga el cierre. Mismo criterio que server_orbit.py.
+    xls = [p for p in base.glob("*.xlsx")
+           if not p.name.startswith("~$") and not p.name.startswith("_NO_USAR_")]
     if not xls:
         return pd.DataFrame()
     meses = {1: "enero", 2: "febrero", 3: "marzo", 4: "abril", 5: "mayo", 6: "junio", 7: "julio",

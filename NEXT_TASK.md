@@ -1,5 +1,20 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-16 (2) - Vermouth (Cinzano) + 6 articulos nuevos
+
+### HECHO
+- [x] **3 Cinzano (90105/90106/90110)** dados de alta en el maestro CSV con **Categoria/Segmento = Vermouth** y **LC = Cinzano**. Antes no tenian categoria: quedaban fuera de acciones y sell out.
+- [x] **VERMOUTH es categoria propia de sell out** (no suma a Spirits): `_SO_CAT_MAP` + `SUBS` en `server_orbit.py`. Renderiza con litros y sin avance (todavia sin objetivo).
+- [x] **3 Cinzano en `Innovaciones.xlsx`** (22 -> 25 productos).
+- [x] **3 Iscay (74410/74411/74528):** ya clasificaban bien, no requerian cambio.
+
+### PENDIENTE
+- [ ] **Objetivo de Vermouth en `OBJSELLOUT.xlsx`:** hoy la fila sale con objetivo "–" y sin avance. Cuando el negocio defina litros objetivo, agregar la fila `vermouth | <grupo> | <litros>` y la tarjeta calcula el avance sola (no hay que tocar codigo).
+- [ ] **Correr el cierre** para que los Cinzano aparezcan en el **tablero de Innovaciones** (lee `mod_innovaciones_segmento.csv`, dataset regenerado; el sell out en cambio ya sale en vivo).
+- [ ] Cinzano aun **sin ventas**: cuando se venda con descuento y no haya accion que lo cubra, va a alertar como "sin accion aplicable" (comportamiento correcto, pero avisar al negocio si se espera descuento).
+- [x] **Renombrados a `_NO_USAR_`** (no borrados: estan gitignored, no se recuperan): `producto activos.xlsx` y el raw inflado de mayo (19MB). El server y el generador ahora ignoran `_NO_USAR_*` al elegir el maestro del mes.
+
+
 ## Sesion 2026-07-16 - Acciones NUEVAS de julio (tarjetas + alertas)
 
 ### HECHO

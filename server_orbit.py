@@ -3986,11 +3986,14 @@ _ACC_MESES_ES = {1: "enero", 2: "febrero", 3: "marzo", 4: "abril", 5: "mayo", 6:
 
 def _acc_desc_articulo_file():
     """Archivo de productos crudo (01_INPUTS/RAW_PRODUCTOS/productos<mes>.xlsx). Prefiere el
-    del mes en curso por nombre; si no, el más reciente por mtime."""
+    del mes en curso por nombre; si no, el más reciente por mtime.
+    Ignora los `_NO_USAR_*` (exports viejos/inflados): si uno quedara con mtime nuevo, sería
+    elegido como maestro del mes y cuelga el cierre (ver raw de mayo, 19MB con filas fantasma)."""
     base = INPUTS / "RAW_PRODUCTOS"
     if not base.exists():
         return None
-    xls = [p for p in base.glob("*.xlsx") if not p.name.startswith("~$")]
+    xls = [p for p in base.glob("*.xlsx")
+           if not p.name.startswith("~$") and not p.name.startswith("_NO_USAR_")]
     if not xls:
         return None
     mes = _ACC_MESES_ES.get(datetime.now(_ARG_TZ).month, "")
@@ -5477,6 +5480,9 @@ _SO_CAT_MAP = {
     "vodka": "SPIRITS",
     "licores": "SPIRITS",
     "bourbon": "SPIRITS",
+    # Vermouth (Cinzano 90105/90106/90110) es categoria PROPIA de sell out, no Spirits:
+    # su venta no suma al objetivo de Spirits (definicion del negocio, 16/07/2026).
+    "vermouth": "VERMOUTH",
 }
 
 # Mapeo Segmento 04D → tier sell out
@@ -5592,6 +5598,9 @@ def _sellout_desde_ventas(df_raw: pd.DataFrame) -> list:
         "RTD":               ["RTD", "RTD (S)"],
         "CHAMPAÑA":          [],
         "CERVEZA ARTESANAL": [],
+        # Categoria nueva (16/07/2026): todavia sin objetivo en OBJSELLOUT.xlsx, asi que la
+        # tarjeta la muestra con litros logrados y sin avance (objetivo/alcance = None).
+        "VERMOUTH":          [],
     }
     _NAC_KW = ("SMIRNOFF", "GORDON", "WHITE HORSE", "J&B", "JYB")
 

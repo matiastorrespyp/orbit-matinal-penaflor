@@ -1,5 +1,27 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-16 - feat(sellout): categoria nueva VERMOUTH (Cinzano) + alta de los 6 articulos nuevos
+
+- **Pedido:** *"actualice el archivo de productos con la incorporacion de 6 articulos nuevos, para que los tomes. En el caso de Cinzano colocalo en el tablero de Innovaciones tambien"* + *"la venta de estos productos suma en la categoria NUEVA Vermouth, esta debe empezar a estar en la tarjeta de Sell Out"*.
+- **Los 6 articulos** (venian de `01_INPUTS/producto activos.xlsx`, y ya estaban en `RAW_PRODUCTOS/productosjulio.xlsx`):
+  - **3 Iscay (74410, 74411, 74528):** ya clasificaban solos (VDG / Iscay / litros OK). **Sin cambios.** 74411 figura "En proceso de baja".
+  - **3 Cinzano (90105, 90106, 90110):** estaban en el archivo del mes **sin Categoria ni Linea Comercial** (solo Segmento=Vermouth) -> `_acc_canon_cat` daba `NAN`, quedaban **fuera de acciones y de sell out**.
+- **Alta en `09_CONFIG/maestro_04D_productos.csv` (260 -> 263 filas):** `90105/90106,Vermouth,Vermouth,Cinzano,12.0,12` y `90110,Vermouth,Vermouth,Cinzano,4.5,6`. Linea Comercial **Cinzano** para que la tarjeta agrupe las 3 variedades bajo una marca (varietales al drill-down).
+- **Categoria nueva de sell out (`server_orbit.py`), definida por el negocio:** Vermouth **NO suma a Spirits**, es bucket propio.
+  - `_SO_CAT_MAP`: `"vermouth" -> "VERMOUTH"` (sin esto la venta se cae del sell out: la categoria del maestro que no esta en el mapa queda NaN).
+  - `SUBS`: `"VERMOUTH": []` (es lo que decide que categorias lista la tarjeta).
+  - **Sin objetivo:** `OBJSELLOUT.xlsx` no trae fila de vermouth -> `objetivo=None` y `alcance=None`. El portal ya renderiza ese caso como "–" (no hizo falta tocarlo).
+- **Innovaciones (`01_INPUTS/INNOVACIONES/Innovaciones.xlsx`, 22 -> 25 productos):** agregados los 3 Cinzano en formato `CODIGO - NOMBRE` con openpyxl (preservando estilos). El lector del generador los toma: `90105 -> Cinz. VTH RSO 12X1000`, etc. **Aparecen en el tablero recien al regenerar datasets** (el tablero lee `mod_innovaciones_segmento.csv`, no el xlsx en vivo) -> entra con el cierre del dia.
+- **Validado:** los 6 codigos resuelven categoria/bucket/LC/litros; `/api/gerencia/sellout_litros` devuelve **VERMOUTH 0.0 L | obj=None**; Playwright en gerencia: la fila "VERMOUTH | 0 L | – | – | – | 0" renderiza en la tarjeta sin errores de consola. `py_compile` OK.
+- **Nota:** Cinzano todavia **no tiene ventas** (0 lineas en ventas.csv y ventas_acumulada.csv), por eso la fila arranca en 0 L. Es alta anticipada.
+- **Aprendizaje (me equivoque primero):** busque "CINZANO" y no encontre nada porque **el archivo abrevia "Cinz."**. Los 6 articulos SI estaban. Para diffear altas: comparar por **codigo**, nunca por texto de la descripcion.
+- **Limpieza de archivos que confunden (decidido con el usuario: renombrar, no borrar — estan gitignored y no se recuperan):**
+  - `01_INPUTS/producto activos.xlsx` -> **`_NO_USAR_producto activos.xlsx`**. Referencia actualizada en `05_INTELLIGENCE_ORBIT/modulo_vda_clientes_ganados.py`; `tools/loader_acciones_comerciales.py` pasa a usar solo el 04D xlsx (lee con read_excel, el CSV no le sirve).
+  - `01_INPUTS/RAW_PRODUCTOS/04D_..._raw_2026-05-12_1352.xlsx` (19MB inflado) -> **`_NO_USAR_04D_raw_2026-05-12.xlsx`**.
+  - **Blindaje:** `_acc_desc_articulo_file()` (server) y `_maestro_mes_productos()` (generador) ahora **ignoran `_NO_USAR_*`**. Sin esto el raw de mayo podia ser elegido como maestro del mes por mtime y colgar el cierre.
+- **`producto activos.xlsx` NO es fuente del sistema** (lo lee solo `modulo_vda_clientes_ganados.py`, y esta en .gitignore -> nunca llega a Render). Las altas de productos deben ir a **`01_INPUTS/RAW_PRODUCTOS/productos<mes>.xlsx`**. En este caso los 6 ya estaban ahi, asi que no hubo que tocarlo.
+
+
 ## 2026-07-16 - feat(acciones): 6 acciones NUEVAS de julio (tarjeta propia) + soporte "menos AASS con planes"
 
 - **Pedido:** *"cree las tarjetas para la pantalla de Acciones Comerciales, gerencia y vendedor, con un diseño visual diferente pero la misma mecanica que las vigentes, el detalle de los productos que entran, las cantidades y en que negocio. Armar las tarjetas de acuerdo a los descuentos... esto que este activo tambien para las alertas."*

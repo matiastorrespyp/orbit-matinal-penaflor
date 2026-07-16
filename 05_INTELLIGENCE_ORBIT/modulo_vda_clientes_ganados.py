@@ -19,7 +19,10 @@ import numpy as np
 # RUTAS
 # ============================================================
 BASE           = Path(r"C:\Orbit\MATINAL_PENAFLOR")
-PRODUCTOS_PATH = BASE / "01_INPUTS" / "producto activos.xlsx"
+# Renombrado a _NO_USAR_ (16/07/2026): NO es fuente del sistema (el maestro sale de
+# 09_CONFIG/maestro_04D_productos.csv + RAW_PRODUCTOS/productos<mes>.xlsx). Este modulo es
+# de una sola vez y lo sigue leyendo solo para su diagnostico historico.
+PRODUCTOS_PATH = BASE / "01_INPUTS" / "_NO_USAR_producto activos.xlsx"
 VENTAS_PATH    = BASE / "01_INPUTS" / "ventas.csv"
 HISTORIAL_PATH = BASE / "02_HISTORY" / "historial_ventas.csv"
 CLIENTES_PATH  = BASE / "01_INPUTS" / "clientes.xlsx"

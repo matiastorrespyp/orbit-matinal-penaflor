@@ -5,6 +5,7 @@ __pycache__/
 *.bak_antes_crlf
 04_DATASETS_ORBIT/mod_vda_ventas_base.csv
 01_INPUTS/producto activos.xlsx
+01_INPUTS/_NO_USAR_producto activos.xlsx
 01_INPUTS/dadatinto.png
 01_INPUTS/RAW_PRODUCTOS/*
 !01_INPUTS/RAW_PRODUCTOS/productos*.xlsx

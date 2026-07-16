@@ -45,8 +45,9 @@ _PROD_GENERICOS = {
     "RESTO SKU", "RESTO", "TODOS", "TODOS_ACTIVOS",
 }
 # Maestros de producto candidatos (solo lectura) para mapear marca/línea → categoría.
+# El maestro vigente es el CSV de 09_CONFIG (completado con RAW_PRODUCTOS/productos<mes>.xlsx);
+# 'producto activos.xlsx' quedó como _NO_USAR_ el 16/07/2026 (lista vieja, no es fuente).
 _MAESTRO_CANDIDATOS = [
-    "01_INPUTS/producto activos.xlsx",
     "01_INPUTS/04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx",
 ]
 # Categoría del maestro → token canónico que usan las reglas.
