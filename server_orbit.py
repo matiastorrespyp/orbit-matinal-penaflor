@@ -4307,6 +4307,22 @@ def _acc_innovaciones_codigos():
     return _ACC_INNOV_CACHE
 
 
+def _acc_plan_as_flags(rule):
+    """(requiere_plan_as, excluye_plan_as) de una regla del catálogo.
+    - requiere: la acción es SOLO para autoservicios CON plan AASS (ej. ACJ26-015..018, -025).
+    - excluye: la acción corre en todos los segmentos MENOS los AASS con plan (ej. ACJ26-024:
+      esos clientes tienen su propio tramo del 12%). Se chequea PRIMERO porque el texto de
+      exclusión ("menos AASS con planes" / "sin plan AASS") contiene la misma frase que el
+      de requerimiento y si no daría el filtro exactamente al revés."""
+    txt = _acc_norm(" ".join(str(rule.get(k, "")) for k in (
+        "categoria", "canal_aplica", "segmento_cliente_aplica")))
+    excluye = ("MENOS AASS CON PLANES" in txt or "SIN PLAN AASS" in txt
+               or "SIN PLANES AASS" in txt or "TODOS SIN PLAN AASS" in txt)
+    if excluye:
+        return False, True
+    return ("PLANES AASS" in txt or "PLAN AASS" in txt), False
+
+
 def _acc_plan_as_clientes():
     """Clientes con Plan AS vigente desde mod_planes_as.csv."""
     global _ACC_PLAN_AS_CACHE
@@ -4745,10 +4761,7 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
         seg_set = _acc_seg_canon(r.get("segmento_cliente_aplica"), r.get("canal_aplica"))
         sub_allowed = _acc_subseg_filtro(r.get("segmento_cliente_aplica"), r.get("canal_aplica"))
         pred = _acc_product_pred(r, all_lineas)
-        regla_txt = _acc_norm(" ".join(str(r.get(k, "")) for k in (
-            "categoria", "canal_aplica", "segmento_cliente_aplica"
-        )))
-        requiere_plan_as = "PLANES AASS" in regla_txt or "PLAN AASS" in regla_txt
+        requiere_plan_as, excluye_plan_as = _acc_plan_as_flags(r)
 
         # filtro por vendedor (vista vendedor) + regla V3 sin autoservicio
         codes = vend_codes
@@ -4811,6 +4824,8 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
             sub = sub[keep]
             if requiere_plan_as:
                 sub = sub[pd.to_numeric(sub["_cli"], errors="coerce").isin(plan_as_clientes)]
+            elif excluye_plan_as:
+                sub = sub[~pd.to_numeric(sub["_cli"], errors="coerce").isin(plan_as_clientes)]
             return sub
 
         # Footprint comercial = ventas netas que matchean la accion.
@@ -4877,6 +4892,14 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
             "id_accion":     str(r.get("id_accion", "")).strip(),
             "tipo":          tipo,
             "tipo_regla":    str(r.get("tipo_regla", "")).strip(),
+            # bloque del catálogo: agrupa las tarjetas por origen. Las acciones dadas de alta
+            # después del drop del mes viajan en su propio bloque (07_NUEVAS_*) y el portal
+            # las renderiza en una sección aparte, con diseño propio.
+            "bloque":        str(r.get("bloque_pptx", "")).strip(),
+            "nueva":         str(r.get("bloque_pptx", "")).strip().upper().startswith("07_NUEVAS"),
+            "minimo":        str(r.get("minimo", "")).strip(),
+            "unidad_minimo": str(r.get("unidad_minimo", "")).strip(),
+            "subcategoria":  str(r.get("subcategoria", "")).strip(),
             "segmento":      str(r.get("segmento_cliente_aplica", "")).strip(),
             "canal":         str(r.get("canal_aplica", "")).strip(),
             "vendedores":    sorted(vend_set),
@@ -4975,9 +4998,9 @@ def _alertas_descuento_mes():
         tramos = [float(x) for x in str(r.get("descuento_pct", "")).replace(",", ".").split("|")
                   if x.strip().replace(".", "").isdigit()]
         maxpct = 100.0 if ("BONIFIC" in tipo or "SIN_CARGO" in tipo) else (max(tramos) if tramos else 0.0)
-        regla_txt = _acc_norm(" ".join(str(r.get(k, "")) for k in ("categoria", "canal_aplica", "segmento_cliente_aplica")))
-        requiere_plan_as = "PLANES AASS" in regla_txt or "PLAN AASS" in regla_txt
-        parsed.append((str(r.get("id_accion", "")).strip(), codes, seg, sub_allowed, pred, maxpct, requiere_plan_as))
+        requiere_plan_as, excluye_plan_as = _acc_plan_as_flags(r)
+        parsed.append((str(r.get("id_accion", "")).strip(), codes, seg, sub_allowed, pred, maxpct,
+                       requiere_plan_as, excluye_plan_as))
 
     # Clientes Plan AS: tienen 10% de descuento en factura SIEMPRE → piso permitido = 10%.
     pas = read_csv(DATASETS / "mod_planes_as.csv")
@@ -4995,7 +5018,7 @@ def _alertas_descuento_mes():
         try: cli_int = int(row["_cli"])
         except Exception: cli_int = None
         allowed, fuente_id = 0.0, None
-        for rid, codes, seg, sub_allowed, pred, maxpct, requiere_plan_as in parsed:
+        for rid, codes, seg, sub_allowed, pred, maxpct, requiere_plan_as, excluye_plan_as in parsed:
             # el sub-filtro almacén/kiosco SOLO restringe el canon TRADICIONAL
             if (sub_allowed is not None and str(row["_seg"]).upper() == "TRADICIONAL"
                     and not any(tok in row["_subseg"] for tok in sub_allowed)):
@@ -5003,6 +5026,10 @@ def _alertas_descuento_mes():
             # Acción de Planes AASS: su tope solo aplica a clientes DENTRO del plan; para
             # el resto no autoriza (si no, taparía sobre-descuentos en autoservicios sin plan).
             if requiere_plan_as and (cli_int is None or cli_int not in pas_ids):
+                continue
+            # Acción que excluye a los AASS con plan: no autoriza descuento en esos clientes
+            # (tienen su propio tramo, con otro tope).
+            if excluye_plan_as and cli_int is not None and cli_int in pas_ids:
                 continue
             if (vend in codes) and _acc_seg_match(seg_v, row_may, seg) and pred(row["_cat"], row["_linea"], row["_art"], row["_marca"], row["_cod"]):
                 if maxpct > allowed:

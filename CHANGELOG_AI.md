@@ -1,5 +1,25 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-16 - feat(acciones): 6 acciones NUEVAS de julio (tarjeta propia) + soporte "menos AASS con planes"
+
+- **Pedido:** *"cree las tarjetas para la pantalla de Acciones Comerciales, gerencia y vendedor, con un diseño visual diferente pero la misma mecanica que las vigentes, el detalle de los productos que entran, las cantidades y en que negocio. Armar las tarjetas de acuerdo a los descuentos... esto que este activo tambien para las alertas."*
+- **Fuente:** `01_INPUTS/ACCIONES COMERCIALES/2026-07/Acciones comerciales nueva JULIO.xlsx` (18 SKU x 3 columnas de accion). Se agrupan en **6 descuentos distintos** = 6 tarjetas.
+- **Alta en el catalogo del mes (`acciones_comerciales_julio_2026_penaflor.csv`, 23 -> 29 reglas)** — NO se toco el motor: las tarjetas, la footprint real, el buscador y las alertas ya salen del catalogo. Las 23 vigentes quedaron byte-identicas.
+  - `ACJ26-024` Smirnoff Botella **10%** desde 1 caja (6 botellas), todos los segmentos **menos AASS con planes**.
+  - `ACJ26-025` Smirnoff Botella **12%** en AASS **con** plan, desde 1 caja.
+  - `ACJ26-026` Smirnoff Botella **15%** a partir de 50 cajas, todos los clientes.
+  - `ACJ26-027` Smirnoff Ice **lata 50%** desde un six pack (35103).
+  - `ACJ26-028` **Cerveza** Antares Lager **18%** desde un six pack (60021, 60022).
+  - `ACJ26-029` **Resto 10%** desde 3 botellas del mismo codigo — JW / Baileys / Tanqueray (9 codigos).
+  - Las 6 apuntan a **codigos exactos** (`productos_marcas` numerico), que el predicado ya soporta; los 18 resuelven descripcion contra `RAW_PRODUCTOS/productosjulio.xlsx`. Bloque nuevo **`07_NUEVAS_JULIO`**.
+- **Cambio real de motor (`server_orbit.py`) — el unico que hacia falta:** existia `requiere_plan_as` (accion SOLO para AASS con plan) pero **no el caso inverso**, y ACJ26-024 lo pide literal. Nuevo **`_acc_plan_as_flags(rule) -> (requiere, excluye)`**, usado por el payload y por las alertas. Chequea la **exclusion primero**: el texto *"menos AASS con planes"* contiene *"PLAN AASS"* y sin eso el filtro quedaba **exactamente al reves**. El payload ademas expone `bloque`, `nueva`, `minimo`, `unidad_minimo` y `subcategoria`.
+- **Portal (`portal.html`) — diseño propio, sin tocar el de las vigentes:** seccion **"✨ Acciones nuevas del mes"** (`.accnew*`) en gerencia y vendedor, con el **descuento como badge circular**, escala, **compra minima**, **en que negocio** (segmento) y **los productos que entran** (codigo + descripcion; los que falten en el maestro salen en ambar). Las nuevas se sacan del listado de vigentes (`!a.nueva`). Mantienen `data-acc`, asi que el **buscador** y el **drill-down de clientes** funcionan igual. Identidad visual intacta (magenta de marca, tokens, tabular-nums).
+- **Alertas: activas.** Las 6 reglas ya autorizan tramo. Verificado: 14 alertas donde manda una accion nueva (`ACJ26-026`, Smirnoff al 16-17% sobre un maximo de 15%). El split por plan AS es real: **ACJ26-024 = 43 clientes, 0 con plan**; **ACJ26-025 = 12 clientes, los 12 con plan**; ACJ26-026 (todos) = 55 = 43 + 12 (revalidado contra la carga de ventas de las 17:41).
+- **Validado:** payload 29 acciones en 3,3 s; `json.dumps` OK sobre payload gerencia, V4 y alertas (numpy no rompe en Render); `py_compile` OK; server local 8502, `/api/gerencia/acciones_mes` y `/api/vendedor/V4/acciones_mes` 200. Playwright gerencia (desktop) + V9 (mobile): **6 tarjetas, 0 errores de consola**; filtro `60021` deja solo ACJ26-028 y oculta la seccion cuando no hay match; drill-down de ACJ26-028 abre 4 clientes / 2 vendedores. **V3 (Nadia) no ve ACJ26-025** (autoservicio), como corresponde.
+- **Limitacion conocida (heredada, no la introduce este cambio):** las alertas toman el **tramo mas alto** de la regla sin mirar la cantidad comprada — ACJ26-026 autoriza 15% en Smirnoff botella aunque el cliente no llegue a las 50 cajas. Es la misma semantica de las escalas vigentes (ACJ26-001 autoriza 8% siempre). Si se quiere gatillar por cantidad, es un cambio de motor aparte.
+- **Bug preexistente detectado (NO tocado):** `ventas_acumulada.csv` solo tiene **2026-07**, asi que el comparativo del mes anterior esta vacio y **todas** las acciones — viejas y nuevas — muestran `clientes_nuevos == clientes_alcanzados` (ACJ26-001: 60 cli / 60 nuevos). Anotado en NEXT_TASK.md.
+
+
 ## 2026-07-14 - data(maestro): alta del codigo 20305 (Suter Etiqueta Marron) + el generador lee el 04D del CSV
 
 - **Pedido:** *"dale de alta el 20305 en el maestro, en la categoria del resto de la marca suter"* (era el unico codigo vendido que no estaba en NINGUN maestro).

@@ -773,6 +773,54 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 .accon-arrow { color:var(--mg); font-weight:700; }
 .accon-gift { color:var(--ok); font-weight:600; }
 
+/* Acciones NUEVAS del mes (bloque 07_NUEVAS_*): altas posteriores al drop. Misma mecánica
+   que las vigentes (footprint real del catálogo), pero tarjeta propia para que se distingan
+   de un vistazo: el descuento manda el diseño (badge circular), y debajo el requisito de
+   compra, el negocio donde aplica y los productos que entran. */
+.accnew-sec { margin-top:20px; }
+.accnew-sec-hd { font-family:var(--f-dis); font-weight:700; font-size:14px; color:var(--text);
+  display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap;
+  border-top:1px solid var(--b); padding-top:16px; }
+.accnew-sec-sub { font-size:11px; color:var(--text3); font-weight:400; }
+.accnew-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:14px; }
+.accnew {
+  position:relative; overflow:hidden; border-radius:var(--r-xl); padding:15px 16px 14px;
+  background:linear-gradient(150deg, rgba(226,20,122,.13) 0%, var(--surf) 58%);
+  border:1px solid var(--mg-g); box-shadow:0 10px 30px rgba(0,0,0,.32);
+}
+.accnew::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background:linear-gradient(180deg,var(--mg),var(--mg2)); }
+.accnew-badge { position:absolute; top:12px; right:12px; font-size:8px; font-weight:800;
+  letter-spacing:.8px; text-transform:uppercase; background:var(--mg); color:#fff;
+  padding:3px 7px; border-radius:6px; box-shadow:0 2px 8px var(--mg-g); }
+.accnew-hd { display:flex; align-items:center; gap:12px; margin-bottom:11px; padding-right:52px; }
+.accnew-pct { flex-shrink:0; width:58px; height:58px; border-radius:50%; display:flex;
+  flex-direction:column; align-items:center; justify-content:center; color:#fff;
+  background:linear-gradient(135deg,var(--mg),var(--mg2)); box-shadow:0 4px 14px var(--mg-g); }
+.accnew-pct b { font-family:var(--f-dis); font-size:17px; line-height:1; font-variant-numeric:tabular-nums; }
+.accnew-pct span { font-size:8px; letter-spacing:.6px; opacity:.85; margin-top:1px; }
+.accnew-t { font-family:var(--f-dis); font-size:13.5px; font-weight:700; line-height:1.3; }
+.accnew-id { font-size:10px; color:var(--text3); font-family:var(--f-mono); margin-top:3px; }
+.accnew-req { display:flex; align-items:center; gap:6px; background:var(--surf2);
+  border:1px dashed var(--mg-g); border-radius:10px; padding:8px 10px; font-size:11.5px;
+  color:var(--text2); line-height:1.4; }
+.accnew-req b { color:var(--text); }
+.accnew-lbl { font-size:9px; font-weight:800; letter-spacing:.7px; text-transform:uppercase;
+  color:var(--text3); margin:10px 0 5px; }
+.accnew-chips { display:flex; flex-wrap:wrap; gap:5px; }
+.accnew-prod { font-size:10.5px; padding:3px 8px; border-radius:7px; line-height:1.5;
+  background:rgba(255,255,255,.05); border:1px solid var(--b); color:var(--text2); }
+.accnew-prod b { color:var(--mg); font-family:var(--f-mono); font-size:10px; }
+.accnew-prod.pend { border-color:var(--wn-g); color:var(--wn); }
+.accnew-prod.pend b { color:var(--wn); }
+.accnew-obs { font-size:10.5px; color:var(--wn); line-height:1.4; margin-top:9px; }
+.accnew-ft { display:flex; flex-wrap:wrap; gap:11px; align-items:center; margin-top:11px;
+  padding-top:10px; border-top:1px solid var(--b); font-size:11px; color:var(--text2);
+  font-variant-numeric:tabular-nums; }
+.accnew-inv { font-weight:800; color:var(--ok); }
+.accnew-k { cursor:pointer; text-decoration:underline; text-decoration-style:dotted; }
+.accnew-k.nv { color:var(--ok); }
+
 /* Buscador de producto/marca dentro de Acciones Comerciales (gerencia + vendedor) */
 .accf-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 .accf-in {
@@ -2872,8 +2920,10 @@ function vAlertas(){
         <span class="card-title">💰 Acciones Comerciales de ${_accMes||'Junio'}</span>
         <span class="chip mg" id="accCnt-v">${accs.length+((_accP.acciones_on||[]).length)} acciones</span>
       </div>`;
-    accs.forEach((a,i)=>{
-      const isLast=i===accs.length-1;
+    // Las nuevas del mes van en su propia sección (accNuevasSectionHTML), no en este listado.
+    const accsVig=accs.filter(a=>!a.nueva);
+    accsVig.forEach((a,i)=>{
+      const isLast=i===accsVig.length-1;
       const tcl=a.tipo==='Sin cargo'?'wn':'ok';
       h+=`<div data-acc="${a.id_accion}" style="padding:12px 15px;${isLast?'':'border-bottom:1px solid var(--b);'}">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:5px;">
@@ -2894,6 +2944,7 @@ function vAlertas(){
     });
     h+=`<div id="acc-v-detalle" style="margin:0 12px 12px;"></div></div>`;
   }
+  h+=accNuevasSectionHTML('v',_accP);
   h+=accOnSectionHTML('v',_accP);
 
   // ── BLOQUE 2: Alertas de clientes ────────────────────────
@@ -3023,6 +3074,11 @@ function accFiltroApply(scope){
   });
   const secOn=root.querySelector('.accon-sec');
   if(secOn) secOn.style.display=onVis.size?'':'none';
+  // Sección de nuevas: sus tarjetas ya se muestran/ocultan por data-acc (son reglas del
+  // catálogo); acá sólo se oculta el encabezado si el filtro no dejó ninguna visible.
+  const secNv=root.querySelector('.accnew-sec');
+  if(secNv) secNv.style.display=
+    [...root.querySelectorAll('.accnew[data-acc]')].some(el=>el.style.display!=='none')?'':'none';
   // Contador del encabezado. Los KPI de arriba (inversión, litros) NO se filtran: son los
   // totales del mes (deduplicados en el backend); por eso el chip avisa cuando hay filtro.
   const cnt=document.getElementById('accCnt-'+scope);
@@ -3123,6 +3179,58 @@ function accShowCat(scope,id){
     <div class="accd-body">${secs}${codsHtml}</div>
   </div>`;
   document.body.appendChild(div);
+}
+
+/* ── Acciones NUEVAS del mes (bloque 07_NUEVAS_*) ──
+   Son reglas del catálogo como cualquier otra (mismo motor, misma footprint real y mismas
+   alertas de descuento); van en su propia sección, con tarjeta propia, porque se dieron de
+   alta después del drop y el vendedor tiene que poder distinguirlas de las ya vigentes.
+   Una tarjeta por descuento: el % manda, y debajo qué hay que comprar, en qué negocio y
+   qué productos entran. */
+function accNuevasSectionHTML(scope, dat){
+  const list=((dat&&dat.acciones)||[]).filter(a=>a.nueva);
+  if(!list.length) return '';
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const fmt=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
+  const cards=list.map(a=>{
+    // El % del badge es el del tramo de la tarjeta (una tarjeta por descuento).
+    const pct=String(a.descuento_pct||'').split('|')[0].trim();
+    const req=[a.minimo,a.unidad_minimo].filter(x=>x&&String(x).trim()).join(' ');
+    const prods=(a.codigos||[]).map(c=>c.encontrado
+      ? `<span class="accnew-prod"><b>${esc(c.codigo)}</b> ${esc(c.producto)}</span>`
+      : `<span class="accnew-prod pend"><b>${esc(c.codigo)}</b> pendiente en maestro</span>`).join('');
+    return `<div class="accnew" data-acc="${esc(a.id_accion)}">
+      <span class="accnew-badge">Nueva</span>
+      <div class="accnew-hd">
+        <div class="accnew-pct"><b>${esc(pct)}%</b><span>DTO</span></div>
+        <div>
+          <div class="accnew-t">${esc(a.categoria_tarjeta||a.subcategoria||a.categoria_tarjeta)}</div>
+          <div class="accnew-id">${esc(a.id_accion)}</div>
+        </div>
+      </div>
+      ${a.escala?`<div class="accnew-req">📊 <span>${esc(a.escala)}</span></div>`:''}
+      ${req?`<div class="accnew-lbl">Compra mínima</div><div style="font-size:12px;color:var(--text);font-weight:700;">${esc(req)}</div>`:''}
+      <div class="accnew-lbl">En qué negocio</div>
+      <div class="accnew-chips">
+        <span class="chip mg" style="font-size:9px;">${esc(a.segmento||'–')}</span>
+        ${scope==='v'?'':(a.vendedores||[]).map(v=>`<span class="chip" style="font-size:9px;">${esc(v)}</span>`).join('')}
+      </div>
+      ${prods?`<div class="accnew-lbl">Productos que entran (${(a.codigos||[]).length})</div>
+        <div class="accnew-chips">${prods}</div>`:''}
+      ${a.observaciones?`<div class="accnew-obs">⚠ ${esc(a.observaciones)}</div>`:''}
+      <div class="accnew-ft">
+        <span class="accnew-inv">$${fmt(a.inversion_pesos)} inv.</span>
+        <span>📦 ${fmt(a.litros)} L</span>
+        <span class="accnew-k" onclick="accShowDetalle('${scope}','${esc(a.id_accion)}','clientes')">👥 ${a.clientes_alcanzados} cli.</span>
+        <span class="accnew-k nv" onclick="accShowDetalle('${scope}','${esc(a.id_accion)}','nuevos')">🆕 ${a.clientes_nuevos} nuevos</span>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="accnew-sec">
+    <div class="accnew-sec-hd">✨ Acciones nuevas del mes <span class="chip mg" style="font-size:9px;">${list.length}</span>
+      <span class="accnew-sec-sub">Se suman a las vigentes · misma mecánica, alta posterior al drop</span></div>
+    <div class="accnew-grid">${cards}</div>
+  </div>`;
 }
 
 /* ── Acciones ON (On Premise / Vinotecas / Tienda de Bebidas / Catering) ──
@@ -3964,7 +4072,8 @@ function gAccionesComerciales(p){
     <div class="kcard ok"><div class="kl">Clientes nuevos</div><div class="kv" style="font-size:18px;">${totNue}</div></div>
   </div>`;
   html+=accFiltroHTML('g',dat);
-  const grid=acc.map(a=>{
+  // Las nuevas del mes van en su propia sección (accNuevasSectionHTML), no en esta grilla.
+  const grid=acc.filter(a=>!a.nueva).map(a=>{
     const tcl=a.tipo==='Sin cargo'?'wn':'ok';
     return `<div class="card" data-acc="${a.id_accion}">
       <div class="card-hd">
@@ -3992,6 +4101,7 @@ function gAccionesComerciales(p){
     </div>`;
   }).join('');
   html+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:13px;">${grid}</div><div id="acc-g-detalle" style="margin-top:14px;"></div>`;
+  html+=accNuevasSectionHTML('g',dat);
   html+=accOnSectionHTML('g',dat);
   p.innerHTML=html;
   return;

@@ -1,5 +1,19 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-16 - Acciones NUEVAS de julio (tarjetas + alertas)
+
+### HECHO
+- [x] **6 tarjetas nuevas** desde `01_INPUTS/ACCIONES COMERCIALES/2026-07/Acciones comerciales nueva JULIO.xlsx` (18 SKU -> 6 descuentos): Smirnoff botella **10% / 12% AASS con plan / 15% por volumen**, Smirnoff **lata 50%**, **Cerveza Antares 18%**, **Resto 10%** (JW / Baileys / Tanqueray).
+- [x] Alta como **reglas del catalogo** (`ACJ26-024..029`, bloque `07_NUEVAS_JULIO`), no como caso especial: heredan footprint real, buscador, drill-down y **alertas** sin tocar el motor.
+- [x] **`_acc_plan_as_flags()`**: soporte del caso *"todos los segmentos MENOS AASS con planes"* (antes solo existia el inverso). Chequea la exclusion primero — el texto contiene "PLAN AASS" y si no el filtro quedaba al reves.
+- [x] **Diseño propio** (`.accnew*`) en gerencia y vendedor: badge circular del descuento, compra minima, en que negocio y productos que entran (codigo + descripcion). Validado con Playwright, sin errores de consola.
+
+### PENDIENTE
+- [ ] **`ventas_acumulada.csv` solo tiene 2026-07** -> sin mes anterior, **todas** las acciones (viejas y nuevas) muestran `clientes_nuevos == clientes_alcanzados` (ACJ26-001: 60 cli / 60 nuevos). El KPI "clientes nuevos" de la pantalla **no es confiable** hasta que el archivo traiga junio. Revisar si el cierre de mes debe dejarlo con 2 meses.
+- [ ] **Alertas por tramo, no por cantidad:** ACJ26-026 autoriza 15% en Smirnoff botella aunque el cliente no compre las 50 cajas (el motor toma el `max` de los tramos, igual que en las escalas vigentes). Definir con el negocio si se gatilla por cantidad comprada; es un cambio de motor.
+- [ ] Si el mes que viene se repiten estas acciones, deben quedar en el catalogo del mes nuevo (el bloque `07_NUEVAS_*` es lo que las manda a la seccion de nuevas).
+
+
 ## Sesion 2026-07-14 - Buscador de producto/marca en Acciones Comerciales
 
 ### HECHO
