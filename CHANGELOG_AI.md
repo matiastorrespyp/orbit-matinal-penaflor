@@ -1,5 +1,12 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-17 - fix(planes_as): "comprado" de la innovación = cobertura AS (6 unidades), no cualquier compra
+
+- **Confirmación del usuario:** "comprado en el mes es mes calendario" (ya estaba) **"y teniendo en cuenta 6 unidades para cobertura"**.
+- **Cambio (`server_orbit.py`):** el flag `comprado` (verde) de cada innovación en Planes AS deja de ser `importe>0` y pasa a exigir **≥ 6 unidades** del producto en el mes calendario. Es la misma regla que la cobertura de **Autoservicio** del resto del sistema (`UMBRAL["AUTOSERVICIO"]=6` en `generar_datasets_acum.py`); los Planes AS son todos AS. Constante `_INOV_PLAN_AS_MIN_UNID=6`. `_inov_plan_as_compras()` ahora suma `CantBase` por `(cliente, código)` y `_inov_plan_as_cliente()` compara contra el umbral; el payload agrega `unidades` por innovación.
+- **Front (`portal.html`):** rótulo `Innovaciones del mes · cobertura 6+ un.` y contador `n/total cubiertas`; cada chip muestra `· Nu` y tooltip con las unidades del mes.
+- **Validado (server :8599 + Playwright):** 832 chips (32×26); **53 verdes (≥6u)** y **6 casos con 3u que ahora caen en dorado** (antes eran verde): p.ej. cliente 2211 con Los Árboles = 3u → pendiente. Cliente 30013 mantiene 2 cubiertas (6u de Trapiche + 6u de Dada sweet red). Screenshot confirma el nuevo rótulo. Sin errores de consola.
+
 ## 2026-07-17 - feat(planes_as): innovaciones seguidas por cliente (compró=verde / no=dorado)
 
 - **Pedido:** en la pantalla de **Planes AS**, al hacer click en cada cliente mostrar las **innovaciones** marcadas con `x` en la columna `AASS c/plan` de `Innovaciones.xlsx`, pintando en **verde** si el cliente las compró en el mes y en **dorado** si no. Para gerencia y vendedor. (Antes: el usuario agregó 2 productos nuevos + la columna `AASS c/plan` con `x`; Termidor queda sin `x` y por tanto afuera.)

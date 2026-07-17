@@ -7,9 +7,10 @@
 - [x] Backend: `_inov_plan_as_productos/_compras/_cliente` en `server_orbit.py`; ambos endpoints `planes_as` (gerencia + vendedor) devuelven `innovaciones` por cliente (`comprado` = compró la innovación este mes en `ventas.csv`, cruce por código, sin filtro Empresa).
 - [x] Front: click en el cliente despliega las innovaciones (verde=comprada `.ok` / dorado=pendiente `.wn`) + badge `💡 ok/total`. Gerencia (fila detalle) y vendedor (tarjeta). Validado en :8599.
 
-### PENDIENTE / A VALIDAR CON EL USUARIO
-- [ ] Confirmar visualmente en el portal real (login gerencia + un vendedor) que el toggle y los colores se ven bien en mobile.
-- [ ] Definir si "compró en el mes" debe ser mes calendario (actual) o período comercial; hoy usa **mes calendario en curso** sobre `ventas.csv`, consistente con Innovaciones/Sell Out.
+### CONFIRMADO POR EL USUARIO (2026-07-17)
+- [x] Periodo = **mes calendario** (ya estaba).
+- [x] "Comprado" (verde) = **cobertura AS de 6 unidades** (no cualquier compra). Aplicado: `_INOV_PLAN_AS_MIN_UNID=6`, mismo umbral que la cobertura de Autoservicio del sistema.
+- [x] Validado visual en portal real (gerencia + V8) con Playwright; deploy en Render.
 
 
 ## Sesion 2026-07-16 (3) - La accion se mide por USO, no por alcance

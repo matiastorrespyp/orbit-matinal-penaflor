@@ -3723,9 +3723,15 @@ def _inov_plan_as_productos():
     return out
 
 
+# Cobertura de una innovacion en un cliente de Plan AS = misma regla que la cobertura
+# de Autoservicio del resto del sistema (UMBRAL["AUTOSERVICIO"] en generar_datasets_acum):
+# minimo 6 unidades (CantBase) del producto en el mes. Los Planes AS son todos AS.
+_INOV_PLAN_AS_MIN_UNID = 6
+
 def _inov_plan_as_compras():
-    """cliente_id -> set de codigos de innovacion comprados en el mes en curso.
-    ventas.csv (mes vivo), ImporteNetoItem > 0, sin filtro de Empresa."""
+    """cliente_id -> {codigo_innovacion: unidades (CantBase) del mes en curso}.
+    ventas.csv (mes vivo), ImporteNetoItem > 0, sin filtro de Empresa. El flag de
+    'comprado' (cobertura) se decide luego contra _INOV_PLAN_AS_MIN_UNID."""
     prods = {p["codigo"] for p in _inov_plan_as_productos()}
     if not prods:
         return {}
@@ -3737,17 +3743,23 @@ def _inov_plan_as_compras():
     d = df[(df["fecha"] >= mes_inicio) & (df["importe_neto"] > 0)
            & (df["codigo_art"].isin(prods))]
     out = {}
-    for cid, cod in zip(d["cliente_id"], d["codigo_art"]):
+    for cid, cod, u in zip(d["cliente_id"], d["codigo_art"], d["cant_base"]):
         if pd.notna(cid) and pd.notna(cod):
-            out.setdefault(int(cid), set()).add(int(cod))
+            porcli = out.setdefault(int(cid), {})
+            porcli[int(cod)] = porcli.get(int(cod), 0.0) + (float(u) if pd.notna(u) else 0.0)
     return out
 
 
 def _inov_plan_as_cliente(cid, prods, compras):
-    """Lista de innovaciones del plan para un cliente, con el flag de compra del mes."""
-    compradas = compras.get(cid, set())
-    return [{"codigo": pr["codigo"], "nombre": pr["nombre"],
-             "comprado": pr["codigo"] in compradas} for pr in prods]
+    """Lista de innovaciones del plan para un cliente. 'comprado' = alcanzo la cobertura
+    de Autoservicio (>= 6 unidades del producto en el mes). 'unidades' viaja para el tooltip."""
+    porcli = compras.get(cid, {})
+    out = []
+    for pr in prods:
+        u = round(porcli.get(pr["codigo"], 0.0), 1)
+        out.append({"codigo": pr["codigo"], "nombre": pr["nombre"],
+                    "unidades": u, "comprado": u >= _INOV_PLAN_AS_MIN_UNID})
+    return out
 
 
 @app.route("/api/gerencia/planes_as")
