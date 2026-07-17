@@ -1,5 +1,17 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-17 (2) - "No salen los vendedores" tras el cierre
+
+### HECHO
+- [x] Diagnóstico: el cierre 17:22 corrió OK; datos correctos (7 vendedores en `/api/dashboard` local y Render). No era el cierre.
+- [x] Causa raíz: Render (starter) rechaza fetch concurrentes en cold-start/redeploy (`ERR_CONNECTION_CLOSED` / `HTTP2_REFUSED_STREAM`); `safe()` no reintentaba → dashboard vacío.
+- [x] Fix: `safe(url, tries=4)` con backoff en `portal.html` (línea 1254). Validado con Playwright (local + Render): 7 vendedores, sin errores.
+
+### PENDIENTE
+- [ ] **COMMITEAR `portal.html`** antes del próximo cierre (si no, `check_git_cierre.py` lo bloquea). Falta aprobación del usuario para commit + push.
+- [ ] (Opcional) El `.bat` del cierre abre el navegador de inmediato; evaluar que espere el healthcheck de Render antes de `start`, o avisar "esperá 2-3 min".
+
+
 ## Sesion 2026-07-17 - Innovaciones seguidas en Planes AS
 
 ### HECHO

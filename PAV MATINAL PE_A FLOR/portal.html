@@ -1251,7 +1251,19 @@ const fmtP  = n => { const v=Math.round(Number(n)||0);
 const ini   = n => (n||'').split(' ').filter(Boolean).map(s=>s[0]).slice(0,2).join('').toUpperCase();
 const clamp = (v,a,b) => Math.max(a, Math.min(b, v||0));
 const pcol  = p => p>=70 ? 'ok' : p>=40 ? 'wn' : 'bd';
-const safe  = async url => { try { const r=await fetch(url); return r.ok ? await r.json() : null; } catch{ return null; } };
+/* safe: fetch tolerante a fallos transitorios de Render (cold-start / redeploy).
+   Render (tier starter) rechaza requests concurrentes durante el arranque
+   (ERR_HTTP2_SERVER_REFUSED_STREAM / ERR_CONNECTION_CLOSED). Sin reintento, si se
+   cae el fetch de /api/dashboard el dashboard queda vacío ("no salen los vendedores").
+   Reintenta con backoff; la firma safe(url) se mantiene para todos los llamadores. */
+const safe  = async (url, tries=4) => {
+  for(let i=0;i<tries;i++){
+    try { const r=await fetch(url); if(r.ok) return await r.json(); }
+    catch(e){}
+    if(i<tries-1) await new Promise(res=>setTimeout(res, 400*(i+1)));
+  }
+  return null;
+};
 
 /* ── modo día / noche (login) ── */
 /* Automático según horario argentino (UTC-3). El botón manual lo sobreescribe

@@ -1,5 +1,14 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-17 - fix(portal): `safe()` reintenta ante fallos transitorios de Render ("no salen los vendedores")
+
+- **Síntoma:** tras el cierre del día el usuario abrió el portal (Render) y **no aparecían los vendedores**. Sospecha de que falló el cierre.
+- **Diagnóstico:** el cierre de las 17:22 corrió **OK** (log 28KB sin crash, push a `origin/master` confirmado). Los datos están bien de punta a punta: `/api/dashboard` devuelve los **7 vendedores** tanto en **local** como en **Render**, sin filtro y con `?dia=Sa`. La ausencia de V6/V8/V10 en `mod_volumen_vendedor.csv` es **esperada** (no trabajan sábado; el día operativo pasó a "Sa") y queda cubierta por el fallback de `resultado.xlsx`.
+- **Causa raíz (frontend):** reproduciendo el render de Render con Playwright aparecieron `ERR_CONNECTION_CLOSED` y `ERR_HTTP2_SERVER_REFUSED_STREAM`. Render (tier starter) rechaza requests concurrentes durante cold-start/redeploy; el portal dispara ~6 `fetch` en paralelo (`Promise.all` en `loadCore`/`loadRole`). `safe()` hacía **un solo fetch y devolvía `null` ante cualquier fallo**, sin reintento → si caía `/api/dashboard`, `D.dash=[]` y **no se renderizaba ningún vendedor**. El `.bat` del cierre además abre el navegador de inmediato, cuando Render todavía está redeployando.
+- **Cambio (`PAV MATINAL PE_A FLOR/portal.html`, línea 1254):** `safe(url, tries=4)` reintenta con backoff (400/800/1600ms) ante fetch fallido o `!r.ok`, devolviendo `null` sólo tras agotar los intentos. Firma `safe(url)` intacta → todos los llamadores siguen funcionando. Sin cambios de datos, endpoints ni diseño.
+- **Validado (Playwright, gerencia, local y Render):** el ranking renderiza los **7 vendedores** (chip "7 vendedores"), `loginScreen` oculto, sin page-errors ni errores de consola JS tras el fix.
+- **Pendiente de commit:** portal.html es archivo funcional → el próximo cierre lo **bloqueará** hasta que se commitee (ver `check_git_cierre.py`).
+
 ## 2026-07-17 - feat(planes_as): tercer sin cargo "Puntera (El Cazador)" + tres bloques rotulados
 
 - **Pedido:** el usuario cargó `01_INPUTS/Planes AASS/sincargosjulio.xlsx` con **3 hojas** (diferentes sin cargos). Que quede claro en la tarjeta de Planes AS **cuál sin cargo es por escala (alcance del mes de junio), cuál por puntera y cuál por plan frío**, y que se pinten en verde a medida que se entregan.
