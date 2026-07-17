@@ -4310,6 +4310,41 @@ def _acc_innovaciones_codigos():
     return _ACC_INNOV_CACHE
 
 
+# Tolerancia al comparar el % aplicado contra el tramo de la acción. Los % que llegan de
+# ventas.csv son enteros limpios (1763/1770 líneas del mes caen en entero exacto), así que
+# 0.5 pp solo absorbe redondeo; no acerca un tramo a otro (el más cercano es 6 vs 7).
+_ACC_PCT_TOL = 0.5
+
+
+def _acc_tramos_pct(rule):
+    """Tramos de descuento de la regla, desde `descuento_pct` ('6|7|8' -> [6.0, 7.0, 8.0]).
+    [] en las de bonificación/sin cargo (no tienen % que matchear)."""
+    return [float(x) for x in str(rule.get("descuento_pct", "")).replace(",", ".").split("|")
+            if x.strip().replace(".", "").isdigit()]
+
+
+def _acc_mask_usa_accion(df, tramos):
+    """¿La línea de venta USÓ esta acción? = el % de descuento aplicado coincide con alguno de
+    los tramos de la acción.
+
+    Sin esto, la tarjeta contaba a TODO el que compró el producto del alcance (con descuento
+    ajeno o sin descuento) como si hubiera usado la acción: ACJ26-029 mostraba 32 clientes y
+    $22.769 cuando sus únicos descuentos eran de 3% y 5% (de la acción de Spirits), y ninguno
+    del 10% de la acción. También inflaba la inversión por doble conteo: el mismo descuento
+    caía en todas las tarjetas cuyo alcance de producto lo alcanzaba.
+
+    Bonificación / sin cargo (sin tramos): no hay % que comparar → cae a "tiene descuento"."""
+    if not len(df):
+        return pd.Series(dtype=bool, index=df.index)
+    if not tramos:
+        return df["_desc"] > 0
+    pct = df["_pct"]
+    mask = pd.Series(False, index=df.index)
+    for t in tramos:
+        mask |= (pct - t).abs() <= _ACC_PCT_TOL
+    return mask
+
+
 def _acc_plan_as_flags(rule):
     """(requiere_plan_as, excluye_plan_as) de una regla del catálogo.
     - requiere: la acción es SOLO para autoservicios CON plan AASS (ej. ACJ26-015..018, -025).
@@ -4747,9 +4782,9 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
         return rows
 
     acciones = []
-    # Union de líneas de venta que caen bajo AL MENOS una acción (dedup por índice de
-    # fila). El total NO es la suma de litros por acción: una misma línea matchea varias
-    # acciones (canal + Plan AASS + 11 Titulares + Innovaciones) y se contaría 2-4 veces.
+    # Union de líneas de venta que USARON al menos una acción (dedup por índice de fila).
+    # El total NO es la suma por acción: una misma línea puede usar varias acciones (canal +
+    # Plan AASS + 11 Titulares + Innovaciones) y se contaría 2-4 veces.
     matched_idx = set()
     prev_idx = set()
     for r in reglas:
@@ -4765,6 +4800,7 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
         sub_allowed = _acc_subseg_filtro(r.get("segmento_cliente_aplica"), r.get("canal_aplica"))
         pred = _acc_product_pred(r, all_lineas)
         requiere_plan_as, excluye_plan_as = _acc_plan_as_flags(r)
+        tramos_pct = _acc_tramos_pct(r)
 
         # filtro por vendedor (vista vendedor) + regla V3 sin autoservicio
         codes = vend_codes
@@ -4829,10 +4865,13 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
                 sub = sub[pd.to_numeric(sub["_cli"], errors="coerce").isin(plan_as_clientes)]
             elif excluye_plan_as:
                 sub = sub[~pd.to_numeric(sub["_cli"], errors="coerce").isin(plan_as_clientes)]
+            # La acción se mide por USO real: el % aplicado tiene que ser el de la acción.
+            # Comprar el producto del alcance sin ese descuento NO es haber usado la acción.
+            sub = sub[_acc_mask_usa_accion(sub, tramos_pct)]
             return sub
 
-        # Footprint comercial = ventas netas que matchean la accion.
-        # La inversion se calcula aparte con descuento real (valorDescuento > 0).
+        # Footprint = ventas que USARON la accion (alcance + el % de descuento de la accion).
+        # Clientes, inversion y litros salen todos de aca: miden la accion, no la categoria.
         cur = _match(v_act)
         matched_idx |= set(cur.index)
         cur_desc = cur[cur["_desc"] > 0]
@@ -4927,7 +4966,8 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
             "clientes_con_descuento": int(len(clientes_desc)),
             "clientes_detalle": detalle,
             "clientes_nuevos_detalle": detalle_nuevos,
-            "nota_calculo": "clientes desde ventas.csv con ImporteNetoItem > 0; inversion desde valorDescuento x CantBase",
+            "nota_calculo": ("clientes/litros/inversion desde ventas.csv, SOLO lineas que usaron la accion "
+                             "(% aplicado = tramo de la accion); inversion desde valorDescuento x CantBase"),
         })
 
     # Orden de tarjetas por orden_visual ASC (respeta el orden del PPTX julio). Sort

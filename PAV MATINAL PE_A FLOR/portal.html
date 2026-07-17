@@ -3304,7 +3304,9 @@ function accShowDetalle(scope,id,kind){
   cont.dataset.k=key;
   const list=kind==='nuevos'?(acc.clientes_nuevos_detalle||[]):(acc.clientes_detalle||[]);
   const fmt=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
-  const title=kind==='nuevos'?'clientes nuevos':'clientes que compraron';
+  // "usaron la acción" y no "compraron": el backend cuenta solo a quien recibió el descuento
+  // de ESTA acción (comprar el producto sin ese descuento no es haber usado la acción).
+  const title=kind==='nuevos'?'clientes nuevos':'clientes que usaron la acción';
   const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   // Agrupar clientes por vendedor (con subtotal por vendedor). Cada cliente ya trae
   // vendedor_id / vendedor_nombre desde el backend (_detalle_clientes).

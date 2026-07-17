@@ -1,5 +1,19 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-16 (3) - La accion se mide por USO, no por alcance
+
+### HECHO
+- [x] **`_acc_mask_usa_accion`**: una linea cuenta para la accion solo si el **% aplicado = tramo de la accion**. Antes contaba a todo el que compraba el producto (sin descuento, o con descuento de otra accion).
+- [x] Aplicado a **clientes + inversion + litros** y a **todas** las tarjetas (vigentes y nuevas), decidido con el usuario.
+- [x] Corta el **doble conteo de inversion** entre tarjetas: suma por tarjeta $23,5M -> $4,0M real.
+- [x] Portal: el drill-down dice **"clientes que usaron la accion"**.
+
+### PENDIENTE
+- [ ] **Confirmar `vigencia_desde` de las 6 acciones nuevas** (hoy 1/7/2026). El xlsx no trae fecha de inicio. Dato: el 15% de ACJ26-026 ya se aplicaba el 02/07, asi que 1/7 parece correcto; si el negocio define otra fecha, cambiarla en el catalogo del mes.
+- [ ] Revisar con el negocio los **% que no matchean ningun tramo** (ej. 10% en VDA tradicional, donde la escala es 6|8): hoy esas lineas ya no suman a la tarjeta y, si superan el tope, alertan. Confirmado por el usuario: **hay acciones puntuales fuera del catalogo**.
+- [ ] **Acciones puntuales al catalogo:** el usuario confirmo que este mes hubo puntuales *con el mismo descuento* que las del catalogo. Como el match es por %, una puntual con el mismo % se le atribuye a la tarjeta del catalogo (falso positivo acotado). Si se quiere separar, cada puntual necesita su propia fila en el catalogo del mes (con su id, alcance y %). Evaluar con el negocio si vale la pena.
+
+
 ## Sesion 2026-07-16 (2) - Vermouth (Cinzano) + 6 articulos nuevos
 
 ### HECHO

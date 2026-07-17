@@ -1,5 +1,22 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-16 - fix(acciones): la tarjeta contaba como "usuarios de la accion" a quien compro SIN el descuento
+
+- **Pedido:** *"veo que las acciones comerciales nuevas me salen con clientes que ya la usaron, cosa que es imposible ya que son nuevas... que el dato de los compradores de la accion sea justamente con el descuento de la accion, sino que no salgan ahi"*. El usuario tenia razon y el problema era MAS profundo que las nuevas.
+- **Causa raiz:** la footprint de cada accion matcheaba **alcance** (vendedor + segmento + producto) y **NO** miraba si el descuento aplicado era el de la accion. Contaba como usuario a cualquiera que comprara el producto: sin descuento, o con descuento de OTRA accion.
+  - `ACJ26-029` (Resto 10%): mostraba **32 clientes / $22.769** cuando sus unicas lineas con descuento tenian **3% y 5%** (de la accion de Spirits) — **ninguna del 10%**. Nadie la habia usado.
+  - La inversion ademas se **contaba doble entre tarjetas**: un mismo descuento caia en todas las tarjetas cuyo alcance de producto lo alcanzara. Suma por tarjeta: **$23,5M** vs **$4,0M** realmente atribuible.
+- **Verificacion previa (por que el fix es confiable):** los % que llegan de ventas.csv son **enteros limpios** (1763/1770 lineas del mes caen en entero exacto) -> matchear el tramo es seguro. Tolerancia `_ACC_PCT_TOL = 0.5` pp: absorbe redondeo y no acerca un tramo a otro (el par mas cercano es 6 vs 7).
+- **Cambio (`server_orbit.py`):** `_acc_tramos_pct(rule)` + `_acc_mask_usa_accion(df, tramos)`, aplicado **dentro de `_match`** -> clientes, inversion y litros se mueven juntos (decidido con el usuario: a TODAS las tarjetas, vigentes + nuevas). Bonificacion/sin cargo (sin tramos) cae a "tiene descuento". `portal.html`: el drill-down pasa a decir **"clientes que usaron la accion"** (antes "clientes que compraron", que ya no describia el dato).
+- **Impacto (todas las tarjetas, no solo las nuevas):**
+  - Nuevas: ACJ26-024 **43 -> 1** cliente, -025 **12 -> 0**, -026 **55 -> 1**, -027 **11 -> 0**, -028 **4 -> 0**, -029 **32 -> 0**. Coincide con lo que el usuario sabia: son nuevas, casi nadie las uso.
+  - Vigentes: ACJ26-001 **65 -> 28**, -002 **251 -> 73**, -007 **36 -> 12**, -017 **30 -> 2**, -022 **138 -> 16**, -023 **29 -> 1**.
+  - KPI gerencia: inversion **$3.943.895**, litros **4.922 L**, clientes **172** (union deduplicada).
+- **Validado:** ninguna tarjeta queda con 0 clientes y plata > 0; `clientes_alcanzados == clientes_con_descuento` en las 29 (coherente). Caso testigo revisado a mano: ACJ26-026 = **1 cliente real** (#273 FONTANA, V10, 2190 botellas al 15% exacto el 02/07 = 365 cajas -> califica para el tramo de 50). `py_compile` OK, endpoints gerencia/V9/V3 200, Playwright gerencia + vendedor sin errores de consola.
+- **Dato para el negocio:** los descuentos de estas acciones **ya se aplicaban antes** de que se subiera el xlsx (la venta al 15% de ACJ26-026 es del 02/07). Por eso `vigencia_desde=1/7` no esta inventando uso; si el negocio define otra fecha de inicio, se cambia en el catalogo.
+- **Limitacion conocida y ACEPTADA por el negocio (confirmada por el usuario 16/07):** *"tuvimos algunas acciones puntuales este mes con el mismo descuento, por eso te figuran"*. El match es por **% aplicado**, y una **accion puntual** (fuera del catalogo) con el MISMO % es indistinguible de la accion del catalogo -> puede atribuirle un uso que en realidad fue de la puntual (ej. el cliente que queda en ACJ26-024/026). No hay dato en ventas.csv que separe una de otra: la unica forma de desambiguar seria que las puntuales entren al catalogo con su propio id. Es un **falso positivo acotado**, muy preferible al estado anterior (contar a todo el que compraba la categoria).
+
+
 ## 2026-07-16 - feat(sellout): categoria nueva VERMOUTH (Cinzano) + alta de los 6 articulos nuevos
 
 - **Pedido:** *"actualice el archivo de productos con la incorporacion de 6 articulos nuevos, para que los tomes. En el caso de Cinzano colocalo en el tablero de Innovaciones tambien"* + *"la venta de estos productos suma en la categoria NUEVA Vermouth, esta debe empezar a estar en la tarjeta de Sell Out"*.
