@@ -6,7 +6,10 @@
 - **Cambio (`01_INPUTS/OBJSELLOUT.xlsx`):** fila `vermouth | vermouth | 6312`, insertada antes de la fila `total` con el mismo patron que **vinos de guarda** (categoria = Grupo PBP, sin fila 'Total' aparte). Estilos copiados de esa fila. **Sin tocar codigo**: el objetivo por categoria ya sale de este archivo (fuente unica).
 - **Validado:** `_cargar_objetivos_sellout()` -> `VERMOUTH {'total': 6312, 'subs': {'vermouth': 6312}}`; la tarjeta muestra **VERMOUTH | 0 L | 6.312 L | faltan 6.312 L | 0,0% | 0 clientes** (0 L porque Cinzano aun no tiene ventas). Playwright sin errores de consola.
 - **Efecto colateral esperado:** el **TOTAL** de la tarjeta pasa de 54.285 a **60.597 L** (el portal suma los objetivos de las categorias, no lee la fila 'total' del archivo).
-- **Nota (pre-existente, no tocada):** la fila `total` del xlsx dice **54283** y el loader la **ignora** (`_cargar_objetivos_sellout` saltea categoria == 'total'). Ya venia desalineada con la suma de sus partes (54.285) antes de este cambio, y ahora quedo 6312 mas abajo. No se toco porque es un numero del negocio, no del sistema; si quieren que el archivo cierre solo, va 60.595.
+- **Fila `total` del xlsx actualizada a pedido del usuario: 54283 -> 60597.** Es **cosmetica**: el loader IGNORA esa fila (`_cargar_objetivos_sellout` saltea categoria == 'total') y el portal arma su TOTAL sumando las categorias. Sirve para que el archivo cierre solo al abrirlo.
+  - **60597, no 60595:** la fila vieja ya estaba mal ANTES de vermouth (decia 54283 contra 54285 de suma real), asi que sumarle 6312 habria arrastrado el error de 2 L. El numero correcto es la **suma de los objetivos por categoria**, que es lo que muestra el portal.
+  - Ojo al recalcularlo a mano: **RTD (S) NO se suma aparte** — el `Total` de rtd (12277) ya incluye rtd 5525 + rtd (s) 6752, y `_OBJ_CAT_NORM` mapea RTD (S) -> RTD. Sumar las 8 filas de categoria da 67.349, que es doble conteo.
+  - Verificado post-cambio: el sistema sigue leyendo 7 categorias (sin una 'TOTAL' colada) y la suma da 60597 = la fila del archivo.
 
 
 ## 2026-07-16 - fix(acciones): la tarjeta contaba como "usuarios de la accion" a quien compro SIN el descuento
