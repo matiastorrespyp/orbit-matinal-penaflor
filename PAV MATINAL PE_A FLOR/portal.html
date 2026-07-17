@@ -3976,6 +3976,10 @@ function gInnovaciones(p){
   p.innerHTML=html;
 }
 
+/* ── Nombre del mes anterior (el sin cargo por escala se gana un mes y se entrega al siguiente) ── */
+const _MESES_ES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function mesAnteriorNom(){const d=new Date();return _MESES_ES[(d.getMonth()+11)%12];}
+
 /* ── Innovaciones del plan por cliente: las marcadas con 'x' en la columna 'AASS c/plan'
    de Innovaciones.xlsx. Verde = compró en el mes, dorado = todavía no. ── */
 function pasInovHTML(c){
@@ -4007,6 +4011,7 @@ function gPlanesAS(p){
     p.innerHTML=html; return;
   }
   const clientes=dat.clientes;
+  const mesAntNom=mesAnteriorNom();
   const planCol={Gold:'#F2B544',Silver:'#8BA0BE',Inicial:'#5BC23A'};
   html+=`<div class="card">
     <div class="card-hd"><span class="card-title">Clientes con Plan AS</span></div>
@@ -4017,8 +4022,8 @@ function gPlanesAS(p){
           <th style="padding:7px 6px;text-align:left;">Plan</th>
           <th style="padding:7px 4px;text-align:right;">Facturado</th>
           <th style="padding:7px 4px;text-align:right;">Escala actual</th>
-          <th style="padding:7px 4px;text-align:left;">Sin cargo (enviado / pendiente)</th>
-          <th style="padding:7px 4px;text-align:right;">Estado</th>
+          <th style="padding:7px 4px;text-align:left;">Sin cargo · ① escala · ② puntera · ③ plan frío (✓ enviado / ⚠ pendiente)</th>
+          <th style="padding:7px 4px;text-align:right;">Estado escala</th>
         </tr></thead>
         <tbody>
           ${clientes.map(c=>{
@@ -4030,14 +4035,21 @@ function gPlanesAS(p){
               {n:'Antares',  prod:'Antares IPA',      env:c.sc_env_antares_ipa||0,pend:c.sc_pend_antares_ipa||0},
               {n:'SMF',      prod:'Smirnoff Flavours',env:c.sc_env_smf_flavours||0,pend:c.sc_pend_smf_flavours||0},
             ].filter(p=>p.env>0||p.pend>0);
-            const scHtml=scProds.map(p=>`<span data-nostop style="font-size:9px;cursor:pointer;" title="Ver fechas de envío" onclick="verSincargo(${c.cliente_id},'${p.prod}')">${p.n}: `+
-              (p.env?`<span style="color:var(--ok);">✓${p.env}</span> `:'')+(p.pend?`<span style="color:var(--wn);">⚠${p.pend}</span>`:'')+'</span>').join(' · ')||'—';
+            const scInner=scProds.map(p=>`<span data-nostop style="font-size:9px;cursor:pointer;" title="Ver fechas de envío" onclick="verSincargo(${c.cliente_id},'${p.prod}')">${p.n}: `+
+              (p.env?`<span style="color:var(--ok);">✓${p.env}</span> `:'')+(p.pend?`<span style="color:var(--wn);">⚠${p.pend}</span>`:'')+'</span>').join(' · ');
+            const scHtml=(c.sc_total_ganado||0)>0
+              ?`<div style="font-size:9px;"><span style="color:var(--text4);">① Escala (${mesAntNom}):</span> ${scInner||'—'}</div>`
+              :`<div style="font-size:9px;color:var(--text4);">① Escala: —</div>`;
             const scGan=c.sc_total_ganado||0;
             const estCell=scGan>0
               ?(c.sc_pendiente>0?'<span class="chip wn">pendiente</span>':'<span class="chip ok">enviados</span>')
               :'<span style="color:var(--text3);">—</span>';
+            const ptHtml=c.pt_disponible
+              ?`<div data-nostop style="margin-top:4px;font-size:9px;color:var(--text3);cursor:pointer;" title="Ver fecha de envío" onclick="verSincargo(${c.cliente_id},'El Cazador')"><span style="color:var(--text4);">② Puntera:</span> El Cazador ${c.pt_disponible} caj. `+
+               (c.pt_enviado>0?`<span style="color:var(--ok);">✓${c.pt_enviado}</span> `:'')+(c.pt_pendiente>0?`<span style="color:var(--wn);">⚠${c.pt_pendiente}</span>`:'')+'</div>'
+              :'';
             const pfHtml=c.pf_disponible
-              ?`<div data-nostop style="margin-top:4px;font-size:9px;color:var(--text3);cursor:pointer;" title="Ver fecha de envío" onclick="verSincargo(${c.cliente_id},'Six Pack Smirnoff ICE')">Plan frío · Six Pack Smirnoff ICE `+
+              ?`<div data-nostop style="margin-top:4px;font-size:9px;color:var(--text3);cursor:pointer;" title="Ver fecha de envío" onclick="verSincargo(${c.cliente_id},'Six Pack Smirnoff ICE')"><span style="color:var(--text4);">③ Plan frío:</span> Six Pack Smirnoff ICE `+
                `<span style="color:var(--${c.pf_enviado?'ok':'wn'});">${c.pf_enviado?'✓ entregado':'⚠ pendiente'}</span></div>`
               :'';
             const vLabel=c.vendedor_id&&c.vendedor_nombre?`(${c.vendedor_id} ${c.vendedor_nombre})`:(c.vendedor_id||'');
@@ -4054,7 +4066,7 @@ function gPlanesAS(p){
               <td style="padding:7px 6px;"><span style="font-weight:700;color:${col};">${c.plan_as}</span></td>
               <td style="padding:7px 4px;text-align:right;font-family:var(--f-dis);">${fmtARS(c.total_facturado)}</td>
               <td style="padding:7px 4px;text-align:right;font-weight:700;">${c.escala_actual||0} / ${c.escala_max||0}</td>
-              <td style="padding:7px 4px;">${scHtml}${pfHtml}</td>
+              <td style="padding:7px 4px;">${scHtml}${ptHtml}${pfHtml}</td>
               <td style="padding:7px 4px;text-align:right;">${estCell}</td>
             </tr>
             <tr id="${detId}" style="display:none;"><td colspan="6" style="padding:0 10px 12px 10px;background:var(--surf2);">
@@ -4451,6 +4463,7 @@ function vPlanesAS(){
     document.getElementById('vT-planes_as').innerHTML=h; return;
   }
   const clientes=dat.clientes;
+  const mesAntNom=mesAnteriorNom();
   const total=clientes.reduce((a,c)=>a+c.total_facturado,0);
   h+=`<div class="vkw" style="background:var(--surf2);">
     <div class="row-b">
@@ -4493,9 +4506,9 @@ function vPlanesAS(){
         <div class="bar"><div class="bar-f ${pcol2}" style="width:${clamp(pctEsc,0,100)}%"></div></div>
         <div class="xs m3" style="color:var(--text3);">${pctEsc}% de la escala máxima alcanzada</div>
       </div>
-      ${scProds.length?`<div>
+      ${scProds.length?`<div style="border-top:1px solid var(--bord);padding-top:8px;">
         <div class="vkl" style="margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;">
-          <span>Sin cargo del plan</span>${estChip}</div>
+          <span>① Sin cargo por escala <span style="color:var(--text4);font-weight:400;">· alcance ${mesAntNom}</span></span>${estChip}</div>
         ${scProds.map(p=>`<div data-nostop style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;cursor:pointer;" title="Ver fechas de envío" onclick="verSincargo(${c.cliente_id},'${p.prod}')">
           <span style="font-size:11px;">${p.nom} (disponible: ${p.gan} caj.)</span>
           <div style="display:flex;gap:4px;">
@@ -4504,8 +4517,18 @@ function vPlanesAS(){
           </div>
         </div>`).join('')}
       </div>`:''}
-      ${c.pf_disponible?`<div data-nostop style="cursor:pointer;" title="Ver fecha de envío" onclick="verSincargo(${c.cliente_id},'Six Pack Smirnoff ICE')">
-        <div class="vkl" style="margin-bottom:5px;">Plan frío</div>
+      ${c.pt_disponible?`<div data-nostop style="cursor:pointer;border-top:1px solid var(--bord);padding-top:8px;" title="Ver fecha de envío" onclick="verSincargo(${c.cliente_id},'El Cazador')">
+        <div class="vkl" style="margin-bottom:5px;">② Sin cargo por puntera</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:11px;">El Cazador (cualquier varietal) · ${c.pt_disponible} caj.</span>
+          <div style="display:flex;gap:4px;">
+            ${c.pt_enviado>0?`<span class="chip ok" style="font-size:10px;">✓ ${c.pt_enviado} enviadas</span>`:''}
+            ${c.pt_pendiente>0?`<span class="chip wn" style="font-size:10px;">⚠ ${c.pt_pendiente} pendientes</span>`:''}
+          </div>
+        </div>
+      </div>`:''}
+      ${c.pf_disponible?`<div data-nostop style="cursor:pointer;border-top:1px solid var(--bord);padding-top:8px;" title="Ver fecha de envío" onclick="verSincargo(${c.cliente_id},'Six Pack Smirnoff ICE')">
+        <div class="vkl" style="margin-bottom:5px;">③ Plan frío</div>
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <span style="font-size:11px;">Six Pack Smirnoff ICE</span>
           <span class="chip ${c.pf_enviado?'ok':'wn'}" style="font-size:10px;">${c.pf_enviado?'✓ entregado':'⚠ pendiente'}</span>

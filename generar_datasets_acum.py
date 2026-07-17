@@ -460,6 +460,53 @@ def _cargar_planfrio_mes():
     return set()
 
 
+def _cargar_puntera_mes():
+    """Puntera del mes: cajas de vino El Cazador (cualquier varietal) sin cargo por cliente.
+    Hoja 'Puntera' de Planes AASS/sincargos*.xlsx (columna código + 'Cjas Sin Cargos (El cazador)').
+    Devuelve {cliente_id: cajas}. Si no hay archivo/hoja válida devuelve {}."""
+    pdir = BASE / "01_INPUTS" / "Planes AASS"
+    if not pdir.exists():
+        return {}
+    cand = _ordenar_por_mes(pdir.glob("sincargos*.xlsx"))
+    for path in cand:
+        try:
+            xl = pd.ExcelFile(path)
+            hoja = next((s for s in xl.sheet_names if "puntera" in s.lower()), None)
+            if hoja is None:
+                continue
+            raw = xl.parse(hoja, header=None)
+            # Fila header: la que tiene 'código' (col código) y 'sin cargo'/'cazador' (col cajas).
+            # Los headers del Excel traen mojibake (código → 'c�digo'); se normaliza dejando
+            # sólo ASCII para no depender del carácter roto exacto.
+            _ascii = lambda s: "".join(c for c in str(s).strip().lower() if c.isascii())
+            hdr_idx = ccol = qcol = None
+            for i in range(min(6, len(raw))):
+                for j, x in enumerate(raw.iloc[i].tolist()):
+                    xa = _ascii(x)
+                    if xa in ("codigo", "cdigo", "cod", "cliente"):
+                        ccol = j
+                    if "sin cargo" in xa or "cazador" in xa:
+                        qcol = j
+                if ccol is not None and qcol is not None:
+                    hdr_idx = i
+                    break
+            if hdr_idx is None or ccol is None or qcol is None:
+                continue
+            out = {}
+            for _, r in raw.iloc[hdr_idx + 1:].iterrows():
+                cid = pd.to_numeric(r.iloc[ccol], errors="coerce")
+                n = pd.to_numeric(r.iloc[qcol], errors="coerce")
+                if pd.isna(cid) or pd.isna(n) or int(n) <= 0:
+                    continue
+                out[int(cid)] = int(n)
+            if out:
+                print(f"  Puntera (El Cazador) desde: {path.name} ({len(out)} clientes)")
+                return out
+        except Exception as e:
+            print(f"  [AVISO] puntera {path.name}: {e}")
+    return {}
+
+
 def _calc_escala_actual(plan_as, fact, esc_df):
     """Escala alcanzada = mayor escala cuyo umbral (según plan Gold/Silver/Inicial) es <= facturado."""
     if esc_df is None or esc_df.empty:
@@ -947,6 +994,23 @@ def generar_planes_as(ventas, bbdd, clientes):
         lambda r: ("entregado" if r["pf_enviado"] else "pendiente") if r["pf_disponible"] else "",
         axis=1)
 
+    # ── PUNTERA: cajas de vino El Cazador (cualquier varietal) sin cargo por cliente listado en
+    # la hoja 'Puntera'. Disponible = cajas del Excel. Enviado = cajas 100% descuento de El
+    # Cazador en ventas.csv (detección por Articulo 'CAZADOR', igual criterio que la escala:
+    # Marca='cazador' es limpia en el ERP y el Articulo dice 'CAZADOR' en todos los varietales).
+    pt_clientes = _cargar_puntera_mes()
+    _es_caz = sc["Articulo"].astype(str).str.upper().str.contains("CAZADOR", regex=False, na=False)
+    pt_env = (sc[_es_caz].groupby("Cliente")["CantBase"].sum()
+              if _es_caz.any() else pd.Series(dtype=float))
+    df["pt_disponible"] = df["cliente_id"].map(pt_clientes).fillna(0).astype(int)
+    df["pt_enviado"] = df["cliente_id"].map(pt_env).fillna(0)
+    # sólo cuenta el enviado de clientes CON puntera disponible (igual que plan frío)
+    df["pt_enviado"] = (df["pt_enviado"] * df["pt_disponible"].gt(0)).clip(lower=0).astype(int)
+    df["pt_pendiente"] = (df["pt_disponible"] - df["pt_enviado"]).clip(lower=0).astype(int)
+    df["pt_estado"] = df.apply(
+        lambda r: ("entregado" if r["pt_pendiente"] == 0 else "pendiente") if r["pt_disponible"] > 0 else "",
+        axis=1)
+
     # ── DETALLE de envíos de sin cargo (fecha de cada entrega) → mod_sincargos_envios.csv.
     # Alimenta la tarjeta desplegable al clickear un sin cargo en el portal. Fecha =
     # FechaComprobante (regla de facturación). Una fila por cliente × producto × fecha.
@@ -969,6 +1033,15 @@ def generar_planes_as(ventas, bbdd, clientes):
             if int(r["Cliente"]) in pf_clientes:
                 det_rows.append({"cliente_id": int(r["Cliente"]), "categoria": "plan_frio",
                                  "producto": "Six Pack Smirnoff ICE",
+                                 "fecha": r["_fecha"], "cajas": int(r["CantBase"])})
+    pt_lines = sc[_es_caz].copy()
+    if not pt_lines.empty:
+        _f3 = pd.to_datetime(pt_lines["FechaComprobante"], dayfirst=True, errors="coerce")
+        pt_lines = pt_lines.assign(_fecha=_f3.dt.strftime("%Y-%m-%d")).dropna(subset=["_fecha"])
+        for _, r in pt_lines.groupby(["Cliente", "_fecha"])["CantBase"].sum().reset_index().iterrows():
+            if int(r["Cliente"]) in pt_clientes:
+                det_rows.append({"cliente_id": int(r["Cliente"]), "categoria": "puntera",
+                                 "producto": "El Cazador",
                                  "fecha": r["_fecha"], "cajas": int(r["CantBase"])})
     pd.DataFrame(det_rows, columns=["cliente_id", "categoria", "producto", "fecha", "cajas"]) \
         .to_csv(OUT / "mod_sincargos_envios.csv", index=False, encoding="utf-8-sig")
@@ -1005,6 +1078,7 @@ def generar_planes_as(ventas, bbdd, clientes):
         "sc_pend_alaris", "sc_pend_alma_mora", "sc_pend_frizze", "sc_pend_antares_ipa", "sc_pend_smf_flavours",
         "sc_cajas_enviadas_total", "sc_pendiente", "sc_estado", "sc_origen_disponible",
         "pf_disponible", "pf_enviado", "pf_estado",
+        "pt_disponible", "pt_enviado", "pt_pendiente", "pt_estado",
     ]
     return df[[c for c in cols_out if c in df.columns]]
 

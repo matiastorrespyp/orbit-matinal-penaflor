@@ -1,5 +1,15 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-17 - feat(planes_as): tercer sin cargo "Puntera (El Cazador)" + tres bloques rotulados
+
+- **Pedido:** el usuario cargó `01_INPUTS/Planes AASS/sincargosjulio.xlsx` con **3 hojas** (diferentes sin cargos). Que quede claro en la tarjeta de Planes AS **cuál sin cargo es por escala (alcance del mes de junio), cuál por puntera y cuál por plan frío**, y que se pinten en verde a medida que se entregan.
+- **Diagnóstico:** escala (`sc_*`, hoja "Planes AASS") y plan frío (`pf_*`, hoja "plan frío") **ya existían**. Faltaba la **Puntera** (hoja "Puntera": cajas de vino **El Cazador** cualquier varietal).
+- **Motor (`generar_datasets_acum.py`):** nueva `_cargar_puntera_mes()` (lee hoja "Puntera"; header con mojibake → normalización dejando sólo ASCII, porque `replace("�","")` no matchea el U+FFFD del Excel). En `generar_planes_as`: `pt_disponible` (cajas del Excel), `pt_enviado` (líneas 100% descuento con Articulo 'CAZADOR', sólo para clientes con puntera), `pt_pendiente`, `pt_estado`; detalle de envíos categoría "puntera"/producto "El Cazador" en `mod_sincargos_envios.csv`. 4 columnas nuevas al `mod_planes_as.csv`.
+- **Backend (`server_orbit.py`):** ambos endpoints `planes_as` devuelven `pt_disponible/pt_enviado/pt_pendiente/pt_estado`.
+- **Front (`portal.html`):** los tres sin cargos quedan rotulados **① Sin cargo por escala (alcance <mes anterior>)**, **② Sin cargo por puntera (El Cazador)**, **③ Plan frío (Six Pack Smirnoff ICE)** — en gerencia (celda de la tabla + header de columna) y vendedor (bloques separados por borde). Helper `mesAnteriorNom()` (dinámico, hoy = Junio). Cada uno pinta verde (`✓ enviadas`) a medida que se factura el sin cargo, dorado (`⚠ pendiente`) si falta. Click abre el detalle con fechas (`verSincargo(cid,'El Cazador')`, ya soportado).
+- **Validado (`:8599` + Playwright, gerencia + V8):** 5 clientes con puntera (172, 538, 30011=6caj, 30044, 30017), todos pendientes (el único envío de Cazador del mes fue al cliente 1446, sin puntera → correctamente ignorado). Screenshots confirman los tres bloques diferenciados. Sin errores de consola.
+- **`sincargosjulio.xlsx`** trackeado y no ignorado → viaja a Render.
+
 ## 2026-07-17 - fix(planes_as): "comprado" de la innovación = cobertura AS (6 unidades), no cualquier compra
 
 - **Confirmación del usuario:** "comprado en el mes es mes calendario" (ya estaba) **"y teniendo en cuenta 6 unidades para cobertura"**.

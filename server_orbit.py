@@ -3774,7 +3774,8 @@ def gerencia_planes_as():
                  "sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa", "sc_smf_flavours",
                  "sc_total_ganado", "sc_cajas_enviadas_total", "sc_pendiente",
                  "sc_env_alaris", "sc_env_alma_mora", "sc_env_frizze", "sc_env_antares_ipa", "sc_env_smf_flavours",
-                 "sc_pend_alaris", "sc_pend_alma_mora", "sc_pend_frizze", "sc_pend_antares_ipa", "sc_pend_smf_flavours"]
+                 "sc_pend_alaris", "sc_pend_alma_mora", "sc_pend_frizze", "sc_pend_antares_ipa", "sc_pend_smf_flavours",
+                 "pt_disponible", "pt_enviado", "pt_pendiente"]
     for c in _num_cols:
         if c in df.columns:
             df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
@@ -3836,6 +3837,10 @@ def gerencia_planes_as():
             "pf_disponible":   _int(row.get("pf_disponible", 0)),
             "pf_enviado":      _int(row.get("pf_enviado", 0)),
             "pf_estado":       str(row.get("pf_estado", "")),
+            "pt_disponible":   _int(row.get("pt_disponible", 0)),
+            "pt_enviado":      _int(row.get("pt_enviado", 0)),
+            "pt_pendiente":    _int(row.get("pt_pendiente", 0)),
+            "pt_estado":       str(row.get("pt_estado", "")),
             "envios":          envios_map.get(cid, []),
             "innovaciones":    _inov_plan_as_cliente(cid, inov_prods, inov_compras),
         })
@@ -5318,7 +5323,8 @@ def vendedor_planes_as(vid):
             "sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa", "sc_smf_flavours",
             "sc_total_ganado", "sc_cajas_enviadas_total", "sc_pendiente",
             "sc_env_alaris", "sc_env_alma_mora", "sc_env_frizze", "sc_env_antares_ipa", "sc_env_smf_flavours",
-            "sc_pend_alaris", "sc_pend_alma_mora", "sc_pend_frizze", "sc_pend_antares_ipa", "sc_pend_smf_flavours"]
+            "sc_pend_alaris", "sc_pend_alma_mora", "sc_pend_frizze", "sc_pend_antares_ipa", "sc_pend_smf_flavours",
+            "pt_disponible", "pt_enviado", "pt_pendiente"]
     for c in _num:
         if c in df.columns:
             df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
@@ -5360,6 +5366,10 @@ def vendedor_planes_as(vid):
             "pf_disponible":       _i(row, "pf_disponible"),
             "pf_enviado":          _i(row, "pf_enviado"),
             "pf_estado":           str(row.get("pf_estado", "")),
+            "pt_disponible":       _i(row, "pt_disponible"),
+            "pt_enviado":          _i(row, "pt_enviado"),
+            "pt_pendiente":        _i(row, "pt_pendiente"),
+            "pt_estado":           str(row.get("pt_estado", "")),
             "envios":              envios_map.get(int(row["cliente_id"]) if pd.notna(row["cliente_id"]) else -1, []),
         })
     return jsonify({
