@@ -222,8 +222,24 @@ if errorlevel 1 (
 
 echo.
 echo OK: Datos publicados en GitHub.
-echo Render va a actualizar automaticamente en 2-3 minutos.
-start "" "https://orbit-matinal-penaflor.onrender.com"
+echo.
+
+REM ── Esperar a que Render sirva el DEPLOY NUEVO antes de abrir el portal.
+REM    Render hace deploy sin downtime: /api/healthz responde 200 desde la instancia
+REM    vieja hasta que la nueva pasa el healthcheck. Por eso no alcanza con "responde
+REM    200": sondeamos hasta que healthz reporte el commit que acabamos de pushear
+REM    (campo "commit" = RENDER_GIT_COMMIT). Timeout ~6 min; si vence, se abre igual.
+for /f "delims=" %%i in ('git rev-parse HEAD') do set "COMMIT_SHA=%%i"
+echo Esperando a que Render despliegue el commit %COMMIT_SHA:~0,7% (hasta 6 min)...
+powershell -NoProfile -Command "$sha='%COMMIT_SHA%'; $url='%PORTAL%/api/healthz'; $ok=$false; for($i=1;$i -le 36;$i++){ try{ $r=Invoke-RestMethod -Uri $url -TimeoutSec 10; if($r.commit -eq $sha){ $ok=$true; break } }catch{}; Write-Host ('  esperando deploy... '+$i+'/36'); Start-Sleep -Seconds 10 }; if($ok){ Write-Host 'OK: Render esta sirviendo el deploy nuevo.'; exit 0 } else { Write-Host 'AVISO: se agoto la espera del deploy.'; exit 1 }"
+if errorlevel 1 (
+    echo.
+    echo Render tardo mas de lo esperado ^(o corre una version sin el commit en healthz^).
+    echo Se abre el portal igual; si no ves datos, recarga en unos minutos.
+) else (
+    echo Deploy confirmado en Render.
+)
+start "" "%PORTAL%"
 goto fin_ok
 
 :fin_error

@@ -7,9 +7,12 @@
 - [x] Causa raíz: Render (starter) rechaza fetch concurrentes en cold-start/redeploy (`ERR_CONNECTION_CLOSED` / `HTTP2_REFUSED_STREAM`); `safe()` no reintentaba → dashboard vacío.
 - [x] Fix: `safe(url, tries=4)` con backoff en `portal.html` (línea 1254). Validado con Playwright (local + Render): 7 vendedores, sin errores.
 
+### HECHO (cont.)
+- [x] `portal.html` (fix `safe()`) commiteado + pusheado (commit `8d781e6`).
+- [x] El `.bat` ahora espera el deploy de Render: `/api/healthz` reporta `commit` (RENDER_GIT_COMMIT) y `CIERRE_DIA_ORBIT.bat` sondea hasta ver el SHA pusheado (timeout ~6 min, fallback abre igual).
+
 ### PENDIENTE
-- [ ] **COMMITEAR `portal.html`** antes del próximo cierre (si no, `check_git_cierre.py` lo bloquea). Falta aprobación del usuario para commit + push.
-- [ ] (Opcional) El `.bat` del cierre abre el navegador de inmediato; evaluar que espere el healthcheck de Render antes de `start`, o avisar "esperá 2-3 min".
+- [ ] **COMMITEAR + PUSHEAR `server_orbit.py` + `CIERRE_DIA_ORBIT.bat`.** Sin desplegar server_orbit.py, healthz en Render no trae `commit` y el .bat siempre cae al timeout (igual abre). Falta aprobación del usuario.
 
 
 ## Sesion 2026-07-17 - Innovaciones seguidas en Planes AS

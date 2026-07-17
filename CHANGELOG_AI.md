@@ -1,5 +1,14 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-17 - feat(cierre): el .bat espera el deploy nuevo de Render antes de abrir el portal
+
+- **Pedido:** que `CIERRE_DIA_ORBIT.bat` espere el healthcheck de Render antes de abrir el navegador (hoy lo abría apenas terminaba el push, con Render todavía redeployando → portal vacío).
+- **Problema de fondo:** Render hace deploy sin downtime; `/api/healthz` responde 200 desde la instancia **vieja** hasta que la nueva pasa el healthcheck. Esperar "un 200" no sirve: devolvería al instante.
+- **Cambio (`server_orbit.py`, healthz):** `/api/healthz` ahora incluye `"commit"` con `os.environ.get("RENDER_GIT_COMMIT","")` (SHA que Render inyecta en cada deploy). Mismo 200, un campo nuevo.
+- **Cambio (`CIERRE_DIA_ORBIT.bat`):** tras el push, captura `git rev-parse HEAD` y sondea healthz con PowerShell hasta que `commit == SHA` pusheado (hasta 36 intentos × 10s = ~6 min). Si matchea → "Deploy confirmado" y abre el portal; si vence el timeout → avisa y abre igual (no bloquea el cierre). Recién ahí hace `start "%PORTAL%"`.
+- **Validado:** healthz local devuelve `{"commit":"", ...}` (vacío sin la env de Render, correcto); lógica de polling PowerShell probada (match con SHA correcto = OK, mismatch = espera); `.bat` reconvertido a **CRLF** (CR=LF=269 bytes) tras normalización del editor — `.gitattributes` ya fuerza `*.bat eol=crlf`; `python -m ast` OK en server_orbit.py.
+- **Nota:** el campo `commit` en healthz sólo existe en Render **después** de desplegar este commit; hasta entonces el .bat caerá en el timeout y abrirá igual (comportamiento de transición esperado). Complementa el fix de `safe()` (reintentos) de esta misma fecha.
+
 ## 2026-07-17 - fix(portal): `safe()` reintenta ante fallos transitorios de Render ("no salen los vendedores")
 
 - **Síntoma:** tras el cierre del día el usuario abrió el portal (Render) y **no aparecían los vendedores**. Sospecha de que falló el cierre.

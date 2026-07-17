@@ -839,7 +839,11 @@ def login():
 # ====== HEALTHCHECK (Render / UptimeRobot) ======
 @app.route("/api/healthz")
 def healthz():
-    return jsonify({"status": "ok", "service": "orbit-penaflor-pav", "healthcheck": True}), 200
+    # commit: SHA que Render inyecta en el deploy (RENDER_GIT_COMMIT). Permite que el
+    # cierre (.bat) espere a que la instancia NUEVA esté sirviendo antes de abrir el
+    # portal — durante el redeploy Render sigue respondiendo 200 desde la vieja.
+    return jsonify({"status": "ok", "service": "orbit-penaflor-pav", "healthcheck": True,
+                    "commit": os.environ.get("RENDER_GIT_COMMIT", "")}), 200
 
 # ====== DIAGNÓSTICO ======
 @app.route("/api/diagnostico")
