@@ -3684,12 +3684,80 @@ def _cargar_sincargos_envios():
     return out
 
 
+# ── INNOVACIONES SEGUIDAS EN PLANES AS ──
+_INOV_PLAN_AS_CACHE = {}
+
+def _inov_plan_as_productos():
+    """Innovaciones marcadas con 'x' en la columna 'AASS c/plan' de Innovaciones.xlsx:
+    las que se siguen cliente por cliente en la pantalla de Planes AS. La fila sin marca
+    (Termidor) queda fuera. Mismo archivo que la pantalla de Innovaciones -> agregar un
+    producto ahi lo suma en las dos. Cacheado por mtime."""
+    p = INPUTS / "INNOVACIONES" / "Innovaciones.xlsx"
+    if not p.exists():
+        return []
+    try:
+        key = os.path.getmtime(p)
+    except OSError:
+        key = 0
+    cached = _INOV_PLAN_AS_CACHE.get(key)
+    if cached is not None:
+        return cached
+    out = []
+    try:
+        df = pd.read_excel(p, sheet_name=0, header=None, dtype=str)
+        for _, fila in df.iterrows():
+            celdas = [str(v).strip() for v in fila.tolist() if pd.notna(v)]
+            if not any(c.lower() == "x" for c in celdas):
+                continue
+            for c in celdas:
+                m = _re.match(r"^0*(\d{4,6})\s*-\s*(.+)$", c)
+                if m:
+                    nombre = _re.sub(r"\s+", " ", m.group(2).replace("\xa0", " ")).strip()
+                    out.append({"codigo": int(m.group(1)), "nombre": nombre})
+                    break
+    except Exception as e:
+        print(f"[WARN] innovaciones plan AS: {e}")
+        out = []
+    _INOV_PLAN_AS_CACHE.clear()
+    _INOV_PLAN_AS_CACHE[key] = out
+    return out
+
+
+def _inov_plan_as_compras():
+    """cliente_id -> set de codigos de innovacion comprados en el mes en curso.
+    ventas.csv (mes vivo), ImporteNetoItem > 0, sin filtro de Empresa."""
+    prods = {p["codigo"] for p in _inov_plan_as_productos()}
+    if not prods:
+        return {}
+    df = _ventas_parsed()
+    if df.empty:
+        return {}
+    hoy = datetime.now(_ARG_TZ)
+    mes_inicio = pd.Timestamp(hoy.year, hoy.month, 1)
+    d = df[(df["fecha"] >= mes_inicio) & (df["importe_neto"] > 0)
+           & (df["codigo_art"].isin(prods))]
+    out = {}
+    for cid, cod in zip(d["cliente_id"], d["codigo_art"]):
+        if pd.notna(cid) and pd.notna(cod):
+            out.setdefault(int(cid), set()).add(int(cod))
+    return out
+
+
+def _inov_plan_as_cliente(cid, prods, compras):
+    """Lista de innovaciones del plan para un cliente, con el flag de compra del mes."""
+    compradas = compras.get(cid, set())
+    return [{"codigo": pr["codigo"], "nombre": pr["nombre"],
+             "comprado": pr["codigo"] in compradas} for pr in prods]
+
+
 @app.route("/api/gerencia/planes_as")
 def gerencia_planes_as():
     df = read_csv(DATASETS / "mod_planes_as.csv")
     if df.empty:
         return jsonify({"error": "Sin datos"}), 404
     envios_map = _cargar_sincargos_envios()
+    inov_prods = _inov_plan_as_productos()
+    inov_compras = _inov_plan_as_compras()
     _num_cols = ["total_facturado", "dcto_plan", "cant_cajas", "tope", "escala_actual", "escala_max",
                  "sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa", "sc_smf_flavours",
                  "sc_total_ganado", "sc_cajas_enviadas_total", "sc_pendiente",
@@ -3757,12 +3825,14 @@ def gerencia_planes_as():
             "pf_enviado":      _int(row.get("pf_enviado", 0)),
             "pf_estado":       str(row.get("pf_estado", "")),
             "envios":          envios_map.get(cid, []),
+            "innovaciones":    _inov_plan_as_cliente(cid, inov_prods, inov_compras),
         })
     fecha = str(df["fecha_calculo"].iloc[0]) if "fecha_calculo" in df.columns else ""
     return jsonify({
         "generado_en": _now_ar(),
         "fecha_calculo": fecha,
         "fuente": "mod_planes_as.csv",
+        "innovaciones_productos": inov_prods,
         "total_clientes": len(registros),
         "clientes": registros,
     })
@@ -5228,6 +5298,8 @@ def vendedor_planes_as(vid):
     if df.empty:
         return jsonify({"clientes": []}), 200
     envios_map = _cargar_sincargos_envios()
+    inov_prods = _inov_plan_as_productos()
+    inov_compras = _inov_plan_as_compras()
     df["vendedor_codigo"] = pd.to_numeric(df["vendedor_codigo"], errors="coerce")
     df = df[df["vendedor_codigo"] == cod]
     _num = ["total_facturado", "dcto_plan", "cant_cajas", "tope", "escala_actual", "escala_max",
@@ -5241,11 +5313,13 @@ def vendedor_planes_as(vid):
     def _i(row, k): return int(row[k]) if k in row.index and pd.notna(row[k]) else 0
     registros = []
     for _, row in df.iterrows():
+        _cid = int(row["cliente_id"]) if pd.notna(row["cliente_id"]) else None
         registros.append({
-            "cliente_id":      int(row["cliente_id"]) if pd.notna(row["cliente_id"]) else None,
+            "cliente_id":      _cid,
             "cliente_nombre":  str(row.get("cliente_nombre", "")),
             "direccion":       str(row.get("direccion", "")),
             "plan_as":         str(row.get("plan_as", "")),
+            "innovaciones":    _inov_plan_as_cliente(_cid, inov_prods, inov_compras),
             "total_facturado": round(float(row["total_facturado"]), 2),
             "dcto_plan":       round(float(row["dcto_plan"]), 2),
             "cant_cajas":      _i(row, "cant_cajas"),
@@ -5280,6 +5354,7 @@ def vendedor_planes_as(vid):
         "generado_en": _now_ar(),
         "vendedor_id": vid_norm,
         "fuente": "mod_planes_as.csv",
+        "innovaciones_productos": inov_prods,
         "total_clientes": len(registros),
         "clientes": registros,
     })

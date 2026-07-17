@@ -1,5 +1,14 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-17 - feat(planes_as): innovaciones seguidas por cliente (compró=verde / no=dorado)
+
+- **Pedido:** en la pantalla de **Planes AS**, al hacer click en cada cliente mostrar las **innovaciones** marcadas con `x` en la columna `AASS c/plan` de `Innovaciones.xlsx`, pintando en **verde** si el cliente las compró en el mes y en **dorado** si no. Para gerencia y vendedor. (Antes: el usuario agregó 2 productos nuevos + la columna `AASS c/plan` con `x`; Termidor queda sin `x` y por tanto afuera.)
+- **Fuente:** `01_INPUTS/INNOVACIONES/Innovaciones.xlsx` (mismo archivo que la pantalla de Innovaciones → un producto agregado ahí entra en las dos). La compra sale de `ventas.csv` (mes vivo), `ImporteNetoItem>0`, cruce por `Codigo`, **sin filtro de Empresa** (regla P&P Logística). Match por código exacto de innovación.
+- **Backend (`server_orbit.py`):** nuevos helpers `_inov_plan_as_productos()` (lee la columna `x`, cacheado por mtime, normaliza `\xa0`), `_inov_plan_as_compras()` (cliente_id → set de códigos comprados en el mes, sobre `_ventas_parsed()` cacheado) y `_inov_plan_as_cliente()`. Ambos endpoints `/api/gerencia/planes_as` y `/api/vendedor/<vid>/planes_as` devuelven `innovaciones_productos` (catálogo) y por cliente una lista `innovaciones:[{codigo,nombre,comprado}]`.
+- **Front (`portal.html`):** helper `pasInovHTML(c)` (chips verde `.ok` / dorado `.wn`, contador `n/total`) + `pasInovTog()` (toggle). Gerencia: fila de la tabla clickeable → fila de detalle `colspan=6` desplegable + badge `💡 ok/total`. Vendedor: tarjeta clickeable → bloque desplegable al pie con las innovaciones + badge. Se marcaron con `data-nostop` los onclick internos (sin-cargo, plan frío) para que no disparen el toggle.
+- **Validado (server en :8599, `PENAFLOR_SKIP_BOOT=1`):** gerencia 32 clientes AS + 26 innovaciones; V8 16 clientes; cliente 30013 → `compradas: 2`. Cruce verificado contra `ventas.csv`: 30013 compró códigos **74840 + 74886** este mes → coincide exacto. `ast.parse` OK, 26 marcados con `x` (Termidor 14425 excluido).
+- **Sin cambios en datasets ni motor de acciones:** es lectura directa del xlsx + ventas, no toca `mod_planes_as.csv` ni `mod_innovaciones_segmento.csv`.
+
 ## 2026-07-16 - data(sellout): objetivo de Vermouth = 6312 litros
 
 - **Pedido:** *"el objetivo de Vermouth es de 6312 litros"*.

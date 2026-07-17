@@ -1,5 +1,17 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-17 - Innovaciones seguidas en Planes AS
+
+### HECHO
+- [x] Columna `AASS c/plan` (`x`) de `Innovaciones.xlsx` define qué innovaciones se siguen cliente por cliente en Planes AS. 26 marcadas; **Termidor (14425) afuera**.
+- [x] Backend: `_inov_plan_as_productos/_compras/_cliente` en `server_orbit.py`; ambos endpoints `planes_as` (gerencia + vendedor) devuelven `innovaciones` por cliente (`comprado` = compró la innovación este mes en `ventas.csv`, cruce por código, sin filtro Empresa).
+- [x] Front: click en el cliente despliega las innovaciones (verde=comprada `.ok` / dorado=pendiente `.wn`) + badge `💡 ok/total`. Gerencia (fila detalle) y vendedor (tarjeta). Validado en :8599.
+
+### PENDIENTE / A VALIDAR CON EL USUARIO
+- [ ] Confirmar visualmente en el portal real (login gerencia + un vendedor) que el toggle y los colores se ven bien en mobile.
+- [ ] Definir si "compró en el mes" debe ser mes calendario (actual) o período comercial; hoy usa **mes calendario en curso** sobre `ventas.csv`, consistente con Innovaciones/Sell Out.
+
+
 ## Sesion 2026-07-16 (3) - La accion se mide por USO, no por alcance
 
 ### HECHO

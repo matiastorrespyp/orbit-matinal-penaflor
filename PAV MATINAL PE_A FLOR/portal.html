@@ -3976,6 +3976,24 @@ function gInnovaciones(p){
   p.innerHTML=html;
 }
 
+/* ── Innovaciones del plan por cliente: las marcadas con 'x' en la columna 'AASS c/plan'
+   de Innovaciones.xlsx. Verde = compró en el mes, dorado = todavía no. ── */
+function pasInovHTML(c){
+  const inv=c.innovaciones||[];
+  if(!inv.length) return `<div class="xs" style="color:var(--text3);">Sin innovaciones cargadas para Planes AS.</div>`;
+  const ok=inv.filter(i=>i.comprado).length;
+  return `<div class="vkl" style="margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+      <span>Innovaciones del mes</span><span style="font-weight:700;">${ok} / ${inv.length} compradas</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;">
+      ${inv.map(i=>`<span class="chip ${i.comprado?'ok':'wn'}" style="font-size:9.5px;">${i.comprado?'✓':'○'} ${i.nombre}</span>`).join('')}
+    </div>`;
+}
+function pasInovTog(ev,id){
+  if(ev&&ev.target.closest('[data-nostop]')) return;
+  const el=document.getElementById(id); if(!el) return;
+  el.style.display=(el.style.display==='none')?'':'none';
+}
+
 /* ════ PLANES AS GERENCIA ════ */
 function gPlanesAS(p){
   const dat=D.planes_as_g;
@@ -4012,21 +4030,25 @@ function gPlanesAS(p){
               {n:'Antares',  prod:'Antares IPA',      env:c.sc_env_antares_ipa||0,pend:c.sc_pend_antares_ipa||0},
               {n:'SMF',      prod:'Smirnoff Flavours',env:c.sc_env_smf_flavours||0,pend:c.sc_pend_smf_flavours||0},
             ].filter(p=>p.env>0||p.pend>0);
-            const scHtml=scProds.map(p=>`<span style="font-size:9px;cursor:pointer;" title="Ver fechas de envío" onclick="verSincargo(${c.cliente_id},'${p.prod}')">${p.n}: `+
+            const scHtml=scProds.map(p=>`<span data-nostop style="font-size:9px;cursor:pointer;" title="Ver fechas de envío" onclick="verSincargo(${c.cliente_id},'${p.prod}')">${p.n}: `+
               (p.env?`<span style="color:var(--ok);">✓${p.env}</span> `:'')+(p.pend?`<span style="color:var(--wn);">⚠${p.pend}</span>`:'')+'</span>').join(' · ')||'—';
             const scGan=c.sc_total_ganado||0;
             const estCell=scGan>0
               ?(c.sc_pendiente>0?'<span class="chip wn">pendiente</span>':'<span class="chip ok">enviados</span>')
               :'<span style="color:var(--text3);">—</span>';
             const pfHtml=c.pf_disponible
-              ?`<div style="margin-top:4px;font-size:9px;color:var(--text3);cursor:pointer;" title="Ver fecha de envío" onclick="verSincargo(${c.cliente_id},'Six Pack Smirnoff ICE')">Plan frío · Six Pack Smirnoff ICE `+
+              ?`<div data-nostop style="margin-top:4px;font-size:9px;color:var(--text3);cursor:pointer;" title="Ver fecha de envío" onclick="verSincargo(${c.cliente_id},'Six Pack Smirnoff ICE')">Plan frío · Six Pack Smirnoff ICE `+
                `<span style="color:var(--${c.pf_enviado?'ok':'wn'});">${c.pf_enviado?'✓ entregado':'⚠ pendiente'}</span></div>`
               :'';
             const vLabel=c.vendedor_id&&c.vendedor_nombre?`(${c.vendedor_id} ${c.vendedor_nombre})`:(c.vendedor_id||'');
             const metaRow=[c.cliente_id?`#${c.cliente_id}`:'',c.direccion||'',c.localidad||'',c.dia_visita||''].filter(Boolean).join(' · ');
-            return `<tr style="border-bottom:1px solid var(--bord);">
+            const inv=c.innovaciones||[];
+            const invOk=inv.filter(i=>i.comprado).length;
+            const invBadge=inv.length?`<span class="chip ${invOk===inv.length?'ok':'wn'}" style="font-size:9px;margin-left:6px;">💡 ${invOk}/${inv.length}</span>`:'';
+            const detId=`pas-inov-g-${c.cliente_id}`;
+            return `<tr style="border-bottom:1px solid var(--bord);cursor:pointer;" onclick="pasInovTog(event,'${detId}')">
               <td style="padding:7px 10px;">
-                <div style="font-weight:600;">${c.cliente_nombre} <span style="font-weight:400;font-size:10px;color:var(--text3);">${vLabel}</span></div>
+                <div style="font-weight:600;">${c.cliente_nombre} <span style="font-weight:400;font-size:10px;color:var(--text3);">${vLabel}</span>${invBadge}</div>
                 <div style="font-size:10px;color:var(--text4);margin-top:2px;">${metaRow}</div>
               </td>
               <td style="padding:7px 6px;"><span style="font-weight:700;color:${col};">${c.plan_as}</span></td>
@@ -4034,7 +4056,10 @@ function gPlanesAS(p){
               <td style="padding:7px 4px;text-align:right;font-weight:700;">${c.escala_actual||0} / ${c.escala_max||0}</td>
               <td style="padding:7px 4px;">${scHtml}${pfHtml}</td>
               <td style="padding:7px 4px;text-align:right;">${estCell}</td>
-            </tr>`;
+            </tr>
+            <tr id="${detId}" style="display:none;"><td colspan="6" style="padding:0 10px 12px 10px;background:var(--surf2);">
+              ${pasInovHTML(c)}
+            </td></tr>`;
           }).join('')}
         </tbody>
       </table>
@@ -4448,10 +4473,14 @@ function vPlanesAS(){
     ].filter(p=>p.gan>0);
     const scGan=c.sc_total_ganado||0, scPend=c.sc_pendiente||0;
     const estChip=scGan>0?`<span class="chip ${scPend>0?'wn':'ok'}" style="font-size:10px;">${scPend>0?'pendiente':'enviados'}</span>`:'';
-    return `<div class="vcli" style="flex-direction:column;align-items:stretch;gap:8px;padding:14px;">
+    const inv=c.innovaciones||[];
+    const invOk=inv.filter(i=>i.comprado).length;
+    const invBadge=inv.length?`<span class="chip ${invOk===inv.length?'ok':'wn'}" style="font-size:10px;">💡 ${invOk}/${inv.length}</span>`:'';
+    const invId=`pas-inov-v-${c.cliente_id}`;
+    return `<div class="vcli" style="flex-direction:column;align-items:stretch;gap:8px;padding:14px;cursor:pointer;" onclick="pasInovTog(event,'${invId}')">
       <div class="row-b">
         <div>
-          <div style="font-weight:700;font-size:13px;">${c.cliente_nombre}</div>
+          <div style="font-weight:700;font-size:13px;">${c.cliente_nombre} ${invBadge}</div>
           <div style="font-size:11px;color:var(--text3);">#${c.cliente_id}${c.direccion?' · '+c.direccion:''}</div>
         </div>
         <span style="font-weight:800;font-size:14px;color:${col};">Plan ${c.plan_as}</span>
@@ -4467,7 +4496,7 @@ function vPlanesAS(){
       ${scProds.length?`<div>
         <div class="vkl" style="margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;">
           <span>Sin cargo del plan</span>${estChip}</div>
-        ${scProds.map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;cursor:pointer;" title="Ver fechas de envío" onclick="verSincargo(${c.cliente_id},'${p.prod}')">
+        ${scProds.map(p=>`<div data-nostop style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;cursor:pointer;" title="Ver fechas de envío" onclick="verSincargo(${c.cliente_id},'${p.prod}')">
           <span style="font-size:11px;">${p.nom} (disponible: ${p.gan} caj.)</span>
           <div style="display:flex;gap:4px;">
             ${p.env>0?`<span class="chip ok" style="font-size:10px;">✓ ${p.env} enviadas</span>`:''}
@@ -4475,13 +4504,16 @@ function vPlanesAS(){
           </div>
         </div>`).join('')}
       </div>`:''}
-      ${c.pf_disponible?`<div style="cursor:pointer;" title="Ver fecha de envío" onclick="verSincargo(${c.cliente_id},'Six Pack Smirnoff ICE')">
+      ${c.pf_disponible?`<div data-nostop style="cursor:pointer;" title="Ver fecha de envío" onclick="verSincargo(${c.cliente_id},'Six Pack Smirnoff ICE')">
         <div class="vkl" style="margin-bottom:5px;">Plan frío</div>
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <span style="font-size:11px;">Six Pack Smirnoff ICE</span>
           <span class="chip ${c.pf_enviado?'ok':'wn'}" style="font-size:10px;">${c.pf_enviado?'✓ entregado':'⚠ pendiente'}</span>
         </div>
       </div>`:''}
+      <div id="${invId}" style="display:none;border-top:1px solid var(--bord);padding-top:10px;margin-top:2px;">
+        ${pasInovHTML(c)}
+      </div>
     </div>`;
   }).join('');
   document.getElementById('vT-planes_as').innerHTML=h;
