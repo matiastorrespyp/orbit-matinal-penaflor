@@ -1,5 +1,14 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-16 - data(sellout): objetivo de Vermouth = 6312 litros
+
+- **Pedido:** *"el objetivo de Vermouth es de 6312 litros"*.
+- **Cambio (`01_INPUTS/OBJSELLOUT.xlsx`):** fila `vermouth | vermouth | 6312`, insertada antes de la fila `total` con el mismo patron que **vinos de guarda** (categoria = Grupo PBP, sin fila 'Total' aparte). Estilos copiados de esa fila. **Sin tocar codigo**: el objetivo por categoria ya sale de este archivo (fuente unica).
+- **Validado:** `_cargar_objetivos_sellout()` -> `VERMOUTH {'total': 6312, 'subs': {'vermouth': 6312}}`; la tarjeta muestra **VERMOUTH | 0 L | 6.312 L | faltan 6.312 L | 0,0% | 0 clientes** (0 L porque Cinzano aun no tiene ventas). Playwright sin errores de consola.
+- **Efecto colateral esperado:** el **TOTAL** de la tarjeta pasa de 54.285 a **60.597 L** (el portal suma los objetivos de las categorias, no lee la fila 'total' del archivo).
+- **Nota (pre-existente, no tocada):** la fila `total` del xlsx dice **54283** y el loader la **ignora** (`_cargar_objetivos_sellout` saltea categoria == 'total'). Ya venia desalineada con la suma de sus partes (54.285) antes de este cambio, y ahora quedo 6312 mas abajo. No se toco porque es un numero del negocio, no del sistema; si quieren que el archivo cierre solo, va 60.595.
+
+
 ## 2026-07-16 - fix(acciones): la tarjeta contaba como "usuarios de la accion" a quien compro SIN el descuento
 
 - **Pedido:** *"veo que las acciones comerciales nuevas me salen con clientes que ya la usaron, cosa que es imposible ya que son nuevas... que el dato de los compradores de la accion sea justamente con el descuento de la accion, sino que no salgan ahi"*. El usuario tenia razon y el problema era MAS profundo que las nuevas.

@@ -23,7 +23,8 @@
 - [x] **3 Iscay (74410/74411/74528):** ya clasificaban bien, no requerian cambio.
 
 ### PENDIENTE
-- [ ] **Objetivo de Vermouth en `OBJSELLOUT.xlsx`:** hoy la fila sale con objetivo "–" y sin avance. Cuando el negocio defina litros objetivo, agregar la fila `vermouth | <grupo> | <litros>` y la tarjeta calcula el avance sola (no hay que tocar codigo).
+- [x] **Objetivo de Vermouth cargado: 6312 L** (`OBJSELLOUT.xlsx`, fila `vermouth | vermouth | 6312`). La tarjeta ya calcula avance sola. El TOTAL de la tarjeta pasa a 60.597 L.
+- [ ] **Fila `total` del OBJSELLOUT.xlsx**: dice 54283, el loader la ignora y ya venia desalineada con la suma de sus partes (54.285). Con vermouth la suma real es 60.597. Si quieren que el archivo cierre solo, actualizarla; el portal no la usa.
 - [ ] **Correr el cierre** para que los Cinzano aparezcan en el **tablero de Innovaciones** (lee `mod_innovaciones_segmento.csv`, dataset regenerado; el sell out en cambio ya sale en vivo).
 - [ ] Cinzano aun **sin ventas**: cuando se venda con descuento y no haya accion que lo cubra, va a alertar como "sin accion aplicable" (comportamiento correcto, pero avisar al negocio si se espera descuento).
 - [x] **Renombrados a `_NO_USAR_`** (no borrados: estan gitignored, no se recuperan): `producto activos.xlsx` y el raw inflado de mayo (19MB). El server y el generador ahora ignoran `_NO_USAR_*` al elegir el maestro del mes.
