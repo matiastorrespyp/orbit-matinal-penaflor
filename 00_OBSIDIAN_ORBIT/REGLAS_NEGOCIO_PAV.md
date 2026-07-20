@@ -67,9 +67,12 @@ V3 trabaja **únicamente** el canal Tradicional, subsegmentos **Almacén / Despe
 
 ### CCC total empresa vs objetivo — tile gerencia (2026-07-06)
 - Endpoint `GET /api/gerencia/ccc_empresa` (reescrito). **Real:** `ventas.csv` (mes vivo), neto>0, solo Peñaflor, excluye V1/V2/V5/V20; clientes únicos por canal.
-- **5 canales** clasificados por **Ramo** (helper `_canal_ccc_empresa`): `Tradicionales` (default: TRADITIONAL TRADE/ALMACENES) · `Autoservicios` (Ramo AUTOSERVICIO/CASH&CARRY) · `On Premise` (ON PREMISE/AWAY FROM HOME/RESTAURANT) · `Vinotecas` · `On Premise Noche`. **Ojo:** acá el Subramo "Autoservicio Tradicional" cuenta como **Tradicional** (por Ramo), distinto del 11T que lo cuenta como AS — son dos métricas con dos definiciones.
-- **Objetivo:** `01_INPUTS/objccc.xlsx` (columnas Canal / Objetivo CCC; helper `_objetivos_ccc_empresa`). Hoy: On Premise 30 / Vinotecas 15 / On Premise Noche 11 / Autoservicios 145 / Tradicionales 845 = **1046**. Objetivo mensual (fuente = mes vivo).
-- Portal: kcard "CCC Compradores Mes" muestra `real / objetivo · %` + card "📊 CCC Empresa · real vs objetivo" por canal.
+- **5 canales** clasificados por **Ramo + Subramo** (helper `_canal_ccc_empresa`): `Tradicionales` (default) · `Autoservicios` · `On Premise` · `Vinotecas` · `On Premise Noche`. `Mayoristas` es canal aparte y **queda fuera** de los canales con objetivo.
+- ⚠️ **CORREGIDO 2026-07-20:** hasta esa fecha esta regla decía que el Subramo "Autoservicio Tradicional" contaba como **Tradicional** porque el objetivo se habría definido por Ramo. **Era falso.** Bajo ese criterio la cartera entera de AS eran 18 clientes contra un objetivo de 145 (imposible), y la tarjeta mostró **Autoservicios 5/145 = 3.4%**. El objetivo 145 corresponde a la clasificación por **Subramo** (cartera 199) — la misma del 11T y de `mod_cobertura_acum.csv`. Ya **no** hay dos definiciones: AS se identifica por Subramo en todo el sistema. Ver [[BITACORA_2026-07-20]].
+- **Objetivo:** `01_INPUTS/objccc.xlsx`. Hoja `total` (canal → objetivo, helper `_objetivos_ccc_empresa`): On Premise 30 / Vinotecas 15 / On Premise Noche 11 / Autoservicios 145 / Tradicionales 845 = **1046**. Hojas `autoservicio` / `tradicional` / `On premise`: **apertura por vendedor** (helper `_objetivos_ccc_vendedor`), sin encabezado real → se parsea buscando la celda `V<n>` en cada fila, nunca por posición de columna.
+- ⚠️ **Objetivo Tradicional 845 vs 809:** el Total declarado en la hoja es 845 pero los 7 vendedores suman 809. AS y OP cierran exacto. **Sin resolver** — la tarjeta usa 845 y muestra los 36 sin asignar de forma explícita.
+- **El total de empresa suma sólo los canales con objetivo** (numerador y denominador miden lo mismo). Antes era `nunique()` global e incluía clientes sin objetivo en el numerador.
+- Portal: kcard "CCC Compradores Mes" muestra `real / objetivo · %` + card "📊 CCC del Mes · real vs objetivo" por canal.
 
 ---
 
@@ -272,6 +275,18 @@ Función: `_clasificar_segmento(ramo, subsegmento)` en `server_orbit.py`.
 | OTROS | Todo lo que no clasifica arriba |
 
 **Despensa = Almacén (regla agregada 2026-06-13):** dentro de TRADICIONAL, el subcanal *Despensa* se trata igual que *Almacén* en **todas** las estadísticas. En el motor de acciones se canoniza `despensa → almacén` (`_ACC_SUBSEG_TRAD` y el `_subseg` de la venta en `_acc_preparar_ventas`). Una acción acotada a "almacén/kiosco" también cubre despensa. El resto del sistema ya colapsaba almacén/despensa/kiosco en TRADICIONAL por igual.
+
+### Autoservicio se identifica por SUBRAMO, no por Ramo (corregido 2026-07-20)
+
+`AUTOSERVICIO TRADICIONAL` es **el grueso del canal** (764 de 826 filas de venta AS) y tiene `Ramo = TRADITIONAL TRADE`. Clasificar autoservicio mirando sólo `Ramo` lo manda entero a Tradicionales.
+
+Cómo se detectó y cómo verificarlo: bajo el criterio Ramo la cartera **completa** de Autoservicios era de **18 clientes**, contra un objetivo de **145**. Un objetivo mayor que la cartera del canal es **aritméticamente imposible** → no es un problema comercial, es un error de clasificación. La tarjeta "CCC del Mes" mostró **Autoservicios 5/145 = 3.4%** durante ese período.
+
+**Regla:** todo clasificador de canal debe mirar `Subramo`/`SubSegmento` como fuente primaria para AUTOSERVICIO. Vale para `_clasificar()` de `generar_datasets_acum.py` (siempre lo hizo bien) y para `_canal_ccc_empresa()` de `server_orbit.py` (corregido).
+
+**Mayorista / Cash&Carry nunca es Autoservicio** — es canal propio y `objccc.xlsx` no lo abre, así que queda **fuera** de los canales con objetivo, nunca sumado a AS ni a Tradicional.
+
+**Chequeo antes de dar por buena una métrica nueva:** comparar el objetivo del canal contra la **cartera** de ese canal. Si el objetivo es mayor, la clasificación está mal.
 
 ---
 

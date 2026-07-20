@@ -2210,9 +2210,16 @@ def matinal_resumen():
 
 # ====== GERENCIA: CCC EMPRESA ======
 # Canales de la cobertura CCC total empresa (objetivo en 01_INPUTS/objccc.xlsx).
-# Clasificación por Ramo (mismo criterio con el que se definió el objetivo): el Subramo
-# "Autoservicio Tradicional" (Ramo TRADITIONAL TRADE) cuenta como Tradicional, no Autoservicio.
+# Autoservicio se identifica por SUBRAMO, no por Ramo: "AUTOSERVICIO TRADICIONAL" tiene
+# Ramo=TRADITIONAL TRADE y es el grueso del canal (764 de 826 filas AS). Clasificar por Ramo
+# dejaba una cartera AS de sólo 18 clientes contra un objetivo de 145 -> la tarjeta mostraba
+# 3.4% de avance, imposible (corregido 2026-07-20). Mismo criterio que `_clasificar()` de
+# generar_datasets_acum.py, para que esta tarjeta y la de Cobertura acumulada no se
+# contradigan sobre el mismo objetivo.
+# MAYORISTA/Cash&Carry queda FUERA de los canales con objetivo (objccc.xlsx no lo abre),
+# igual que en mod_cobertura_acum.csv: no se mide contra un objetivo que no existe.
 _CCC_CANALES_ORDEN = ["Tradicionales", "Autoservicios", "On Premise", "Vinotecas", "On Premise Noche"]
+_CCC_AS_SUBRAMOS = ("AUTOSERVICIO", "CADENA REGIONAL", "CADENAS REGIONALES", "LARGE FORMAT")
 
 def _canal_ccc_empresa(df):
     """Serie con el canal objccc por fila, clasificado por Ramo/Subramo."""
@@ -2220,22 +2227,36 @@ def _canal_ccc_empresa(df):
     sub  = df["Subramo"].astype(str).str.upper().str.strip() if "Subramo" in df.columns else pd.Series("", index=df.index)
     txt  = ramo.str.cat(sub, sep=" ")
     canal = pd.Series("Tradicionales", index=df.index)
-    canal[(ramo == "AUTOSERVICIO") | ramo.str.contains("CASH", regex=False, na=False)] = "Autoservicios"
+    es_as = ramo.isin(("AUTOSERVICIO", "LARGE FORMAT"))
+    for clave in _CCC_AS_SUBRAMOS:
+        es_as = es_as | sub.str.startswith(clave, na=False)
+    canal[es_as] = "Autoservicios"
     canal[txt.str.contains("ON PREMISE", regex=False, na=False)
           | txt.str.contains("AWAY FROM HOME", regex=False, na=False)
           | txt.str.contains("RESTAURANT", regex=False, na=False)] = "On Premise"
     canal[txt.str.contains("VINOTECA", regex=False, na=False)] = "Vinotecas"
     canal[txt.str.contains("NOCHE", regex=False, na=False)] = "On Premise Noche"
+    # Mayorista al final: nunca debe quedar contado como Autoservicio ni como Tradicional.
+    canal[ramo.str.contains("CASH", regex=False, na=False)
+          | ramo.str.startswith("MAYORISTA", na=False)
+          | sub.str.startswith("MAYORISTA", na=False)] = "Mayoristas"
     return canal
 
 def _objetivos_ccc_empresa():
-    """canal -> objetivo CCC desde 01_INPUTS/objccc.xlsx (columnas Canal / Objetivo CCC)."""
+    """canal -> objetivo CCC desde 01_INPUTS/objccc.xlsx (columnas Canal / Objetivo CCC).
+
+    Lee la hoja "total" POR NOMBRE: desde 2026-07-20 el archivo tiene 4 hojas (total +
+    apertura por vendedor) y tomar la primera por posición se rompería en silencio si
+    alguien las reordena. Cae a la primera hoja si no existe "total" (formato viejo,
+    hoja única "Hoja1")."""
     p = INPUTS / "objccc.xlsx"
     out = {}
     if not p.exists():
         return out
     try:
-        d = pd.read_excel(p)
+        hojas = pd.ExcelFile(p).sheet_names
+        hoja = next((s for s in hojas if str(s).strip().lower() == "total"), hojas[0])
+        d = pd.read_excel(p, sheet_name=hoja)
         cols = {str(c).strip().lower(): c for c in d.columns}
         c_can = cols.get("canal")
         c_obj = next((cols[k] for k in cols if "objetivo" in k), None)
@@ -2250,15 +2271,72 @@ def _objetivos_ccc_empresa():
         print(f"[AVISO] objccc.xlsx: {e}")
     return out
 
+
+# Hojas de objccc.xlsx con la apertura por vendedor -> segmento de mod_cobertura_acum.csv.
+# La hoja "On premise" ya incluye Vinotecas y On Premise Noche (30+15+11=56), igual que el
+# segmento ON_PREMISE del clasificador (_OP_KEYWORDS incluye VINOTECA). MAYORISTA no tiene
+# objetivo cargado: se muestra sin objetivo, nunca contra 0.
+_OBJCCC_HOJAS = {"autoservicio": "AUTOSERVICIO", "tradicional": "TRADICIONAL", "on premise": "ON_PREMISE"}
+_OBJCCC_VEND_CACHE = {"mtime": None, "data": None}
+
+def _objetivos_ccc_vendedor():
+    """Objetivos CCC aperturados por vendedor desde 01_INPUTS/objccc.xlsx.
+
+    Las hojas por vendedor no tienen encabezado real (columnas 'Unnamed'), así que NO se
+    leen por posición: se busca en cada fila la celda 'V<n>' y se toma el último numérico
+    de esa fila como objetivo. La fila 'Total' se guarda aparte como total declarado.
+
+    Devuelve {"por_segmento": {SEG: {cod_vend: obj}}, "declarado": {SEG: total_hoja}}."""
+    p = INPUTS / "objccc.xlsx"
+    vacio = {"por_segmento": {}, "declarado": {}}
+    if not p.exists():
+        return vacio
+    mt = p.stat().st_mtime
+    if _OBJCCC_VEND_CACHE["data"] is not None and _OBJCCC_VEND_CACHE["mtime"] == mt:
+        return _OBJCCC_VEND_CACHE["data"]
+    por_seg, declarado = {}, {}
+    try:
+        x = pd.ExcelFile(p)
+        hojas = {str(s).strip().lower(): s for s in x.sheet_names}
+        for clave, seg in _OBJCCC_HOJAS.items():
+            hoja = hojas.get(clave)
+            if hoja is None:
+                continue
+            d = x.parse(hoja, header=None)
+            por_seg[seg] = {}
+            for _, fila in d.iterrows():
+                celdas = [c for c in fila.tolist() if pd.notna(c)]
+                if not celdas:
+                    continue
+                textos = [str(c).strip() for c in celdas]
+                nums = [pd.to_numeric(c, errors="coerce") for c in celdas]
+                nums = [n for n in nums if pd.notna(n)]
+                if not nums:
+                    continue
+                valor = int(float(nums[-1]))
+                cod = next((t[1:] for t in textos
+                            if len(t) > 1 and t[0] in "Vv" and t[1:].isdigit()), None)
+                if cod is not None:
+                    por_seg[seg][int(cod)] = valor
+                elif any(t.lower() == "total" for t in textos):
+                    declarado[seg] = valor
+    except Exception as e:
+        print(f"[AVISO] objccc.xlsx (apertura por vendedor): {e}")
+        return vacio
+    data = {"por_segmento": por_seg, "declarado": declarado}
+    _OBJCCC_VEND_CACHE.update({"mtime": mt, "data": data})
+    return data
+
 @app.route("/api/gerencia/ccc_empresa")
 def gerencia_ccc_empresa():
     """CCC del mes vivo (cobertura) total empresa vs objetivo por canal.
     Real: ventas.csv (mes actual, neto>0, excluye V1/V2/V5/V20), clientes únicos por canal
-    (Ramo). NO se filtra por Empresa: P&P Logística es nuestra 2da razón social (ver
-    `_LEEME_EMPRESA`). Objetivo: 01_INPUTS/objccc.xlsx."""
+    (Ramo+Subramo, ver `_canal_ccc_empresa`). NO se filtra por Empresa: P&P Logística es
+    nuestra 2da razón social (ver `_LEEME_EMPRESA`). Objetivo: 01_INPUTS/objccc.xlsx."""
     obj_map = _objetivos_ccc_empresa()
     ccc_map = {}
     total_ccc = 0
+    fuera_obj = 0        # clientes en canales sin objetivo (Mayoristas): no entran al %
     vpath = INPUTS / "ventas.csv"
     if vpath.exists():
         try:
@@ -2270,7 +2348,10 @@ def gerencia_ccc_empresa():
             if not v.empty:
                 v["canal"] = _canal_ccc_empresa(v)
                 ccc_map = v.groupby("canal")["Cliente"].nunique().to_dict()
-                total_ccc = int(v["Cliente"].nunique())
+                # El total se arma con los canales QUE TIENEN objetivo, para que numerador y
+                # denominador midan lo mismo (antes era nunique() global e incluía Mayoristas).
+                total_ccc = int(v[v["canal"].isin(_CCC_CANALES_ORDEN)]["Cliente"].nunique())
+                fuera_obj = int(v[~v["canal"].isin(_CCC_CANALES_ORDEN)]["Cliente"].nunique())
         except Exception as e:
             print(f"[AVISO] ccc_empresa ventas.csv: {e}")
 
@@ -2292,6 +2373,7 @@ def gerencia_ccc_empresa():
             "total":         total_ccc,
             "objetivo_total": total_obj,
             "pct":           round(total_ccc / total_obj * 100, 1) if total_obj else None,
+            "fuera_objetivo": fuera_obj,
             # compat con el render previo (Trad / AS / OP)
             "tradicional":   int(ccc_map.get("Tradicionales", 0)),
             "autoservicio":  int(ccc_map.get("Autoservicios", 0)),
@@ -3275,19 +3357,39 @@ def gerencia_cobertura_acum():
             df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0).astype(int)
     df["pct_cobertura"] = pd.to_numeric(df.get("pct_cobertura", 0), errors="coerce").fillna(0)
     fecha = str(df["fecha_calculo"].iloc[0]) if "fecha_calculo" in df.columns else ""
+    # Objetivos aperturados por vendedor (objccc.xlsx). MAYORISTA no tiene objetivo cargado:
+    # queda visible como informativo y FUERA del total, para no comparar contra 0.
+    objs = _objetivos_ccc_vendedor()
+    obj_seg = objs.get("por_segmento", {})
+    declarado = objs.get("declarado", {})
+
     por_vendedor = {}
     for _, row in df.iterrows():
-        vid = f"V{int(row['vendedor_codigo'])}"
+        cod = int(row["vendedor_codigo"])
+        vid = f"V{cod}"
         if vid not in por_vendedor:
-            por_vendedor[vid] = {"vendedor_id": vid, "vendedor_nombre": str(row.get("vendedor_nombre", "")), "segmentos": []}
+            por_vendedor[vid] = {"vendedor_id": vid, "vendedor_nombre": str(row.get("vendedor_nombre", "")),
+                                 "segmentos": [], "cubiertos": 0, "objetivo": 0}
+        seg = str(row["segmento"])
+        cubiertos = int(row["cubiertos"])
+        obj = obj_seg.get(seg, {}).get(cod)
         por_vendedor[vid]["segmentos"].append({
-            "segmento": str(row["segmento"]),
+            "segmento": seg,
             "cartera": int(row["cartera"]),
-            "cubiertos": int(row["cubiertos"]),
+            "cubiertos": cubiertos,
             "sin_cobertura": int(row["sin_cobertura"]),
             "pct_cobertura": round(float(row["pct_cobertura"]), 4),
+            "objetivo": obj,
+            "pct_objetivo": round(cubiertos / obj * 100, 1) if obj else None,
         })
-    # ── Depósito (V20): informativo, clientes/botellas con compra (sin cartera ni %) ──
+        if obj is not None:
+            por_vendedor[vid]["cubiertos"] += cubiertos
+            por_vendedor[vid]["objetivo"] += obj
+    for v in por_vendedor.values():
+        v["pct_objetivo"] = round(v["cubiertos"] / v["objetivo"] * 100, 1) if v["objetivo"] else None
+
+    # ── Depósito (V20): CCC informativo. No tiene cartera en el maestro ni objetivo propio,
+    # pero su CCC SÍ suma al logrado total de la empresa (decisión usuario 2026-07-20). ──
     deposito = None
     try:
         vd = _df_deposito_ventas()
@@ -3295,18 +3397,37 @@ def gerencia_cobertura_acum():
             deposito = {
                 "vendedor_id": "V20",
                 "vendedor_nombre": "Depósito (venta directa)",
+                "ccc": int(vd["Cliente"].nunique()),
                 "clientes": int(vd["Cliente"].nunique()),
                 "botellas": round(float(vd["CantBase"].sum()), 1),
             }
     except Exception:
         deposito = None
 
+    # Empresa: sólo los segmentos CON objetivo (AS/TRAD/OP), en numerador y denominador.
+    log_ruta = sum(v["cubiertos"] for v in por_vendedor.values())
+    log_dep = int(deposito["ccc"]) if deposito else 0
+    obj_asignado = sum(v["objetivo"] for v in por_vendedor.values())
+    obj_total = sum(declarado.get(s, 0) for s in _OBJCCC_HOJAS.values()) or obj_asignado
+    log_total = log_ruta + log_dep
+
     return jsonify({
         "generado_en": _now_ar(),
         "fecha_calculo": fecha,
-        "fuente": "mod_cobertura_acum.csv",
+        "fuente": "mod_cobertura_acum.csv + objccc.xlsx",
         "por_vendedor": list(por_vendedor.values()),
         "deposito": deposito,
+        "empresa": {
+            "logrado_ruta":      log_ruta,
+            "logrado_deposito":  log_dep,
+            "logrado_total":     log_total,
+            "objetivo_total":    obj_total,
+            # Los objetivos por vendedor suman menos que el total declarado en objccc.xlsx
+            # (Tradicional: 809 vs 845). Se exponen ambos para que la diferencia sea visible
+            # en la tarjeta y no quede escondida dentro del %.
+            "objetivo_asignado": obj_asignado,
+            "pct":               round(log_total / obj_total * 100, 1) if obj_total else None,
+        },
     })
 
 

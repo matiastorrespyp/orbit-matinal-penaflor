@@ -1677,31 +1677,40 @@ function gDashboard(p){
       </div>
     </div>`;
   }
-  // Cobertura acumulada del mes por segmento
-  const cobAcumVends=D.cob_acum?.por_vendedor||[];
+  // Cobertura acumulada del mes: apertura por vendedor vs objetivo (objccc.xlsx) + depósito
+  const cobAcumVends=(D.cob_acum?.por_vendedor||[]).slice()
+    .sort((a,b)=>(parseInt(a.vendedor_id.slice(1))||0)-(parseInt(b.vendedor_id.slice(1))||0));
   if(cobAcumVends.length){
-    const acumSegs={};
-    cobAcumVends.forEach(v=>{
-      (v.segmentos||[]).forEach(s=>{
-        if(!acumSegs[s.segmento]) acumSegs[s.segmento]={cartera:0,cubiertos:0,sin_cobertura:0};
-        acumSegs[s.segmento].cartera+=s.cartera||0;
-        acumSegs[s.segmento].cubiertos+=s.cubiertos||0;
-        acumSegs[s.segmento].sin_cobertura+=s.sin_cobertura||0;
-      });
-    });
-    const SEG_ORDER=['AUTOSERVICIO','TRADICIONAL','ON_PREMISE','MAYORISTA'];
-    const segsAcum=SEG_ORDER.filter(k=>acumSegs[k]).map(k=>({seg:k,...acumSegs[k]}));
+    const emp=D.cob_acum?.empresa||{}, dep=D.cob_acum?.deposito;
+    const pctE=emp.pct!=null?emp.pct:0, clE=pctE>=80?'ok':pctE>=50?'wn':'bd';
+    // El objetivo declarado en objccc.xlsx es mayor que la suma de los objetivos por
+    // vendedor (Tradicional: 845 vs 809). Se muestra la diferencia en vez de esconderla.
+    const sinAsignar=(emp.objetivo_total||0)-(emp.objetivo_asignado||0);
     left+=`<div class="card">
-      <div class="card-hd"><span class="card-title">📊 Cobertura acumulada del mes</span><span class="chip">${D.cob_acum?.fecha_calculo||''}</span></div>
+      <div class="card-hd"><span class="card-title">📊 Cobertura acumulada del mes · vs objetivo</span><span class="chip ${clE}">${emp.logrado_total??0}/${emp.objetivo_total??'–'} · ${emp.pct!=null?emp.pct+'%':'–'}</span></div>
       <div class="card-body">
-        ${segsAcum.map(s=>{const pct=s.cartera?Math.round(s.cubiertos/s.cartera*100):0,cl=pct>=80?'ok':pct>=50?'wn':'bd';
-          const sid='gcobseg-'+s.seg.replace(/[^A-Z0-9]/gi,'');
+        ${cobAcumVends.map(v=>{
+          const obj=v.objetivo||0, pct=v.pct_objetivo!=null?v.pct_objetivo:0;
+          const cl=pct>=80?'ok':pct>=50?'wn':'bd';
+          const vid='gcobv-'+v.vendedor_id;
           return `<div class="srow">
-            <div class="srow-hd" style="cursor:pointer;" onclick="gCobSegToggle('${s.seg}','${sid}')"><span class="srow-name"><span id="${sid}-arr">▸</span> ${s.seg}</span><span class="chip ${cl}">${pct}%</span></div>
-            <div class="bar" style="height:5px;"><div class="bar-f ${cl}" style="width:${pct}%"></div></div>
-            <div class="xs m3 mt4">${s.cubiertos} cubiertos de ${s.cartera} cartera · <b style="color:var(--bd)">${s.sin_cobertura} aún sin comprar</b> · <span style="color:var(--mg)">ver por vendedor</span></div>
+            <div class="srow-hd" style="cursor:pointer;" onclick="gCobVendToggle('${v.vendedor_id}','${vid}')">
+              <span class="srow-name"><span id="${vid}-arr">▸</span> <b style="color:${CV[v.vendedor_id]||'var(--text2)'}">${v.vendedor_id}</b> ${v.vendedor_nombre||''}</span>
+              <span class="chip ${cl}">${v.cubiertos||0}/${obj||'–'} · ${obj?pct+'%':'–'}</span>
+            </div>
+            <div class="bar" style="height:5px;"><div class="bar-f ${cl}" style="width:${Math.min(pct,100)}%"></div></div>
+            <div class="xs m3 mt4">${v.cubiertos||0} clientes cubiertos de ${obj||'–'} objetivo · <span style="color:var(--mg)">ver por segmento</span></div>
           </div>
-          <div id="${sid}" style="display:none;padding:2px 0 10px;"></div>`;}).join('')}
+          <div id="${vid}" style="display:none;padding:2px 0 10px;"></div>`;}).join('')}
+        ${dep?`<div class="srow" style="border-top:1px solid var(--bd3);padding-top:8px;">
+          <div class="srow-hd"><span class="srow-name"><b style="color:var(--text2)">V20</b> Depósito (venta directa)</span><span class="chip">${dep.ccc??0} CCC</span></div>
+          <div class="xs m3 mt4">Sin cartera asignada ni objetivo propio · su CCC suma al total de la empresa</div>
+        </div>`:''}
+        <div class="xs m3" style="border-top:1px solid var(--bd3);padding-top:8px;margin-top:8px;">
+          Total empresa: ${emp.logrado_ruta??0} ruta + ${emp.logrado_deposito??0} depósito = <b>${emp.logrado_total??0}</b> sobre objetivo ${emp.objetivo_total??'–'}.
+          ${sinAsignar>0?`<b style="color:var(--wn)">${sinAsignar} del objetivo no está asignado a ningún vendedor</b> (los vendedores suman ${emp.objetivo_asignado}).`:''}
+          MAYORISTA no tiene objetivo cargado: queda fuera del total.
+        </div>
       </div>
     </div>`;
   }
@@ -2136,7 +2145,8 @@ function _faltRows(fl){
     <span>${c.cliente_nombre||('#'+c.cliente_id)}${c.localidad?' · '+c.localidad:''}</span>
     <span style="color:var(--bd);white-space:nowrap;">${c.botellas}/${c.umbral} bot</span></div>`).join('');
 }
-async function gCobSegToggle(seg,divId){
+const _COB_SEG_ORDER=['AUTOSERVICIO','TRADICIONAL','ON_PREMISE','MAYORISTA'];
+async function gCobVendToggle(vid,divId){
   const el=document.getElementById(divId), arr=document.getElementById(divId+'-arr');
   if(!el) return;
   if(el.style.display!=='none'){ el.style.display='none'; if(arr)arr.textContent='▸'; return; }
@@ -2144,22 +2154,25 @@ async function gCobSegToggle(seg,divId){
   if(el.dataset.loaded) return;
   el.dataset.loaded='1';
   el.innerHTML=`<div class="xs m3" style="padding:4px 0;">Cargando detalle…</div>`;
-  const vends=(D.cob_acum?.por_vendedor||[]).map(v=>{
-    const sg=(v.segmentos||[]).find(x=>x.segmento===seg);
-    return sg?{vid:v.vendedor_id,nombre:v.vendedor_nombre,...sg}:null;
-  }).filter(Boolean).sort((a,b)=>(parseInt(a.vid.slice(1))||0)-(parseInt(b.vid.slice(1))||0));
-  const falt=await _cobFaltFetch(seg);
-  el.innerHTML=vends.length?vends.map(v=>{
-    const pct=v.cartera?Math.round(v.cubiertos/v.cartera*100):0,cl=pct>=80?'ok':pct>=50?'wn':'bd';
-    const fid=divId+'-'+v.vid;
+  const v=(D.cob_acum?.por_vendedor||[]).find(x=>x.vendedor_id===vid);
+  const segs=(v?.segmentos||[]).slice()
+    .sort((a,b)=>_COB_SEG_ORDER.indexOf(a.segmento)-_COB_SEG_ORDER.indexOf(b.segmento));
+  // Un fetch de faltantes por segmento (cacheado en _cobFaltFetch), filtrado a este vendedor.
+  const falt={};
+  for(const s of segs) falt[s.segmento]=(await _cobFaltFetch(s.segmento))[vid];
+  el.innerHTML=segs.length?segs.map(s=>{
+    const obj=s.objetivo, pct=s.pct_objetivo!=null?s.pct_objetivo:null;
+    const cl=pct==null?'':pct>=80?'ok':pct>=50?'wn':'bd';
+    const fid=divId+'-'+s.segmento.replace(/[^A-Z0-9]/gi,'');
     return `<div style="border-top:1px solid var(--bd3);padding:6px 0;">
       <div class="row-b" style="cursor:pointer;" onclick="gCobFaltToggle('${fid}')">
-        <span style="font-size:12px;"><b style="color:${CV[v.vid]||'var(--text2)'}">${v.vid}</b> ${v.nombre||''}</span>
-        <span class="chip ${cl}" style="font-size:10px;">${v.cubiertos}/${v.cartera} · ${pct}%</span>
+        <span style="font-size:12px;">${s.segmento}</span>
+        <span class="chip ${cl}" style="font-size:10px;">${obj?`${s.cubiertos}/${obj} · ${pct}%`:`${s.cubiertos} cubiertos · sin objetivo`}</span>
       </div>
-      <div id="${fid}" style="display:none;margin-top:5px;max-height:180px;overflow:auto;">${_faltRows(falt[v.vid])}</div>
+      <div class="xs m3 mt4">${s.cubiertos} de ${s.cartera} en cartera · <b style="color:var(--bd)">${s.sin_cobertura} aún sin comprar</b></div>
+      <div id="${fid}" style="display:none;margin-top:5px;max-height:180px;overflow:auto;">${_faltRows(falt[s.segmento])}</div>
     </div>`;
-  }).join(''):`<div class="xs m3">Sin datos para ${seg}</div>`;
+  }).join(''):`<div class="xs m3">Sin datos para ${vid}</div>`;
 }
 function gCobFaltToggle(id){const e=document.getElementById(id);if(e)e.style.display=e.style.display==='none'?'block':'none';}
 async function gVendCobToggle(vid,seg,divId){
