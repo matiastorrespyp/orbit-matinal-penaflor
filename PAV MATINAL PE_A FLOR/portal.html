@@ -1110,12 +1110,12 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
     </div>
     <div class="gs-nav">
       <div class="gs-sec">Gerencia</div>
-      <div class="gs-item active" data-sc="dashboard" onclick="gSw('dashboard',this)"><span class="gs-ico">📊</span>Dashboard</div>
+      <div class="gs-item active" data-sc="planvsreal"   onclick="gSw('planvsreal',this)"><span class="gs-ico">📊</span>Plan vs Real</div>
+      <div class="gs-item" data-sc="dashboard" onclick="gSw('dashboard',this)"><span class="gs-ico">📊</span>Dashboard</div>
+      <div class="gs-item" data-sc="planificacion" onclick="gSw('planificacion',this)"><span class="gs-ico">📋</span>Planificación</div>
       <div class="gs-item" data-sc="vendedores"  onclick="gSw('vendedores',this)"><span class="gs-ico">👥</span>Vendedores</div>
       <div class="gs-item" data-sc="clientes"    onclick="gSw('clientes',this)"><span class="gs-ico">🏪</span>Clientes Críticos</div>
       <div class="gs-item" data-sc="cliente"     onclick="gSw('cliente',this)"><span class="gs-ico">🔎</span>Cliente</div>
-      <div class="gs-item" data-sc="planificacion" onclick="gSw('planificacion',this)"><span class="gs-ico">📋</span>Planificación</div>
-      <div class="gs-item" data-sc="planvsreal"   onclick="gSw('planvsreal',this)"><span class="gs-ico">📊</span>Plan vs Real</div>
       <div class="gs-item" data-sc="alertas"    onclick="gSw('alertas',this)">
         <span class="gs-ico">⚡</span>Alertas
         <span class="gs-badge" id="gAlertBadge" style="display:none">0</span>
@@ -1151,7 +1151,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       </button>
       <div class="gt-crumb">
         <span class="c1">ORBIT</span><span class="c2">›</span>
-        <span id="gTopTitle">Dashboard</span>
+        <span id="gTopTitle">Plan vs Real</span>
         <span class="gt-live">EN VIVO</span>
       </div>
       <div class="g-sp"></div>
@@ -1222,7 +1222,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 'use strict';
 
 /* ── estado ── */
-let userData = null, currentDay = null, gFiltro = "", gScreen = "dashboard", gPlanFechaSel = null;
+let userData = null, currentDay = null, gFiltro = "", gScreen = "planvsreal", gPlanFechaSel = null;
 let D = { diag:{}, dash:[], cli:[], al:[], plan:[], pvr:{}, det:{}, msgs:[], cccEmpresa:{}, onceTit:{}, onceTitDia:{}, inov:null, plan_inov:null, cob_acum:null, cob_acum_v:null, t11_acum:null, inov_total:null, planes_as_g:null, planes_as_v:null, acc_vigentes:[], oportInov:null, ruta:null };
 
 const CV = { V3:'#5BDED4', V4:'#F2B544', V6:'#5BC23A', V7:'#9B7BFF', V8:'#4DA3FF', V9:'#FF9D5C', V10:'#FF5D8B' };

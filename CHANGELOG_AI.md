@@ -1,5 +1,15 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-20 - ui(portal): orden del menú lateral de gerencia + arranque en Plan vs Real
+
+- **Pedido:** en el panel lateral izquierdo de gerencia, poner **Plan vs Real** arriba, luego **Dashboard** y **Planificación**, y el resto como estaba. Después: que la pantalla que abre por defecto sea Plan vs Real.
+- **Cambio (`PAV MATINAL PE_A FLOR/portal.html`), sección "Gerencia" del `.gs-nav` (líneas 1113-1118):** reordenados los `.gs-item` a Plan vs Real → Dashboard → Planificación → Vendedores → Clientes Críticos → Cliente. Alertas, Dormidos y todo el bloque "Productos" quedaron intactos.
+- **Cambio (arranque):** tres puntos que debían moverse juntos para no desfasar contenido/título/resaltado — `class="active"` pasó de Dashboard a Plan vs Real (1113-1114), `gScreen` inicial `"dashboard"` → `"planvsreal"` (1225), y el `<span id="gTopTitle">` inicial `Dashboard` → `Plan vs Real` (1154).
+- **Sin cambios** de datos, endpoints, cálculos ni estilos. Ningún llamador invoca `gDashboard()` directo: login y refrescos pasan todos por `gRender()`, que lee `gScreen`.
+- **Validado (Playwright, gerencia, server local `:8599`):** tras el login `gScreen='planvsreal'`, botón activo = `planvsreal`, `#gTopTitle`='Plan vs Real' y el orden del menú queda `planvsreal > dashboard > planificacion > vendedores > clientes > cliente > alertas > dormidos > [Productos...]`. Screenshot confirma la pantalla renderizada al entrar. Sin errores de consola ni page-errors.
+- **Nota operativa:** hoy (corte 2026-07-18) Plan vs Real abre vacío ("Sin planes para este período", "Real: pendiente"), que es el estado real del día, no un bug. Gerencia verá esa pantalla vacía los días sin planes enviados.
+- **Hallazgo lateral (no tocado):** `/index.html` sirve un HTML viejo de ~10KB desde la carpeta del frontend; el portal real se sirve en `/` y `/portal.html`. Candidato a `_NO_USAR_` si está muerto.
+
 ## 2026-07-17 - feat(cierre): el .bat espera el deploy nuevo de Render antes de abrir el portal
 
 - **Pedido:** que `CIERRE_DIA_ORBIT.bat` espere el healthcheck de Render antes de abrir el navegador (hoy lo abría apenas terminaba el push, con Render todavía redeployando → portal vacío).
