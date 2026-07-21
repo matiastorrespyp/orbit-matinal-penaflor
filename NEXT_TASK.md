@@ -6,8 +6,8 @@
 - [x] Menú lateral de gerencia reordenado (Plan vs Real arriba) + arranque en Plan vs Real. Commiteado y desplegado en Render (`fe980f0`).
 - [x] Tarjeta "Cobertura acumulada del mes" aperturada **por vendedor** vs objetivo de `objccc.xlsx`, drill-down vendedor→segmento→faltantes, línea "V20 Depósito" (10 CCC, sin objetivo) sumando al total de empresa. Validado con Playwright.
 
-### PENDIENTE - DECISIONES DEL USUARIO
-- [ ] **Objetivo Tradicional: 845 o 809.** La hoja `tradicional` de objccc.xlsx declara Total 845, pero los 7 vendedores suman 809. AS (145) y OP (56) cierran exacto. Hoy la tarjeta usa **845** como objetivo de empresa y muestra los 36 sin asignar en el pie. Confirmar si el 845 está vigente o si falta repartir esos 36.
+### RESUELTO
+- [x] **Objetivo Tradicional 845 vs 809:** el usuario actualizó la hoja `tradicional` de objccc.xlsx (2026-07-21) repartiendo los objetivos por vendedor → ahora suman **845** exacto (V3 116, V4 118, V6 111, V7 116, V8 125, V9 117, V10 142). `objetivo_asignado == objetivo_total == 1046`; la leyenda "sin asignar" del pie se oculta sola. Validado en navegador + endpoint. Excel pusheado a Render.
 ### HECHO (cont.)
 - [x] **BUG corregido:** "CCC del Mes" mostraba Autoservicios 5/145 (3.4%). `_canal_ccc_empresa()` clasificaba sólo por Ramo y `AUTOSERVICIO TRADICIONAL` (764 filas) vive en Subramo. Ahora AS se detecta por Subramo, Mayoristas sale de AS, y el total suma sólo canales con objetivo. AS pasó a **74/145 (51%)**, coincidiendo con la tarjeta de Cobertura. Documentado en `BITACORA_2026-07-20.md` + `REGLAS_NEGOCIO_PAV.md`.
 

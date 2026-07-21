@@ -1,5 +1,12 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-21 - data(objccc): objetivos Tradicional por vendedor actualizados (suman 845 exacto)
+
+- **Contexto:** el 20/07 quedó pendiente el desajuste del objetivo Tradicional (Total declarado 845 vs suma por vendedor 809). El usuario actualizó la hoja `tradicional` de `01_INPUTS/objccc.xlsx` repartiendo los 36 faltantes.
+- **Resultado:** Tradicional por vendedor ahora suma **845** (V3 116, V4 118, V6 111, V7 116, V8 125, V9 117, V10 142). AS (145) y OP (56) siguen exactos → `objetivo_asignado == objetivo_total == 1046`.
+- **Efecto en la tarjeta (sin cambio de código):** la leyenda "N del objetivo no está asignado a ningún vendedor" del pie se **oculta sola** (`sinAsignar=0`). Cambian los denominadores por vendedor (ej. V3 105→116, V4 141→145, V7 125→139).
+- **Validado (Playwright + endpoint, `:8599`):** tarjeta Cobertura con los 7 vendedores contra su nuevo objetivo, pie "401 ruta + 10 depósito = 411 sobre objetivo 1046" sin leyenda de faltante. CCC del Mes coherente (AS 76/145). Sin errores de consola. Sólo cambia el input `objccc.xlsx`; sin tocar server ni portal.
+
 ## 2026-07-20 - feat(cobertura): tarjeta "Cobertura acumulada del mes" aperturada por vendedor vs objetivo + depósito
 
 - **Pedido:** que la tarjeta tome todos los vendedores y también depósito, y que se mida contra el objetivo de `01_INPUTS/objccc.xlsx` (aperturado por vendedor). Aclaración del usuario: apertura **por vendedor**, y el CCC del depósito va **debajo, sin objetivo propio, pero sumando al objetivo total de la empresa**.
