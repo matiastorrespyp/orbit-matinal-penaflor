@@ -11,8 +11,9 @@
 ### HECHO (cont.)
 - [x] **BUG corregido:** "CCC del Mes" mostraba Autoservicios 5/145 (3.4%). `_canal_ccc_empresa()` clasificaba sólo por Ramo y `AUTOSERVICIO TRADICIONAL` (764 filas) vive en Subramo. Ahora AS se detecta por Subramo, Mayoristas sale de AS, y el total suma sólo canales con objetivo. AS pasó a **74/145 (51%)**, coincidiendo con la tarjeta de Cobertura. Documentado en `BITACORA_2026-07-20.md` + `REGLAS_NEGOCIO_PAV.md`.
 
-### PENDIENTE
-- [ ] **Revisar si el mismo error de clasificación afecta otras métricas.** Se corrigió `_canal_ccc_empresa()`; falta auditar si algún otro cálculo del portal clasifica autoservicio mirando sólo `Ramo` (el 11T y `mod_cobertura_acum.csv` ya usan Subramo, están OK).
+### HECHO (cont.)
+- [x] **Auditoría "¿otro cálculo usa sólo Ramo?" (2026-07-21):** revisados TODOS los usos de Ramo en `server_orbit.py` y `generar_datasets_acum.py`. **`_canal_ccc_empresa()` era el único con el bug** (ya corregido). El resto clasifica bien: `_clasificar_segmento`/`_clasificar` buscan AS sobre el texto **combinado Ramo+Subramo** (AS chequeado primero → "AUTOSERVICIO TRADICIONAL" del Subramo matchea); los filtros directos (11T live línea 2445, planes AS línea 7265, acciones/mayorista 4722) chequean Ramo **y** Subramo. Los 4 `sub_col = next(... "subseg"/"subramo" ...)` detectan bien SubSegmento/Subramo. No queda ningún clasificador Ramo-only.
+- **Observación menor (pre-existente, NO es bug de Ramo):** los dos clasificadores tratan MAYORISTA distinto — `_clasificar_segmento` (server, `segmento_operativo` → tiles CCC del **día**) lo **pliega en AUTOSERVICIO**; `_clasificar` (generador, `mod_cobertura_acum.csv`) y `_canal_ccc_empresa` lo dejan **aparte**. Impacto: ~1 CCC/día de mayorista cuenta como AS en las tarjetas del día. Despreciable hoy; anotar si algún día molesta.
 
 ## Sesion 2026-07-17 (2) - "No salen los vendedores" tras el cierre
 
