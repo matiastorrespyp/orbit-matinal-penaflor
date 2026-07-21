@@ -1,5 +1,15 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-21 - feat(planes_as): buscador de cliente en la pantalla Planes AS (gerencia + vendedor)
+
+- **Pedido:** un buscador en Planes AS para encontrar más rápido un cliente del listado, en ambos perfiles.
+- **Cambio (`PAV MATINAL PE_A FLOR/portal.html`), sólo front, sin tocar backend ni datos:**
+  - Helper `pasMatch(c,q)`: filtra por nombre, código, dirección, localidad, día de visita y (gerencia) vendedor. Case-insensitive.
+  - **Gerencia (`gPlanesAS`):** se separó el armado de filas en `_gPlanesASRows()`. El input + la tabla (shell) se renderizan una vez; cada tecla re-renderiza **sólo `<tbody id="gpasBody">`**, no toda la pantalla → el input no pierde el foco. El chip del header (`gpasCount`) muestra el nº de coincidencias; "Sin coincidencias" si no hay match.
+  - **Vendedor (`vPlanesAS`):** mismo patrón con `_vPlanesASCards()` re-renderizando sólo `<div id="vpasBody">`. El KPI "Clientes AS" del resumen se dejó **estable** (cartera completa) para no mezclar un contador filtrado con el "Facturado total" sin filtrar; las tarjetas visibles son el feedback de la búsqueda.
+- **Patrón reutilizado** del buscador de Stock sin Venta (re-render parcial para preservar foco), no se inventó nada nuevo.
+- **Validado (Playwright, ambos perfiles, `:8599`):** gerencia 32→3 filtrando por apellido, vendedor V8 16→3, **foco preservado en el input** en los dos casos, chip/"Sin coincidencias" OK, `node --check` del JS OK, cero errores de consola.
+
 ## 2026-07-21 - data(objccc): objetivos Tradicional por vendedor actualizados (suman 845 exacto)
 
 - **Contexto:** el 20/07 quedó pendiente el desajuste del objetivo Tradicional (Total declarado 845 vs suma por vendedor 809). El usuario actualizó la hoja `tradicional` de `01_INPUTS/objccc.xlsx` repartiendo los 36 faltantes.

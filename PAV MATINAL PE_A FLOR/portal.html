@@ -4022,6 +4022,12 @@ function pasInovTog(ev,id){
   const el=document.getElementById(id); if(!el) return;
   el.style.display=(el.style.display==='none')?'':'none';
 }
+// Filtro del buscador de Planes AS: nombre, código, dirección, localidad o vendedor.
+function pasMatch(c,q){
+  if(!q) return true;
+  return [c.cliente_nombre,c.cliente_id,c.direccion,c.localidad,c.dia_visita,c.vendedor_id,c.vendedor_nombre]
+    .some(f=>String(f==null?'':f).toLowerCase().includes(q));
+}
 
 /* ════ PLANES AS GERENCIA ════ */
 function gPlanesAS(p){
@@ -4035,11 +4041,12 @@ function gPlanesAS(p){
     html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">🏆</div><p>Sin datos de Planes AS.</p></div></div></div>`;
     p.innerHTML=html; return;
   }
-  const clientes=dat.clientes;
-  const mesAntNom=mesAnteriorNom();
-  const planCol={Gold:'#F2B544',Silver:'#8BA0BE',Inicial:'#5BC23A'};
   html+=`<div class="card">
-    <div class="card-hd"><span class="card-title">Clientes con Plan AS</span></div>
+    <div class="card-hd"><span class="card-title">Clientes con Plan AS</span><span class="chip" id="gpasCount">${dat.clientes.length} clientes</span></div>
+    <div class="card-body">
+      <input id="gpasSearch" type="text" placeholder="🔎 Buscar cliente por nombre, código, localidad o vendedor…" oninput="_gPlanesASRows()"
+        style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:9px;border:1px solid var(--line);background:var(--bg2);color:var(--text);font-size:13px;">
+    </div>
     <div class="card-body nop">
       <table style="width:100%;border-collapse:collapse;font-size:11px;">
         <thead><tr style="color:var(--text3);border-bottom:1px solid var(--bord);">
@@ -4050,8 +4057,24 @@ function gPlanesAS(p){
           <th style="padding:7px 4px;text-align:left;">Sin cargo · ① escala · ② puntera · ③ plan frío (✓ enviado / ⚠ pendiente)</th>
           <th style="padding:7px 4px;text-align:right;">Estado escala</th>
         </tr></thead>
-        <tbody>
-          ${clientes.map(c=>{
+        <tbody id="gpasBody"></tbody>
+      </table>
+    </div>
+  </div>`;
+  p.innerHTML=html;
+  _gPlanesASRows();
+}
+// Re-renderiza SOLO las filas del listado (no toda la pantalla) para no perder el foco del buscador.
+function _gPlanesASRows(){
+  const dat=D.planes_as_g; const tb=document.getElementById('gpasBody'); if(!tb) return;
+  const fmtARS=n=>n?'$'+(n).toLocaleString('es-AR',{maximumFractionDigits:0}):'$0';
+  const mesAntNom=mesAnteriorNom();
+  const planCol={Gold:'#F2B544',Silver:'#8BA0BE',Inicial:'#5BC23A'};
+  const q=(document.getElementById('gpasSearch')?.value||'').trim().toLowerCase();
+  const clientes=(dat.clientes||[]).filter(c=>pasMatch(c,q));
+  const cnt=document.getElementById('gpasCount'); if(cnt) cnt.textContent=clientes.length+' clientes';
+  if(!clientes.length){ tb.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:22px;">Sin coincidencias.</td></tr>`; return; }
+  tb.innerHTML=clientes.map(c=>{
             const col=planCol[c.plan_as]||'var(--text2)';
             const scProds=[
               {n:'Alaris',   prod:'Alaris',           env:c.sc_env_alaris||0,    pend:c.sc_pend_alaris||0},
@@ -4097,12 +4120,7 @@ function gPlanesAS(p){
             <tr id="${detId}" style="display:none;"><td colspan="6" style="padding:0 10px 12px 10px;background:var(--surf2);">
               ${pasInovHTML(c)}
             </td></tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>
-  </div>`;
-  p.innerHTML=html;
+          }).join('');
 }
 
 /* ════ ACCIONES COMERCIALES GERENCIA ════ */
@@ -4478,7 +4496,6 @@ function gDormidos(p){
 function vPlanesAS(){
   const dat=D.planes_as_v;
   const fmtARS=n=>n?'$'+(n).toLocaleString('es-AR',{maximumFractionDigits:0}):'$0';
-  const planCol={Gold:'#F2B544',Silver:'#8BA0BE',Inicial:'#5BC23A'};
   let h=`<div class="vsh">Mi Plan AS</div>`;
   if(!dat||!dat.clientes?.length){
     h+=`<div class="vkw" style="background:var(--surf2);text-align:center;padding:28px 16px;">
@@ -4488,7 +4505,6 @@ function vPlanesAS(){
     document.getElementById('vT-planes_as').innerHTML=h; return;
   }
   const clientes=dat.clientes;
-  const mesAntNom=mesAnteriorNom();
   const total=clientes.reduce((a,c)=>a+c.total_facturado,0);
   h+=`<div class="vkw" style="background:var(--surf2);">
     <div class="row-b">
@@ -4496,7 +4512,22 @@ function vPlanesAS(){
       <div style="text-align:right;"><div class="vkl">Facturado total</div><div class="vkv" style="font-size:18px;">${fmtARS(total)}</div></div>
     </div>
   </div>`;
-  h+=clientes.map(c=>{
+  h+=`<input id="vpasSearch" type="text" placeholder="🔎 Buscar cliente por nombre, código o dirección…" oninput="_vPlanesASCards()"
+    style="width:100%;box-sizing:border-box;margin-bottom:10px;padding:10px 12px;border-radius:9px;border:1px solid var(--line);background:var(--surf2);color:var(--text);font-size:13px;">
+  <div id="vpasBody"></div>`;
+  document.getElementById('vT-planes_as').innerHTML=h;
+  _vPlanesASCards();
+}
+// Re-renderiza SOLO las tarjetas (no toda la pestaña) para no perder el foco del buscador.
+function _vPlanesASCards(){
+  const dat=D.planes_as_v; const cont=document.getElementById('vpasBody'); if(!cont) return;
+  const fmtARS=n=>n?'$'+(n).toLocaleString('es-AR',{maximumFractionDigits:0}):'$0';
+  const planCol={Gold:'#F2B544',Silver:'#8BA0BE',Inicial:'#5BC23A'};
+  const mesAntNom=mesAnteriorNom();
+  const q=(document.getElementById('vpasSearch')?.value||'').trim().toLowerCase();
+  const clientes=(dat.clientes||[]).filter(c=>pasMatch(c,q));
+  if(!clientes.length){ cont.innerHTML=`<div class="vkw" style="background:var(--surf2);text-align:center;padding:22px 16px;color:var(--text3);font-size:13px;">Sin coincidencias.</div>`; return; }
+  cont.innerHTML=clientes.map(c=>{
     const col=planCol[c.plan_as]||'var(--text2)';
     const escAct=c.escala_actual||0, escMax=c.escala_max||0;
     const pctEsc=escMax?Math.round(escAct/escMax*100):0;
@@ -4564,7 +4595,6 @@ function vPlanesAS(){
       </div>
     </div>`;
   }).join('');
-  document.getElementById('vT-planes_as').innerHTML=h;
 }
 
 /* ════ CIERRE DE MES ════ */
