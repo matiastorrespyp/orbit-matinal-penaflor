@@ -2068,6 +2068,107 @@ def _real_dia_resultado(fecha_objetivo=None):
     return real, f_hoy, f_ayer
 
 
+def _snapshot_matinal_resumen():
+    """Fallback de LECTURA para Plan vs Real cuando NO hay fuentes vivas (modo embebido en Orbit
+    Home: sin SQLite poblado, sin 02_HISTORY, sin 01_INPUTS/ventas.csv). Arma el resumen desde el
+    ÚLTIMO SNAPSHOT COMPLETO ya generado (04_DATASETS_ORBIT/mod_volumen_vendedor.csv), sin usar la
+    fecha del reloj y sin recomputar reglas comerciales (sólo lee valores YA calculados por el
+    cierre). Devuelve el MISMO contrato que matinal_resumen, o None si no hay snapshot.
+
+    Fecha efectiva: metadata real del dataset (fecha_ejecucion = último cierre completo). Plan: de
+    Google Sheets (fuente de verdad) hidratando la cache si hace falta, para esa MISMA fecha. Real:
+    real_resultado/venta_ayer (venta del día) + clientes_compra_ayer (CCC total del día) del snapshot.
+    El CCC real POR SEGMENTO del día no está en los datasets vendorizados (mod_ccc_segmento es del
+    MES): en modo embebido queda en 0 (no se inventa); el real principal (venta + CCC total) sí sale.
+    """
+    vol = read_csv(DATASETS / "mod_volumen_vendedor.csv")
+    if vol.empty or "fecha_ejecucion" not in vol.columns:
+        return None
+    fechas = sorted(str(f).strip() for f in vol["fecha_ejecucion"].dropna().unique() if str(f).strip())
+    if not fechas:
+        return None
+    fecha_efectiva = fechas[-1]                      # último cierre completo (no hardcode, no reloj)
+    vol = vol[vol["fecha_ejecucion"].astype(str).str.strip() == fecha_efectiva]
+
+    def _num(x):
+        try:
+            return float(x)
+        except Exception:
+            return 0.0
+
+    # Real del día por vendedor (precomputado en el snapshot; no se recalcula).
+    real_snap = {}
+    for _, row in vol.iterrows():
+        cn = clean_code(str(row.get("vendedor_codigo", "")))
+        if not cn.isdigit():
+            continue
+        rr, va = _num(row.get("real_resultado")), _num(row.get("venta_ayer"))
+        real_snap[int(cn)] = {"venta": rr if rr > 0 else va,
+                              "ccc_total": int(_num(row.get("clientes_compra_ayer")))}
+
+    # Plan de la MISMA fecha efectiva: Google Sheets (fuente de verdad), cache SQLite si ya está.
+    planes = {}
+    try:
+        conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        n = conn.execute("SELECT COUNT(*) FROM planificacion").fetchone()[0]
+        if n == 0 and gsheets_enabled():
+            conn.close()
+            try:
+                hydrate_planificacion_from_sheets()
+            except Exception:
+                pass
+            conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+            conn.row_factory = sqlite3.Row
+        planes = {r["vendedor_id"]: dict(r) for r in conn.execute(
+            "SELECT * FROM planificacion WHERE fecha=?", (fecha_efectiva,)).fetchall()}
+        conn.close()
+    except Exception:
+        planes = {}
+
+    vend = read_csv(CONFIG / "vendedores_activos.csv")
+    resultado, tiene_real_any = [], False
+    if not vend.empty:
+        for _, v in vend[vend["activo"] == 1].iterrows():
+            cod = str(v["codigo_vendedor"]).strip()
+            cn = clean_code(cod)
+            cod_int = int(cn) if cn.isdigit() else 0
+            r = real_snap.get(cod_int, {})
+            v_tiene_real = cod_int in real_snap
+            if v_tiene_real:
+                tiene_real_any = True
+            real_venta = float(r.get("venta") or 0)
+            plan = planes.get(cod, {})
+            plan_venta = float(plan.get("venta_esperada") or 0)
+            pct = round(real_venta / plan_venta * 100, 1) if plan_venta else None
+            resultado.append({
+                "vendedor_id": cod, "vendedor_nombre": str(v["nombre_vendedor"]).strip(),
+                "fecha_plan": fecha_efectiva, "fecha_real": fecha_efectiva,
+                "plan_venta": plan_venta, "real_ayer": real_venta,
+                "delta": round(real_venta - plan_venta, 2), "pct_cumplimiento": pct,
+                "plan_ccc_trad": int(plan.get("ccc_tradicional") or 0),
+                "plan_ccc_as":   int(plan.get("ccc_autoservicio") or 0),
+                "plan_ccc_op":   int(plan.get("ccc_onpremise") or 0),
+                "plan_once_t":   int(plan.get("once_t") or 0),
+                "real_ccc_trad": 0, "real_ccc_as": 0, "real_ccc_op": 0,   # por-segmento no vendorizado
+                "real_ccc_total": int(r.get("ccc_total") or 0),
+                "plan_acciones": plan.get("acciones") or "",
+                "plan_estado": plan.get("estado") or "sin_plan",
+                "plan_id": plan.get("id"),
+                "tiene_plan": bool(plan),
+                "tiene_real": v_tiene_real,
+            })
+    if not resultado:
+        return None
+    return {
+        "fecha_plan": fecha_efectiva, "fecha_real": fecha_efectiva,
+        "tiene_real": tiene_real_any, "modo": "cierre",
+        "fuente_real": "snapshot mod_volumen_vendedor.csv (último cierre completo)",
+        "fecha_real_ayer": None, "fecha_efectiva": fecha_efectiva, "origen": "snapshot",
+        "generado_en": _now_ar(), "resumen": resultado,
+    }
+
+
 @app.route("/api/matinal/resumen")
 def matinal_resumen():
     """
@@ -2195,6 +2296,16 @@ def matinal_resumen():
                 "tiene_plan":       bool(plan),
                 "tiene_real":       v_tiene_real,
             })
+
+    # Fecha efectiva única: si el día vivo NO está completo (falta plan o falta real, p.ej. modo
+    # embebido en Orbit Home sin SQLite/02_HISTORY/01_INPUTS, o mañana sin real todavía), usar el
+    # ÚLTIMO cierre completo del snapshot generado — nunca la fecha del reloj, sin mezclar fechas.
+    # Si el día vivo tiene plan Y real (comportamiento standalone habitual), se mantiene igual.
+    live_completo = bool(planes) and bool(tiene_real)
+    if (not fecha_param) and (not live_completo):
+        snap = _snapshot_matinal_resumen()
+        if snap is not None:
+            return jsonify(snap)
 
     return jsonify({
         "fecha_plan":  fecha_plan,
