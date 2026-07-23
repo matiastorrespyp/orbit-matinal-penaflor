@@ -4132,8 +4132,9 @@ function _gPlanesASRows(){
             const estCell=scGan>0
               ?(c.sc_pendiente>0?'<span class="chip wn">pendiente</span>':'<span class="chip ok">enviados</span>')
               :'<span style="color:var(--text3);">—</span>';
+            const ptProd=c.pt_producto||'Puntera';
             const ptHtml=c.pt_disponible
-              ?`<div data-nostop style="margin-top:4px;font-size:9px;color:var(--text3);cursor:pointer;" title="Ver fecha de envío" onclick="verSincargo(${c.cliente_id},'El Cazador')"><span style="color:var(--text4);">② Puntera:</span> El Cazador ${c.pt_disponible} caj. `+
+              ?`<div data-nostop style="margin-top:4px;font-size:9px;color:var(--text3);cursor:pointer;" title="Ver fecha de envío" onclick="verSincargo(${c.cliente_id},&quot;${ptProd}&quot;)"><span style="color:var(--text4);">② Puntera:</span> ${ptProd} ${c.pt_disponible} caj. `+
                (c.pt_enviado>0?`<span style="color:var(--ok);">✓${c.pt_enviado}</span> `:'')+(c.pt_pendiente>0?`<span style="color:var(--wn);">⚠${c.pt_pendiente}</span>`:'')+'</div>'
               :'';
             const pfHtml=c.pf_disponible
@@ -4515,10 +4516,10 @@ function _vPlanesASCards(){
           </div>
         </div>`).join('')}
       </div>`:''}
-      ${c.pt_disponible?`<div data-nostop style="cursor:pointer;border-top:1px solid var(--bord);padding-top:8px;" title="Ver fecha de envío" onclick="verSincargo(${c.cliente_id},'El Cazador')">
+      ${c.pt_disponible?`<div data-nostop style="cursor:pointer;border-top:1px solid var(--bord);padding-top:8px;" title="Ver fecha de envío" onclick="verSincargo(${c.cliente_id},&quot;${c.pt_producto||'Puntera'}&quot;)">
         <div class="vkl" style="margin-bottom:5px;">② Sin cargo por puntera</div>
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:11px;">El Cazador (cualquier varietal) · ${c.pt_disponible} caj.</span>
+          <span style="font-size:11px;">${c.pt_producto||'Puntera'} (cualquier varietal) · ${c.pt_disponible} caj.</span>
           <div style="display:flex;gap:4px;">
             ${c.pt_enviado>0?`<span class="chip ok" style="font-size:10px;">✓ ${c.pt_enviado} enviadas</span>`:''}
             ${c.pt_pendiente>0?`<span class="chip wn" style="font-size:10px;">⚠ ${c.pt_pendiente} pendientes</span>`:''}

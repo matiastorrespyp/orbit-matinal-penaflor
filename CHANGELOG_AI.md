@@ -1,5 +1,17 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-23 - fix(planes_as): la puntera sin cargo toma el producto del Excel (Cazador → Los Arboles)
+
+- **Pedido:** en Planes AS la puntera sin cargo figuraba **El Cazador**; el usuario cambió el producto a **Los Arboles** en el Excel fuente y al actualizar no se reflejaba.
+- **Causa:** el producto de la puntera estaba **cableado** en el código (nombre "El Cazador" + detección del enviado por `Articulo` que contiene "CAZADOR"). Cambiar el Excel no alcanzaba. El Excel sólo aportaba el *disponible* (cajas por cliente), no el nombre del producto.
+- **Solución — ahora es Excel-driven:** el producto sale del **encabezado** de la hoja `Puntera` (`Cjas Sin Cargos (<Producto>)`), así se puede cambiar desde el Excel sin tocar código.
+  - **`generar_datasets_acum.py`:** `_cargar_puntera_mes()` devuelve `(dict, producto)` parseando el texto entre paréntesis del encabezado. La detección del enviado usa ese nombre en mayúsculas contra `Articulo` (`LOS ARBOLES` matchea limpio, igual que `CAZADOR` antes). Se agrega columna `pt_producto` a `mod_planes_as.csv` y el detalle de envíos usa ese nombre. `import re` agregado.
+  - **`server_orbit.py`:** ambos endpoints de Planes AS (gerencia + vendedor) pasan `pt_producto`.
+  - **`portal.html`:** gerencia y vendedor muestran `c.pt_producto` (fallback "Puntera") en la fila/tarjeta de puntera y en el `verSincargo()`, en vez del literal "El Cazador".
+  - **Requisito documentado:** el nombre entre paréntesis debe aparecer tal cual en el `Articulo` del ERP (ej. "Los Arboles" → "LOS ARBOLES …"). Si algún día usan un nombre que el ERP escribe distinto, hay que nombrarlo como aparece en el ERP.
+- **Validado:** `_cargar_puntera_mes()` → "Los Arboles", 5 clientes. Regeneré `mod_planes_as.csv`: `pt_producto=Los Arboles`, enviado computado desde ventas de Los Arboles (ej. cli 538: 18 → entregado); detalle de envíos "Los Arboles", cero "Cazador". Playwright (`:8599`, copia de orbit.db): gerencia y vendedor V8 muestran "Los Arboles" y **cero "Cazador"**, el modal de envíos también. `ast.parse` + `node --check` OK, sin errores de consola.
+- **Nota de datos:** se commitean sólo `mod_planes_as.csv` + `mod_sincargos_envios.csv` (los que produce este cambio). Los demás datasets que tocó la regeneración completa se revirtieron: se regeneran en el cierre, no acá.
+
 ## 2026-07-23 - feat(alertas): descartar alertas para que no se acumulen (gerencia)
 
 - **Pedido:** un botón dentro de la pantalla de Alertas para borrar las alertas y que no se sigan acumulando.

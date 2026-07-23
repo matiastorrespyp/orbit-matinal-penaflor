@@ -4151,6 +4151,7 @@ def gerencia_planes_as():
             "pt_enviado":      _int(row.get("pt_enviado", 0)),
             "pt_pendiente":    _int(row.get("pt_pendiente", 0)),
             "pt_estado":       str(row.get("pt_estado", "")),
+            "pt_producto":     str(row.get("pt_producto", "") or ""),
             "envios":          envios_map.get(cid, []),
             "innovaciones":    _inov_plan_as_cliente(cid, inov_prods, inov_compras),
         })
@@ -5680,6 +5681,7 @@ def vendedor_planes_as(vid):
             "pt_enviado":          _i(row, "pt_enviado"),
             "pt_pendiente":        _i(row, "pt_pendiente"),
             "pt_estado":           str(row.get("pt_estado", "")),
+            "pt_producto":         str(row.get("pt_producto", "") or ""),
             "envios":              envios_map.get(int(row["cliente_id"]) if pd.notna(row["cliente_id"]) else -1, []),
         })
     return jsonify({

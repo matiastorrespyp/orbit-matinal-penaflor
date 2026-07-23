@@ -1,5 +1,14 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-23 - Puntera sin cargo Excel-driven (Cazador → Los Arboles)
+
+### HECHO
+- [x] El producto de la puntera sin cargo (Planes AS) ahora sale del encabezado de la hoja `Puntera` del Excel `sincargos<mes>.xlsx`, no está cableado. Cambia de "El Cazador" a "Los Arboles" solo. `generar_datasets_acum.py` (`_cargar_puntera_mes` devuelve producto + columna `pt_producto`), `server_orbit.py` (endpoints pasan `pt_producto`), `portal.html` (muestra `c.pt_producto`). Validado con Playwright.
+
+### PENDIENTE
+- [ ] **Commitear + pushear** `generar_datasets_acum.py`, `server_orbit.py`, `PAV MATINAL PE_A FLOR/portal.html`, `mod_planes_as.csv`, `mod_sincargos_envios.csv` a Render.
+- [ ] Recordatorio para el negocio: el nombre del producto de puntera en el Excel debe coincidir con cómo aparece en el `Articulo` del ERP (ej. "Los Arboles"). Si usan un nombre que el ERP escribe distinto, el enviado no se detecta.
+
 ## Sesion 2026-07-23 - Descartar alertas (que no se acumulen)
 
 ### HECHO

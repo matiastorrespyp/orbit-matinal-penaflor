@@ -5,10 +5,13 @@
 519,escala,Smirnoff Flavours,2026-07-21,6
 538,escala,Alaris,2026-07-22,6
 538,escala,Smirnoff Flavours,2026-07-22,6
+596,escala,Alaris,2026-07-23,12
+596,escala,Smirnoff Flavours,2026-07-23,6
 692,escala,Smirnoff Flavours,2026-07-08,6
 769,escala,Alaris,2026-07-22,24
 769,escala,Alma Mora,2026-07-22,6
 769,escala,Smirnoff Flavours,2026-07-22,6
+917,escala,Smirnoff Flavours,2026-07-23,6
 1006,escala,Alaris,2026-07-20,24
 1006,escala,Alma Mora,2026-07-20,6
 1006,escala,Smirnoff Flavours,2026-07-20,6
@@ -48,10 +51,13 @@
 30044,escala,Alaris,2026-07-22,24
 30044,escala,Alma Mora,2026-07-22,12
 30044,escala,Smirnoff Flavours,2026-07-22,6
+30056,escala,Alaris,2026-07-23,6
+30056,escala,Smirnoff Flavours,2026-07-23,6
 30063,escala,Alaris,2026-07-20,24
 30063,escala,Smirnoff Flavours,2026-07-20,6
 519,plan_frio,Six Pack Smirnoff ICE,2026-07-21,6
 538,plan_frio,Six Pack Smirnoff ICE,2026-07-22,6
+596,plan_frio,Six Pack Smirnoff ICE,2026-07-23,6
 769,plan_frio,Six Pack Smirnoff ICE,2026-07-22,6
 1006,plan_frio,Six Pack Smirnoff ICE,2026-07-20,6
 1089,plan_frio,Six Pack Smirnoff ICE,2026-07-22,6
@@ -65,3 +71,6 @@
 30033,plan_frio,Six Pack Smirnoff ICE,2026-07-21,6
 30044,plan_frio,Six Pack Smirnoff ICE,2026-07-22,6
 30063,plan_frio,Six Pack Smirnoff ICE,2026-07-20,6
+538,puntera,Los Arboles,2026-07-22,18
+30017,puntera,Los Arboles,2026-07-21,18
+30044,puntera,Los Arboles,2026-07-22,24
