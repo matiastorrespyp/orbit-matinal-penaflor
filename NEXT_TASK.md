@@ -1,5 +1,13 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-23 - Baja de la pantalla "Clientes Dormidos"
+
+### HECHO
+- [x] Eliminada la pantalla de gerencia **Clientes Dormidos**: front (botón de menú lateral + badge + fetch + `gDormidos()`/`descargarDormidosExcel()`) y backend (`_dormidos_payload()`, `_litros_por_unidad()`, rutas `/api/gerencia/alertas_caida` y `/export`). Validado: `ast.parse` OK, app importa con 56 rutas sin `alertas_caida`, `node --check` del JS OK, 0 referencias residuales.
+
+### PENDIENTE
+- [ ] **Commitear + pushear** `server_orbit.py` y `PAV MATINAL PE_A FLOR/portal.html` para que la baja llegue a Render (falta aprobación del usuario).
+
 ## Sesion 2026-07-20 - Cobertura acumulada vs objetivo (objccc.xlsx)
 
 ### HECHO

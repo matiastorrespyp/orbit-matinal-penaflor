@@ -1,5 +1,13 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-23 - chore(portal): baja de la pantalla "Clientes Dormidos" (gerencia)
+
+- **Pedido:** sacar la pantalla de clientes dormidos, ya no se usa.
+- **Backend (`server_orbit.py`):** eliminado el bloque completo `# ====== ALERTAS CAÍDA: clientes dormidos ======` → helper `_litros_por_unidad()`, `_dormidos_payload()` y las rutas `GET /api/gerencia/alertas_caida` y `/api/gerencia/alertas_caida/export` (~9.7 KB). `_litros_por_unidad` sólo lo usaba este bloque; `send_file`/`BytesIO` **siguen importados** porque los usa el export de Stock sin Venta.
+- **Front (`PAV MATINAL PE_A FLOR/portal.html`):** botón de menú lateral "💤 Dormidos" + su badge `gDormBadge`, el fetch `safe('/api/gerencia/alertas_caida')` de `loadRole()` (con su destructuring y `D.dormidos`), las dos asignaciones de badge en `showApp()`/`refreshAfterRole()`, el ruteo `gScreen==='dormidos'` y las funciones `gDormidos()` + `descargarDormidosExcel()` (~4.8 KB).
+- **Sin efectos sobre datos:** la pantalla era de sólo lectura sobre `historial_ventas_cliente.csv` + `ventas.csv`; no se tocó ningún input, dataset ni cálculo de otra pantalla.
+- **Validado:** `ast.parse` de `server_orbit.py` OK; import de la app OK → **56 rutas, ninguna `alertas_caida`**; `node --check` del JS de `portal.html` OK; grep de `dormido|Dormidos|gDormBadge|alertas_caida` en ambos archivos → **0 coincidencias**.
+
 ## 2026-07-21 - feat(planes_as): buscador de cliente en la pantalla Planes AS (gerencia + vendedor)
 
 - **Pedido:** un buscador en Planes AS para encontrar más rápido un cliente del listado, en ambos perfiles.

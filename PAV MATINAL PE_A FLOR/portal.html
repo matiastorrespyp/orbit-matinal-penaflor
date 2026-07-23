@@ -1120,10 +1120,6 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
         <span class="gs-ico">⚡</span>Alertas
         <span class="gs-badge" id="gAlertBadge" style="display:none">0</span>
       </div>
-      <div class="gs-item" data-sc="dormidos" onclick="gSw('dormidos',this)">
-        <span class="gs-ico">💤</span>Dormidos
-        <span class="gs-badge" id="gDormBadge" style="display:none;background:var(--wn)">0</span>
-      </div>
       <div class="gs-sec">Productos</div>
       <div class="gs-item" data-sc="innovaciones"        onclick="gSw('innovaciones',this)"><span class="gs-ico">🚀</span>Innovaciones</div>
       <div class="gs-item" data-sc="planes_as"           onclick="gSw('planes_as',this)"><span class="gs-ico">🏆</span>Planes AS</div>
@@ -1363,8 +1359,6 @@ function refreshAfterRole(){
   try{
     const altasN=(D.al||[]).filter(a=>a.prioridad==='alta').length;
     if(altasN){ const b=document.getElementById('gAlertBadge'); if(b){ b.textContent=altasN; b.style.display=''; } }
-    const dormN=D.dormidos?.resumen?.total_dormidos||0;
-    if(dormN){ const b=document.getElementById('gDormBadge'); if(b){ b.textContent=dormN; b.style.display='inline-flex'; } }
     if(userData?.rol==='gerencia') gRender(); else vRenderAll();
   }catch(e){}
 }
@@ -1415,7 +1409,7 @@ async function loadRole(){
     if(planFrizzeV) D.plan_frizze_v=planFrizzeV;
   }
   if(userData?.rol==='gerencia'){
-    const [cccEmp,onceTit,onceTitDia,inov,cobAcum,t11Acum,inovTot,plasAS,sellLitros,accRank,dormidos,planFrizzeG,incentivoDadaG,stockSinVentaG]=await Promise.all([
+    const [cccEmp,onceTit,onceTitDia,inov,cobAcum,t11Acum,inovTot,plasAS,sellLitros,accRank,planFrizzeG,incentivoDadaG,stockSinVentaG]=await Promise.all([
       safe('/api/gerencia/ccc_empresa'),
       safe('/api/gerencia/once_titulares'),
       safe('/api/gerencia/once_titulares_zona?dia='+(currentDay||'')),
@@ -1426,7 +1420,6 @@ async function loadRole(){
       safe('/api/gerencia/planes_as'),
       safe('/api/gerencia/sellout_litros'),
       safe('/api/gerencia/acciones_mes'),
-      safe('/api/gerencia/alertas_caida'),
       safe('/api/gerencia/plan_frizze'),
       safe('/api/gerencia/incentivo_dada'),
       safe('/api/gerencia/stock_sin_venta')
@@ -1441,7 +1434,6 @@ async function loadRole(){
     if(plasAS)      D.planes_as_g=plasAS;
     if(sellLitros)  D.sellout_litros=sellLitros;
     if(accRank)     D.acc_mes=accRank;
-    if(dormidos)    D.dormidos=dormidos;
     if(planFrizzeG) D.plan_frizze_g=planFrizzeG;
     if(incentivoDadaG) D.incentivo_dada_g=incentivoDadaG;
     if(stockSinVentaG) D.stock_sin_venta=stockSinVentaG;
@@ -1481,8 +1473,6 @@ function showApp(){
   }
   const altasN=(D.al||[]).filter(a=>a.prioridad==='alta').length;
   if(altasN){ const b=document.getElementById('gAlertBadge'); b.textContent=altasN; b.style.display=''; }
-  const dormN=D.dormidos?.resumen?.total_dormidos||0;
-  if(dormN){ const b=document.getElementById('gDormBadge'); if(b){ b.textContent=dormN; b.style.display='inline-flex'; } }
   if(userData.rol==='gerencia'){
     document.getElementById('appG').style.display='flex';
     document.getElementById('gAv').textContent=ini(userData.nombre)||'G';
@@ -1582,7 +1572,6 @@ function gRender(){
   else if(gScreen==='plan_frizze')           gPlanFrizze(p);
   else if(gScreen==='incentivo_dada')        gIncentivoDada(p);
   else if(gScreen==='stock_sin_venta')       gStockSinVenta(p);
-  else if(gScreen==='dormidos')              gDormidos(p);
   else if(gScreen==='cierre_mes')            gCierreMes(p);
 }
 
@@ -4303,11 +4292,6 @@ function gAccionesComerciales(p){
 }
 
 
-/* ════ CLIENTES DORMIDOS ════ */
-function descargarDormidosExcel(){
-  // Descarga server-side (.xlsx) con el listado COMPLETO de clientes dormidos.
-  window.location.href='/api/gerencia/alertas_caida/export';
-}
 /* ════ STOCK SIN VENTA EN EL MES (gerencia) ════ */
 function _stockSinVentaRender(){
   const dat=D.stock_sin_venta;
@@ -4399,99 +4383,6 @@ function gStockSinVenta(p){
   p.innerHTML=html;
   _stockSinVentaRender();
 }
-function gDormidos(p){
-  const dat=D.dormidos;
-  const fmtARS=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
-  let html=`<div class="gph">
-    <div><div class="gph-title">Clientes Dormidos</div>
-    <div class="gph-sub">Sin compra hace más de 60 días · riesgo $ y litros</div></div>
-    <div class="gph-chips"><button class="g-prim" onclick="descargarDormidosExcel()">⬇ Descargar Excel</button></div>
-  </div>`;
-  if(!dat||!dat.resumen){
-    html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">💤</div><p>Sin datos disponibles.</p></div></div></div>`;
-    p.innerHTML=html; return;
-  }
-  const res=dat.resumen, pv=dat.por_vendedor||[], det=dat.detalle||[];
-
-  // Actualizar badge en sidebar
-  const badge=document.getElementById('gDormBadge');
-  if(badge){ badge.textContent=res.total_dormidos; badge.style.display=res.total_dormidos>0?'inline-flex':'none'; }
-
-  // KPI cards
-  html+=`<div class="krow" style="margin-bottom:16px;">
-    <div class="kcard wn">
-      <div class="kl">Clientes dormidos</div>
-      <div class="kv" style="font-size:22px;">${res.total_dormidos}</div>
-      <div class="ks" style="font-size:10px;margin-top:3px;">sin compra hace +${res.criterio_dias||60} días</div>
-    </div>
-    <div class="kcard bd">
-      <div class="kl">Riesgo en $</div>
-      <div class="kv" style="font-size:22px;">$${fmtARS(res.importe_en_riesgo)}</div>
-      <div class="ks" style="font-size:10px;margin-top:3px;">volumen $ acumulado de estos clientes</div>
-    </div>
-    <div class="kcard info">
-      <div class="kl">Riesgo en litros</div>
-      <div class="kv" style="font-size:22px;">${fmtARS(res.litros_en_riesgo)} L</div>
-      <div class="ks" style="font-size:10px;margin-top:3px;">volumen acumulado de estos clientes</div>
-    </div>
-  </div>`;
-
-  // Tabla resumen por vendedor
-  html+=`<div class="card" style="margin-bottom:14px;">
-    <div class="card-hd"><span class="card-title">💤 Dormidos por Vendedor</span></div>
-    <div class="card-body nop">
-      <table class="tbl"><thead><tr>
-        <th>Vendedor</th>
-        <th style="text-align:right">Dormidos</th>
-        <th style="text-align:right">Riesgo $ / Litros</th>
-        <th>Top 3 clientes (mayor volumen)</th>
-      </tr></thead>
-      <tbody>${pv.map(v=>{
-        const top3=v.top_clientes.slice(0,3).map(c=>`<div style="font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px;">${c.cliente_nombre} <span style="color:var(--text3)">${c.dias_sin_compra}d · $${fmtARS(c.importe_anterior)} · ${fmtARS(c.litros_anterior)}L</span></div>`).join('');
-        return `<tr>
-          <td><b>${v.vendedor_codigo}</b> <span style="font-size:11px;color:var(--text3)">${v.vendedor_nombre}</span></td>
-          <td style="text-align:right"><span class="chip wn">${v.dormidos}</span></td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums"><b>$${fmtARS(v.importe_en_riesgo)}</b><br><span style="font-size:11px;color:var(--text3)">${fmtARS(v.litros_en_riesgo)} L</span></td>
-          <td>${top3}</td>
-        </tr>`;
-      }).join('')}</tbody></table>
-    </div>
-  </div>`;
-
-  // Tabla detalle top 100 por importe
-  const topDet=det.slice(0,100);
-  const maxImp=Math.max(...topDet.map(c=>c.importe_anterior),1);
-  html+=`<div class="card">
-    <div class="card-hd">
-      <span class="card-title">📋 Detalle clientes (top ${topDet.length} por importe)</span>
-      <span class="chip">${det.length} total</span>
-    </div>
-    <div class="card-body nop">
-      <table class="tbl"><thead><tr>
-        <th>Cliente</th>
-        <th>Vendedor</th>
-        <th style="text-align:right">Últ. compra</th>
-        <th style="text-align:right">Días s/compra</th>
-        <th>Importe ant. $</th>
-        <th style="min-width:100px"></th>
-      </tr></thead>
-      <tbody>${topDet.map(c=>{
-        const pct=Math.round(c.importe_anterior/maxImp*100);
-        const urgCol=c.dias_sin_compra>=45?'bd':c.dias_sin_compra>=30?'wn':'info';
-        return `<tr>
-          <td><span style="font-size:10px;color:var(--text3)">[${c.cliente_id}]</span> ${c.cliente_nombre}</td>
-          <td style="font-size:11px;">${c.vendedor_codigo} · <span style="color:var(--text3)">${c.vendedor_nombre}</span></td>
-          <td style="text-align:right;font-size:11px;">${c.ultima_compra}</td>
-          <td style="text-align:right"><span class="chip ${urgCol}">${c.dias_sin_compra}d</span></td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums"><b>$${fmtARS(c.importe_anterior)}</b></td>
-          <td><div class="bar" style="height:5px;"><div class="bar-f ${urgCol}" style="width:${pct}%"></div></div></td>
-        </tr>`;
-      }).join('')}</tbody></table>
-    </div>
-  </div>`;
-  p.innerHTML=html;
-}
-
 /* ════ PLANES AS VENDEDOR ════ */
 function vPlanesAS(){
   const dat=D.planes_as_v;
