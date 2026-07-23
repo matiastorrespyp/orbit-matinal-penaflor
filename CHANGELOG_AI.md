@@ -1,5 +1,19 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-23 - feat(alertas): descartar alertas para que no se acumulen (gerencia)
+
+- **Pedido:** un botón dentro de la pantalla de Alertas para borrar las alertas y que no se sigan acumulando.
+- **Contexto (por qué no es un "borrar" literal):** `/api/alertas` **no persiste** alertas — las recalcula en vivo desde `ventas.csv` del mes (`_alertas_descuento_mes` + `_alertas_tope_cajas_mes`). Mientras la venta esté en el mes, la alerta reaparece. Por eso se implementó un **registro de descartadas** (mismo patrón que `alerta_seguimiento`): "ya la vi, no me la muestres más". No se borra ninguna venta.
+- **Decisión del usuario:** las descartadas se ocultan **en gerencia Y en el vendedor** (ambos consumen `/api/alertas`); y se ofrece **botón masivo** ("🗑 Limpiar alertas (N)") **+ ✕ por alerta**.
+- **Backend (`server_orbit.py`):**
+  - Nueva tabla `alerta_descartada(clave, autor, resumen, descartada_at)` en `init_db()`.
+  - `_alerta_clave(a)`: clave estable = `mes | tipo | vendedor | cliente | articulo | fecha_pedido`. **Incluye el mes** (YYYY-MM) para que el descarte NO se herede al mes siguiente, y **la fecha del pedido** para que una infracción nueva en otro día vuelva a alertar. En `descuento` agrega la magnitud (`%aplicado/neto/cant`) porque un mismo artículo puede tener dos líneas distintas el mismo día (descartar una no tapa la otra); en `tope` NO, porque es un acumulado del mes que si no reaparecería cada día.
+  - `_alertas_descartadas()`: set de claves (tolera tabla inexistente → no filtra).
+  - `/api/alertas` ahora adjunta `clave_descarte` a cada alerta y filtra las descartadas.
+  - Nueva ruta `POST /api/alertas/descartar` (body `{claves, autor, resumenes}`), UPSERT idempotente; 400 si faltan claves.
+- **Front (`PAV MATINAL PE_A FLOR/portal.html`, `gAlertas`):** botón masivo en el encabezado (con `confirm` explicando que se oculta también al vendedor y que una infracción nueva reaparece), ✕ por fila, `descartarAlerta()`/`descartarTodasAlertas()` que hacen el POST, sacan la alerta de `D.al`, re-renderizan y actualizan el badge del sidebar.
+- **Validado sobre copia de `orbit.db`** (`ORBIT_DB_PATH` → scratchpad, DB operativa intacta): endpoint 878 alertas → 875/877 claves únicas, las 2 colisiones reales eran líneas distintas del mismo artículo/día (montos distintos) → se agregó la magnitud a la clave para no taparlas. Playwright gerencia: ✕ individual 878→877, masivo → "Sin alertas activas hoy", badge oculto; **V8 (vendedor) ve 0** tras el descarte. Sin errores de consola. `ast.parse` + `node --check` OK.
+
 ## 2026-07-23 - chore(portal): baja de la pantalla "Clientes Dormidos" (gerencia)
 
 - **Pedido:** sacar la pantalla de clientes dormidos, ya no se usa.

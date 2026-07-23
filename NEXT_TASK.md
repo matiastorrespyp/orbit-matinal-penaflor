@@ -1,5 +1,14 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-23 - Descartar alertas (que no se acumulen)
+
+### HECHO
+- [x] Botón "🗑 Limpiar alertas (N)" + ✕ por alerta en la pantalla de Alertas (gerencia). Backend: tabla `alerta_descartada`, `POST /api/alertas/descartar`, `/api/alertas` filtra descartadas y expone `clave_descarte`. Se oculta en gerencia **y** en el vendedor. Clave por mes+fecha → no se hereda al mes siguiente y una infracción nueva reaparece. Validado con Playwright sobre copia de la DB.
+
+### PENDIENTE
+- [ ] **Commitear + pushear** `server_orbit.py` y `PAV MATINAL PE_A FLOR/portal.html` a Render (junto con la baja de Dormidos si aún no se hizo).
+- [ ] La tabla `alerta_descartada` se crea sola en `init_db()` al arrancar; en Render aparece en el próximo deploy. Nada que migrar a mano.
+
 ## Sesion 2026-07-23 - Baja de la pantalla "Clientes Dormidos"
 
 ### HECHO

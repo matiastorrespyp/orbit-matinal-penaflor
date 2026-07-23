@@ -2462,15 +2462,17 @@ async function gPlanificacion(p){
 
 /* — Alertas gerencial — */
 let gAlSegKeys={};   // idx -> clave (vendedor|cliente|articulo) para el seguimiento gerencial
+let gAlDescKeys={};  // idx -> clave_descarte (del backend) para descartar la alerta
 function gAlertas(p){
   const al=D.al||[];
   const alta=al.filter(a=>a.prioridad==='alta');
   const media=al.filter(a=>a.prioridad==='media'||a.prioridad==='normal');
   const otros=al.filter(a=>!['alta','media','normal'].includes(a.prioridad));
-  gAlSegKeys={}; let _si=0;
+  gAlSegKeys={}; gAlDescKeys={}; let _si=0;
   let html=`<div class="gph">
     <div><div class="gph-title">Alertas Comerciales</div><div class="gph-sub">Copiloto ORBIT · ${al.length} alertas activas · escribí al lado de cada una si fue vista y hablada con el vendedor</div></div>
-    <div class="gph-chips"><span class="chip bd">${alta.length} altas</span><span class="chip wn">${media.length} medias</span></div>
+    <div class="gph-chips"><span class="chip bd">${alta.length} altas</span><span class="chip wn">${media.length} medias</span>
+      ${al.length?`<button class="g-prim" id="alClearBtn" onclick="descartarTodasAlertas()">🗑 Limpiar alertas (${al.length})</button>`:''}</div>
   </div>`;
   if(!al.length){ html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">✅</div><p>Sin alertas activas hoy.</p></div></div></div>`; }
   const rg=(items,label,cls)=>{
@@ -2481,7 +2483,8 @@ function gAlertas(p){
         ${items.slice(0,30).map(a=>{
           const idx=_si++;
           gAlSegKeys[idx]=`${a.vendedor_id||''}|${a.cliente_id||''}|${a.articulo||''}`;
-          return `<div class="arow">
+          gAlDescKeys[idx]=a.clave_descarte||'';
+          return `<div class="arow" id="arow_${idx}">
           <div class="adot ${a.prioridad||'baja'}"></div>
           <div class="abody">
             <div class="atitle">${a.cliente_nombre||a.titulo||'Sin nombre'} <span style="font-size:10px;color:var(--text3);font-family:var(--f-mono);">[${a.cliente_id||'–'}]</span> <span class="chip" style="font-size:9px;color:${CV[a.vendedor_id]||'var(--text2)'};">${a.vendedor_id||''}</span>${a.fecha_carga?` <span style="font-size:9px;color:var(--text3);font-family:var(--f-mono);">📅 ${a.fecha_carga}</span>`:''}</div>
@@ -2493,6 +2496,7 @@ function gAlertas(p){
             </div>
           </div>
           <span class="chip ${cls}" style="flex-shrink:0;font-size:9px;">${(a.prioridad||'info').toUpperCase()}</span>
+          <button title="Descartar esta alerta" onclick="descartarAlerta(${idx})" style="flex-shrink:0;margin-left:6px;padding:4px 8px;font-size:12px;line-height:1;border:1px solid var(--bs);border-radius:7px;background:transparent;color:var(--text3);cursor:pointer;">✕</button>
         </div>`;}).join('')}
       </div>
     </div>`;
@@ -2500,6 +2504,53 @@ function gAlertas(p){
   html+=rg(alta,'⚡ Prioridad Alta','bd')+rg(media,'⚠️ Prioridad Media','wn')+rg(otros,'📋 Sin clasificar','');
   p.innerHTML=html;
   _cargarSeguimientoAlertas();
+}
+
+/* Descartar alertas: no borra ninguna venta, registra en el server que ya fueron revisadas
+   para que dejen de mostrarse (en gerencia y en el vendedor). Una infracción nueva en otra
+   fecha vuelve a alertar. */
+async function _descartarClaves(claves,resumenes){
+  const r=await fetch('/api/alertas/descartar',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({claves:claves,resumenes:resumenes||{},autor:(userData&&userData.nombre)||'Gerencia'})});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return await r.json();
+}
+function _refrescarBadgeAlertas(){
+  const b=document.getElementById('gAlertBadge'); if(!b) return;
+  const n=(D.al||[]).filter(a=>a.prioridad==='alta').length;
+  b.textContent=n; b.style.display=n?'':'none';
+}
+async function descartarAlerta(idx){
+  const clave=gAlDescKeys[idx];
+  if(!clave){ alert('Esta alerta no tiene clave de descarte (recargá la pantalla).'); return; }
+  const row=document.getElementById('arow_'+idx);
+  if(row) row.style.opacity='.4';
+  try{
+    await _descartarClaves([clave]);
+    D.al=(D.al||[]).filter(a=>a.clave_descarte!==clave);
+    gRender(); _refrescarBadgeAlertas();
+  }catch(e){
+    if(row) row.style.opacity='';
+    alert('No se pudo descartar la alerta: '+e.message);
+  }
+}
+async function descartarTodasAlertas(){
+  const al=D.al||[];
+  const claves=al.map(a=>a.clave_descarte).filter(Boolean);
+  if(!claves.length){ alert('No hay alertas para descartar.'); return; }
+  if(!confirm(`Descartar las ${claves.length} alertas actuales?\n\nDejan de mostrarse acá y también al vendedor. No se borra ninguna venta: si el cliente vuelve a excederse otro día, la alerta aparece de nuevo.`)) return;
+  const btn=document.getElementById('alClearBtn');
+  if(btn){ btn.disabled=true; btn.textContent='Descartando…'; }
+  const resumenes={};
+  al.forEach(a=>{ if(a.clave_descarte) resumenes[a.clave_descarte]=`${a.vendedor_id||''} ${a.cliente_nombre||''} — ${(a.detalle||'').substring(0,120)}`; });
+  try{
+    await _descartarClaves(claves,resumenes);
+    D.al=al.filter(a=>!claves.includes(a.clave_descarte));
+    gRender(); _refrescarBadgeAlertas();
+  }catch(e){
+    if(btn){ btn.disabled=false; btn.textContent='🗑 Limpiar alertas ('+claves.length+')'; }
+    alert('No se pudieron descartar las alertas: '+e.message);
+  }
 }
 
 async function _cargarSeguimientoAlertas(){

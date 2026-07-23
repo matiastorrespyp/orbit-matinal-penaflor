@@ -92,6 +92,11 @@ def init_db():
     # Seguimiento gerencial de alertas: nota por alerta (clave = vendedor|cliente|articulo)
     c.execute("""CREATE TABLE IF NOT EXISTS alerta_seguimiento(
         clave TEXT PRIMARY KEY, mensaje TEXT, autor TEXT, updated_at TEXT)""")
+    # Alertas descartadas por gerencia: se ocultan en gerencia Y en el vendedor.
+    # No se borra el dato de origen (la alerta se recalcula siempre desde ventas.csv);
+    # esta tabla es el registro de "ya la vi, no me la muestres más". Ver _alerta_clave().
+    c.execute("""CREATE TABLE IF NOT EXISTS alerta_descartada(
+        clave TEXT PRIMARY KEY, autor TEXT, resumen TEXT, descartada_at TEXT)""")
     conn.commit()
     conn.close()
 
@@ -1537,6 +1542,40 @@ def _v3_clientes_tradicional():
     return out
 
 
+def _alerta_clave(a):
+    """Clave estable de una alerta, para poder descartarla.
+    Incluye el mes (YYYY-MM) para que el descarte NO se herede al mes siguiente, y la fecha
+    del pedido: si el mismo cliente vuelve a excederse otro día, es una alerta nueva y se
+    muestra igual.
+    En 'descuento' se agrega la magnitud (% aplicado, neto, cantidad) porque un mismo
+    artículo puede tener DOS líneas el mismo día con importes distintos: son infracciones
+    distintas y descartar una no debe tapar la otra. Líneas idénticas comparten clave, que
+    es lo correcto: son indistinguibles.
+    En 'tope' NO se incluye la magnitud a propósito: es un acumulado del mes y si sumara
+    cajas volvería a aparecer todos los días — justo lo que se quiere evitar. Una por
+    cliente + acción + mes."""
+    mes = pd.Timestamp.today().strftime("%Y-%m")
+    partes = [mes, str(a.get("tipo") or ""), str(a.get("vendedor_id") or ""),
+              str(a.get("cliente_id") or ""), str(a.get("articulo") or ""),
+              str(a.get("fecha_pedido") or "")]
+    if str(a.get("tipo") or "") == "descuento":
+        partes.append(f"{a.get('descuento_aplicado_pct')}/{a.get('importe_neto')}/{a.get('cant_base')}")
+    return "|".join(partes)
+
+
+def _alertas_descartadas():
+    """Set de claves descartadas. Si la tabla no existe todavía, no filtra nada."""
+    try:
+        conn = sqlite3.connect(str(DB_PATH), timeout=10, check_same_thread=False)
+        try:
+            return {r[0] for r in conn.execute("SELECT clave FROM alerta_descartada")}
+        finally:
+            conn.close()
+    except Exception as e:
+        print(f"[WARN] _alertas_descartadas: {e}")
+        return set()
+
+
 @app.route("/api/alertas")
 def alertas():
     # Alertas en vivo desde el catálogo de acciones del mes (acciones_comerciales_<mes>_penaflor.csv):
@@ -1555,7 +1594,42 @@ def alertas():
             except (TypeError, ValueError):
                 return True
         data = [a for a in data if _keep(a)]
-    return jsonify(data)
+    # Descartadas por gerencia: se ocultan para todos (gerencia y vendedor consumen esta ruta).
+    descartadas = _alertas_descartadas()
+    out = []
+    for a in data:
+        a["clave_descarte"] = _alerta_clave(a)
+        if a["clave_descarte"] not in descartadas:
+            out.append(a)
+    return jsonify(out)
+
+
+@app.route("/api/alertas/descartar", methods=["POST"])
+def alertas_descartar():
+    """Descarta alertas por clave (`clave_descarte` de /api/alertas) para que dejen de
+    mostrarse. No borra ninguna venta: sólo registra que ya fueron revisadas.
+    Body: {"claves": [...], "autor": "Gerencia", "resumenes": {clave: texto}}"""
+    d = request.get_json(silent=True) or {}
+    claves = [str(k).strip() for k in (d.get("claves") or []) if str(k).strip()]
+    if not claves:
+        return jsonify({"error": "falta 'claves'"}), 400
+    autor = str(d.get("autor", "Gerencia")).strip() or "Gerencia"
+    resumenes = d.get("resumenes") or {}
+    ts = _now_ar()
+    conn = sqlite3.connect(str(DB_PATH), timeout=10, check_same_thread=False)
+    try:
+        conn.executemany(
+            """INSERT INTO alerta_descartada(clave, autor, resumen, descartada_at)
+               VALUES(?,?,?,?)
+               ON CONFLICT(clave) DO UPDATE SET autor=excluded.autor,
+                   resumen=excluded.resumen, descartada_at=excluded.descartada_at""",
+            [(k, autor, str(resumenes.get(k, ""))[:300], ts) for k in claves])
+        conn.commit()
+        total = conn.execute("SELECT COUNT(*) FROM alerta_descartada").fetchone()[0]
+    finally:
+        conn.close()
+    return jsonify({"ok": True, "descartadas": len(claves), "total_descartadas": total,
+                    "autor": autor, "descartada_at": ts})
 
 
 # ====== SEGUIMIENTO GERENCIAL DE ALERTAS ======
