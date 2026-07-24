@@ -1,5 +1,8 @@
 ﻿cliente_id,categoria,producto,fecha,cajas
+223,escala,Alma Mora,2026-07-24,12
+223,escala,Smirnoff Flavours,2026-07-24,12
 301,escala,Frizze,2026-07-02,18
+390,escala,Smirnoff Flavours,2026-07-24,6
 476,escala,Smirnoff Flavours,2026-07-20,12
 519,escala,Alaris,2026-07-21,18
 519,escala,Smirnoff Flavours,2026-07-21,6
@@ -12,6 +15,7 @@
 769,escala,Alma Mora,2026-07-22,6
 769,escala,Smirnoff Flavours,2026-07-22,6
 917,escala,Smirnoff Flavours,2026-07-23,6
+997,escala,Alaris,2026-07-24,6
 1006,escala,Alaris,2026-07-20,24
 1006,escala,Alma Mora,2026-07-20,6
 1006,escala,Smirnoff Flavours,2026-07-20,6
@@ -19,6 +23,9 @@
 1089,escala,Alaris,2026-07-22,24
 1089,escala,Alma Mora,2026-07-22,6
 1089,escala,Smirnoff Flavours,2026-07-22,6
+1093,escala,Alaris,2026-07-24,24
+1093,escala,Alma Mora,2026-07-24,6
+1093,escala,Smirnoff Flavours,2026-07-24,6
 1320,escala,Smirnoff Flavours,2026-07-22,18
 1368,escala,Smirnoff Flavours,2026-07-08,6
 1443,escala,Frizze,2026-07-01,18
@@ -26,6 +33,9 @@
 1447,escala,Alma Mora,2026-07-10,12
 1449,escala,Alaris,2026-07-13,12
 1449,escala,Smirnoff Flavours,2026-07-13,12
+8010,escala,Alaris,2026-07-24,18
+8010,escala,Alma Mora,2026-07-24,6
+8010,escala,Smirnoff Flavours,2026-07-24,6
 8125,escala,Smirnoff Flavours,2026-07-21,6
 8139,escala,Alaris,2026-07-21,24
 8139,escala,Alma Mora,2026-07-21,6
@@ -55,12 +65,15 @@
 30056,escala,Smirnoff Flavours,2026-07-23,6
 30063,escala,Alaris,2026-07-20,24
 30063,escala,Smirnoff Flavours,2026-07-20,6
+390,plan_frio,Six Pack Smirnoff ICE,2026-07-24,6
 519,plan_frio,Six Pack Smirnoff ICE,2026-07-21,6
 538,plan_frio,Six Pack Smirnoff ICE,2026-07-22,6
 596,plan_frio,Six Pack Smirnoff ICE,2026-07-23,6
 769,plan_frio,Six Pack Smirnoff ICE,2026-07-22,6
 1006,plan_frio,Six Pack Smirnoff ICE,2026-07-20,6
 1089,plan_frio,Six Pack Smirnoff ICE,2026-07-22,6
+1093,plan_frio,Six Pack Smirnoff ICE,2026-07-24,6
+8010,plan_frio,Six Pack Smirnoff ICE,2026-07-24,6
 8125,plan_frio,Six Pack Smirnoff ICE,2026-07-21,6
 8139,plan_frio,Six Pack Smirnoff ICE,2026-07-21,6
 8230,plan_frio,Six Pack Smirnoff ICE,2026-07-22,6
