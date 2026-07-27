@@ -1,5 +1,15 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-27 - fix(cierre): stock.xlsx y dadatinto.csv nunca llegaban a Render
+
+- **Síntoma:** los dos archivos figuraban permanentemente como ` M` en `git status`; en Render, Stock sin Venta y el Incentivo Dada servían datos viejos. El cierre diario corría **en verde** todos los días.
+- **Causa raíz:** `CIERRE_DIA_ORBIT.bat` no hace `git add .` — tiene un **allowlist explícito** de ~35 rutas (líneas 153-187) y ninguna de las dos estaba. En Render el disco **es el repo**, y `server_orbit.py` los lee en vivo (`:3852` Stock sin Venta, `:7230` Incentivo Dada) → lo no commiteado no existe allá.
+- **Por qué fue silencioso:** `check_git_cierre.py` clasifica todo `01_INPUTS/**` como "operativo permitido" → los veía modificados, imprimía `[OK] Cierre habilitado` y seguía. El guard bloquea **código colado**, no verifica que los inputs viajen. "Permitido que esté modificado" ≠ "va a llegar a Render".
+- **Impacto medido:** `dadatinto.csv` en Render = 58 filas hasta el **2026-06-30** (vs 77 hasta el 24/07 en local) → el Incentivo Dada mostraba **junio**, sin julio. `stock.xlsx` = 217 filas del commit del 08/07 vs 222 locales.
+- **Solución:** agregadas `git add "01_INPUTS/Stock/stock.xlsx"` y `git add "01_INPUTS/dadatinto.csv"` al allowlist del `.bat` (tras `clientes.xlsx`) + commit de puesta al día para que Render no espere al próximo cierre.
+- **Validado:** `.bat` sigue 100% CRLF (271 LF / 271 CRLF, cero LF sueltos) — el chequeo válido es contar bytes con Python, `cat -A` vía `sed` de Git Bash no muestra el `^M` aunque esté.
+- **Regla:** todo input que `server_orbit.py` lea del disco debe estar en el allowlist del `.bat`; al sumar una pantalla con input nuevo, la ruta va en el mismo commit. Ficha `ERR-014` en Obsidian.
+
 ## 2026-07-27 - chore(portal): baja de la tarjeta "Sin Comp. Mes" del dashboard
 
 - **Pedido:** sacar del dashboard (gerencia) la tarjeta **Sin Comp. Mes**.
