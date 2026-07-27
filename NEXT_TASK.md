@@ -1,12 +1,22 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-27 - Baja de la tarjeta "Sin Comp. Mes" (dashboard gerencia)
+
+### HECHO
+- [x] Eliminada la tarjeta "Sin Comp. Mes" de la fila de KPIs del dashboard en `PAV MATINAL PE_A FLOR/portal.html`. Quedan 3 tarjetas; el `.krow` es auto-fit y se reacomoda solo. Sin cambios de backend.
+
+- [x] Commiteado y pusheado a `master` → Render auto-deploy.
+
+### PENDIENTE
+- Nada.
+
 ## Sesion 2026-07-23 - Puntera sin cargo Excel-driven (Cazador → Los Arboles)
 
 ### HECHO
 - [x] El producto de la puntera sin cargo (Planes AS) ahora sale del encabezado de la hoja `Puntera` del Excel `sincargos<mes>.xlsx`, no está cableado. Cambia de "El Cazador" a "Los Arboles" solo. `generar_datasets_acum.py` (`_cargar_puntera_mes` devuelve producto + columna `pt_producto`), `server_orbit.py` (endpoints pasan `pt_producto`), `portal.html` (muestra `c.pt_producto`). Validado con Playwright.
 
 ### PENDIENTE
-- [ ] **Commitear + pushear** `generar_datasets_acum.py`, `server_orbit.py`, `PAV MATINAL PE_A FLOR/portal.html`, `mod_planes_as.csv`, `mod_sincargos_envios.csv` a Render.
+- [x] Commiteado y pusheado (`bc50e5e`). Verificado el 27/07: `origin/master` al día.
 - [ ] Recordatorio para el negocio: el nombre del producto de puntera en el Excel debe coincidir con cómo aparece en el `Articulo` del ERP (ej. "Los Arboles"). Si usan un nombre que el ERP escribe distinto, el enviado no se detecta.
 
 ## Sesion 2026-07-23 - Descartar alertas (que no se acumulen)
@@ -15,7 +25,7 @@
 - [x] Botón "🗑 Limpiar alertas (N)" + ✕ por alerta en la pantalla de Alertas (gerencia). Backend: tabla `alerta_descartada`, `POST /api/alertas/descartar`, `/api/alertas` filtra descartadas y expone `clave_descarte`. Se oculta en gerencia **y** en el vendedor. Clave por mes+fecha → no se hereda al mes siguiente y una infracción nueva reaparece. Validado con Playwright sobre copia de la DB.
 
 ### PENDIENTE
-- [ ] **Commitear + pushear** `server_orbit.py` y `PAV MATINAL PE_A FLOR/portal.html` a Render (junto con la baja de Dormidos si aún no se hizo).
+- [x] Commiteado y pusheado (`254d425`). Verificado el 27/07: `origin/master` al día.
 - [ ] La tabla `alerta_descartada` se crea sola en `init_db()` al arrancar; en Render aparece en el próximo deploy. Nada que migrar a mano.
 
 ## Sesion 2026-07-23 - Baja de la pantalla "Clientes Dormidos"
@@ -24,7 +34,7 @@
 - [x] Eliminada la pantalla de gerencia **Clientes Dormidos**: front (botón de menú lateral + badge + fetch + `gDormidos()`/`descargarDormidosExcel()`) y backend (`_dormidos_payload()`, `_litros_por_unidad()`, rutas `/api/gerencia/alertas_caida` y `/export`). Validado: `ast.parse` OK, app importa con 56 rutas sin `alertas_caida`, `node --check` del JS OK, 0 referencias residuales.
 
 ### PENDIENTE
-- [ ] **Commitear + pushear** `server_orbit.py` y `PAV MATINAL PE_A FLOR/portal.html` para que la baja llegue a Render (falta aprobación del usuario).
+- [x] Commiteado y pusheado (`d26fdb6`). Verificado el 27/07: `origin/master` al día.
 
 ## Sesion 2026-07-20 - Cobertura acumulada vs objetivo (objccc.xlsx)
 

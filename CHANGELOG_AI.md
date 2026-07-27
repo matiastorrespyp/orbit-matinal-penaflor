@@ -1,5 +1,12 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-27 - chore(portal): baja de la tarjeta "Sin Comp. Mes" del dashboard
+
+- **Pedido:** sacar del dashboard (gerencia) la tarjeta **Sin Comp. Mes**.
+- **Cambio:** `PAV MATINAL PE_A FLOR/portal.html` — eliminado el 4º `kcard wn` de la fila de KPIs (contaba `D.cli` con `compra_mes_flag` 0/null, subtítulo "Zona del día · sin compra este mes"). Solo front, sin tocar backend ni datasets: el payload sigue trayendo `D.cli` igual, que lo usan otras pantallas.
+- **Layout:** `.krow` es `repeat(auto-fit,minmax(162px,1fr))`, así que las 3 tarjetas restantes (Acumulado compañía, Tendencia %, Clientes del Día) se reparten el ancho sin hueco. El dato no se pierde: "Clientes del Día" ya muestra `⚠ N sin compra mes` en su pie sobre el mismo universo.
+- **Validado:** `node --check` sobre el bloque `<script>` del portal → OK.
+
 ## 2026-07-23 - fix(planes_as): la puntera sin cargo toma el producto del Excel (Cazador → Los Arboles)
 
 - **Pedido:** en Planes AS la puntera sin cargo figuraba **El Cazador**; el usuario cambió el producto a **Los Arboles** en el Excel fuente y al actualizar no se reflejaba.
