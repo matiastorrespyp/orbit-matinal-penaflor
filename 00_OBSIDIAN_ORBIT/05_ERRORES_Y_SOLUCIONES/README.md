@@ -151,16 +151,3 @@ Registro de errores ya diagnosticados, con causa raíz y solución aplicada o pe
 **Estado:** ✅ Resuelto. El código `20305` se dio de alta el 2026-07-14 en `09_CONFIG/maestro_04D_productos.csv` (Vinos del año / Medio / Etiqueta Marron Suter). Pendiente: subir el export de productos **todos los meses** a `RAW_PRODUCTOS/`.
 
 > **Ojo — altas a mano:** el alta se hace en `09_CONFIG/maestro_04D_productos.csv` (es el que lee `server_orbit.py`). Hasta el 2026-07-14 `generar_datasets_acum.py` leía el **xlsx**, así que un alta en el CSV **no llegaba a los datasets**. Ya se unificó: ambos leen el CSV.
-
----
-
-## ERR-014 — Inputs actualizados a diario que NUNCA llegaban a Render (fuera del allowlist del cierre)
-
-**Detectado:** 2026-07-27 (el usuario preguntó por qué `stock.xlsx` y `dadatinto.csv` figuraban modificados hace días).
-**Síntoma:** los dos archivos aparecían **permanentemente como ` M`** en `git status`, sesión tras sesión. En Render, la pantalla **Stock sin Venta** y el **Incentivo Dada** mostraban datos viejos sin que nadie lo notara. **El cierre diario corría en verde todos los días.**
-**Causa raíz:** `CIERRE_DIA_ORBIT.bat` **no hace `git add .`** — tiene un **allowlist explícito** de ~35 rutas (líneas 153-187). `01_INPUTS/Stock/stock.xlsx` y `01_INPUTS/dadatinto.csv` **no estaban en la lista**, así que el cierre nunca los stageaba. Se actualizaban en la PC del usuario y se quedaban ahí para siempre.
-**Por qué fue silencioso (lo importante):** `check_git_cierre.py` clasifica todo `01_INPUTS/**` como **"operativo permitido"** → los veía modificados, imprimía `[OK]` y `Cierre habilitado`, y seguía de largo. El guard está diseñado para **bloquear código colado** (`.py`, `.bat`, `portal.html`), no para verificar que los inputs efectivamente se commiteen. Los dos conceptos se parecen y no son lo mismo: *"permitido que esté modificado"* ≠ *"va a viajar a Render"*.
-**Impacto medido:** `dadatinto.csv` en Render tenía **58 filas hasta el 2026-06-30** vs 77 hasta el 24/07 en local → el Incentivo Dada mostraba **junio**, sin nada de julio. `stock.xlsx`: 217 filas (commit del 08/07) vs 222 locales.
-**Solución aplicada:** las dos rutas agregadas al allowlist de `CIERRE_DIA_ORBIT.bat` + commit de puesta al día. De ahora en más entran solas en cada cierre.
-**Cómo detectarlo / prevención:** cualquier input que `server_orbit.py` lea **en vivo del disco** tiene que estar en el allowlist del `.bat`, porque **en Render el disco es el repo**. Chequeo rápido: `git status --short 01_INPUTS/` — si un archivo aparece modificado **después** de un cierre exitoso, no está en la lista y no está llegando al portal. Al agregar una pantalla que lee un input nuevo, **agregar la ruta al `.bat` en el mismo commit**.
-**Lección:** un allowlist es seguro pero **falla en silencio por omisión**. El cierre en verde sólo garantiza que no se coló código, **no** que todos los datos viajaron.

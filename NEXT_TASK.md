@@ -1,15 +1,5 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
-## Sesion 2026-07-27 - stock.xlsx y dadatinto.csv no llegaban a Render (ERR-014)
-
-### HECHO
-- [x] Diagnostico: `CIERRE_DIA_ORBIT.bat` usa allowlist de `git add` y los dos archivos no estaban → nunca viajaban. `check_git_cierre.py` los daba por "operativo permitido" y el cierre corria en verde. Render servia `dadatinto.csv` hasta el 30/06 (Incentivo Dada mostraba junio) y `stock.xlsx` del 08/07.
-- [x] Agregadas las 2 rutas al allowlist del `.bat` (CRLF verificado) + commit de puesta al dia.
-
-### PENDIENTE
-- [ ] **Revisar el resto de los inputs que el server lee en vivo** y confirmar que todos esten en el allowlist del `.bat`. Este bug es por omision y puede haber mas casos (candidatos a chequear: `INNOVACIONES/`, `RAW_PRODUCTOS/productos<mes>.xlsx`, `planfrizze.xlsx`, `sincargos<mes>.xlsx`, `escala_*.xlsx`, `OBJSELLOUT.xlsx`, `DADAVERANOOBJ.xlsx`).
-- [ ] Evaluar si `check_git_cierre.py` deberia **avisar** (no bloquear) cuando queda un `01_INPUTS/**` modificado y sin stagear al terminar el cierre — seria la deteccion automatica de este tipo de fallo.
-
 ## Sesion 2026-07-27 - Baja de la tarjeta "Sin Comp. Mes" (dashboard gerencia)
 
 ### HECHO
