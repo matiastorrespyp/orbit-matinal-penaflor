@@ -159,6 +159,12 @@ git add "01_INPUTS/ventas-clubfaro.csv"
 git add "01_INPUTS/incentivo_club_faro*.xlsx"
 git add "01_INPUTS/INNOVACIONES/Innovaciones.xlsx"
 git add "01_INPUTS/Planes AASS"
+REM Stock de los dos depositos: los lee la tarjeta Dias de Stock (pantalla Semanal)
+REM y Stock sin Venta. Sin estas dos lineas el cierre no los publica y Render
+REM sigue mostrando la foto del ultimo commit manual (mismo patron que ERR-014).
+REM MPA.xlsx NO va: es una lista fija, no cambia con el cierre diario.
+git add "01_INPUTS/Stock/stock.xlsx"
+git add "01_INPUTS/Stock/stock_VSB_Cuyo.xlsx"
 git add "02_HISTORY/historial_ventas_cliente.csv"
 git add "02_HISTORY/acumulado_resultado_historico.csv"
 git add "04_DATASETS_ORBIT/clientes_dia.csv"

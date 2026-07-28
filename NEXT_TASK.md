@@ -7,9 +7,11 @@
 - [x] Cada tarjeta: acento propio (magenta / azul), KPIs, **resumen de los productos bajo 30 días** arriba y **desplegable** con el detalle individual abajo. Tabs y desplegable independientes por tarjeta.
 - [x] `_stock_disponible(archivo)` parametrizado (Stock sin Venta sigue igual con el default).
 
+- [x] `CIERRE_DIA_ORBIT.bat`: los dos archivos de stock al allowlist, así el cierre diario los publica y Render no queda con una foto vieja. `MPA.xlsx` afuera a propósito (lista fija).
+
 ### PENDIENTE
 - [ ] Confirmar si **Stock sin Venta** debería contemplar también el depósito VSB Cuyo (hoy sólo mira `stock.xlsx`).
-- [ ] **Sin commitear** — falta aprobación.
+- [ ] Cuando el negocio actualice el plan AASS: `01_INPUTS/MPA/MPA.xlsx` **no lo publica el cierre** (es lista fija), hay que commitearlo a mano y revisar `09_CONFIG/mpa_codigos.csv` en la misma pasada.
 
 ## Sesion 2026-07-28 - Tarjeta Días de Stock (11T · Innovaciones · MPA)
 

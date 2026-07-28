@@ -1,5 +1,13 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-28 - fix(cierre): los dos archivos de stock al allowlist del cierre diario
+
+- **Contexto:** `CIERRE_DIA_ORBIT.bat` no hace `git add .` sino un allowlist explícito de ~35 rutas. Ninguno de los archivos de stock estaba: el cierre nunca los publicaba, así que Render quedaba con la foto del último commit manual y la tarjeta Días de Stock (y Stock sin Venta) habría mostrado un stock viejo sin avisar. Es el patrón de ERR-014 (ver [[project_cierre_allowlist]]).
+- **Cambio:** dos líneas nuevas — `01_INPUTS/Stock/stock.xlsx` y `01_INPUTS/Stock/stock_VSB_Cuyo.xlsx` — con el comentario de por qué están.
+- **`MPA/MPA.xlsx` queda AFUERA a propósito:** es una lista fija de productos, no cambia con el cierre diario. Cuando el negocio actualice el plan AASS se commitea a mano (junto con `09_CONFIG/mpa_codigos.csv`, que hay que revisar en la misma pasada).
+- **Nota:** el 27/07 se había intentado lo mismo (`dba1dca`) y se revirtió en `0013665` por estar fuera del pedido; esta vez el usuario lo pidió explícitamente.
+- **Validado:** `check_git_cierre.py --test` → TODAS OK (`01_INPUTS/` es ruta operativa, así que el cierre no aborta). El `.bat` sigue en **CRLF puro** (275 CRLF, 0 LF sueltos) — con LF `cmd` rompe el `if/else` y el cierre no pushea, ver [[project_cierre_bat_crlf]].
+
 ## 2026-07-28 - feat(semanal): Días de Stock se parte en dos depósitos — Stock PyP y VSB Cuyo
 
 - **Pedido:** la tarjeta pasa a llamarse **Stock PyP** y se calcula sólo con los vendedores **V3, V4, V6, V8, V10**. Los otros dos (**V7, V9**) van en una tarjeta aparte, **VSB Cuyo**, con `01_INPUTS/Stock/stock_VSB_Cuyo.xlsx`. Además: resumen arriba con los productos por debajo de 30 días para detectarlos rápido, y desplegable abajo con el detalle individual.

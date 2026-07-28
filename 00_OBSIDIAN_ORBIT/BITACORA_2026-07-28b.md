@@ -120,6 +120,14 @@ Umbrales en `_DIAS_STOCK_CRITICO` / `_DIAS_STOCK_ATENCION` (15 / 30), a confirma
 - `stock_sin_venta` (217/55) y `semanal` (12 meses) siguen OK: `_stock_disponible(archivo="stock.xlsx")` mantiene el default.
 - `node --check` + `ast.parse` OK.
 
+## El allowlist del cierre (o: el reporte que se congela en silencio)
+
+`CIERRE_DIA_ORBIT.bat` no hace `git add .` sino un **allowlist explícito** de ~35 rutas, y **ninguno de los archivos de stock estaba**. Consecuencia: el commit inicial habría sido la foto de ese día y el cierre diario nunca la habría actualizado. Render seguiría sirviendo un stock viejo, sin ningún síntoma visible — los días de stock se ven perfectamente plausibles con datos de hace tres semanas. Es exactamente ERR-014 ([[project_cierre_allowlist]]).
+
+Se agregaron las dos rutas de stock. **`MPA/MPA.xlsx` queda afuera a propósito**: es una lista fija de productos, no cambia con el cierre. Cuando el negocio la actualice hay que commitearla a mano y revisar `09_CONFIG/mpa_codigos.csv` en la misma pasada (los productos nuevos van a aparecer como "sin código asignado" hasta que se mapeen — que es justamente lo que se quiere que pase).
+
+Detalle no menor: el `.bat` tiene que quedar en **CRLF puro** ([[project_cierre_bat_crlf]]). Se verificó después de editar: 275 CRLF, 0 LF sueltos. Y `check_git_cierre.py --test` pasa, porque `01_INPUTS/` ya está declarado como ruta operativa.
+
 ## Nota de método
 
 Dos veces en esta sesión el camino más rápido habría sido aceptar un dato que "parecía bien": el matcher automático de MPA y la tabla de ceros del stock roto. Los dos casos terminaban en un número plausible y falso dentro de un reporte que se usa para decidir compras. El costo de verificar (mapear 62 productos a mano, cruzar códigos contra el portfolio) fue de una sola vez; el costo de no hacerlo se habría pagado cada mañana.
