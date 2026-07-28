@@ -1,5 +1,33 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-28 - Días de Stock: dos depósitos (Stock PyP + VSB Cuyo)
+
+### HECHO
+- [x] La tarjeta se parte en dos: **Stock PyP** (`stock.xlsx`, V3·V4·V6·V8·V10) y **VSB Cuyo** (`stock_VSB_Cuyo.xlsx`, V7·V9). Cada depósito se mide contra la venta de SU ruta; no se suman. V20 queda fuera de los dos.
+- [x] Cada tarjeta: acento propio (magenta / azul), KPIs, **resumen de los productos bajo 30 días** arriba y **desplegable** con el detalle individual abajo. Tabs y desplegable independientes por tarjeta.
+- [x] `_stock_disponible(archivo)` parametrizado (Stock sin Venta sigue igual con el default).
+
+### PENDIENTE
+- [ ] Confirmar si **Stock sin Venta** debería contemplar también el depósito VSB Cuyo (hoy sólo mira `stock.xlsx`).
+- [ ] **Sin commitear** — falta aprobación.
+
+## Sesion 2026-07-28 - Tarjeta Días de Stock (11T · Innovaciones · MPA)
+
+### HECHO
+- [x] Tercera tarjeta al pie de la pantalla Semanal: días de stock por producto para los 3 universos, contra la venta del mes anterior (unidades / días operativos).
+- [x] `09_CONFIG/mpa_codigos.csv`: mapeo revisado a mano de los productos de `MPA.xlsx` al Código Art. del ERP (59 de 62; el match automático por texto se descartó por errores).
+- [x] `GET /api/gerencia/dias_stock` + `_leer_ventas_min()` factorizado desde el bloque semanal.
+
+### PENDIENTE — ACCIÓN DEL USUARIO
+- [x] ~~`01_INPUTS/Stock/stock.xlsx` no era el export de Peñaflor~~ → **resuelto 28/07**: el usuario re-exportó y ahora trae 222 códigos, todos GRUPO PEÑAFLOR SA. Revalidado OK. (El export equivocado había salido filtrado al revés: sólo proveedores que NO son Peñaflor. Vale como chequeo para la próxima: si `NombreProvedor` no dice GRUPO PEÑAFLOR, el export está mal.)
+- [ ] **3 productos de MPA.xlsx sin código asignado**, a definir por el negocio (se agregan como fila en `09_CONFIG/mpa_codigos.csv`):
+  - `Alma Mora Blend 0.75L` → ¿74437 BLEND TINTO o 74438 BLEND BLANCO?
+  - `Dada 7 Dulce 0.75L` → no hay Dada N°7 vino; ¿74473 DADA 7 ESPUMANTE ROSÉ o 74728 DADA 7 ORANGE BITTER?
+  - `Suter Etiqueta Marron Blanco 0.75L` → ¿20303 SUTER ETI MARRON NEW PIN (en proceso de baja)?
+- [ ] Confirmar los umbrales de color (hoy rojo <15 días, ámbar <30, verde ≥30) — son `_DIAS_STOCK_CRITICO` / `_DIAS_STOCK_ATENCION` en `server_orbit.py`.
+- [ ] Confirmar el criterio de las 3 agrupaciones de `MPA.xlsx` (*Antares*, *Smirnoff ICE Flavors*, *Smirnoff Flavors 700 ml*): hoy se expanden a **toda** la línea del ERP.
+- [ ] **Sin commitear** — falta aprobación. Archivos: `server_orbit.py`, `portal.html`, `09_CONFIG/mpa_codigos.csv`, `CHANGELOG_AI.md`, `NEXT_TASK.md`.
+
 ## Sesion 2026-07-28 - Pantalla Semanal (gerencia): histórico por semana + planificación del mes
 
 ### HECHO

@@ -2641,11 +2641,12 @@ def _semanal_fechas(serie):
     return fec
 
 
-def _semanal_leer(path):
-    """Lee una fuente de ventas (cualquiera de las 3) y devuelve el DataFrame mínimo
-    normalizado: cliente, fecha, imp, canal, sem, periodo. Ya filtrado a neto>0 y sin
-    vendedores excluidos. usecols: de las 57 columnas del ERP sólo se parsean 6
-    (historial_ventas.csv pesa 63 MB — leerlo entero en Render sería inviable)."""
+def _leer_ventas_min(path, cols):
+    """Lee una fuente de ventas del ERP tomando SÓLO las columnas pedidas.
+    Sirve para las 3 fuentes (ventas.csv, cierre versionado, historial): sniff del
+    separador (`;` vs `,`) y encoding en cascada. `usecols` es lo que hace esto viable
+    en Render: de las 57 columnas del ERP se parsean 4-6 (historial_ventas.csv pesa
+    63 MB y leerlo entero es inviable)."""
     if not path.exists():
         return pd.DataFrame()
     try:
@@ -2658,13 +2659,23 @@ def _semanal_leer(path):
     for enc in ("utf-8-sig", "latin-1", "windows-1252"):
         try:
             df = pd.read_csv(path, sep=sep, encoding=enc, dtype=str, quotechar='"',
-                             usecols=_SEMANAL_COLS, low_memory=False)
+                             usecols=cols, low_memory=False)
             break
         except (UnicodeDecodeError, ValueError):
             continue
     if df is None or df.empty:
         return pd.DataFrame()
     df.columns = [c.strip() for c in df.columns]
+    return df
+
+
+def _semanal_leer(path):
+    """Lee una fuente de ventas (cualquiera de las 3) y devuelve el DataFrame mínimo
+    normalizado: cliente, fecha, imp, canal, sem, periodo. Ya filtrado a neto>0 y sin
+    vendedores excluidos."""
+    df = _leer_ventas_min(path, _SEMANAL_COLS)
+    if df.empty:
+        return pd.DataFrame()
     df["imp"] = _semanal_num(df["ImporteNetoItem"])
     df["cv"]  = pd.to_numeric(df["CodVendedor"], errors="coerce")
     df["fec"] = _semanal_fechas(df["FechaComprobante"])
@@ -2969,6 +2980,290 @@ def gerencia_semanal_plan():
     _semanal_plan_export_csv()
     guardado, meta = _semanal_plan_leer(periodo)
     return jsonify({"ok": True, "periodo": periodo, "plan": guardado, "plan_meta": meta})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DÍAS DE STOCK — 11 Titulares · Innovaciones · MPA (tarjeta de la pantalla Semanal)
+# ══════════════════════════════════════════════════════════════════════════════
+# Días de stock = existencia actual / venta diaria del MES ANTERIOR (cerrado).
+#   · Venta: CantBase del mes anterior, MISMA unidad que el stock (unidades/botellas).
+#     Se suma con signo: las devoluciones vienen en negativo (TipoDeVenta "Devolución
+#     por Rechazo"/"por Canje") y tienen que netear, porque vuelven al depósito.
+#   · Divisor = días operativos del mes anterior (lun-sáb sin feriados): el depósito
+#     no despacha los domingos, así que un "día de stock" es un día que se vende.
+# Universos: 11T (matriz oficial por código), Innovaciones (Innovaciones.xlsx) y
+# MPA (01_INPUTS/MPA/MPA.xlsx + el mapeo a código de 09_CONFIG/mpa_codigos.csv).
+#
+# DOS DEPÓSITOS, DOS TARJETAS (definido por el usuario 2026-07-28). No se suman ni se
+# comparten: cada uno tiene su propio archivo de stock y su propia ruta de vendedores,
+# así que la venta que descuenta cada stock es SÓLO la de sus vendedores.
+#   · Stock PyP  → stock.xlsx           → V3, V4, V6, V8, V10
+#   · VSB Cuyo   → stock_VSB_Cuyo.xlsx  → V7, V9
+# V20 (Depósito) queda fuera de los dos: no pertenece a ninguna de las dos rutas.
+_DIAS_STOCK_CRITICO = 15    # días: rojo
+_DIAS_STOCK_ATENCION = 30   # días: ámbar; por encima, verde
+_STOCK_BLOQUES = [
+    {"id": "pyp", "label": "Stock PyP",  "archivo": "stock.xlsx",
+     "vendedores": [3, 4, 6, 8, 10]},
+    {"id": "vsb", "label": "VSB Cuyo",   "archivo": "stock_VSB_Cuyo.xlsx",
+     "vendedores": [7, 9]},
+]
+
+
+def _innovaciones_codigos_todas():
+    """[{codigo, nombre}] de TODAS las innovaciones de Innovaciones.xlsx.
+    Se diferencia de `_inov_plan_as_productos()`, que sólo devuelve las marcadas con
+    'x' para Planes AS: acá interesa el portfolio de innovación completo."""
+    p = INPUTS / "INNOVACIONES" / "Innovaciones.xlsx"
+    if not p.exists():
+        return []
+    out, vistos = [], set()
+    try:
+        df = pd.read_excel(p, sheet_name=0, header=None, dtype=str)
+        for _, fila in df.iterrows():
+            for celda in [str(v).strip() for v in fila.tolist() if pd.notna(v)]:
+                m = _re.match(r"^0*(\d{4,6})\s*-\s*(.+)$", celda)
+                if m:
+                    cod = int(m.group(1))
+                    if cod not in vistos:
+                        vistos.add(cod)
+                        out.append({"codigo": cod,
+                                    "nombre": _re.sub(r"\s+", " ", m.group(2).replace("\xa0", " ")).strip()})
+                    break
+    except Exception as e:
+        print(f"[WARN] innovaciones (días de stock): {e}")
+        return []
+    return out
+
+
+_MPA_CACHE = {"key": None, "data": None}
+
+
+def _mpa_universo():
+    """({codigo: nombre_mpa}, [nombres sin código]) del universo MPA.
+
+    MPA.xlsx trae los productos por NOMBRE COMERCIAL ("Alaris Malbec 0.75L"), que no
+    coincide con el `Descripción Art.` del ERP ("TRAPICHE ALARIS MALBEC 6X750"). El
+    puente es 09_CONFIG/mpa_codigos.csv, un mapeo REVISADO A MANO (el match
+    automático por texto se equivocaba, p.ej. Alma Mora Cabernet → F.LAS MORAS CABSAU).
+    Lo que está en MPA.xlsx y no en el mapeo se informa como "sin código asignado":
+    nunca se descarta en silencio ni se adivina."""
+    px = INPUTS / "MPA" / "MPA.xlsx"
+    pc = CONFIG / "mpa_codigos.csv"
+    key = (_semanal_mtime(px), _semanal_mtime(pc))
+    if _MPA_CACHE["data"] is not None and _MPA_CACHE["key"] == key:
+        return _MPA_CACHE["data"]
+
+    def _norm(s):
+        return _re.sub(r"[^a-z0-9]+", "", str(s).lower())
+
+    nombres = []
+    if px.exists():
+        try:
+            d = pd.read_excel(px, header=None, dtype=str)
+            # Las filas de productos son las que arrancan con el plan (Inicial / Silver).
+            # Ambas listan el MISMO universo, así que se unifican por nombre.
+            for _, fila in d.iterrows():
+                vals = [str(v).strip() for v in fila.tolist() if pd.notna(v)]
+                if not vals or _norm(vals[0]) not in ("inicial", "silver"):
+                    continue
+                for v in vals[1:]:
+                    if v and v not in nombres:
+                        nombres.append(v)
+        except Exception as e:
+            print(f"[WARN] MPA.xlsx: {e}")
+
+    mapa = {}
+    if pc.exists():
+        try:
+            m = pd.read_csv(pc, dtype=str, encoding="utf-8-sig")
+            for _, r in m.iterrows():
+                cod = pd.to_numeric(r.get("codigo"), errors="coerce")
+                if pd.isna(cod):
+                    continue
+                mapa.setdefault(_norm(r.get("mpa_nombre", "")), []).append(int(cod))
+        except Exception as e:
+            print(f"[WARN] mpa_codigos.csv: {e}")
+
+    cod2nom, sin_codigo = {}, []
+    for n in nombres:
+        cods = mapa.get(_norm(n))
+        if not cods:
+            sin_codigo.append(n)
+            continue
+        for c in cods:
+            cod2nom.setdefault(c, n)   # un código puede venir de un SKU y de una agrupación
+    data = (cod2nom, sin_codigo)
+    _MPA_CACHE.update({"key": key, "data": data})
+    return data
+
+
+_DIAS_STOCK_VENTA_CACHE = {}
+
+
+def _dias_stock_venta_base(vendedores):
+    """({codigo: unidades}, meta) del MES ANTERIOR cerrado, SÓLO de los vendedores
+    indicados (la ruta del depósito que se está midiendo).
+    Fuente resuelta igual que el histórico semanal: cierre versionado → historial."""
+    from calendar import monthrange
+    hoy = datetime.now(_ARG_TZ).date()
+    a, m = (hoy.year, hoy.month - 1) if hoy.month > 1 else (hoy.year - 1, 12)
+    per = f"{a:04d}-{m:02d}"
+    path, etiqueta = _semanal_fuente_de(per)
+    vend = tuple(sorted(int(v) for v in vendedores))
+    key = (per, str(path), _semanal_mtime(path), vend)
+    cache = _DIAS_STOCK_VENTA_CACHE.get(key)
+    if cache is not None:
+        return cache
+
+    ultimo = monthrange(a, m)[1]
+    habiles = sum(1 for d in range(1, ultimo + 1)
+                  if _es_dia_operativo(datetime(a, m, d).date()))
+    unidades = {}
+    df = _leer_ventas_min(path, ["Codigo", "CantBase", "FechaComprobante", "CodVendedor"])
+    if not df.empty:
+        df["cod"] = pd.to_numeric(df["Codigo"], errors="coerce")
+        df["cv"]  = pd.to_numeric(df["CodVendedor"], errors="coerce")
+        df["cant"] = _semanal_num(df["CantBase"])
+        df["fec"] = _semanal_fechas(df["FechaComprobante"])
+        df = df.dropna(subset=["cod", "fec"])
+        df = df[(df["fec"].dt.strftime("%Y-%m") == per) & (df["cv"].isin(vend))]
+        if not df.empty:
+            unidades = {int(c): float(v) for c, v in
+                        df.groupby("cod")["cant"].sum().items()}
+    meta = {
+        "periodo": per,
+        "label": f"{_SEMANAL_MESES_ES.get(m, m)} {a}",
+        "dias_habiles": habiles,
+        "fuente": etiqueta,
+        "sin_fuente": not bool(unidades),
+    }
+    data = (unidades, meta)
+    if len(_DIAS_STOCK_VENTA_CACHE) > 8:
+        _DIAS_STOCK_VENTA_CACHE.clear()
+    _DIAS_STOCK_VENTA_CACHE[key] = data
+    return data
+
+
+def _dias_stock_filas(cod2etq, stock_map, unidades, habiles, desc_map):
+    """Una fila por código del universo, ordenada por días de stock ascendente
+    (primero lo que se queda sin stock)."""
+    filas = []
+    for cod, etq in cod2etq.items():
+        st = stock_map.get(cod)
+        vendido = unidades.get(cod, 0.0)
+        diaria = (vendido / habiles) if habiles else 0.0
+        dias = (st["disponible"] / diaria) if (st and diaria > 0) else None
+        filas.append({
+            "codigo":      int(cod),
+            "etiqueta":    etq,
+            "descripcion": (st or {}).get("descripcion") or desc_map.get(str(cod), {}).get("descripcion", ""),
+            "en_stock":    st is not None,
+            "disponible":  int(round(st["disponible"])) if st else None,
+            "transito":    int(round(st["transito"])) if st else None,
+            "vendido_mes": int(round(vendido)),
+            "venta_diaria": round(diaria, 1),
+            "dias_stock":  round(dias, 1) if dias is not None else None,
+        })
+    # None al final: sin venta el mes pasado (o sin stock) no es "0 días".
+    filas.sort(key=lambda f: (f["dias_stock"] is None, f["dias_stock"] if f["dias_stock"] is not None else 0))
+    return filas
+
+
+def _dias_stock_resumen(filas, habiles):
+    """Días de stock del conjunto: existencia total / venta diaria total del universo."""
+    disp = sum(f["disponible"] or 0 for f in filas)
+    vend = sum(f["vendido_mes"] or 0 for f in filas)
+    diaria = (vend / habiles) if habiles else 0.0
+    return {
+        "productos":   len(filas),
+        "en_stock":    sum(1 for f in filas if f["en_stock"]),
+        "disponible":  int(disp),
+        "vendido_mes": int(vend),
+        "venta_diaria": round(diaria, 1),
+        "dias_stock":  round(disp / diaria, 1) if diaria > 0 else None,
+        "criticos":    sum(1 for f in filas
+                           if f["dias_stock"] is not None and f["dias_stock"] < _DIAS_STOCK_CRITICO),
+        "atencion":    sum(1 for f in filas
+                           if f["dias_stock"] is not None and f["dias_stock"] < _DIAS_STOCK_ATENCION),
+        "sin_stock":   sum(1 for f in filas if not f["en_stock"] or (f["disponible"] or 0) <= 0),
+    }
+
+
+def _dias_stock_bloque(cfg, desc_map, universos_base):
+    """Un depósito: su stock, su ruta de vendedores y los 3 universos de producto."""
+    stock = _stock_disponible(cfg["archivo"])
+    stock_map = {}
+    if not stock.empty:
+        for _, r in stock.iterrows():
+            c = int(r["codigo"])
+            prev = stock_map.get(c)
+            if prev:   # el mismo código puede venir en varias sedes/sectores
+                prev["disponible"] += float(r["disponible"])
+                prev["transito"]   += float(r["transito"])
+            else:
+                stock_map[c] = {"descripcion": str(r["descripcion"]),
+                                "disponible": float(r["disponible"]),
+                                "transito": float(r["transito"])}
+
+    unidades, meta = _dias_stock_venta_base(cfg["vendedores"])
+    habiles = meta["dias_habiles"]
+
+    universos = []
+    for uid, label, fuente, cod2etq, sin_codigo in universos_base:
+        filas = _dias_stock_filas(cod2etq, stock_map, unidades, habiles, desc_map)
+        universos.append({"id": uid, "label": label, "fuente": fuente,
+                          "productos": filas,
+                          "resumen": _dias_stock_resumen(filas, habiles),
+                          "sin_codigo": sin_codigo})
+
+    # Diagnóstico de la fuente de stock: si NINGÚN código del portfolio aparece en el
+    # archivo, el export cargado no es el de Peñaflor. Se avisa explícito en vez de
+    # dibujar una tabla de ceros que se leería como "no tenemos nada".
+    codigos_universo = {f["codigo"] for u in universos for f in u["productos"]}
+    match = len(codigos_universo & set(stock_map))
+    return {
+        "id": cfg["id"], "label": cfg["label"],
+        "archivo": cfg["archivo"],
+        "vendedores": [f"V{v}" for v in cfg["vendedores"]],
+        "base": meta,
+        "stock_codigos": len(stock_map),
+        "stock_match": match,
+        "stock_ok": bool(stock_map) and match > 0,
+        "universos": universos,
+    }
+
+
+@app.route("/api/gerencia/dias_stock")
+def gerencia_dias_stock():
+    """Días de stock de 11 Titulares, Innovaciones y MPA contra la venta del mes
+    anterior, por depósito (Stock PyP y VSB Cuyo, cada uno con su ruta)."""
+    desc_map = _acc_desc_articulo_map()
+    # Los universos de producto son los mismos para los dos depósitos: se arman una
+    # sola vez y cada bloque los cruza con SU stock y SU venta.
+    universos_base = []
+    u11 = _codigos_11t_map()
+    if u11:
+        universos_base.append(("11t", "11 Titulares", "matriz oficial 11T (Código Art.)",
+                               {int(c): str(mk) for c, mk in u11.items()}, []))
+    inov = _innovaciones_codigos_todas()
+    if inov:
+        universos_base.append(("innovaciones", "Innovaciones", "INNOVACIONES/Innovaciones.xlsx",
+                               {int(p["codigo"]): p["nombre"] for p in inov}, []))
+    cod2nom, sin_codigo = _mpa_universo()
+    if cod2nom or sin_codigo:
+        universos_base.append(("mpa", "MPA · Plan AASS",
+                               "MPA/MPA.xlsx × 09_CONFIG/mpa_codigos.csv",
+                               cod2nom, sin_codigo))
+
+    bloques = [_dias_stock_bloque(cfg, desc_map, universos_base) for cfg in _STOCK_BLOQUES]
+    return jsonify({
+        "generado_en": _now_ar(),
+        "fuente": "01_INPUTS/Stock/<depósito>.xlsx + venta del mes anterior (unidades)",
+        "umbrales": {"critico": _DIAS_STOCK_CRITICO, "atencion": _DIAS_STOCK_ATENCION},
+        "base": bloques[0]["base"] if bloques else {},
+        "bloques": bloques,
+    })
 
 
 # ====== 11 TITULARES: MATCH POR CÓDIGO DE ARTÍCULO (matriz oficial AS) ======
@@ -4248,18 +4543,20 @@ def gerencia_innovaciones_total():
 # ====== STOCK SIN VENTA EN EL MES — GERENCIA ======
 _STOCK_CACHE = {}
 
-def _stock_disponible() -> pd.DataFrame:
-    """Stock de depósito desde 01_INPUTS/Stock/stock.xlsx, cacheado por mtime.
+def _stock_disponible(archivo: str = "stock.xlsx") -> pd.DataFrame:
+    """Stock de depósito desde 01_INPUTS/Stock/<archivo>, cacheado por (archivo, mtime).
     Columnas normalizadas: codigo (int), descripcion, disponible (UniTotalDisponible),
     bultos_total, reserva, transito, proveedor. El disponible es la existencia real
-    (Total = Disponible + Reserva; Tránsito es mercadería en camino, informativo)."""
-    p = INPUTS / "Stock" / "stock.xlsx"
+    (Total = Disponible + Reserva; Tránsito es mercadería en camino, informativo).
+    El default `stock.xlsx` es el depósito PyP; VSB Cuyo tiene su propio export
+    (`stock_VSB_Cuyo.xlsx`) — son dos depósitos distintos, no se suman."""
+    p = INPUTS / "Stock" / archivo
     if not p.exists():
         return pd.DataFrame()
     try:
-        key = os.path.getmtime(p)
+        key = (archivo, os.path.getmtime(p))
     except OSError:
-        key = 0
+        key = (archivo, 0)
     df = _STOCK_CACHE.get(key)
     if df is not None:
         return df
@@ -4287,7 +4584,8 @@ def _stock_disponible() -> pd.DataFrame:
     df = (df.groupby(["codigo", "descripcion", "proveedor"], as_index=False)
             .agg({"disponible": "sum", "bultos_total": "sum",
                   "reserva": "sum", "transito": "sum"}))
-    _STOCK_CACHE.clear()
+    for k in [k for k in _STOCK_CACHE if k[0] == archivo and k != key]:
+        _STOCK_CACHE.pop(k, None)
     _STOCK_CACHE[key] = df
     return df
 

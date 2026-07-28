@@ -419,6 +419,61 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 .sem-note { font-size:10.5px; color:var(--text3); line-height:1.5; margin-top:10px; }
 .sem-acts { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 @media(max-width:900px){ .sem-in{ width:54px; } .sem-tbl th,.sem-tbl td{ padding:7px 5px; } }
+/* días de stock — una tarjeta por depósito, diferenciadas por el color de acento */
+.st-card { position:relative; overflow:hidden; }
+.st-card::before { content:''; position:absolute; inset:0 auto 0 0; width:3px; background:var(--acc); }
+.st-hd { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+  padding:14px 17px 14px 20px; border-bottom:1px solid var(--b);
+  background:linear-gradient(90deg, var(--acc-s) 0%, transparent 62%); }
+.st-title { font-family:var(--f-dis); font-weight:700; font-size:16px; letter-spacing:-.2px;
+  display:flex; align-items:center; gap:8px; }
+.st-sub { font-size:10.5px; color:var(--text3); margin-top:2px; }
+.st-ruta { font-size:10px; font-weight:700; color:var(--acc); background:var(--acc-s);
+  border:1px solid var(--acc); border-radius:999px; padding:3px 9px; letter-spacing:.4px; }
+.st-tabs { display:inline-flex; background:rgba(0,0,0,.35); border:1px solid var(--bs);
+  border-radius:var(--r-sm); padding:3px; gap:2px; }
+.st-tabs button { padding:5px 10px; border-radius:6px; font-size:11px; font-weight:600;
+  color:var(--text3); transition:all .12s; white-space:nowrap; }
+.st-tabs button.active { background:var(--acc); color:#fff; font-weight:700; }
+.st-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(142px,1fr)); gap:11px; }
+.st-kpi { background:var(--surf2); border:1px solid var(--b); border-radius:12px; padding:12px 14px; }
+.st-kn { font-family:var(--f-dis); font-weight:700; font-size:23px; line-height:1.1; font-variant-numeric:tabular-nums; }
+.st-kn.ok{ color:var(--ok);} .st-kn.wn{ color:var(--wn);} .st-kn.bd{ color:var(--bd);}
+.st-kl { font-size:10.5px; color:var(--text3); margin-top:3px; }
+/* resumen: lo que está por debajo del umbral, para detectarlo de un vistazo */
+.st-alert-hd { display:flex; align-items:center; gap:8px; margin:16px 0 9px;
+  font-size:11px; font-weight:700; letter-spacing:.3px; text-transform:uppercase; color:var(--text2); }
+.st-alert-hd .chip { text-transform:none; letter-spacing:0; }
+.st-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(268px,1fr)); gap:8px; }
+.st-item { display:flex; align-items:center; justify-content:space-between; gap:10px;
+  background:var(--surf2); border:1px solid var(--b); border-left:3px solid var(--bd);
+  border-radius:9px; padding:8px 11px; }
+.st-item.wn { border-left-color:var(--wn); }
+.st-item-nm { min-width:0; }
+.st-item-nm b { display:block; font-size:11.5px; line-height:1.2;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.st-item-nm span { font-size:9.5px; color:var(--text3); }
+.st-item-d { text-align:right; flex-shrink:0; }
+.st-item-d b { font-family:var(--f-dis); font-size:14px; font-variant-numeric:tabular-nums; }
+.st-item-d span { display:block; font-size:9px; color:var(--text3); }
+.st-none { font-size:11.5px; color:var(--ok); background:var(--ok-s);
+  border:1px solid rgba(46,194,126,.3); border-radius:9px; padding:10px 12px; }
+/* desplegable con el detalle producto por producto */
+.st-toggle { width:100%; margin-top:14px; padding:9px 12px; border-radius:var(--r-sm);
+  border:1px solid var(--bs); background:rgba(0,0,0,.25); color:var(--text2);
+  font-size:11.5px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:7px;
+  transition:all .14s; }
+.st-toggle:hover { border-color:var(--acc); color:var(--text); }
+.st-scroll { max-height:56vh; overflow-y:auto; border-top:1px solid var(--b); }
+.st-scroll .sem-tbl th { position:sticky; top:0; z-index:1; }
+.st-dias { font-family:var(--f-dis); font-weight:700; font-size:13px; }
+.st-dias.ok{ color:var(--ok);} .st-dias.wn{ color:var(--wn);} .st-dias.bd{ color:var(--bd);}
+.st-prod { text-align:left; }
+.st-prod b { font-size:11.5px; }
+.st-prod span { display:block; font-size:9.5px; color:var(--text3); margin-top:1px; }
+.st-warn { background:var(--wn-s); border:1px solid var(--wn); color:var(--wn);
+  border-radius:10px; padding:11px 13px; font-size:11.5px; line-height:1.45; margin-bottom:13px; }
+.st-warn b { color:var(--wn); }
 
 /* ── Incentivo Dada ── */
 .dd-hero { border-radius:16px; overflow:hidden; margin-bottom:18px; background:var(--surf2);
@@ -1483,7 +1538,7 @@ async function loadRole(){
 
 async function reloadData(){
   const savedDay = currentDay;
-  SEM=null;   // Semanal se carga lazy: forzar refetch al Actualizar
+  SEM=null; STK=null;   // Semanal se carga lazy: forzar refetch al Actualizar
   const p = document.getElementById('gPage');
   if(p) p.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);">↻ Actualizando datos…</div>';
   await loadAll();
@@ -3676,7 +3731,9 @@ function gSemanal(p){
     <div id="sem-hist"><div class="card"><div class="card-body"><div class="empty">
       <div class="eico" style="font-size:28px">⏳</div><p>Cargando histórico semanal…</p>
     </div></div></div></div>
-    <div id="sem-plan"></div>`;
+    <div id="sem-plan"></div>
+    <div id="sem-stock"></div>`;
+  semStockCargar();
   if(SEM){ semRenderAll(); return; }
   safe('/api/gerencia/semanal').then(j=>{
     if(gScreen!=='semanal') return;          // el usuario ya cambió de pantalla
@@ -3918,6 +3975,175 @@ async function semGuardar(){
     semSaving=false;
     const b2=document.getElementById('sem-save'); if(b2) b2.textContent='Guardar plan';
   }
+}
+
+/* ════ DÍAS DE STOCK (tarjeta al pie de la pantalla Semanal) ════ */
+/* Días de stock = existencia actual / venta diaria del mes anterior cerrado.
+   Fuente: /api/gerencia/dias_stock. Tres universos: 11 Titulares, Innovaciones y
+   MPA (Plan AASS Inicial/Silver). Carga lazy junto con el resto de la pantalla. */
+/* Dos depósitos, dos tarjetas: Stock PyP (V3·V4·V6·V8·V10) y VSB Cuyo (V7·V9).
+   Cada una cruza SU archivo de stock con la venta de SUS vendedores. */
+let STK=null, stkUni={}, stkOpen={};
+const STK_ACC={pyp:{acc:'var(--mg)',accs:'var(--mg-s)',ico:'📦'},
+               vsb:{acc:'var(--info)',accs:'var(--info-s)',ico:'🏔️'}};
+
+function semStockCargar(){
+  if(STK){ semRenderStock(); return; }
+  const c=document.getElementById('sem-stock');
+  if(c) c.innerHTML=`<div class="card"><div class="card-body"><div class="empty">
+    <div class="eico" style="font-size:28px">📦</div><p>Cargando días de stock…</p></div></div></div>`;
+  safe('/api/gerencia/dias_stock').then(j=>{
+    if(gScreen!=='semanal') return;
+    if(!j){
+      const c2=document.getElementById('sem-stock');
+      if(c2) c2.innerHTML=`<div class="card"><div class="card-body"><div class="empty">
+        <div class="eico" style="font-size:28px">⚠️</div>
+        <p>No se pudo cargar /api/gerencia/dias_stock.</p></div></div></div>`;
+      return;
+    }
+    STK=j;
+    (j.bloques||[]).forEach(b=>{ if(!stkUni[b.id]) stkUni[b.id]=(b.universos||[])[0]?.id||'11t'; });
+    semRenderStock();
+  });
+}
+
+function semSetUni(bid,id){ stkUni[bid]=id; semRenderStock(); }
+function semStkTog(k){ stkOpen[k]=!stkOpen[k]; semRenderStock(); }
+
+function semRenderStock(){
+  const cont=document.getElementById('sem-stock'); if(!cont||!STK) return;
+  cont.innerHTML=(STK.bloques||[]).map(_stkCard).join('');
+}
+
+function _stkCard(B){
+  const um=STK.umbrales||{critico:15,atencion:30};
+  const uid=stkUni[B.id]||(B.universos||[])[0]?.id;
+  const U=(B.universos||[]).find(u=>u.id===uid)||(B.universos||[])[0];
+  if(!U) return '';
+  const r=U.resumen||{}, base=B.base||{}, ok=!!B.stock_ok;
+  const acc=STK_ACC[B.id]||{acc:'var(--mg)',accs:'var(--mg-s)',ico:'📦'};
+  const nf=n=>Number(n||0).toLocaleString('es-AR');
+  const dcls=d=>d==null?'':(d<um.critico?'bd':d<um.atencion?'wn':'ok');
+  const tabs=(B.universos||[]).map(u=>
+    `<button class="${u.id===uid?'active':''}" onclick="semSetUni('${B.id}','${u.id}')">${u.label}</button>`).join('');
+
+  // Sin match contra el archivo de stock = el export cargado no es el de Peñaflor.
+  // Se avisa en vez de dibujar una tabla de ceros (que se leería como "no hay stock").
+  const warn = ok ? '' : `<div class="st-warn">
+      <b>⚠️ El stock cargado no corresponde al portfolio Peñaflor.</b><br>
+      <code>01_INPUTS/Stock/${B.archivo}</code> tiene ${nf(B.stock_codigos)} códigos y
+      <b>ninguno</b> coincide con los productos de 11 Titulares, Innovaciones ni MPA.
+      Los días de stock no se pueden calcular hasta reemplazarlo por el export de Peñaflor.
+      La venta del mes anterior sí está bien (se muestra igual).
+    </div>`;
+
+  // ── Resumen: sólo lo que está por debajo del umbral de atención ──
+  const bajos=(U.productos||[]).filter(f=>f.dias_stock!=null && f.dias_stock<um.atencion);
+  const items=bajos.map(f=>`<div class="st-item ${f.dias_stock<um.critico?'':'wn'}">
+      <div class="st-item-nm">
+        <b title="${f.descripcion||f.etiqueta}">${f.descripcion||f.etiqueta}</b>
+        <span>${f.codigo} · ${nf(f.disponible)} u en depósito</span>
+      </div>
+      <div class="st-item-d">
+        <b class="st-dias ${dcls(f.dias_stock)}">${f.dias_stock.toFixed(1)} d</b>
+        <span>${nf(f.venta_diaria)} u/día</span>
+      </div>
+    </div>`).join('');
+  const resumen = !ok
+    ? ''
+    : (bajos.length
+        ? `<div class="st-alert-hd">⚠️ Bajo ${um.atencion} días de stock
+             <span class="chip bd">${bajos.length} de ${nf(r.productos)}</span></div>
+           <div class="st-grid">${items}</div>`
+        : `<div class="st-alert-hd">Cobertura</div>
+           <div class="st-none">✓ Ningún producto por debajo de ${um.atencion} días de stock.</div>`);
+
+  // ── Desplegable con el detalle producto por producto ──
+  const k=`${B.id}-${uid}`, abierto=!!stkOpen[k];
+  const filas=(U.productos||[]).map(f=>{
+    const d=f.dias_stock;
+    const dtxt = d!=null ? `${d.toFixed(1)} d`
+               : (!f.en_stock ? `<span class="sem-nd">sin stock</span>`
+                              : `<span class="sem-nd">sin venta</span>`);
+    return `<tr>
+      <td class="st-prod"><b>${f.descripcion||f.etiqueta}</b><span>${f.codigo} · ${f.etiqueta}</span></td>
+      <td>${f.disponible!=null?nf(f.disponible):`<span class="sem-nd">–</span>`}</td>
+      <td>${f.transito?nf(f.transito):`<span style="color:var(--text3)">–</span>`}</td>
+      <td>${nf(f.vendido_mes)}</td>
+      <td>${nf(f.venta_diaria)}</td>
+      <td class="st-dias ${dcls(d)}">${dtxt}</td>
+    </tr>`;
+  }).join('');
+  const detalle = abierto ? `<div class="st-scroll">
+      <table class="sem-tbl">
+        <thead><tr>
+          <th style="text-align:left">Producto</th><th>Disponible</th><th>Tránsito</th>
+          <th>Vendido ${base.label||''}</th><th>Unid./día</th><th>Días de stock</th>
+        </tr></thead><tbody>${filas}</tbody>
+      </table>
+    </div>` : '';
+
+  const sinCod=(U.sin_codigo||[]).length ? `<div class="sem-note" style="margin-top:10px">
+      <b>${U.sin_codigo.length} producto${U.sin_codigo.length>1?'s':''} de MPA.xlsx sin código asignado</b>
+      (no se puede saber a qué SKU del ERP corresponden, así que quedan fuera del cálculo en vez de
+      adivinar): ${U.sin_codigo.map(n=>`<i>${n}</i>`).join(' · ')}.
+      Se resuelven agregando la fila en <code>09_CONFIG/mpa_codigos.csv</code>.
+    </div>` : '';
+
+  return `<div class="card st-card" style="--acc:${acc.acc};--acc-s:${acc.accs}">
+    <div class="st-hd">
+      <div>
+        <div class="st-title">${acc.ico} ${B.label}
+          <span class="st-ruta">${(B.vendedores||[]).join(' · ')}</span></div>
+        <div class="st-sub">Días de stock · base ${base.label||''} · ${B.archivo}</div>
+      </div>
+      <div class="st-tabs">${tabs}</div>
+    </div>
+    <div class="card-body">
+      ${warn}
+      <div class="st-kpis">
+        <div class="st-kpi">
+          <div class="st-kn ${ok?dcls(r.dias_stock):''}">${ok&&r.dias_stock!=null?r.dias_stock.toFixed(1)+' d':'–'}</div>
+          <div class="st-kl">Días de stock del conjunto</div>
+        </div>
+        <div class="st-kpi">
+          <div class="st-kn ${ok?(r.criticos?'bd':'ok'):''}">${ok?nf(r.criticos):'–'}</div>
+          <div class="st-kl">Bajo ${um.critico} días</div>
+        </div>
+        <div class="st-kpi">
+          <div class="st-kn ${ok?(r.atencion?'wn':'ok'):''}">${ok?nf(r.atencion):'–'}</div>
+          <div class="st-kl">Bajo ${um.atencion} días</div>
+        </div>
+        <div class="st-kpi">
+          <div class="st-kn ${ok?(r.sin_stock?'wn':'ok'):''}">${ok?nf(r.sin_stock):'–'}</div>
+          <div class="st-kl">Sin existencia · de ${nf(r.productos)} productos</div>
+        </div>
+        <div class="st-kpi">
+          <div class="st-kn">${ok?nf(r.disponible):'–'}</div>
+          <div class="st-kl">Unidades en depósito</div>
+        </div>
+        <div class="st-kpi">
+          <div class="st-kn">${nf(r.venta_diaria)}</div>
+          <div class="st-kl">Unidades/día en ${base.label||'el mes base'}</div>
+        </div>
+      </div>
+      ${resumen}
+      <button class="st-toggle" onclick="semStkTog('${k}')">
+        ${abierto?'▲ Ocultar el detalle':`▼ Ver los ${nf(r.productos)} productos de ${U.label}`}
+      </button>
+    </div>
+    ${detalle}
+    <div class="card-body" style="border-top:1px solid var(--b);padding-top:11px;">
+      <div class="sem-note">
+        <b>Días de stock</b> = unidades disponibles ÷ venta diaria de ${base.label||'el mes anterior'}
+        (${nf(base.dias_habiles)} días operativos lun-sáb, sin feriados), en unidades y neta de
+        devoluciones. Sólo cuenta la venta de <b>${(B.vendedores||[]).join(', ')}</b>, que es la ruta
+        que descarga este depósito. Rojo &lt; ${um.critico} d · ámbar &lt; ${um.atencion} d ·
+        verde ≥ ${um.atencion} d. Universo: ${U.fuente}. Stock: 01_INPUTS/Stock/${B.archivo}.
+      </div>
+      ${sinCod}
+    </div>
+  </div>`;
 }
 
 /* ════ PLAN FRIZZE (gerencia + vendedor comparten el mismo render) ════ */
