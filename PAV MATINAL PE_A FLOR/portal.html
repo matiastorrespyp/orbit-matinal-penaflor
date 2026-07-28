@@ -380,6 +380,46 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 .pf-sc-on { color:var(--ok); cursor:pointer; font-weight:600; }
 @media(max-width:560px){ .pf-cards{ grid-template-columns:1fr; } }
 
+/* ── Semanal (histórico + planificación por semana) ── */
+.sem-tabs { display:inline-flex; background:rgba(0,0,0,.35); border:1px solid var(--bs);
+  border-radius:var(--r-sm); padding:3px; gap:2px; flex-wrap:wrap; }
+.sem-tabs button { padding:5px 10px; border-radius:6px; font-size:11px; font-weight:600;
+  color:var(--text3); transition:all .12s; white-space:nowrap; }
+.sem-tabs button.active { background:var(--mg); color:#fff; font-weight:700; box-shadow:0 2px 8px var(--mg-g); }
+.sem-tbl { width:100%; border-collapse:collapse; font-size:12px; }
+.sem-tbl th { text-align:center; padding:8px 10px; font-size:9px; font-weight:700; text-transform:uppercase;
+  letter-spacing:1.1px; color:var(--text3); background:var(--surf2); border-bottom:1px solid var(--b); }
+.sem-tbl th:first-child, .sem-tbl td:first-child { text-align:left; }
+.sem-tbl td { padding:8px 10px; border-bottom:1px solid var(--b); text-align:center;
+  font-variant-numeric:tabular-nums; }
+.sem-tbl tr:last-child td { border-bottom:0; }
+.sem-tbl tr:hover td { background:rgba(255,255,255,.013); }
+.sem-mes { font-weight:600; font-size:12px; white-space:nowrap; }
+.sem-src { font-size:9px; color:var(--text3); margin-left:6px; font-weight:400; }
+.sem-pct { font-family:var(--f-dis); font-weight:700; font-size:13.5px; line-height:1.1; }
+.sem-val { font-size:9.5px; color:var(--text3); margin-top:1px; }
+.sem-bar { height:4px; border-radius:999px; background:rgba(255,255,255,.06); margin:4px auto 0; max-width:74px; }
+.sem-bar i { display:block; height:100%; border-radius:999px; background:var(--mg); }
+.sem-row-prom td { background:var(--mg-s); border-bottom:1px solid var(--bs); }
+.sem-row-prom .sem-pct { color:var(--mg); }
+.sem-tot { font-family:var(--f-dis); font-weight:700; font-size:12px; color:var(--text2); }
+/* planificación */
+.sem-wk-hd { display:flex; flex-direction:column; align-items:center; gap:3px; }
+.sem-in { width:66px; padding:6px 8px; text-align:center; font-size:13px; font-weight:700;
+  font-family:var(--f-dis); font-variant-numeric:tabular-nums;
+  background:rgba(0,0,0,.35); border:1px solid var(--bs); border-radius:var(--r-sm); color:var(--text); }
+.sem-in:focus { outline:none; border-color:var(--mg); box-shadow:0 0 0 2px var(--mg-s); }
+.sem-in.pend { border-style:dashed; color:var(--text3); }
+.sem-cell-meta { font-size:9.5px; color:var(--text3); margin-top:5px; line-height:1.45; }
+.sem-cell-meta b { font-variant-numeric:tabular-nums; }
+.sem-dl { font-weight:700; }
+.sem-dl.ok { color:var(--ok); } .sem-dl.wn { color:var(--wn); } .sem-dl.bd { color:var(--bd); }
+.sem-suma { font-family:var(--f-dis); font-weight:700; font-size:13px; }
+.sem-nd { color:var(--text3); font-style:italic; font-size:10px; }
+.sem-note { font-size:10.5px; color:var(--text3); line-height:1.5; margin-top:10px; }
+.sem-acts { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+@media(max-width:900px){ .sem-in{ width:54px; } .sem-tbl th,.sem-tbl td{ padding:7px 5px; } }
+
 /* ── Incentivo Dada ── */
 .dd-hero { border-radius:16px; overflow:hidden; margin-bottom:18px; background:var(--surf2);
   border:1px solid var(--b); box-shadow:0 8px 24px rgba(0,0,0,.28); }
@@ -1113,6 +1153,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       <div class="gs-item active" data-sc="planvsreal"   onclick="gSw('planvsreal',this)"><span class="gs-ico">📊</span>Plan vs Real</div>
       <div class="gs-item" data-sc="dashboard" onclick="gSw('dashboard',this)"><span class="gs-ico">📊</span>Dashboard</div>
       <div class="gs-item" data-sc="planificacion" onclick="gSw('planificacion',this)"><span class="gs-ico">📋</span>Planificación</div>
+      <div class="gs-item" data-sc="semanal" onclick="gSw('semanal',this)"><span class="gs-ico">📆</span>Semanal</div>
       <div class="gs-item" data-sc="vendedores"  onclick="gSw('vendedores',this)"><span class="gs-ico">👥</span>Vendedores</div>
       <div class="gs-item" data-sc="clientes"    onclick="gSw('clientes',this)"><span class="gs-ico">🏪</span>Clientes Críticos</div>
       <div class="gs-item" data-sc="cliente"     onclick="gSw('cliente',this)"><span class="gs-ico">🔎</span>Cliente</div>
@@ -1442,6 +1483,7 @@ async function loadRole(){
 
 async function reloadData(){
   const savedDay = currentDay;
+  SEM=null;   // Semanal se carga lazy: forzar refetch al Actualizar
   const p = document.getElementById('gPage');
   if(p) p.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);">↻ Actualizando datos…</div>';
   await loadAll();
@@ -1552,7 +1594,7 @@ function gSw(id,el){
   gScreen=id;
   document.querySelectorAll('.gs-item').forEach(n=>n.classList.remove('active'));
   (el||document.querySelector(`[data-sc="${id}"]`))?.classList.add('active');
-  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',cliente:'Cliente',planificacion:'Planificación',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',incentivo_faro:'Incentivo FARO',plan_frizze:'Plan Frizze',incentivo_dada:'Incentivo Dada',stock_sin_venta:'Stock sin Venta',cierre_mes:'Cierre de Mes'};
+  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',cliente:'Cliente',planificacion:'Planificación',semanal:'Semanal',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',incentivo_faro:'Incentivo FARO',plan_frizze:'Plan Frizze',incentivo_dada:'Incentivo Dada',stock_sin_venta:'Stock sin Venta',cierre_mes:'Cierre de Mes'};
   document.getElementById('gTopTitle').textContent=tt[id]||'';
   gRender();
 }
@@ -1563,6 +1605,7 @@ function gRender(){
   else if(gScreen==='clientes')      gClientes(p);
   else if(gScreen==='cliente')       gCliente(p);
   else if(gScreen==='planificacion') gPlanificacion(p);
+  else if(gScreen==='semanal')       gSemanal(p);
   else if(gScreen==='planvsreal')    gPlanVsReal(p);
   else if(gScreen==='alertas')       gAlertas(p);
   else if(gScreen==='innovaciones')          gInnovaciones(p);
@@ -3604,6 +3647,277 @@ function verSincargo(cid, producto){
   </div>`;
   document.body.appendChild(div);
   div.addEventListener('click',e=>{if(e.target===div) closeModal();});
+}
+
+/* ════ SEMANAL — distribución del mes por semana (histórico + planificación) ════ */
+/* Fuente: /api/gerencia/semanal. Carga LAZY (igual que Cierre de Mes): el histórico
+   parsea 12 meses de ventas y no tiene por qué demorar el login.
+   Semana = bloque de días del mes: S1 1-7 · S2 8-14 · S3 15-21 · S4 22-fin.
+   CCC = aporte incremental: el cliente cuenta en la semana de su PRIMERA compra del
+   mes, así las 4 semanas suman 100% del CCC del mes.
+   Los inputs del plan NO re-renderizan la tarjeta al tipear (se perdería el foco):
+   cada tecla sólo actualiza la meta de esa celda y la suma de la fila. */
+let SEM=null, semKpi='facturacion', semEdit={}, semSaving=false;
+
+const semNum = (v,tipo) => tipo==='moneda'
+  ? fmtM(v)
+  : Number(Math.round(v||0)).toLocaleString('es-AR');
+const semExacto = (v,tipo) => tipo==='moneda' ? fmtP(v) : Math.round(v||0)+' clientes';
+const semKpiDef = id => (SEM?.kpis||[]).find(k=>k.id===id) || {id,label:id,tipo:'clientes'};
+
+function gSemanal(p){
+  p.innerHTML=`<div class="gph">
+      <div>
+        <div class="gph-title">Semanal</div>
+        <div class="gph-sub" id="sem-sub">Distribución de la venta del mes por semana</div>
+      </div>
+      <div class="gph-chips" id="sem-chips"></div>
+    </div>
+    <div id="sem-hist"><div class="card"><div class="card-body"><div class="empty">
+      <div class="eico" style="font-size:28px">⏳</div><p>Cargando histórico semanal…</p>
+    </div></div></div></div>
+    <div id="sem-plan"></div>`;
+  if(SEM){ semRenderAll(); return; }
+  safe('/api/gerencia/semanal').then(j=>{
+    if(gScreen!=='semanal') return;          // el usuario ya cambió de pantalla
+    if(!j){
+      const h=document.getElementById('sem-hist');
+      if(h) h.innerHTML=`<div class="card"><div class="card-body"><div class="empty">
+        <div class="eico" style="font-size:28px">⚠️</div>
+        <p>No se pudo cargar /api/gerencia/semanal.</p></div></div></div>`;
+      return;
+    }
+    SEM=j; semEdit={};
+    semRenderAll();
+  });
+}
+
+function semRenderAll(){
+  const sub=document.getElementById('sem-sub');
+  if(sub) sub.textContent=`${SEM.definicion_semana} · CCC por ${SEM.definicion_ccc.split(':')[0]} · sin ${SEM.excluidos}`;
+  const ch=document.getElementById('sem-chips');
+  if(ch) ch.innerHTML=`<span class="chip">${(SEM.historico||[]).length} meses cerrados</span>
+    <span class="chip mg">${SEM.actual?.label||''} en curso</span>`;
+  semRenderHist();
+  semRenderPlan();
+}
+
+/* ── Tarjeta 1: histórico ── */
+function semSetKpi(id){ semKpi=id; semRenderHist(); }
+
+function semRenderHist(){
+  const cont=document.getElementById('sem-hist'); if(!cont) return;
+  const meses=(SEM.historico||[]).slice().reverse();   // más reciente arriba
+  const def=semKpiDef(semKpi), prom=(SEM.promedio||{})[semKpi]||[0,0,0,0];
+  const nProm=(SEM.meses_promediados||{})[semKpi]||0;
+  const tabs=(SEM.kpis||[]).map(k=>
+    `<button class="${k.id===semKpi?'active':''}" onclick="semSetKpi('${k.id}')">${k.label}</button>`).join('');
+
+  const fila=(label,pcts,valores,total,extra,cls)=>{
+    const mx=Math.max(...pcts,1);
+    const tds=pcts.map((pc,i)=>`<td>
+        <div class="sem-pct">${(pc||0).toFixed(1)}%</div>
+        ${valores?`<div class="sem-val" title="${semExacto(valores[i],def.tipo)}">${semNum(valores[i],def.tipo)}</div>`:''}
+        <div class="sem-bar"><i style="width:${Math.round((pc||0)/mx*100)}%"></i></div>
+      </td>`).join('');
+    return `<tr class="${cls||''}">
+      <td class="sem-mes">${label}${extra||''}</td>${tds}
+      <td class="sem-tot">${total}</td></tr>`;
+  };
+
+  let filas='';
+  if(nProm) filas+=fila(`Promedio`,prom,null,`<span class="sem-nd">${nProm} meses</span>`,
+                        `<span class="sem-src">base para planificar</span>`,'sem-row-prom');
+  meses.forEach(m=>{
+    const k=m.kpis[semKpi]||{pcts:[0,0,0,0],valores:[0,0,0,0],total:0};
+    filas+=fila(m.label,k.pcts,k.valores,
+      `<span title="${semExacto(k.total,def.tipo)}">${semNum(k.total,def.tipo)}</span>`,
+      `<span class="sem-src">${m.fuente}</span>`);
+  });
+  if(!meses.length) filas=`<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:22px">
+    Sin meses cerrados con datos.</td></tr>`;
+
+  cont.innerHTML=`<div class="card">
+    <div class="card-hd">
+      <span class="card-title">📊 Histórico · % del mes por semana</span>
+      <div class="sem-tabs">${tabs}</div>
+    </div>
+    <div class="card-body nop">
+      <table class="sem-tbl">
+        <thead><tr>
+          <th>Mes</th><th>S1 · 1-7</th><th>S2 · 8-14</th><th>S3 · 15-21</th><th>S4 · 22-fin</th>
+          <th>Total mes</th>
+        </tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+    </div>
+    <div class="card-body" style="border-top:1px solid var(--b);padding-top:11px;">
+      <div class="sem-note">Fuente: ${SEM.fuente}. Facturación medida por FechaComprobante.
+      ${def.tipo==='clientes'?`CCC: ${SEM.definicion_ccc}.`:''}</div>
+    </div>
+  </div>`;
+}
+
+/* ── Tarjeta 2: planificación del mes en curso ── */
+function semPlanVal(kpi,i){
+  const e=semEdit[kpi]; if(e && e[i]!==undefined) return e[i];
+  const p=(SEM.plan||{})[kpi]; return p ? p[i] : null;
+}
+function semSetEdit(kpi,i,v){ (semEdit[kpi]=semEdit[kpi]||[])[i]=v; }
+
+function semRenderPlan(){
+  const cont=document.getElementById('sem-plan'); if(!cont) return;
+  const A=SEM.actual||{}, obj=SEM.objetivos||{}, sems=A.semanas||[];
+  const estCls={cerrada:'ok',en_curso:'mg',pendiente:''};
+  const estTxt={cerrada:'CERRADA',en_curso:'EN CURSO',pendiente:'PENDIENTE'};
+  const th=sems.map(w=>`<th><div class="sem-wk-hd">
+      <b style="font-size:11px;color:var(--text2)">S${w.semana}</b>
+      <span style="font-weight:600">${w.label}</span>
+      <span class="chip ${estCls[w.estado]||''}">${estTxt[w.estado]||''}</span>
+    </div></th>`).join('');
+
+  const filas=(SEM.kpis||[]).map(k=>{
+    const o=obj[k.id];
+    const tds=sems.map((w,i)=>`<td>
+        <input class="sem-in ${w.estado==='pendiente'?'pend':''}" type="number" min="0" max="100" step="0.1"
+               id="sem-in-${k.id}-${i}" value="${semPlanVal(k.id,i)??''}" placeholder="–"
+               oninput="semCell('${k.id}',${i})">
+        <div class="sem-cell-meta" id="sem-meta-${k.id}-${i}">${semMetaHtml(k,i,o)}</div>
+      </td>`).join('');
+    return `<tr>
+      <td><b>${k.label}</b></td>
+      <td class="sem-tot">${o!=null?`<span title="${semExacto(o,k.tipo)}">${semNum(o,k.tipo)}</span>`
+                                  :`<span class="sem-nd">sin objetivo</span>`}</td>
+      ${tds}
+      <td class="sem-suma" id="sem-suma-${k.id}">${semSumaHtml(k.id)}</td>
+    </tr>`;
+  }).join('');
+
+  const meta=SEM.plan_meta||{};
+  cont.innerHTML=`<div class="card">
+    <div class="card-hd">
+      <span class="card-title">🎯 Planificación semanal · ${A.label||''}</span>
+      <div class="sem-acts">
+        <button class="g-ghost" onclick="semUsarPromedio()">↧ Usar promedio histórico</button>
+        <button class="g-prim" id="sem-save" onclick="semGuardar()">Guardar plan</button>
+      </div>
+    </div>
+    <div class="card-body nop">
+      <table class="sem-tbl">
+        <thead><tr><th>KPI</th><th>Objetivo mes</th>${th}<th>Suma</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+    </div>
+    <div class="card-body" style="border-top:1px solid var(--b);padding-top:11px;">
+      <div class="sem-note">
+        Cargá el <b>% del mes</b> que esperás hacer en cada semana (la suma tiene que dar 100%).
+        <b>Plan</b> = % × objetivo del mes · <b>Real</b> = logrado de esa semana · <b>Δ</b> = real − plan.
+        La variación queda firme cuando la semana cierra (la semana en curso va en gris, es parcial).
+        Objetivos: facturación de resultado.xlsx · CCC de objccc.xlsx. El real de facturación es lo
+        <b>facturado</b> (FechaComprobante), no el acumulado de pedidos de Plan vs Real.
+        ${A.ultima_fecha_venta?`Última venta cargada: ${A.ultima_fecha_venta}.`:''}
+        ${meta.updated_at?`<br>Último guardado: ${meta.updated_at}${meta.editado_por?' · '+meta.editado_por:''}.`:''}
+      </div>
+      <div class="pf-ok" id="semOk">✓ Plan semanal guardado</div>
+      <div class="pf-ok" id="semErr" style="background:rgba(220,50,50,.18);color:#ff6b6b;display:none;"></div>
+    </div>
+  </div>`;
+}
+
+/* Meta de una celda: plan en unidades, real logrado y desvío. */
+function semMetaHtml(k,i,o){
+  const A=SEM.actual||{}, w=(A.semanas||[])[i]||{};
+  const pct=semPlanVal(k.id,i);
+  const planV=(o!=null && pct!=null && pct!=='') ? o*Number(pct)/100 : null;
+  let h='';
+  h+= planV!=null ? `Plan <b title="${semExacto(planV,k.tipo)}">${semNum(planV,k.tipo)}</b>`
+                  : `<span class="sem-nd">${o==null?'sin objetivo':'sin plan'}</span>`;
+  if(w.estado==='pendiente') return h;
+  const realV=((A.kpis||{})[k.id]||{}).valores?.[i]??0;
+  h+=`<br>Real <b title="${semExacto(realV,k.tipo)}">${semNum(realV,k.tipo)}</b>`;
+  if(w.estado==='en_curso') h+=` <span class="sem-nd">parcial</span>`;
+  if(planV!=null && planV>0){
+    const d=realV-planV, r=d/planV;
+    // La semana en curso se compara contra el plan COMPLETO de esa semana: el desvío
+    // todavía no es un resultado, así que va en gris y no como alerta roja.
+    const cls=w.estado==='en_curso' ? '' : (r>=-0.02?'ok':r>=-0.15?'wn':'bd');
+    h+=`<br><span class="sem-dl ${cls}">${d>=0?'+':'−'}${semNum(Math.abs(d),k.tipo)} (${d>=0?'+':'−'}${Math.abs(r*100).toFixed(0)}%)</span>`;
+  }
+  return h;
+}
+
+function semSumaHtml(kpi){
+  let s=0, hay=false;
+  for(let i=0;i<4;i++){ const v=semPlanVal(kpi,i); if(v!=null && v!==''){ s+=Number(v)||0; hay=true; } }
+  if(!hay) return `<span class="sem-nd">–</span>`;
+  const ok=Math.abs(s-100)<0.05;
+  return `<span style="color:var(--${ok?'ok':'wn'})">${s.toFixed(1)}%</span>`;
+}
+
+/* Cada tecla toca SOLO la meta de esa celda y la suma de la fila (no re-renderiza
+   la tarjeta: si lo hiciera, el input perdería el foco en cada dígito). */
+function semCell(kpi,i){
+  const el=document.getElementById(`sem-in-${kpi}-${i}`); if(!el) return;
+  semSetEdit(kpi,i, el.value===''?null:Number(el.value));
+  const k=semKpiDef(kpi), o=(SEM.objetivos||{})[kpi];
+  const m=document.getElementById(`sem-meta-${kpi}-${i}`); if(m) m.innerHTML=semMetaHtml(k,i,o);
+  const s=document.getElementById(`sem-suma-${kpi}`);      if(s) s.innerHTML=semSumaHtml(kpi);
+}
+
+function semUsarPromedio(){
+  const prom=SEM.promedio||{};
+  (SEM.kpis||[]).forEach(k=>{
+    let p=prom[k.id]; if(!p) return;
+    // El promedio de %s redondeados no da 100 exacto (99.9 / 100.1): el residuo se
+    // carga a la semana más pesada para que el plan arranque cuadrado en 100%.
+    const suma=p.reduce((a,b)=>a+(b||0),0);
+    if(suma>0 && Math.abs(suma-100)<2){
+      p=p.slice();
+      const mx=p.indexOf(Math.max(...p));
+      p[mx]=Math.round((p[mx]+100-suma)*10)/10;
+    }
+    p.forEach((v,i)=>{
+      semSetEdit(k.id,i,v);
+      const el=document.getElementById(`sem-in-${k.id}-${i}`); if(el) el.value=v;
+      const m=document.getElementById(`sem-meta-${k.id}-${i}`);
+      if(m) m.innerHTML=semMetaHtml(k,i,(SEM.objetivos||{})[k.id]);
+    });
+    const s=document.getElementById(`sem-suma-${k.id}`); if(s) s.innerHTML=semSumaHtml(k.id);
+  });
+}
+
+async function semGuardar(){
+  if(semSaving) return;
+  const ok=document.getElementById('semOk'), err=document.getElementById('semErr');
+  const plan={};
+  (SEM.kpis||[]).forEach(k=>{
+    plan[k.id]=[0,1,2,3].map(i=>{
+      const el=document.getElementById(`sem-in-${k.id}-${i}`);
+      const v=el?el.value:'';
+      return v===''?null:Number(v);
+    });
+  });
+  semSaving=true;
+  const btn=document.getElementById('sem-save'); if(btn) btn.textContent='Guardando…';
+  try{
+    const r=await fetch('/api/gerencia/semanal/plan',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({periodo:SEM.actual.periodo,autor:userData?.nombre||'gerencia',plan})});
+    const d=await r.json();
+    if(d.ok){
+      SEM.plan=d.plan; SEM.plan_meta=d.plan_meta; semEdit={};
+      semRenderPlan();
+      const o2=document.getElementById('semOk');
+      if(o2){ o2.style.display='block'; setTimeout(()=>o2.style.display='none',3000); }
+    } else if(err){
+      err.textContent='✗ '+(d.error||'No se pudo guardar.'); err.style.display='block';
+    }
+  }catch(e){
+    if(err){ err.textContent='✗ Sin conexión con el servidor.'; err.style.display='block'; }
+  }finally{
+    semSaving=false;
+    const b2=document.getElementById('sem-save'); if(b2) b2.textContent='Guardar plan';
+  }
 }
 
 /* ════ PLAN FRIZZE (gerencia + vendedor comparten el mismo render) ════ */

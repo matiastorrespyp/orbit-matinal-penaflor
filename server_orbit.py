@@ -97,6 +97,13 @@ def init_db():
     # esta tabla es el registro de "ya la vi, no me la muestres más". Ver _alerta_clave().
     c.execute("""CREATE TABLE IF NOT EXISTS alerta_descartada(
         clave TEXT PRIMARY KEY, autor TEXT, resumen TEXT, descartada_at TEXT)""")
+    # Planificación semanal del mes (pantalla Semanal de gerencia): % del mes que
+    # esperamos hacer en cada una de las 4 semanas, por KPI. Es carga manual de
+    # gerencia — el real se calcula siempre desde las ventas, nunca desde acá.
+    c.execute("""CREATE TABLE IF NOT EXISTS plan_semanal(
+        periodo TEXT NOT NULL, kpi TEXT NOT NULL, semana INTEGER NOT NULL,
+        pct REAL, editado_por TEXT, updated_at TEXT,
+        PRIMARY KEY(periodo, kpi, semana))""")
     conn.commit()
     conn.close()
 
@@ -2565,6 +2572,403 @@ def gerencia_ccc_empresa():
             "onpremise":     _op,
         },
     })
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SEMANAL — apertura del mes en 4 semanas (pantalla Semanal de gerencia)
+# ══════════════════════════════════════════════════════════════════════════════
+# Definiciones acordadas con el usuario (2026-07-27):
+#   · Semana = bloque de días del mes: S1 = 1-7, S2 = 8-14, S3 = 15-21, S4 = 22-fin.
+#     Siempre 4 semanas → los meses se comparan entre sí sin ajustes.
+#   · Facturación = suma de ImporteNetoItem de la semana (medida FACTURADO, por
+#     FechaComprobante). El % de cada semana suma 100% del mes.
+#   · CCC = aporte INCREMENTAL: cada cliente cuenta en la semana en que compró por
+#     PRIMERA VEZ en el mes. Las 4 semanas suman 100% del CCC del mes (si se contara
+#     el CCC bruto semanal, un cliente que compra 2 semanas contaría 2 veces y el
+#     total pasaría el 100%, que no es lo que se quiere planificar).
+#   · Canal: se reusa `_canal_ccc_empresa` (misma clasificación que CCC empresa /
+#     objccc.xlsx). On Premise agrupa On Premise + Vinotecas + On Premise Noche,
+#     igual que el objetivo del Excel (30+15+11).
+#   · V20 Depósito queda EXCLUIDO (además de V1/V2/V5): la planificación semanal es
+#     de ruta y se mide contra objetivos, donde V20 nunca entra.
+#
+# Fuente por mes (se resuelve sola, sin tocar código cada mes):
+#   1) 01_INPUTS/cierres mes/ventas_mes_MMAAAA.csv  → cierre mensual congelado
+#   2) 02_HISTORY/historial_ventas.csv              → fallback para los meses viejos
+#      (export estático 2024-03 → 2026-04; es la única fuente con detalle diario
+#      anterior a los cierres versionados)
+#   3) 01_INPUTS/ventas.csv                         → mes en curso
+_SEMANAL_DESDE = "2025-07"
+_SEMANAL_MESES_ES = {1:"Ene",2:"Feb",3:"Mar",4:"Abr",5:"May",6:"Jun",
+                     7:"Jul",8:"Ago",9:"Sep",10:"Oct",11:"Nov",12:"Dic"}
+_SEMANAL_KPIS = [
+    {"id":"facturacion",      "label":"Facturación",       "tipo":"moneda"},
+    {"id":"ccc_tradicional",  "label":"CCC Tradicionales",  "tipo":"clientes"},
+    {"id":"ccc_autoservicio", "label":"CCC Autoservicios",  "tipo":"clientes"},
+    {"id":"ccc_onpremise",    "label":"CCC On Premise",     "tipo":"clientes"},
+]
+_SEMANAL_KPI_IDS = [k["id"] for k in _SEMANAL_KPIS]
+_SEMANAL_CANALES = {
+    "ccc_tradicional":  ("Tradicionales",),
+    "ccc_autoservicio": ("Autoservicios",),
+    "ccc_onpremise":    ("On Premise", "Vinotecas", "On Premise Noche"),
+}
+_SEMANAL_COLS = ["Cliente", "FechaComprobante", "CodVendedor", "ImporteNetoItem", "Ramo", "Subramo"]
+
+
+def _semanal_num(serie):
+    """Importe a float tolerando los dos formatos que conviven en las fuentes.
+    Si el texto trae coma decimal ('1.234,56' / '15800,82') el punto es separador de
+    miles; si no la trae, se parsea tal cual. Nunca al revés: strippear el punto en
+    un '15800.82' lo multiplicaría por 100."""
+    t = serie.astype(str).str.strip().str.strip('"')
+    con_coma = t.str.contains(",", regex=False)
+    t = t.where(~con_coma, t.str.replace(".", "", regex=False).str.replace(",", ".", regex=False))
+    return pd.to_numeric(t, errors="coerce").fillna(0.0)
+
+
+def _semanal_fechas(serie):
+    """FechaComprobante a datetime. Los cierres versionados vienen en ISO
+    (2026-06-01) y ventas.csv / historial en dd/mm/aaaa: parsear todo con
+    dayfirst=True desarma las ISO (mes y día invertidos → meses fantasma)."""
+    s = serie.astype(str).str.strip()
+    iso = s.str.match(r"^\d{4}-\d{2}-\d{2}")
+    fec = pd.Series(pd.NaT, index=s.index, dtype="datetime64[ns]")
+    if iso.any():
+        fec[iso] = pd.to_datetime(s[iso].str.slice(0, 10), format="%Y-%m-%d", errors="coerce")
+    if (~iso).any():
+        fec[~iso] = pd.to_datetime(s[~iso], dayfirst=True, errors="coerce")
+    return fec
+
+
+def _semanal_leer(path):
+    """Lee una fuente de ventas (cualquiera de las 3) y devuelve el DataFrame mínimo
+    normalizado: cliente, fecha, imp, canal, sem, periodo. Ya filtrado a neto>0 y sin
+    vendedores excluidos. usecols: de las 57 columnas del ERP sólo se parsean 6
+    (historial_ventas.csv pesa 63 MB — leerlo entero en Render sería inviable)."""
+    if not path.exists():
+        return pd.DataFrame()
+    try:
+        with open(path, "r", encoding="utf-8-sig", errors="ignore") as f:
+            cab = f.readline()
+    except OSError:
+        return pd.DataFrame()
+    sep = ";" if cab.count(";") >= cab.count(",") else ","
+    df = None
+    for enc in ("utf-8-sig", "latin-1", "windows-1252"):
+        try:
+            df = pd.read_csv(path, sep=sep, encoding=enc, dtype=str, quotechar='"',
+                             usecols=_SEMANAL_COLS, low_memory=False)
+            break
+        except (UnicodeDecodeError, ValueError):
+            continue
+    if df is None or df.empty:
+        return pd.DataFrame()
+    df.columns = [c.strip() for c in df.columns]
+    df["imp"] = _semanal_num(df["ImporteNetoItem"])
+    df["cv"]  = pd.to_numeric(df["CodVendedor"], errors="coerce")
+    df["fec"] = _semanal_fechas(df["FechaComprobante"])
+    df = df[(~df["cv"].isin(_VENDEDORES_EXCLUIDOS)) & (df["imp"] > 0)]
+    df = df.dropna(subset=["fec", "Cliente"])
+    if df.empty:
+        return pd.DataFrame()
+    df = df.copy()
+    df["canal"]   = _canal_ccc_empresa(df)
+    df["sem"]     = (((df["fec"].dt.day - 1) // 7) + 1).clip(upper=4)
+    df["periodo"] = df["fec"].dt.strftime("%Y-%m")
+    return df[["Cliente", "fec", "imp", "canal", "sem", "periodo"]]
+
+
+def _semanal_agg(df):
+    """{kpi: {total, valores[4], pcts[4]}} para un mes ya filtrado."""
+    out = {}
+    tot_f = float(df["imp"].sum())
+    val_f = [float(df.loc[df["sem"] == s, "imp"].sum()) for s in (1, 2, 3, 4)]
+    out["facturacion"] = {
+        "total":   round(tot_f, 2),
+        "valores": [round(v, 2) for v in val_f],
+        "pcts":    [round(v / tot_f * 100, 1) if tot_f else 0.0 for v in val_f],
+    }
+    for kpi, canales in _SEMANAL_CANALES.items():
+        g = df[df["canal"].isin(canales)]
+        if g.empty:
+            out[kpi] = {"total": 0, "valores": [0, 0, 0, 0], "pcts": [0.0] * 4}
+            continue
+        # Semana de la PRIMERA compra del mes de cada cliente → aporte incremental
+        primera = g.groupby("Cliente")["sem"].min()
+        n = int(primera.shape[0])
+        val = [int((primera == s).sum()) for s in (1, 2, 3, 4)]
+        out[kpi] = {
+            "total":   n,
+            "valores": val,
+            "pcts":    [round(v / n * 100, 1) if n else 0.0 for v in val],
+        }
+    return out
+
+
+def _semanal_periodos_cerrados(hoy=None):
+    """Lista de 'YYYY-MM' desde _SEMANAL_DESDE hasta el mes anterior al actual."""
+    hoy = hoy or datetime.now(_ARG_TZ).date()
+    a0, m0 = int(_SEMANAL_DESDE[:4]), int(_SEMANAL_DESDE[5:7])
+    a1, m1 = (hoy.year, hoy.month - 1) if hoy.month > 1 else (hoy.year - 1, 12)
+    out = []
+    a, m = a0, m0
+    while (a, m) <= (a1, m1):
+        out.append(f"{a:04d}-{m:02d}")
+        a, m = (a, m + 1) if m < 12 else (a + 1, 1)
+    return out
+
+
+def _semanal_fuente_de(periodo):
+    """(path, etiqueta) del archivo que manda para ese mes. Prioriza el cierre
+    versionado; si no está, cae al historial estático."""
+    p = INPUTS / "cierres mes" / f"ventas_mes_{periodo[5:7]}{periodo[:4]}.csv"
+    if p.exists():
+        return p, "cierre mensual"
+    return BASE / "02_HISTORY" / "historial_ventas.csv", "historial"
+
+
+def _semanal_mtime(path):
+    try:
+        return path.stat().st_mtime
+    except OSError:
+        return 0
+
+
+_SEMANAL_HIST_CACHE = {"key": None, "data": None}
+
+
+def _semanal_historico():
+    """Apertura semanal de todos los meses cerrados desde julio 2025.
+    Cacheado por (archivo, mtime) de todas las fuentes: el historial se parsea una
+    sola vez por proceso y sólo se recalcula si cambia algún archivo."""
+    periodos = _semanal_periodos_cerrados()
+    fuentes = {per: _semanal_fuente_de(per) for per in periodos}
+    key = tuple(sorted({(str(p), _semanal_mtime(p)) for p, _ in fuentes.values()}))
+    if _SEMANAL_HIST_CACHE["data"] is not None and _SEMANAL_HIST_CACHE["key"] == key:
+        return _SEMANAL_HIST_CACHE["data"]
+    cache_df = {}
+    meses = []
+    for per in periodos:
+        path, etiqueta = fuentes[per]
+        sp = str(path)
+        if sp not in cache_df:
+            cache_df[sp] = _semanal_leer(path)
+        df = cache_df[sp]
+        if df.empty:
+            continue
+        g = df[df["periodo"] == per]
+        if g.empty:
+            continue
+        a, m = int(per[:4]), int(per[5:7])
+        meses.append({
+            "periodo": per,
+            "label":   f"{_SEMANAL_MESES_ES[m]} {a}",
+            "fuente":  etiqueta,
+            "kpis":    _semanal_agg(g),
+        })
+    promedio = {}
+    for kpi in _SEMANAL_KPI_IDS:
+        filas = [m["kpis"][kpi]["pcts"] for m in meses if m["kpis"][kpi]["total"]]
+        promedio[kpi] = ([round(sum(f[i] for f in filas) / len(filas), 1) for i in range(4)]
+                         if filas else [0.0] * 4)
+    data = {"meses": meses, "promedio": promedio, "meses_promediados":
+            {kpi: sum(1 for m in meses if m["kpis"][kpi]["total"]) for kpi in _SEMANAL_KPI_IDS}}
+    _SEMANAL_HIST_CACHE.update({"key": key, "data": data})
+    return data
+
+
+_SEMANAL_ACTUAL_CACHE = {"key": None, "data": None}
+
+
+def _semanal_actual():
+    """Apertura semanal del mes en curso (ventas.csv). Parcial por definición:
+    las semanas que todavía no ocurrieron valen 0 y se marcan 'pendiente'."""
+    from calendar import monthrange
+    path = INPUTS / "ventas.csv"
+    hoy = datetime.now(_ARG_TZ).date()
+    per = f"{hoy.year:04d}-{hoy.month:02d}"
+    key = (str(path), _semanal_mtime(path), per, hoy.isoformat())
+    if _SEMANAL_ACTUAL_CACHE["data"] is not None and _SEMANAL_ACTUAL_CACHE["key"] == key:
+        return _SEMANAL_ACTUAL_CACHE["data"]
+    ultimo = monthrange(hoy.year, hoy.month)[1]
+    rangos = [(1, 7), (8, 14), (15, 21), (22, ultimo)]
+    semanas = []
+    for i, (d1, d2) in enumerate(rangos, start=1):
+        if hoy.day > d2:
+            estado = "cerrada"
+        elif hoy.day >= d1:
+            estado = "en_curso"
+        else:
+            estado = "pendiente"
+        semanas.append({
+            "semana": i, "estado": estado,
+            "desde": f"{per}-{d1:02d}", "hasta": f"{per}-{d2:02d}",
+            "label": f"{d1}–{d2}",
+        })
+    df = _semanal_leer(path)
+    g = df[df["periodo"] == per] if not df.empty else pd.DataFrame()
+    if g.empty:
+        kpis = {k: {"total": 0, "valores": [0] * 4, "pcts": [0.0] * 4} for k in _SEMANAL_KPI_IDS}
+        ultima_fecha = None
+    else:
+        kpis = _semanal_agg(g)
+        ultima_fecha = str(g["fec"].max().date())
+    data = {
+        "periodo": per,
+        "label":   f"{_SEMANAL_MESES_ES[hoy.month]} {hoy.year}",
+        "hoy":     hoy.isoformat(),
+        "ultima_fecha_venta": ultima_fecha,
+        "semanas": semanas,
+        "kpis":    kpis,
+    }
+    _SEMANAL_ACTUAL_CACHE.update({"key": key, "data": data})
+    return data
+
+
+def _semanal_objetivos():
+    """Objetivo del mes por KPI: CCC de objccc.xlsx (mismos canales que CCC empresa)
+    y facturación de resultado.xlsx hoja Avance (suma de ValorObjetivo de la ruta).
+    Sin fuente devuelve None — nunca 0, que se leería como 'objetivo cero'."""
+    obj = {k: None for k in _SEMANAL_KPI_IDS}
+    ccc = _objetivos_ccc_empresa()
+    if ccc:
+        obj["ccc_tradicional"]  = int(ccc.get("Tradicionales", 0)) or None
+        obj["ccc_autoservicio"] = int(ccc.get("Autoservicios", 0)) or None
+        op = sum(int(ccc.get(c, 0)) for c in _SEMANAL_CANALES["ccc_onpremise"])
+        obj["ccc_onpremise"] = op or None
+    p = INPUTS / "resultado.xlsx"
+    if p.exists():
+        try:
+            av = pd.read_excel(p, sheet_name="Avance")
+            tot = 0.0
+            for _, r in av.iterrows():
+                cn = clean_code(str(r.get("VendedorCodigo", "")))
+                if not cn or int(cn) in _VENDEDORES_EXCLUIDOS:
+                    continue
+                tot += float(r.get("ValorObjetivo", 0) or 0)
+            obj["facturacion"] = round(tot, 2) or None
+        except Exception as e:
+            print(f"[AVISO] semanal objetivos resultado.xlsx: {e}")
+    return obj
+
+
+def _semanal_plan_leer(periodo):
+    """{kpi: [p1,p2,p3,p4]} + metadata de la última edición."""
+    plan = {k: [None] * 4 for k in _SEMANAL_KPI_IDS}
+    meta = {"updated_at": None, "editado_por": None}
+    try:
+        conn = sqlite3.connect(str(DB_PATH))
+        rows = conn.execute(
+            "SELECT kpi, semana, pct, editado_por, updated_at FROM plan_semanal WHERE periodo=?",
+            (periodo,)).fetchall()
+        conn.close()
+    except Exception as e:
+        print(f"[AVISO] plan_semanal leer: {e}")
+        return plan, meta
+    for kpi, sem, pct, autor, ts in rows:
+        if kpi in plan and 1 <= int(sem) <= 4:
+            plan[kpi][int(sem) - 1] = None if pct is None else round(float(pct), 2)
+        if ts and (meta["updated_at"] is None or ts > meta["updated_at"]):
+            meta = {"updated_at": ts, "editado_por": autor}
+    return plan, meta
+
+
+def _semanal_plan_export_csv():
+    """Respaldo del plan semanal a CSV (mismo criterio que la planificación diaria:
+    la tabla vive en el disco persistente, pero el CSV permite recuperarla a mano)."""
+    try:
+        PLAN_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(DB_PATH))
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute("SELECT * FROM plan_semanal ORDER BY periodo, kpi, semana").fetchall()
+        conn.close()
+        if not rows:
+            return
+        with open(str(PLAN_BACKUP_DIR / "plan_semanal_latest.csv"), "w", newline="", encoding="utf-8") as f:
+            w = _csv.DictWriter(f, fieldnames=rows[0].keys())
+            w.writeheader()
+            w.writerows([dict(r) for r in rows])
+    except Exception as e:
+        print(f"[WARN] _semanal_plan_export_csv: {e}")
+
+
+@app.route("/api/gerencia/semanal")
+def gerencia_semanal():
+    """Pantalla Semanal: histórico de distribución semanal + plan del mes en curso.
+    Real (histórico y mes vivo) = ventas facturadas por FechaComprobante.
+    Plan = carga manual de gerencia (tabla plan_semanal)."""
+    hist = _semanal_historico()
+    actual = _semanal_actual()
+    plan, plan_meta = _semanal_plan_leer(actual["periodo"])
+    return jsonify({
+        "generado_en": _now_ar(),
+        "fuente": ("cierres mes/ventas_mes_MMAAAA.csv + 02_HISTORY/historial_ventas.csv "
+                   "(meses cerrados) · 01_INPUTS/ventas.csv (mes en curso)"),
+        "definicion_semana": "S1 1-7 · S2 8-14 · S3 15-21 · S4 22-fin",
+        "definicion_ccc": "aporte incremental: el cliente cuenta en la semana de su primera compra del mes",
+        "excluidos": "V1 · V2 · V5 · V20 Depósito",
+        "kpis": _SEMANAL_KPIS,
+        "historico": hist["meses"],
+        "promedio": hist["promedio"],
+        "meses_promediados": hist["meses_promediados"],
+        "actual": actual,
+        "objetivos": _semanal_objetivos(),
+        "plan": plan,
+        "plan_meta": plan_meta,
+    })
+
+
+@app.route("/api/gerencia/semanal/plan", methods=["POST"])
+def gerencia_semanal_plan():
+    """Guarda el % planificado por semana y KPI del mes indicado.
+    Body: {periodo:'YYYY-MM', autor:'...', plan:{kpi:[p1,p2,p3,p4]}}
+    Un valor null/'' borra la celda (queda sin planificar, no en 0)."""
+    body = request.get_json(silent=True) or {}
+    periodo = str(body.get("periodo", "")).strip()
+    _p = periodo.split("-")
+    if len(_p) != 2 or not (_p[0].isdigit() and len(_p[0]) == 4
+                            and _p[1].isdigit() and len(_p[1]) == 2 and 1 <= int(_p[1]) <= 12):
+        return jsonify({"ok": False, "error": "periodo inválido (YYYY-MM)"}), 400
+    plan = body.get("plan") or {}
+    if not isinstance(plan, dict):
+        return jsonify({"ok": False, "error": "plan inválido"}), 400
+    autor = str(body.get("autor", "gerencia")).strip()[:40]
+    ts = _now_ar()
+    filas, borrar = [], []
+    for kpi, vals in plan.items():
+        if kpi not in _SEMANAL_KPI_IDS or not isinstance(vals, list):
+            continue
+        for i, v in enumerate(vals[:4], start=1):
+            if v is None or v == "":
+                borrar.append((periodo, kpi, i))
+                continue
+            try:
+                pct = float(v)
+            except (TypeError, ValueError):
+                return jsonify({"ok": False, "error": f"valor no numérico en {kpi} S{i}"}), 400
+            if pct < 0 or pct > 100:
+                return jsonify({"ok": False, "error": f"{kpi} S{i}: el % debe estar entre 0 y 100"}), 400
+            filas.append((periodo, kpi, i, round(pct, 2), autor, ts))
+    try:
+        conn = sqlite3.connect(str(DB_PATH))
+        c = conn.cursor()
+        if borrar:
+            c.executemany("DELETE FROM plan_semanal WHERE periodo=? AND kpi=? AND semana=?", borrar)
+        if filas:
+            c.executemany("""INSERT INTO plan_semanal(periodo,kpi,semana,pct,editado_por,updated_at)
+                             VALUES(?,?,?,?,?,?)
+                             ON CONFLICT(periodo,kpi,semana) DO UPDATE SET
+                               pct=excluded.pct, editado_por=excluded.editado_por,
+                               updated_at=excluded.updated_at""", filas)
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[ERROR] plan_semanal guardar: {e}")
+        return jsonify({"ok": False, "error": f"no se pudo guardar: {e}"}), 500
+    _semanal_plan_export_csv()
+    guardado, meta = _semanal_plan_leer(periodo)
+    return jsonify({"ok": True, "periodo": periodo, "plan": guardado, "plan_meta": meta})
 
 
 # ====== 11 TITULARES: MATCH POR CÓDIGO DE ARTÍCULO (matriz oficial AS) ======

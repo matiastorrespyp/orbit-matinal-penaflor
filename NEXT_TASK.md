@@ -1,5 +1,20 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-28 - Pantalla Semanal (gerencia): histórico por semana + planificación del mes
+
+### HECHO
+- [x] Pantalla **📆 Semanal** en el menú de gerencia, con dos tarjetas y los 4 KPIs (CCC Trad / CCC AS / CCC On Premise / Facturación $).
+- [x] **Tarjeta 1 — Histórico:** % del mes por semana desde jul-2025 (12 meses cerrados), con fila **Promedio** como base para planificar. Fuente por mes: cierre versionado → historial → ventas.csv (se resuelve sola cada mes).
+- [x] **Tarjeta 2 — Planificación del mes:** carga manual del % por semana y KPI; al cerrar cada semana muestra Plan (% × objetivo) vs Real vs Δ. Botón "Usar promedio histórico" (normaliza a 100%).
+- [x] Backend: tabla `plan_semanal`, `GET /api/gerencia/semanal`, `POST /api/gerencia/semanal/plan`. Reusa `_canal_ccc_empresa` y los objetivos de `objccc.xlsx` / `resultado.xlsx`.
+- [x] Validado: CCC del mes vivo idéntico a `/api/gerencia/ccc_empresa` (640/121/41), endpoint 2.6 s → 0.03 s cacheado, portal probado en Chrome, plan de prueba borrado de `orbit.db`.
+
+### PENDIENTE
+- [ ] **Sin commitear** — falta aprobación explícita. Archivos: `server_orbit.py`, `PAV MATINAL PE_A FLOR/portal.html`, `CHANGELOG_AI.md`, `NEXT_TASK.md`.
+- [ ] La tabla `plan_semanal` se crea sola en `init_db()` al arrancar; en Render aparece en el próximo deploy. Nada que migrar a mano.
+- [ ] **Decisión de negocio abierta:** el real de facturación es lo **facturado** (FechaComprobante), mientras que el objetivo de `resultado.xlsx` se mide contra el **acumulado de pedidos** (lo que muestra Plan vs Real). Por eso los Δ de facturación salen más negativos de lo que se ve en Plan vs Real. Está aclarado al pie de la tarjeta. Si se prefiere medir el semanal contra pedidos, hay fuente diaria desde 2026-06-02 (`02_HISTORY/acumulado_resultado_historico.csv`), pero el histórico de 13 meses sólo existe en facturado.
+- [ ] Cuando el usuario cargue su planificación de julio, revisar que la suma dé 100% por KPI (la columna Suma queda ámbar si no).
+
 ## Sesion 2026-07-27 - Baja de la tarjeta "Sin Comp. Mes" (dashboard gerencia)
 
 ### HECHO
