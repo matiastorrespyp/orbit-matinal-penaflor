@@ -1,5 +1,23 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-28 - feat(semanal): borrar plan por semana, semanas cerradas bloqueadas y resumen de stock por grupo
+
+Dos pedidos sobre lo entregado hoy.
+
+**1. Planificación semanal: borrar por semana y bloquear las cerradas.**
+- Botón **🗑 Borrar** en el encabezado de cada semana: limpia las 4 filas de KPI de esa semana y **persiste** (no hay que apretar Guardar aparte).
+- **La semana cerrada no se planifica ni se borra:** sus inputs quedan `disabled` con estilo atenuado, el botón de borrar no se dibuja y en su lugar va un 🔒. El plan ya cargado **sigue visible** (read-only) para poder leer la variación contra lo logrado.
+- `semUsarPromedio()` respeta el bloqueo: rellena sólo las semanas abiertas.
+- **Regresión cubierta:** un input `disabled` conserva su `value`, así que `semGuardar()` lo re-postea igual y el plan de una semana cerrada **no se pierde** al guardar. Verificado punta a punta.
+
+**2. Tarjeta de stock: el resumen ahora muestra los 3 grupos, no sólo "bajo 30 días".**
+- Antes el resumen listaba únicamente los productos bajo 30 días, así que los KPI "sin existencia" y "bajo 15 días" mostraban un número sin decir **cuáles** eran (caso reportado: Innovaciones en PyP con "2 sin existencia de 27" y ningún detalle).
+- Ahora hay **tres bloques con sus productos**: 🚫 Sin existencia · 🔴 Bajo 15 días · 🟠 De 15 a 30 días.
+- **Los grupos son EXCLUYENTES** (`grupo` en cada fila, calculado en `_dias_stock_filas`): `sin_stock` / `critico` / `atencion` / `sin_venta` / `ok`. Antes "bajo 30" incluía a los "bajo 15" y los de stock 0 contaban en las dos puntas; ahora cada producto cae en un solo grupo y **los contadores de los KPI coinciden exactamente con lo que lista cada bloque**. Se verificó que la suma de los 5 grupos = total de productos en los 6 cortes (2 depósitos × 3 universos).
+- Cambia el rótulo del tercer KPI: "Bajo 30 días" → **"De 15 a 30 días"**, para que diga lo que efectivamente cuenta. Se agrega `en_riesgo` (sin_stock + critico + atencion) al resumen.
+- Los "sin existencia" distinguen dos casos, que se leen distinto: **"sin existencia en depósito"** (el código está en el archivo con 0 u) y **"no está en el archivo de stock"** (nunca llegó, o el export no lo trae).
+- **Validado:** PyP · Innovaciones ahora lista los 2 sin existencia por nombre (`TERMIDOR TRAD B-D SLIM 12X1L` y `Don David Torrontes Low 6x750`, ninguno de los dos figura en el stock y ninguno vendió en junio). KPI 2/1/2 ↔ bloques con 2/1/2 productos. Borrado de S4 probado con clic real: inputs vacíos, DB en null, suma en "–". Plan de prueba borrado de `orbit.db`. `node --check` + `ast.parse` OK.
+
 ## 2026-07-28 - fix(cierre): los dos archivos de stock al allowlist del cierre diario
 
 - **Contexto:** `CIERRE_DIA_ORBIT.bat` no hace `git add .` sino un allowlist explícito de ~35 rutas. Ninguno de los archivos de stock estaba: el cierre nunca los publicaba, así que Render quedaba con la foto del último commit manual y la tarjeta Días de Stock (y Stock sin Venta) habría mostrado un stock viejo sin avisar. Es el patrón de ERR-014 (ver [[project_cierre_allowlist]]).

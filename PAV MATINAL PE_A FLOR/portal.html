@@ -410,6 +410,13 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
   background:rgba(0,0,0,.35); border:1px solid var(--bs); border-radius:var(--r-sm); color:var(--text); }
 .sem-in:focus { outline:none; border-color:var(--mg); box-shadow:0 0 0 2px var(--mg-s); }
 .sem-in.pend { border-style:dashed; color:var(--text3); }
+.sem-in.lock { background:rgba(0,0,0,.15); border-color:var(--b); color:var(--text3);
+  cursor:not-allowed; opacity:.75; }
+.sem-del { font-size:9px; font-weight:700; letter-spacing:.3px; padding:3px 7px;
+  border-radius:999px; border:1px solid var(--bs); color:var(--text3); transition:all .14s; }
+.sem-del:hover { border-color:var(--bd); color:var(--bd); background:var(--bd-s); }
+.sem-lock { font-size:9px; font-weight:700; letter-spacing:.3px; color:var(--text3);
+  padding:3px 7px; }
 .sem-cell-meta { font-size:9.5px; color:var(--text3); margin-top:5px; line-height:1.45; }
 .sem-cell-meta b { font-variant-numeric:tabular-nums; }
 .sem-dl { font-weight:700; }
@@ -448,7 +455,8 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 .st-item { display:flex; align-items:center; justify-content:space-between; gap:10px;
   background:var(--surf2); border:1px solid var(--b); border-left:3px solid var(--bd);
   border-radius:9px; padding:8px 11px; }
-.st-item.wn { border-left-color:var(--wn); }
+.st-item.atencion { border-left-color:var(--wn); }
+.st-item.sin_stock { border-left-color:var(--bd); background:var(--bd-s); }
 .st-item-nm { min-width:0; }
 .st-item-nm b { display:block; font-size:11.5px; line-height:1.2;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -3827,20 +3835,30 @@ function semRenderPlan(){
   const A=SEM.actual||{}, obj=SEM.objetivos||{}, sems=A.semanas||[];
   const estCls={cerrada:'ok',en_curso:'mg',pendiente:''};
   const estTxt={cerrada:'CERRADA',en_curso:'EN CURSO',pendiente:'PENDIENTE'};
-  const th=sems.map(w=>`<th><div class="sem-wk-hd">
+  // La semana cerrada ya es historia: no se planifica ni se borra. Su plan queda
+  // visible (read-only) para poder leer la variación contra lo logrado.
+  const th=sems.map((w,i)=>`<th><div class="sem-wk-hd">
       <b style="font-size:11px;color:var(--text2)">S${w.semana}</b>
       <span style="font-weight:600">${w.label}</span>
       <span class="chip ${estCls[w.estado]||''}">${estTxt[w.estado]||''}</span>
+      ${w.estado==='cerrada'
+        ? `<span class="sem-lock" title="Semana cerrada: no se planifica ni se borra">🔒</span>`
+        : `<button class="sem-del" onclick="semBorrarSemana(${i})"
+                   title="Borrar el plan de la semana ${w.semana}">🗑 Borrar</button>`}
     </div></th>`).join('');
 
   const filas=(SEM.kpis||[]).map(k=>{
     const o=obj[k.id];
-    const tds=sems.map((w,i)=>`<td>
-        <input class="sem-in ${w.estado==='pendiente'?'pend':''}" type="number" min="0" max="100" step="0.1"
+    const tds=sems.map((w,i)=>{
+      const cerrada=w.estado==='cerrada';
+      return `<td>
+        <input class="sem-in ${cerrada?'lock':(w.estado==='pendiente'?'pend':'')}" type="number"
+               min="0" max="100" step="0.1" ${cerrada?'disabled':''}
                id="sem-in-${k.id}-${i}" value="${semPlanVal(k.id,i)??''}" placeholder="–"
                oninput="semCell('${k.id}',${i})">
         <div class="sem-cell-meta" id="sem-meta-${k.id}-${i}">${semMetaHtml(k,i,o)}</div>
-      </td>`).join('');
+      </td>`;
+    }).join('');
     return `<tr>
       <td><b>${k.label}</b></td>
       <td class="sem-tot">${o!=null?`<span title="${semExacto(o,k.tipo)}">${semNum(o,k.tipo)}</span>`
@@ -3921,8 +3939,21 @@ function semCell(kpi,i){
   const s=document.getElementById(`sem-suma-${kpi}`);      if(s) s.innerHTML=semSumaHtml(kpi);
 }
 
+/* Borra el plan de UNA semana (las 4 filas) y lo persiste. Las semanas cerradas
+   no se tocan: el botón directamente no se dibuja. */
+async function semBorrarSemana(i){
+  const w=(SEM.actual?.semanas||[])[i];
+  if(!w || w.estado==='cerrada') return;
+  (SEM.kpis||[]).forEach(k=>{
+    semSetEdit(k.id,i,null);
+    const el=document.getElementById(`sem-in-${k.id}-${i}`); if(el) el.value='';
+  });
+  await semGuardar();
+}
+
 function semUsarPromedio(){
   const prom=SEM.promedio||{};
+  const cerrada=i=>((SEM.actual?.semanas||[])[i]||{}).estado==='cerrada';
   (SEM.kpis||[]).forEach(k=>{
     let p=prom[k.id]; if(!p) return;
     // El promedio de %s redondeados no da 100 exacto (99.9 / 100.1): el residuo se
@@ -3934,6 +3965,7 @@ function semUsarPromedio(){
       p[mx]=Math.round((p[mx]+100-suma)*10)/10;
     }
     p.forEach((v,i)=>{
+      if(cerrada(i)) return;        // la semana cerrada no se re-planifica
       semSetEdit(k.id,i,v);
       const el=document.getElementById(`sem-in-${k.id}-${i}`); if(el) el.value=v;
       const m=document.getElementById(`sem-meta-${k.id}-${i}`);
@@ -4037,26 +4069,42 @@ function _stkCard(B){
       La venta del mes anterior sí está bien (se muestra igual).
     </div>`;
 
-  // ── Resumen: sólo lo que está por debajo del umbral de atención ──
-  const bajos=(U.productos||[]).filter(f=>f.dias_stock!=null && f.dias_stock<um.atencion);
-  const items=bajos.map(f=>`<div class="st-item ${f.dias_stock<um.critico?'':'wn'}">
+  // ── Resumen: los 3 grupos de riesgo, cada uno con SUS productos ──
+  // Los grupos son excluyentes (los vienen así del backend), por eso los contadores
+  // de los KPI coinciden exactamente con lo que lista cada bloque.
+  const item=f=>{
+    const sinStock=f.grupo==='sin_stock';
+    const dtxt = sinStock
+      ? (f.en_stock?'0 u':'no figura')
+      : `${f.dias_stock.toFixed(1)} d`;
+    const sub = sinStock
+      ? (f.en_stock?'sin existencia en depósito':'no está en el archivo de stock')
+      : `${f.codigo} · ${nf(f.disponible)} u en depósito`;
+    return `<div class="st-item ${f.grupo}">
       <div class="st-item-nm">
         <b title="${f.descripcion||f.etiqueta}">${f.descripcion||f.etiqueta}</b>
-        <span>${f.codigo} · ${nf(f.disponible)} u en depósito</span>
+        <span>${sinStock?f.codigo+' · ':''}${sub}</span>
       </div>
       <div class="st-item-d">
-        <b class="st-dias ${dcls(f.dias_stock)}">${f.dias_stock.toFixed(1)} d</b>
+        <b class="st-dias ${sinStock?'bd':dcls(f.dias_stock)}">${dtxt}</b>
         <span>${nf(f.venta_diaria)} u/día</span>
       </div>
-    </div>`).join('');
-  const resumen = !ok
-    ? ''
-    : (bajos.length
-        ? `<div class="st-alert-hd">⚠️ Bajo ${um.atencion} días de stock
-             <span class="chip bd">${bajos.length} de ${nf(r.productos)}</span></div>
-           <div class="st-grid">${items}</div>`
-        : `<div class="st-alert-hd">Cobertura</div>
-           <div class="st-none">✓ Ningún producto por debajo de ${um.atencion} días de stock.</div>`);
+    </div>`;
+  };
+  const bloque=(grupo,ico,titulo,cls)=>{
+    const fs=(U.productos||[]).filter(f=>f.grupo===grupo);
+    if(!fs.length) return '';
+    return `<div class="st-alert-hd">${ico} ${titulo}
+        <span class="chip ${cls}">${fs.length} de ${nf(r.productos)}</span></div>
+      <div class="st-grid">${fs.map(item).join('')}</div>`;
+  };
+  const resumen = !ok ? '' : (
+    r.en_riesgo
+      ? bloque('sin_stock','🚫',`Sin existencia`,'bd')
+        + bloque('critico','🔴',`Bajo ${um.critico} días de stock`,'bd')
+        + bloque('atencion','🟠',`De ${um.critico} a ${um.atencion} días de stock`,'wn')
+      : `<div class="st-alert-hd">Cobertura</div>
+         <div class="st-none">✓ Ningún producto sin existencia ni por debajo de ${um.atencion} días.</div>`);
 
   // ── Desplegable con el detalle producto por producto ──
   const k=`${B.id}-${uid}`, abierto=!!stkOpen[k];
@@ -4107,16 +4155,16 @@ function _stkCard(B){
           <div class="st-kl">Días de stock del conjunto</div>
         </div>
         <div class="st-kpi">
+          <div class="st-kn ${ok?(r.sin_stock?'bd':'ok'):''}">${ok?nf(r.sin_stock):'–'}</div>
+          <div class="st-kl">Sin existencia · de ${nf(r.productos)} productos</div>
+        </div>
+        <div class="st-kpi">
           <div class="st-kn ${ok?(r.criticos?'bd':'ok'):''}">${ok?nf(r.criticos):'–'}</div>
           <div class="st-kl">Bajo ${um.critico} días</div>
         </div>
         <div class="st-kpi">
           <div class="st-kn ${ok?(r.atencion?'wn':'ok'):''}">${ok?nf(r.atencion):'–'}</div>
-          <div class="st-kl">Bajo ${um.atencion} días</div>
-        </div>
-        <div class="st-kpi">
-          <div class="st-kn ${ok?(r.sin_stock?'wn':'ok'):''}">${ok?nf(r.sin_stock):'–'}</div>
-          <div class="st-kl">Sin existencia · de ${nf(r.productos)} productos</div>
+          <div class="st-kl">De ${um.critico} a ${um.atencion} días</div>
         </div>
         <div class="st-kpi">
           <div class="st-kn">${ok?nf(r.disponible):'–'}</div>

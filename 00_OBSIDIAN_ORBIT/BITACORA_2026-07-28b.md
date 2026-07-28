@@ -1,8 +1,9 @@
 # Bitácora — Sesión 2026-07-28 (parte 2)
 
-Detalle en `CHANGELOG_AI.md`. Continuación de [[BITACORA_2026-07-28]] (pantalla Semanal). Un solo tema:
+Detalle en `CHANGELOG_AI.md`. Continuación de [[BITACORA_2026-07-28]] (pantalla Semanal). Dos temas:
 
 1. **Días de Stock** al pie de la pantalla Semanal, en dos tarjetas: **Stock PyP** y **VSB Cuyo**.
+2. **Ajustes sobre lo entregado**, ya con el usuario mirando la pantalla: borrar el plan por semana, bloquear las semanas cerradas, y mostrar el resumen de stock por grupo.
 
 ---
 
@@ -127,6 +128,46 @@ Umbrales en `_DIAS_STOCK_CRITICO` / `_DIAS_STOCK_ATENCION` (15 / 30), a confirma
 Se agregaron las dos rutas de stock. **`MPA/MPA.xlsx` queda afuera a propósito**: es una lista fija de productos, no cambia con el cierre. Cuando el negocio la actualice hay que commitearla a mano y revisar `09_CONFIG/mpa_codigos.csv` en la misma pasada (los productos nuevos van a aparecer como "sin código asignado" hasta que se mapeen — que es justamente lo que se quiere que pase).
 
 Detalle no menor: el `.bat` tiene que quedar en **CRLF puro** ([[project_cierre_bat_crlf]]). Se verificó después de editar: 275 CRLF, 0 LF sueltos. Y `check_git_cierre.py --test` pasa, porque `01_INPUTS/` ya está declarado como ruta operativa.
+
+---
+
+# 2. Ajustes con el usuario mirando la pantalla
+
+Los dos salieron de usar la pantalla, no de leer la especificación. Vale anotarlos porque los dos tocan un principio.
+
+## Borrar el plan de una semana · la semana cerrada se bloquea
+
+Pedido: un botón para borrar una semana, "y que si la semana está cerrada no se planifique ni se borre".
+
+El botón **🗑 Borrar** limpia las 4 filas de KPI de esa semana y **persiste solo** (no queda esperando el Guardar): borrar en dos pasos se siente como que no pasó nada.
+
+Lo interesante es el bloqueo. Una semana cerrada ya es historia: no tiene sentido planificarla. Pero su plan **sí tiene que seguir visible**, porque es contra lo que se lee la variación de lo logrado. Entonces: `disabled` + estilo atenuado + 🔒, sin botón de borrar, valor a la vista.
+
+**La trampa estaba en el guardado.** `semGuardar()` recorre *todos* los inputs y postea lo que encuentra; un `null` en el payload **borra** la celda. Si un input deshabilitado hubiera devuelto vacío, guardar el plan de S4 habría borrado en silencio el de S1, S2 y S3. No pasa —un `<input disabled>` conserva su `value`— pero es exactamente el tipo de cosa que hay que **probar**, no razonar: se cargó un 12,8% en S1 (cerrada), se guardó desde la UI y se verificó contra la API que seguía ahí.
+
+`semUsarPromedio()` también respeta el bloqueo: rellena sólo las semanas abiertas.
+
+## El resumen de stock: por qué los grupos tienen que ser excluyentes
+
+Síntoma reportado: en PyP → Innovaciones el KPI decía "2 sin existencia de 27" pero **abajo no se veía cuáles eran**; el resumen sólo listaba los de "bajo 30 días".
+
+La solución obvia —listar los tres grupos— tenía un problema de fondo: los contadores **se pisaban**. "Bajo 30" incluía a los "bajo 15", y un producto con 0 unidades caía en *sin existencia* y además en *bajo 15 días* (0 stock ÷ venta = 0 días). Listar los tres bloques habría mostrado el mismo producto dos veces y los números no habrían cerrado contra el total.
+
+Se pasó a un campo `grupo` **excluyente** por fila, calculado en el backend:
+
+| grupo | condición |
+|---|---|
+| `sin_stock` | sin existencia, o el código no figura en el archivo |
+| `critico` | hay stock, alcanza para < 15 días |
+| `atencion` | hay stock, entre 15 y 30 días |
+| `sin_venta` | hay stock pero el mes anterior no vendió: no hay días que calcular |
+| `ok` | por encima de 30 días |
+
+Ahora **el número del KPI es exactamente lo que lista el bloque de abajo**. Se verificó que la suma de los 5 grupos da el total de productos en los 6 cortes (2 depósitos × 3 universos).
+
+Efecto colateral necesario: el tercer KPI pasó de decir "Bajo 30 días" a **"De 15 a 30 días"**, porque eso es lo que cuenta ahora. Un rótulo que no describe lo que cuenta es una mentira chica que después alguien usa para decidir.
+
+Detalle que apareció al listarlos: los "sin existencia" son **dos situaciones distintas** y se muestran distinto — *sin existencia en depósito* (está en el archivo con 0 u) y *no está en el archivo de stock* (nunca llegó, o el export no lo trae). Los 2 de Innovaciones eran del segundo tipo, y además no vendieron nada en junio: no es que se agotaron, es que no existen en la operación.
 
 ## Nota de método
 

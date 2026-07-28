@@ -1,5 +1,16 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-28 - Ajustes sobre Semanal (borrar semana + resumen de stock por grupo)
+
+### HECHO
+- [x] Botón **🗑 Borrar** por semana en la planificación: limpia las 4 filas de esa semana y persiste.
+- [x] **Semana cerrada = bloqueada**: inputs `disabled` + 🔒, sin botón de borrar. El plan cargado sigue visible read-only y no se pierde al guardar.
+- [x] Tarjeta de stock: el resumen pasa de un solo bloque ("bajo 30 días") a **tres bloques con sus productos** (sin existencia / bajo 15 d / de 15 a 30 d), con grupos **excluyentes** para que los KPI y las listas coincidan.
+- [x] Tercer KPI re-rotulado a "De 15 a 30 días" (antes decía "Bajo 30 días" y contaba acumulado).
+
+### PENDIENTE
+- [ ] **Sin commitear** — falta aprobación.
+
 ## Sesion 2026-07-28 - Días de Stock: dos depósitos (Stock PyP + VSB Cuyo)
 
 ### HECHO

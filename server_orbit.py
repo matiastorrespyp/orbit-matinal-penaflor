@@ -3147,34 +3147,58 @@ def _dias_stock_venta_base(vendedores):
 
 def _dias_stock_filas(cod2etq, stock_map, unidades, habiles, desc_map):
     """Una fila por código del universo, ordenada por días de stock ascendente
-    (primero lo que se queda sin stock)."""
+    (primero lo que se queda sin stock).
+
+    Cada fila lleva un `grupo` EXCLUYENTE, para que los contadores del resumen y las
+    listas que se muestran coincidan exactamente (si "bajo 30" incluyera a los de
+    "bajo 15", el mismo producto aparecería dos veces y los números no cerrarían):
+      sin_stock  → sin existencia en el depósito (o el código no figura en el archivo)
+      critico    → hay stock, alcanza para menos de _DIAS_STOCK_CRITICO días
+      atencion   → hay stock, entre _DIAS_STOCK_CRITICO y _DIAS_STOCK_ATENCION días
+      sin_venta  → hay stock pero el mes anterior no se vendió: no hay días que calcular
+      ok         → por encima del umbral de atención
+    """
     filas = []
     for cod, etq in cod2etq.items():
         st = stock_map.get(cod)
         vendido = unidades.get(cod, 0.0)
         diaria = (vendido / habiles) if habiles else 0.0
         dias = (st["disponible"] / diaria) if (st and diaria > 0) else None
+        disponible = int(round(st["disponible"])) if st else None
+        if st is None or (disponible or 0) <= 0:
+            grupo = "sin_stock"
+        elif dias is None:
+            grupo = "sin_venta"
+        elif dias < _DIAS_STOCK_CRITICO:
+            grupo = "critico"
+        elif dias < _DIAS_STOCK_ATENCION:
+            grupo = "atencion"
+        else:
+            grupo = "ok"
         filas.append({
             "codigo":      int(cod),
             "etiqueta":    etq,
             "descripcion": (st or {}).get("descripcion") or desc_map.get(str(cod), {}).get("descripcion", ""),
             "en_stock":    st is not None,
-            "disponible":  int(round(st["disponible"])) if st else None,
+            "disponible":  disponible,
             "transito":    int(round(st["transito"])) if st else None,
             "vendido_mes": int(round(vendido)),
             "venta_diaria": round(diaria, 1),
             "dias_stock":  round(dias, 1) if dias is not None else None,
+            "grupo":       grupo,
         })
-    # None al final: sin venta el mes pasado (o sin stock) no es "0 días".
+    # None al final: sin venta el mes pasado no es "0 días".
     filas.sort(key=lambda f: (f["dias_stock"] is None, f["dias_stock"] if f["dias_stock"] is not None else 0))
     return filas
 
 
 def _dias_stock_resumen(filas, habiles):
-    """Días de stock del conjunto: existencia total / venta diaria total del universo."""
+    """Días de stock del conjunto: existencia total / venta diaria total del universo.
+    Los contadores por grupo son excluyentes (ver `_dias_stock_filas`)."""
     disp = sum(f["disponible"] or 0 for f in filas)
     vend = sum(f["vendido_mes"] or 0 for f in filas)
     diaria = (vend / habiles) if habiles else 0.0
+    n = lambda g: sum(1 for f in filas if f["grupo"] == g)
     return {
         "productos":   len(filas),
         "en_stock":    sum(1 for f in filas if f["en_stock"]),
@@ -3182,11 +3206,12 @@ def _dias_stock_resumen(filas, habiles):
         "vendido_mes": int(vend),
         "venta_diaria": round(diaria, 1),
         "dias_stock":  round(disp / diaria, 1) if diaria > 0 else None,
-        "criticos":    sum(1 for f in filas
-                           if f["dias_stock"] is not None and f["dias_stock"] < _DIAS_STOCK_CRITICO),
-        "atencion":    sum(1 for f in filas
-                           if f["dias_stock"] is not None and f["dias_stock"] < _DIAS_STOCK_ATENCION),
-        "sin_stock":   sum(1 for f in filas if not f["en_stock"] or (f["disponible"] or 0) <= 0),
+        "sin_stock":   n("sin_stock"),
+        "criticos":    n("critico"),
+        "atencion":    n("atencion"),
+        "sin_venta":   n("sin_venta"),
+        "ok":          n("ok"),
+        "en_riesgo":   n("sin_stock") + n("critico") + n("atencion"),
     }
 
 
