@@ -1329,7 +1329,13 @@ _CLIENTE_VENTAS_CACHE = {}
 
 def _cliente_ventas_base():
     """Ventas vivas disponibles para ficha cliente. Litros por la misma cascada que Sell Out
-    (_litros_por_linea: maestro 04D → PesoKg → nombre del artículo)."""
+    (_litros_por_linea: maestro 04D → PesoKg → nombre del artículo).
+
+    incluir_deposito=True: la pantalla de Clientes de gerencia muestra la cartera CON
+    depósito (_clientes_maestro(incluir_deposito=True)); si la base de ventas excluía V20,
+    los clientes que sólo compran por venta directa (ej. #786 ANSELMI) salían como
+    'Sin compras en el mes vigente' teniendo venta real. La ficha es informativa (sin
+    objetivo), así que V20 suma acá; el ficha de vendedor lo vuelve a excluir."""
     paths = [INPUTS / "ventas_acumulada.csv", INPUTS / "ventas.csv"]
     key = tuple((str(p), os.path.getmtime(p) if p.exists() else 0) for p in paths)
     df = _CLIENTE_VENTAS_CACHE.get(key)
@@ -1338,7 +1344,7 @@ def _cliente_ventas_base():
     frames = []
     for p in paths:
         if p.exists():
-            v = _preparar_df_ventas(p)
+            v = _preparar_df_ventas(p, incluir_deposito=True)
             if not v.empty:
                 frames.append(v)
     if not frames:
@@ -1350,10 +1356,15 @@ def _cliente_ventas_base():
     df["_fecha"] = pd.to_datetime(df.get("FechaComprobante"), dayfirst=True, errors="coerce")
     df["_litros"] = _litros_por_linea(df)
     df["_importe"] = pd.to_numeric(df.get("ImporteNetoItem"), errors="coerce").fillna(0)
-    df["_marca"] = df.get("Marca", pd.Series([""] * len(df), index=df.index)).astype(str).str.strip()
-    df["_linea"] = df.get("Linea", pd.Series([""] * len(df), index=df.index)).astype(str).str.strip()
-    df["_articulo"] = df.get("Articulo", pd.Series([""] * len(df), index=df.index)).astype(str).str.strip()
-    df["_codigo"] = df.get("Codigo", pd.Series([""] * len(df), index=df.index)).astype(str).str.strip()
+    # astype(str) sobre una celda vacía del ERP deja el literal "nan": sin esto la ficha
+    # mostraba una marca llamada "nan" (Cinzano/Dada Sweet vienen sin Marca en ventas.csv).
+    def _txt(col):
+        s = df.get(col, pd.Series([""] * len(df), index=df.index)).astype(str).str.strip()
+        return s.where(~s.str.lower().isin(["nan", "none", "nat"]), "")
+    df["_marca"] = _txt("Marca")
+    df["_linea"] = _txt("Linea")
+    df["_articulo"] = _txt("Articulo")
+    df["_codigo"] = _txt("Codigo")
     df["_botellas"] = pd.to_numeric(df.get("CantBase"), errors="coerce").fillna(0)
     df = df.dropna(subset=["_cli", "_vend", "_fecha"])
     if "NroComprobante" in df.columns and "Codigo" in df.columns:
@@ -1422,6 +1433,10 @@ def cliente_ficha(cliente_id):
         return jsonify({"error": "cliente fuera de la cartera del vendedor"}), 403
 
     ventas = _cliente_ventas_base()
+    if not ventas.empty and vend:
+        # Ficha pedida desde el perfil de un vendedor: V20 (Depósito / venta directa) no
+        # entra en lo que ve el vendedor. En gerencia (sin ?vendedor=) sí se muestra.
+        ventas = ventas[ventas["_vend"] != 20]
     vc = ventas[ventas["_cli"] == int(cliente_id)].copy() if not ventas.empty else pd.DataFrame()
     if vc.empty:
         base.update({

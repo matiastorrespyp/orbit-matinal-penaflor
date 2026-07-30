@@ -1,5 +1,17 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-30 - Ficha de cliente (gerencia): clientes de Depósito sin venta
+
+### HECHO
+- [x] `_cliente_ventas_base()` lee ventas con `incluir_deposito=True`: los clientes que compran por V20 (ej. #786 ANSELMI) dejan de salir "Sin compras en el mes vigente".
+- [x] `cliente_ficha()` excluye V20 cuando la ficha se abre desde el perfil de un vendedor (`?vendedor=Vxx`): gerencia ve el total del cliente, el vendedor sólo lo suyo.
+- [x] Marca `"nan"` (literal) → **"Sin marca"** en toda la ficha: afectaba 133 líneas (Cinzano, Dada Sweet, Tanqueray Bossa Nova vienen sin `Marca` del ERP).
+
+### PENDIENTE
+- [ ] **Sin commitear** — falta aprobación.
+- [ ] Los clientes de Depósito no tienen `codven` en `clientes.xlsx`, así que la ficha muestra el vendedor como `-`. Evaluar si conviene rotularlos **"V20 Depósito"** en el buscador y en la ficha, en línea con [[business_rule_sellout_maestro]].
+- [ ] La `Marca` vacía en `ventas.csv` para Cinzano / Dada Sweet / Tanqueray es un hueco del ERP. Si el negocio quiere verlos agrupados por marca en la ficha, habría que resolverlos por `Codigo` contra el maestro 04D (mismo criterio que el 11T, ver [[business_rule_11t_codigos]]).
+
 ## Sesion 2026-07-28 - Ajustes sobre Semanal (borrar semana + resumen de stock por grupo)
 
 ### HECHO

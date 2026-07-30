@@ -1,5 +1,21 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-30 - fix(clientes): la ficha de gerencia decía "sin compras" en los clientes que compran por Depósito
+
+- **Reporte:** en gerencia → pantalla **Clientes**, `#786 ANSELMI Y CIA S.R.L.` salía **"Sin compras en el mes vigente"** teniendo venta real (70 líneas en `ventas.csv`, 2.747,7 L / $15.475.505 en julio).
+- **Causa raíz:** desalineación entre las dos mitades de la ficha. El maestro se lee con `_clientes_maestro(incluir_deposito=True)` — la pantalla de Clientes **sí** muestra la cartera del Depósito — pero `_cliente_ventas_base()` llamaba a `_preparar_df_ventas(p)` con el default `incluir_deposito=False`, que descarta **CodVendedor 20**. Anselmi factura 100% por V20 (venta directa), así que el cliente aparecía en el buscador pero su base de ventas quedaba vacía. La ficha no tiene objetivo, no era un tema de la regla de exclusión de V20 (ver [[business_rule_sellout_maestro]]).
+- **Cambio 1 — `server_orbit.py:_cliente_ventas_base()`**: `_preparar_df_ventas(p, incluir_deposito=True)`. La base de la ficha ahora contiene V20.
+- **Cambio 2 — `server_orbit.py:cliente_ficha()`**: si viene `?vendedor=Vxx` (ficha abierta desde el perfil del vendedor) se filtra `_vend != 20`. Gerencia ve la venta total del cliente; el vendedor sigue viendo sólo lo suyo, sin V20. Los números del vendedor **no se mueven**.
+- **Cambio 3 — marca "nan"**: `astype(str)` sobre una celda vacía del ERP dejaba el literal `"nan"`, y la ficha dibujaba una marca llamada **nan** (era el bloque más grande de Anselmi: Cinzano 90105/90106/90110, Dada Sweet, Tanqueray Bossa Nova — el ERP no les completa `Marca`). Helper `_txt()` normaliza `nan`/`none`/`nat` → `""` en `_marca`, `_linea`, `_articulo`, `_codigo`, y el fallback existente los muestra como **"Sin marca"**. Afectaba 133 líneas de la base, o sea a **todas** las fichas, no sólo a esta.
+- **Alcance:** `_cliente_ventas_base()` lo usa **únicamente** `/api/clientes/<id>/ficha` (verificado por grep). CCC, cobertura, 11T, sell out, objetivos y avance **no tocan esta base** — ninguna métrica con objetivo cambia.
+- **Validado (test_client sobre datos reales de hoy):**
+  - `786` gerencia → 200, mes 2026-07, **2.747,7 L / $15.475.505**, 27 marcas, 70 SKUs, última compra 30/07, frecuencia 2 días/mes. Sin marca `nan`.
+  - `786` con `?vendedor=V6` → **403** (sigue fuera de la cartera del vendedor).
+  - **13 clientes** compran por Depósito este mes y los 13 están en el maestro; 11 mostraban "sin compras" y 2 mostraban la venta a medias.
+  - Clientes **mixtos** (ruta + depósito): `#15 BELTRAMO, DUTTO Y DUTT` → gerencia 2.606,6 L vs vendedor V8 197,4 L; `#8212 CLIENTE MOSTRADOR V20` → gerencia 9,0 L vs vendedor V9 1,5 L. La separación funciona.
+  - **No regresión** en clientes de ruta pura: `#4 OLGA GROSSO` (11,8 L, 5 marcas) y `#12 QUINTEROS JOEL ENRIQUE` (21,0 L, 1 marca) idénticos a antes.
+  - Humo de endpoints: `/api/clientes`, `/api/clientes/buscar`, `/api/clientes/<id>/ficha`, `/api/alertas`, `/api/dashboard`, `/api/vendedor/V6` → todos 200.
+
 ## 2026-07-28 - feat(semanal): borrar plan por semana, semanas cerradas bloqueadas y resumen de stock por grupo
 
 Dos pedidos sobre lo entregado hoy.
