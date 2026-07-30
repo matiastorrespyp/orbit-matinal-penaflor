@@ -1,4 +1,7 @@
 ﻿cliente_id,categoria,producto,fecha,cajas
+172,escala,Alaris,2026-07-30,24
+172,escala,Alma Mora,2026-07-30,24
+172,escala,Smirnoff Flavours,2026-07-30,6
 223,escala,Alma Mora,2026-07-24,12
 223,escala,Smirnoff Flavours,2026-07-24,12
 301,escala,Frizze,2026-07-02,18
@@ -83,6 +86,7 @@
 30056,escala,Smirnoff Flavours,2026-07-28,-6
 30063,escala,Alaris,2026-07-20,24
 30063,escala,Smirnoff Flavours,2026-07-20,6
+172,plan_frio,Six Pack Smirnoff ICE,2026-07-30,6
 309,plan_frio,Six Pack Smirnoff ICE,2026-07-28,6
 390,plan_frio,Six Pack Smirnoff ICE,2026-07-24,6
 519,plan_frio,Six Pack Smirnoff ICE,2026-07-21,6
