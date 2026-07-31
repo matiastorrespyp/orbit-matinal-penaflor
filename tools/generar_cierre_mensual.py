@@ -79,19 +79,31 @@ def _ahora_ar():
 
 
 def _seg(ramo, subramo):
-    t = str(ramo).upper() + " | " + str(subramo).upper()
-    if any(k in t for k in ["AUTOSERVICIO","CADENA REGIONAL","SAR","LARGE FORMAT",
-                             "PROXIMITY","CASH&CARRY","CASH & CARRY","MAYORISTA",
+    """EL SUBRAMO MANDA SOBRE EL RAMO — espejo de `_clasificar_segmento()` de
+    server_orbit.py, tienen que dar el mismo resultado. Ver el porqué allá."""
+    r = str(ramo).upper()
+    s = str(subramo).upper()
+    # "CADENAS REGIONALES" (plural) antes que On Premise: `CADENAS REGIONALES (BAR)` es un
+    # formato de supermercado grande, no un bar (el `(BAR)` matcheaba la clave "BAR").
+    if any(k in f"{r} | {s}" for k in ["AUTOSERVICIO","CADENA REGIONAL","CADENAS REGIONALES",
+                             "SAR","LARGE FORMAT",
+                             "CASH&CARRY","CASH & CARRY","MAYORISTA",
                              "MAYORISTAS","TIENDA DE BEBIDAS"]):
         return "AUTOSERVICIO"
-    if any(k in t for k in ["ON PREMISE","AWAY FROM HOME","VINOTECA","VINOTECAS",
-                             "BAR","RESTAURANT","RESTAURANTE","ESTACION DE SERVICIO",
-                             "EVENTOS","TEMPORADA","CATERING","ON DIA","ON NOCHE"]):
-        return "ON_PREMISE_VTK"
-    if any(k in t for k in ["TRADITIONAL TRADE","ALMACEN","DESPENSA","KIOSCO",
-                             "MAXIKIOSCO","FIAMBRERIA","CARNICERIA","GRANJA",
-                             "PANADERIA","CASA DE PASTAS","TRADICIONAL"]):
-        return "TRADICIONAL"
+    # PROXIMITY (estaciones de servicio) = canal propio, antes que On Premise.
+    if any(k in f"{r} | {s}" for k in ["PROXIMITY","ESTACION DE SERVICIO","ESTACIONES DE SERVICIO"]):
+        return "PROXIMITY"
+    on = ["ON PREMISE","AWAY FROM HOME","VINOTECA","VINOTECAS",
+          "BAR","RESTAURANT","RESTAURANTE",
+          "EVENTOS","TEMPORADA","CATERING","ON DIA","ON NOCHE"]
+    trad = ["TRADITIONAL TRADE","ALMACEN","DESPENSA","KIOSCO","KIOSK",
+            "MAXIKIOSCO","FIAMBRERIA","CARNICERIA","GRANJA",
+            "PANADERIA","CASA DE PASTAS","VERDULERIA","TRADICIONAL"]
+    for t in (s, r):              # el Subramo decide solo; el Ramo es el fallback
+        if any(k in t for k in on):
+            return "ON_PREMISE_VTK"
+        if any(k in t for k in trad):
+            return "TRADICIONAL"
     return "OTROS"
 
 

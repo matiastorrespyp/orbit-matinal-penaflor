@@ -325,27 +325,39 @@ def detectar_marca_desde_texto(texto: str) -> str:
 def clasificar_segmento_operativo(ramo: str, subsegmento: str) -> str:
     texto = f"{normalize_upper(ramo)} | {normalize_upper(subsegmento)}"
 
+    # Espejo de _clasificar_segmento() de server_orbit.py: este modulo genera
+    # mod_ccc_segmento.csv, que alimenta el CCC del DIA del portal. Si los dos no dicen
+    # lo mismo, el CCC del dia y el del mes contradicen.
+    # 1) SubSegmento antes que Ramo  2) PROXIMITY canal propio  3) "CADENAS REGIONALES (BAR)"
+    #    es un supermercado, no un bar.
+    r = normalize_upper(ramo)
+    s = normalize_upper(subsegmento)
+
     claves_auto = [
-        "AUTOSERVICIO", "CADENA REGIONAL", "SAR", "LARGE FORMAT", "PROXIMITY",
+        "AUTOSERVICIO", "CADENA REGIONAL", "CADENAS REGIONALES", "SAR", "LARGE FORMAT",
         "CASH&CARRY", "CASH & CARRY", "MAYORISTA", "MAYORISTAS", "TIENDA DE BEBIDAS",
     ]
     if any(k in texto for k in claves_auto):
         return "AUTOSERVICIO"
 
+    if any(k in texto for k in ["PROXIMITY", "ESTACION DE SERVICIO", "ESTACIONES DE SERVICIO"]):
+        return "PROXIMITY"
+
     claves_on = [
         "ON PREMISE", "AWAY FROM HOME", "VINOTECA", "VINOTECAS", "BAR",
-        "RESTAURANT", "RESTAURANTE", "ESTACION DE SERVICIO", "ESTACIONES DE SERVICIO",
+        "RESTAURANT", "RESTAURANTE",
         "EVENTOS", "TEMPORADA", "CATERING", "ON DIA", "ON NOCHE",
     ]
-    if any(k in texto for k in claves_on):
-        return "ON_PREMISE_VTK"
-
     claves_trad = [
-        "TRADITIONAL TRADE", "ALMACEN", "DESPENSA", "KIOSCO", "MAXIKIOSCO",
-        "FIAMBRERIA", "CARNICERIA", "GRANJA", "PANADERIA", "CASA DE PASTAS", "TRADICIONAL",
+        "TRADITIONAL TRADE", "ALMACEN", "DESPENSA", "KIOSCO", "KIOSK", "MAXIKIOSCO",
+        "FIAMBRERIA", "CARNICERIA", "GRANJA", "PANADERIA", "CASA DE PASTAS",
+        "VERDULERIA", "TRADICIONAL",
     ]
-    if any(k in texto for k in claves_trad):
-        return "TRADICIONAL"
+    for t_ in (s, r):
+        if any(k in t_ for k in claves_on):
+            return "ON_PREMISE_VTK"
+        if any(k in t_ for k in claves_trad):
+            return "TRADICIONAL"
 
     return "OTROS"
 
@@ -368,10 +380,15 @@ def clasificar_segmento_11t(ramo: str, subsegmento: str, segmento_operativo: str
         return "ON_DIA"
     if segmento_operativo == "TRADICIONAL":
         return "TRADICIONAL"
+    if segmento_operativo == "PROXIMITY":
+        # El 11T se mide en Autoservicio + Almacén + Kiosco. Las estaciones de servicio
+        # quedan fuera a propósito, igual que en generar_datasets_acum (que filtra
+        # segmento_11t a AUTOSERVICIO + TRADICIONAL).
+        return "OTROS"
     return "OTROS"
 
 def threshold_cobertura(segmento_operativo: str) -> int:
-    return 6 if segmento_operativo in {"AUTOSERVICIO", "ON_PREMISE_VTK"} else 3
+    return 6 if segmento_operativo in {"AUTOSERVICIO", "ON_PREMISE_VTK", "PROXIMITY"} else 3
 
 def prioridad_11t(tiene_flag: int, botellas_mes: float) -> str:
     if tiene_flag == 0:

@@ -1,5 +1,34 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-07-30 - Innovaciones (gerencia): Don David Torrontés Low en 0
+
+### HECHO
+- [x] `Innovaciones.xlsx` B22: `42337` → **`42377`** (código real del ERP). El producto pasa de 0 a **1 cliente** (V8 · AUTOSERVICIO, `#30033`) y además aparece en Días de Stock (174 u / 87 días).
+- [x] `Innovaciones.xlsx` B9: `14425` → **`14578`** (Termidor blanco dulce, confirmado por el negocio). Pasa de 0 a **2 clientes** (V8 · AUTOSERVICIO, `#1006` y `#538`) y en Días de Stock sale **crítico**: 12 u, 3 días, 12 en tránsito.
+- [x] Auditados **los 27 códigos** de la tarjeta contra maestro de productos + stock + `ventas.csv`. Los otros 25 están bien.
+- [x] **La compra cuenta para el vendedor que la facturó** (definición del negocio). `generar_innovaciones_segmento()`: se sacó la intersección con la cartera propia, el cliente se ubica por el subcanal del maestro, y un par (producto, cliente) le cuenta a un solo vendedor. Los faltantes del plan de acción descuentan a los que ya compraron el producto a cualquiera. **El CCC no se movió**: la causa de las diferencias era otra (ver abajo).
+
+- [x] **El SubSegmento manda sobre el Ramo** en los 3 clasificadores (motor, portal, cierre) + `KIOSK` y `VERDULERIA` a las claves de Tradicional. **60 clientes cambiaron de canal**: carnicerías, verdulerías, panaderías y casas de pastas salen de On Premise (se miden con 3 botellas, no 6) y los KIOSKO salen de OTROS.
+- [x] **`CADENAS REGIONALES (BAR)` = supermercado grande, no bar** (dato del negocio). El portal y el cierre lo mandaban a On Premise por el `(BAR)` del nombre; ahora los tres clasificadores lo resuelven como Autoservicio. La clave `"BAR"` se mantiene: `#7934` es un bar de verdad.
+- [x] **Lista blanca de V3 en cobertura eliminada**: exigía SubSegmento `ALMACEN|DESPENSA|KIOSCO` y dejaba afuera carnicerías/verdulerías/panaderías de su ruta. Cartera V3 268 → 293, cubiertos 21 → 26.
+
+- [x] **PROXIMITY = canal propio** (32 estaciones de servicio), umbral **6 botellas**, **V3 sí lo trabaja**. Tocó los **4** clasificadores (apareció el del legacy, que alimenta el CCC del día) y todos los lugares que sumaban canal por canal con lista fija.
+
+### PENDIENTE
+- [ ] **Sin commitear** — falta aprobación.
+- [ ] **Proximity no se ve en 3 lugares de la UI, a propósito, por si el negocio lo quiere:** (a) los tiles de CCC del vendedor en su propia pantalla (muestran Tradicional/AS/On Premise; el dato ya viaja como `ccc_proximity`), (b) la columna "CCC T/A/O" del ranking de gerencia, (c) la planificación, que sigue con 3 canales. En los tres casos el **total sí** incluye Proximity. Agregar (a) y (b) es UI; (c) implica cambiar el esquema de Google Sheets.
+- [ ] **Proximity no tiene objetivo de CCC en `objccc.xlsx`** (el archivo tiene 5 canales y ninguno es Proximity), así que sale como logrado sin objetivo. Si el negocio quiere medirlo contra objetivo, hay que agregarle la fila.
+- [ ] **Las acciones comerciales no tienen canal Proximity.** Hoy a esas estaciones sólo les llegan las acciones sin canal declarado (las de "TODOS"). Si alguna acción de Tradicional u On Premise las tenía que alcanzar, hay que declararlo en el catálogo. Impacto hoy: 1 sola línea de venta en el mes.
+- [ ] **`#7174 GENERO ALBERTO` y `#7231 FRANCONE GASTON` son bares asignados a V3 en el maestro; el negocio confirma que son de V8.** Hay que corregir la **cartera en el ERP** — a mano en el export se pierde en la próxima bajada. Mientras tanto no se miden (V3 no trabaja On Premise) y son la última diferencia de la tarjeta de Innovaciones. Ojo: V3 tiene **19 clientes On Premise** en el maestro; conviene revisarlos todos, no sólo estos dos.
+- [ ] **32 estaciones de servicio (`Ramo = PROXIMITY`) clasifican distinto en el motor (On Premise) y en el portal (Autoservicio).** Es previo a esta sesión y es la **única** discrepancia que queda entre los tres clasificadores. Definir el canal correcto y unificar — cambia el umbral de cobertura (3 vs 6 botellas) y el CCC por canal de esos 32 clientes.
+- [ ] **Revisar si heladerías (10) y rotiserías (2) son On Premise o Tradicional.** Quedaron en On Premise porque no están en las claves de Tradicional; carnicería, panadería y verdulería sí. Si el negocio las considera almacén, es agregar la palabra a `_TR_KEYWORDS` (y a los dos espejos).
+- [ ] **`clientes.xlsx` tiene 10 clientes duplicados** (`#272, #320, #1065, #1257, #1336, #1366, #1392, #1414, #1424, #4758`): cada uno con una fila en la ruta de **V3** y otra en la de **V8**. Hay que definir de quién son y corregir el maestro. Mientras tanto **inflan la cartera**: cuentan dos veces en el denominador de Innovaciones y muy probablemente en toda tarjeta que arme cartera desde `clientes.xlsx` (cobertura, CCC, planes). **Es la causa real** de lo que se había atribuido al criterio de atribución.
+- [ ] **`#1458` y `#1459` compran pero no están en `clientes.xlsx`** (Cazador Malbec por V8). Sin fila en el maestro no tienen subcanal y no entran en ninguna métrica de cartera. Ver si son altas nuevas que faltó bajar del ERP.
+- [ ] **8 clientes con subcanal `OTROS`** (entre ellos `#525 VELAZQUEZ FLORENCIA`, que compró 3 innovaciones): la tarjeta mide 5 subcanales y OTROS queda afuera. Revisar el `Ramo`/`SubSegmento` de esos 8 en el maestro.
+- [ ] **Definir si las ventas de V3 a On Premise cuentan.** Hoy no: la regla "V3 no trabaja On Premise" le gana al criterio nuevo. Son 4 casos este mes (`#7174`, `#7231` en Cazador Malbec; `#7215`, `#7533` en Cinzano Rosso). Si el negocio quiere que cuenten, es una línea en el motor.
+- [ ] **Validar los códigos al generar.** `_cargar_inov_productos()` acepta cualquier número que venga en el xlsx; si está mal tipeado el producto queda en 0 y **no avisa nada**. Un chequeo contra el maestro de productos con `[AVISO] código X de Innovaciones.xlsx no existe en el catálogo` habría cazado estos dos el primer día.
+- [ ] `_INOV_PRODUCTOS_DEFAULT` en `generar_datasets_acum.py` es un fallback viejo (20 productos, sin Cinzano, Los Arboles, Dada Sweet Low ni Don David Low). Sólo se usa si falta el xlsx, pero si eso pasa la tarjeta miente sin avisar.
+
 ## Sesion 2026-07-30 - Ficha de cliente (gerencia): clientes de Depósito sin venta
 
 ### HECHO

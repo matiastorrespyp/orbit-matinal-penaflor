@@ -33,30 +33,51 @@ _MAY_SUBSEG = {
 # Claves ON_PREMISE
 _OP_KEYWORDS = {
     "ON PREMISE", "AWAY FROM HOME", "VINOTECA", "VINOTECAS", "BAR",
-    "RESTAURANT", "RESTAURANTE", "ESTACION DE SERVICIO", "EVENTOS",
+    "RESTAURANT", "RESTAURANTE", "EVENTOS",
     "TEMPORADA", "CATERING", "ON DIA", "ON NOCHE",
 }
-# Claves TRADICIONAL
+# Claves PROXIMITY (estaciones de servicio) — canal propio por decisión del negocio
+# 2026-07-30. No son On Premise ni Autoservicio: se miden aparte, con umbral 6.
+_PROX_KEYWORDS = {
+    "PROXIMITY", "ESTACION DE SERVICIO", "ESTACIONES DE SERVICIO",
+}
+# Claves TRADICIONAL. "KIOSK" cubre las dos grafías del ERP (KIOSCO y KIOSKO).
 _TR_KEYWORDS = {
-    "TRADITIONAL TRADE", "ALMACEN", "DESPENSA", "KIOSCO", "MAXIKIOSCO",
+    "TRADITIONAL TRADE", "ALMACEN", "DESPENSA", "KIOSCO", "KIOSK", "MAXIKIOSCO",
     "FIAMBRERIA", "CARNICERIA", "GRANJA", "PANADERIA", "CASA DE PASTAS",
-    "TRADICIONAL", "PROXIMITY",
+    "VERDULERIA", "TRADICIONAL",
 }
 
 def _clasificar(ramo: str, subseg: str) -> str:
+    """EL SUBSEGMENTO MANDA SOBRE EL RAMO. El ERP mete carnicerías, verdulerías y
+    panaderías bajo Ramo = AWAY FROM HOME: si se mira el Ramo primero, un almacén de
+    barrio termina clasificado On Premise y se le mide cobertura con 6 botellas en vez
+    de 3 (corregido 2026-07-30). Mismo criterio que ya regía para AUTOSERVICIO."""
     s = str(subseg).upper().strip()
     r = str(ramo).upper().strip()
     # MAYORISTA: va primero para que nunca caiga en AUTOSERVICIO
     if s in _MAY_SUBSEG or r in {"CASH&CARRY", "MAYORISTAS", "MAYORISTA"}:
         return "MAYORISTA"
-    # AUTOSERVICIO: SubSegmento como fuente primaria (regla de negocio)
-    if s in _AS_SUBSEG or r in {"AUTOSERVICIO", "LARGE FORMAT"}:
+    # AUTOSERVICIO: SubSegmento como fuente primaria (regla de negocio).
+    # "CADENAS REGIONALES" tiene que resolverse acá: `CADENAS REGIONALES (BAR)` es un formato
+    # de supermercado grande, no un bar, y más abajo el `(BAR)` matchearía la clave "BAR".
+    if (s in _AS_SUBSEG or r in {"AUTOSERVICIO", "LARGE FORMAT"}
+            or "CADENA REGIONAL" in s or "CADENAS REGIONALES" in s
+            or "CADENA REGIONAL" in r or "CADENAS REGIONALES" in r):
         return "AUTOSERVICIO"
-    # ON_PREMISE
-    if any(k in s for k in _OP_KEYWORDS) or any(k in r for k in _OP_KEYWORDS):
+    # PROXIMITY antes que On Premise: el SubSegmento dice "Estacion de Servicio - AXION",
+    # que matchea las claves de OP si se lo deja pasar.
+    if any(k in s for k in _PROX_KEYWORDS) or any(k in r for k in _PROX_KEYWORDS):
+        return "PROXIMITY"
+    # SubSegmento (dato fino del ERP): decide solo, sin mirar el Ramo
+    if any(k in s for k in _OP_KEYWORDS):
         return "ON_PREMISE"
-    # TRADICIONAL
-    if any(k in s for k in _TR_KEYWORDS) or any(k in r for k in _TR_KEYWORDS):
+    if any(k in s for k in _TR_KEYWORDS):
+        return "TRADICIONAL"
+    # Recién ahora el Ramo, como fallback para los que no traen SubSegmento útil
+    if any(k in r for k in _OP_KEYWORDS):
+        return "ON_PREMISE"
+    if any(k in r for k in _TR_KEYWORDS):
         return "TRADICIONAL"
     return "OTROS"
 
@@ -79,6 +100,7 @@ UMBRAL = {
     "ON_PREMISE":   6,
     "VINOTECAS":    6,
     "MAYORISTA":    6,
+    "PROXIMITY":    6,   # estaciones de servicio (decisión del negocio 2026-07-30)
 }
 
 # Los 11 Titulares son los MISMOS para Autoservicio y Tradicional (validado por usuario 2026-06-04).
@@ -172,6 +194,11 @@ def _cargar_inov_productos():
 
 INOV_PRODUCTOS = _cargar_inov_productos()
 VENDEDORES_ACTIVOS_INOV = [3, 4, 6, 7, 8, 9, 10]
+
+# Canales que trabaja V3 (Nadia): Tradicional y Proximity. No AS, On Premise ni Mayorista.
+# En subcanal fino, TRADICIONAL se abre en ALMACEN + KIOSCO.
+_V3_SEGMENTOS  = {"TRADICIONAL", "PROXIMITY"}
+_V3_SUBCANALES = {"ALMACEN", "KIOSCO", "PROXIMITY"}
 
 
 # ─────────────────────────────────────────────
@@ -749,13 +776,11 @@ def generar_cobertura_acum(ventas, clientes):
                  **({sub_col: "subseg"} if sub_col else {})}
     ).copy()
     cart = cart[cart["segmento"] != "OTROS"]
-    # V3 (Nadia) solo trabaja Tradicional almacén/despensa/kiosco (no AS, On Premise ni Mayorista)
-    if "subseg" in cart.columns:
-        _subu = cart["subseg"].astype(str).str.upper()
-        _v3_ok = (cart["segmento"] == "TRADICIONAL") & _subu.str.contains("ALMACEN|DESPENSA|KIOSCO", na=False)
-    else:
-        _v3_ok = (cart["segmento"] == "TRADICIONAL")
-    cart = cart[(cart["vendedor_codigo"] != 3) | _v3_ok]
+    # V3 (Nadia) trabaja Tradicional y Proximity (no AS, On Premise ni Mayorista).
+    # Alcanza con el segmento: hasta 2026-07-30 esto además exigía que el SubSegmento
+    # dijera ALMACEN/DESPENSA/KIOSCO, y esa lista blanca se comía las carnicerías,
+    # verdulerías y panaderías de su ruta — clientes tradicionales que V3 sí atiende.
+    cart = cart[(cart["vendedor_codigo"] != 3) | (cart["segmento"].isin(_V3_SEGMENTOS))]
     if "subseg" in cart.columns:
         cart = cart.drop(columns=["subseg"])
 
@@ -1103,12 +1128,23 @@ def generar_planes_as(ventas, bbdd, clientes):
 def generar_innovaciones_segmento(ventas, clientes):
     """
     CCC de los productos innovación (lista de Innovaciones.xlsx) por vendedor × SUBCANAL.
-    Subcanales (5): AUTOSERVICIO, ALMACEN, KIOSCO, ON_PREMISE, MAYORISTA.
-    Fuente: ventas.csv (MES VIVO), solo Peñaflor (excluye P&P Logística).
-    V3 solo Tradicional (ALMACEN + KIOSCO): sin AS, Mayorista ni On Premise.
+    Subcanales (6): AUTOSERVICIO, ALMACEN, KIOSCO, ON_PREMISE, MAYORISTA, PROXIMITY.
+    Fuente: ventas.csv (MES VIVO). No se filtra por Empresa (ver comentario abajo).
+    V3 solo Tradicional (ALMACEN + KIOSCO) y Proximity: sin AS, Mayorista ni On Premise.
     El CSV mantiene la columna 'segmento' (ahora con el subcanal) por compat con el portal.
+
+    LA COMPRA CUENTA PARA EL VENDEDOR QUE LA FACTURÓ, no para el dueño de la cartera
+    (definición del negocio, 2026-07-30). Antes se cruzaba "clientes que le compraron a
+    ese vendedor" ∩ "cartera de ese vendedor", así que una venta hecha por V8 sobre un
+    cliente de la cartera de V3 no le sumaba a nadie y se perdía del total de gerencia.
+    El cliente se ubica en el subcanal que dice el maestro, esté o no en la cartera del
+    vendedor que le vendió. Dos consecuencias buscadas:
+      - 'clientes_compraron' puede incluir clientes fuera de la cartera del vendedor
+        (mide lo que vendió, no a quién tiene asignado).
+      - 'clientes_faltantes' (plan de acción) descuenta a los que ya compraron el producto
+        A CUALQUIER VENDEDOR: no se manda a visitar a un cliente que ya lo tiene.
     """
-    SUBCANALES = ["AUTOSERVICIO", "ALMACEN", "KIOSCO", "ON_PREMISE", "MAYORISTA"]
+    SUBCANALES = ["AUTOSERVICIO", "ALMACEN", "KIOSCO", "ON_PREMISE", "MAYORISTA", "PROXIMITY"]
 
     # Cartera por vendedor × subcanal
     cart = clientes[["Codigo", "codven", "Vendedor", "_subcanal"]].rename(
@@ -1118,7 +1154,7 @@ def generar_innovaciones_segmento(ventas, clientes):
     cart = cart[cart["segmento"].isin(SUBCANALES)]
     cart = cart[cart["vendedor_codigo"].isin(VENDEDORES_ACTIVOS_INOV)]
     # V3 solo Tradicional (Almacén + Kiosco)
-    cart = cart[~((cart["vendedor_codigo"] == 3) & (~cart["segmento"].isin(["ALMACEN", "KIOSCO"])))]
+    cart = cart[~((cart["vendedor_codigo"] == 3) & (~cart["segmento"].isin(_V3_SUBCANALES)))]
 
     # Ventas de productos innovación. No se filtra por Empresa: P&P Logística es nuestra
     # segunda razón social, no otro distribuidor (Proveedor = GRUPO PEÑAFLOR SA en el 100%
@@ -1127,22 +1163,47 @@ def generar_innovaciones_segmento(ventas, clientes):
     v["_cod"] = pd.to_numeric(v["Codigo"], errors="coerce")
     v_inov = v[v["_cod"].isin(INOV_PRODUCTOS.keys()) &
                v["CodVendedor"].isin(VENDEDORES_ACTIVOS_INOV)].copy()
+    v_inov = v_inov.dropna(subset=["_cod", "Cliente", "CodVendedor"])
+    # Un par (producto, cliente) le cuenta a UN solo vendedor. Si dos vendedores le
+    # facturaron el mismo producto al mismo cliente, se lo queda el de mayor volumen:
+    # de lo contrario el total de gerencia (suma por vendedor) contaría dos veces al cliente.
+    v_inov = (v_inov.groupby(["_cod", "Cliente", "CodVendedor"], as_index=False)["CantBase"].sum()
+                    .sort_values("CantBase", ascending=False)
+                    .drop_duplicates(subset=["_cod", "Cliente"]))
+
+    # Subcanal del cliente según el maestro: ubica la compra en su segmento aunque el
+    # cliente no esté en la cartera del vendedor que la facturó.
+    cli_seg = clientes[["Codigo", "_subcanal"]].dropna(subset=["Codigo"]).drop_duplicates(subset=["Codigo"])
+    SEG_DE_CLIENTE = {int(c): s for c, s in zip(cli_seg["Codigo"], cli_seg["_subcanal"])}
+
+    compras_vend = {}      # (producto, vendedor) → set de clientes a los que ESE vendedor le vendió
+    compradores = {}       # producto → set de clientes que lo compraron, a cualquier vendedor
+    for cod_p, cli, vend in zip(v_inov["_cod"], v_inov["Cliente"], v_inov["CodVendedor"]):
+        cod_p, cli, vend = int(cod_p), int(cli), int(vend)
+        compras_vend.setdefault((cod_p, vend), set()).add(cli)
+        compradores.setdefault(cod_p, set()).add(cli)
 
     fecha = datetime.now().strftime("%Y-%m-%d")
     filas = []
     for vend_cod, grp_vend in cart.groupby("vendedor_codigo"):
+        vend_cod = int(vend_cod)
         vend_nombre = grp_vend["vendedor_nombre"].iloc[0]
         for seg in SUBCANALES:
-            grp_seg = grp_vend[grp_vend["segmento"] == seg]
-            if grp_seg.empty:
+            # V3 no trabaja AS / On Premise / Mayorista: esas filas no existen para ella.
+            if vend_cod == 3 and seg not in _V3_SUBCANALES:
                 continue
+            grp_seg = grp_vend[grp_vend["segmento"] == seg]
             cartera_ids = set(grp_seg["cliente_id"].dropna().astype(int))
+            # Clientes de este subcanal a los que el vendedor le facturó alguna innovación,
+            # tenga o no cartera propia acá (si no, la venta se volvería a perder).
+            vendio_en_seg = {c for (p, vv), cs in compras_vend.items() if vv == vend_cod
+                             for c in cs if SEG_DE_CLIENTE.get(c) == seg}
+            if not cartera_ids and not vendio_en_seg:
+                continue
             for cod, nombre in INOV_PRODUCTOS.items():
-                compraron_ids = set(
-                    v_inov[(v_inov["CodVendedor"] == vend_cod) & (v_inov["_cod"] == cod)]
-                    ["Cliente"].dropna().astype(int)
-                ) & cartera_ids
-                faltantes = sorted(cartera_ids - compraron_ids)
+                compraron_ids = {c for c in compras_vend.get((cod, vend_cod), set())
+                                 if SEG_DE_CLIENTE.get(c) == seg}
+                faltantes = sorted(cartera_ids - compradores.get(cod, set()))
                 filas.append({
                     "fecha_ejecucion": fecha,
                     "vendedor_codigo": int(vend_cod),

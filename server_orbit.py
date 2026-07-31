@@ -555,20 +555,34 @@ def _fecha_planificacion_default(now=None):
     return hoy.isoformat()
 
 def _clasificar_segmento(ramo: str, subsegmento: str) -> str:
-    texto = f"{str(ramo).upper()} | {str(subsegmento).upper()}"
-    auto = ["AUTOSERVICIO","CADENA REGIONAL","SAR","LARGE FORMAT","PROXIMITY",
+    """EL SUBSEGMENTO MANDA SOBRE EL RAMO — ver `_clasificar()` en generar_datasets_acum.py,
+    esta función es su espejo para el portal y tiene que dar el mismo resultado. El ERP mete
+    carnicerías, verdulerías y panaderías bajo Ramo = AWAY FROM HOME; mirando el Ramo primero
+    quedaban como On Premise (cobertura 6 botellas en vez de 3). Corregido 2026-07-30."""
+    r = str(ramo).upper()
+    s = str(subsegmento).upper()
+    # "CADENAS REGIONALES" (plural) va sí o sí antes que On Premise: `CADENAS REGIONALES (BAR)`
+    # es un formato de supermercado grande, no un bar, y el `(BAR)` matcheaba la clave "BAR".
+    auto = ["AUTOSERVICIO","CADENA REGIONAL","CADENAS REGIONALES","SAR","LARGE FORMAT",
             "CASH&CARRY","CASH & CARRY","MAYORISTA","MAYORISTAS","TIENDA DE BEBIDAS"]
-    if any(k in texto for k in auto):
+    if any(k in f"{r} | {s}" for k in auto):
         return "AUTOSERVICIO"
+    # PROXIMITY (estaciones de servicio) = canal propio, decisión del negocio 2026-07-30.
+    # Va antes que On Premise: el SubSegmento dice "Estacion de Servicio - AXION".
+    if any(k in f"{r} | {s}" for k in ["PROXIMITY","ESTACION DE SERVICIO","ESTACIONES DE SERVICIO"]):
+        return "PROXIMITY"
     on = ["ON PREMISE","AWAY FROM HOME","VINOTECA","VINOTECAS","BAR",
-          "RESTAURANT","RESTAURANTE","ESTACION DE SERVICIO","ESTACIONES DE SERVICIO",
+          "RESTAURANT","RESTAURANTE",
           "EVENTOS","TEMPORADA","CATERING","ON DIA","ON NOCHE"]
-    if any(k in texto for k in on):
-        return "ON_PREMISE_VTK"
-    trad = ["TRADITIONAL TRADE","ALMACEN","DESPENSA","KIOSCO","MAXIKIOSCO",
-            "FIAMBRERIA","CARNICERIA","GRANJA","PANADERIA","CASA DE PASTAS","TRADICIONAL"]
-    if any(k in texto for k in trad):
-        return "TRADICIONAL"
+    # "KIOSK" cubre las dos grafías del ERP (KIOSCO y KIOSKO).
+    trad = ["TRADITIONAL TRADE","ALMACEN","DESPENSA","KIOSCO","KIOSK","MAXIKIOSCO",
+            "FIAMBRERIA","CARNICERIA","GRANJA","PANADERIA","CASA DE PASTAS",
+            "VERDULERIA","TRADICIONAL"]
+    for texto in (s, r):          # el SubSegmento decide solo; el Ramo es el fallback
+        if any(k in texto for k in on):
+            return "ON_PREMISE_VTK"
+        if any(k in texto for k in trad):
+            return "TRADICIONAL"
     return "OTROS"
 
 _VENTAS_PARSED_CACHE = {}
@@ -651,8 +665,10 @@ def _ccc_mes_por_vendedor(ventas_mes: pd.DataFrame) -> dict:
     """
     Calcula CCC Compradores Mes por vendedor y segmento.
     Retorna dict keyed por int(vendedor_codigo):
-      {tradicional, autoservicio, onpremise, total}
-    V3 tiene autoservicio=0 por regla de negocio.
+      {tradicional, autoservicio, onpremise, proximity, total}
+    V3 tiene autoservicio=0 y onpremise=0 por regla de negocio (Proximity sí lo trabaja).
+    'total' suma los CUATRO canales: Proximity es canal propio desde 2026-07-30 y si no se
+    sumara, esos clientes desaparecerían del CCC total del vendedor sin que nada lo avise.
     """
     if ventas_mes.empty:
         return {}
@@ -666,6 +682,7 @@ def _ccc_mes_por_vendedor(ventas_mes: pd.DataFrame) -> dict:
         trad  = int((grp["segmento_operativo"] == "TRADICIONAL").sum())
         aas   = int((grp["segmento_operativo"] == "AUTOSERVICIO").sum())
         op    = int((grp["segmento_operativo"] == "ON_PREMISE_VTK").sum())
+        prox  = int((grp["segmento_operativo"] == "PROXIMITY").sum())
         if cod_int == 3:  # V3 no trabaja autoservicio ni on premise (regla de negocio)
             aas = 0
             op  = 0
@@ -673,7 +690,8 @@ def _ccc_mes_por_vendedor(ventas_mes: pd.DataFrame) -> dict:
             "tradicional": trad,
             "autoservicio": aas,
             "onpremise":   op,
-            "total":       trad + aas + op,
+            "proximity":   prox,
+            "total":       trad + aas + op + prox,
         }
     return result
 
@@ -916,6 +934,7 @@ def diagnostico():
         ("TRADICIONAL",    "Tradicional",          3,  "#5BC23A"),
         ("AUTOSERVICIO",   "Autoservicio",          6,  "#4DA3FF"),
         ("ON_PREMISE_VTK", "On Premise / Vinoteca", 6,  "#9B7BFF"),
+        ("PROXIMITY",      "Proximity",             6,  "#F5A623"),
     ]
     cartera_real_total = 0
     cartera_segs_real = {sid: 0 for sid, *_ in seg_ids}
@@ -1161,10 +1180,12 @@ def dashboard():
 
         # CCC Compradores Mes — desde ventas.csv del mes actual
         cod_int = int(cn) if cn.isdigit() else 0
-        ccc_mes = ccc_mes_map.get(cod_int, {"tradicional": 0, "autoservicio": 0, "onpremise": 0, "total": 0})
+        ccc_mes = ccc_mes_map.get(cod_int, {"tradicional": 0, "autoservicio": 0, "onpremise": 0,
+                                            "proximity": 0, "total": 0})
         ccc_mes_trad = ccc_mes["tradicional"]
         ccc_mes_as   = ccc_mes["autoservicio"]   # ya es 0 para V3 por regla en _ccc_mes_por_vendedor
         ccc_mes_op   = ccc_mes["onpremise"]
+        ccc_mes_prox = ccc_mes.get("proximity", 0)   # estaciones de servicio: canal propio, V3 sí lo trabaja
 
         # CCC DÍA — desde mod_ccc_segmento (clientes con compra ayer)
         def _ccc_dia_seg(df, seg_pattern):
@@ -1176,6 +1197,7 @@ def dashboard():
         ccc_dia_trad = _ccc_dia_seg(cv, "TRADICIONAL")
         ccc_dia_as   = _ccc_dia_seg(cv, "AUTOSERVICIO")
         ccc_dia_op   = _ccc_dia_seg(cv, "ON_PREMISE|VTK")
+        ccc_dia_prox = _ccc_dia_seg(cv, "PROXIMITY")
 
         # 11T cumplidos desde mod_11t_acum (cobertura real); fallback a mod_11_titulares.
         _t11v = t11_acum_map.get(cn)
@@ -1214,10 +1236,12 @@ def dashboard():
                 "clientes_total": cli_total, "clientes_pendientes": cli_sin,
                 # CCC Compradores Mes — fuente: ventas.csv mes actual, ImporteNetoItem > 0
                 "ccc_tradicional": ccc_mes_trad, "ccc_autoservicio": ccc_mes_as, "ccc_onpremise": ccc_mes_op,
-                "ccc_total": ccc_mes_trad + ccc_mes_as + ccc_mes_op,
+                "ccc_proximity": ccc_mes_prox,
+                "ccc_total": ccc_mes_trad + ccc_mes_as + ccc_mes_op + ccc_mes_prox,
                 # CCC Compradores Día — fuente: mod_ccc_segmento (ayer)
                 "ccc_dia_tradicional": ccc_dia_trad, "ccc_dia_autoservicio": ccc_dia_as, "ccc_dia_onpremise": ccc_dia_op,
-                "ccc_dia_total": ccc_dia_trad + ccc_dia_as + ccc_dia_op,
+                "ccc_dia_proximity": ccc_dia_prox,
+                "ccc_dia_total": ccc_dia_trad + ccc_dia_as + ccc_dia_op + ccc_dia_prox,
                 "once_titulares_cumplidos": t11_cumplidos, "once_titulares_total": t11_total,
                 "cobertura_pct": cli_total and (100 - (cli_sin/cli_total*100)) or 0,
                 "alertas_criticas": 0, "oportunidades": oportunidades,
@@ -1750,10 +1774,12 @@ def vendedor_detalle(vid):
     ventas_mes_vd = _cargar_ventas_mes_actual()
     ccc_mes_map_vd = _ccc_mes_por_vendedor(ventas_mes_vd)
     cod_int = int(cn) if cn.isdigit() else 0
-    ccc_mes_vd = ccc_mes_map_vd.get(cod_int, {"tradicional": 0, "autoservicio": 0, "onpremise": 0, "total": 0})
+    ccc_mes_vd = ccc_mes_map_vd.get(cod_int, {"tradicional": 0, "autoservicio": 0, "onpremise": 0,
+                                              "proximity": 0, "total": 0})
     ccc_trad = ccc_mes_vd["tradicional"]
     ccc_as   = ccc_mes_vd["autoservicio"]   # ya es 0 para V3
     ccc_op   = ccc_mes_vd["onpremise"]
+    ccc_prox = ccc_mes_vd.get("proximity", 0)   # estaciones de servicio: V3 sí lo trabaja
 
     # CCC Compradores Día — desde mod_ccc_segmento (ayer)
     ccc_df = read_csv(DATASETS / "mod_ccc_segmento.csv")
@@ -1767,6 +1793,7 @@ def vendedor_detalle(vid):
     ccc_dia_trad = _ccc_dia(cv, "TRADICIONAL")
     ccc_dia_as   = _ccc_dia(cv, "AUTOSERVICIO")
     ccc_dia_op   = _ccc_dia(cv, "ON_PREMISE|VTK")
+    ccc_dia_prox = _ccc_dia(cv, "PROXIMITY")
 
     # V3 no trabaja autoservicio ni on premise (ccc_as/ccc_op ya son 0; refuerzo ccc_dia)
     if vid_norm == "V3":
@@ -1822,12 +1849,14 @@ def vendedor_detalle(vid):
         "ccc_tradicional":   ccc_trad,
         "ccc_autoservicio":  ccc_as,
         "ccc_onpremise":     ccc_op,
-        "ccc_total":         ccc_trad + ccc_as + ccc_op,
+        "ccc_proximity":     ccc_prox,
+        "ccc_total":         ccc_trad + ccc_as + ccc_op + ccc_prox,
         # CCC Compradores Día — fuente: mod_ccc_segmento (ayer)
         "ccc_dia_tradicional": ccc_dia_trad,
         "ccc_dia_autoservicio": ccc_dia_as,
         "ccc_dia_onpremise": ccc_dia_op,
-        "ccc_dia_total":     ccc_dia_trad + ccc_dia_as + ccc_dia_op,
+        "ccc_dia_proximity": ccc_dia_prox,
+        "ccc_dia_total":     ccc_dia_trad + ccc_dia_as + ccc_dia_op + ccc_dia_prox,
         "once_t_cumplidos":  once_t_cumplidos,
         "once_t_total":      once_t_total,
         "titulares11":       titulares11,
@@ -2335,7 +2364,8 @@ def matinal_resumen():
             ccc_t = int(grp[grp["segmento_operativo"] == "TRADICIONAL"]["cliente_id"].nunique())
             ccc_a = int(grp[grp["segmento_operativo"] == "AUTOSERVICIO"]["cliente_id"].nunique())
             ccc_o = int(grp[grp["segmento_operativo"] == "ON_PREMISE_VTK"]["cliente_id"].nunique())
-            if cod_int == 3:           # V3 no trabaja autoservicio ni on premise
+            ccc_p = int(grp[grp["segmento_operativo"] == "PROXIMITY"]["cliente_id"].nunique())
+            if cod_int == 3:           # V3 no trabaja autoservicio ni on premise (Proximity sí)
                 ccc_a = 0
                 ccc_o = 0
             real_map[cod_int] = {
@@ -2343,6 +2373,7 @@ def matinal_resumen():
                 "ccc_trad":  ccc_t,
                 "ccc_as":    ccc_a,
                 "ccc_op":    ccc_o,
+                "ccc_prox":  ccc_p,
                 "ccc_total": int(grp["cliente_id"].nunique()),
             }
 
@@ -3912,7 +3943,9 @@ def gerencia_real_ayer_segmento():
                 "venta_neta":          round(float(row.get("venta_neta", 0) or 0), 2),
             }
 
-    SEGMENTOS_POSIBLES = ["TRADICIONAL", "AUTOSERVICIO", "ON_PREMISE_VTK"]
+    # PROXIMITY (estaciones de servicio) es canal propio desde 2026-07-30: si no está acá,
+    # la venta de esos clientes no aparece en ninguna fila y el total del vendedor no cierra.
+    SEGMENTOS_POSIBLES = ["TRADICIONAL", "AUTOSERVICIO", "ON_PREMISE_VTK", "PROXIMITY"]
     _cero = {"clientes_con_compra": 0, "coberturas_logradas": 0, "botellas_vendidas": 0, "venta_neta": 0.0}
 
     resultado = []
@@ -5339,8 +5372,11 @@ def _acc_seg_canon(seg_text, canal_text):
     # autoservicios (el cliente mayorista se detecta aparte por Ramo/Subramo, _es_mayorista).
     if "MAYORISTA" in t:
         out.add("MAYORISTA")
+    if "PROXIMITY" in t or "ESTACION DE SERVICIO" in t:
+        out.add("PROXIMITY")
     if not out:
-        out = {"TRADICIONAL", "AUTOSERVICIO", "ON_PREMISE_VTK", "MAYORISTA", "OTROS"}
+        # Sin canal declarado = la accion aplica a todos, Proximity incluido.
+        out = {"TRADICIONAL", "AUTOSERVICIO", "ON_PREMISE_VTK", "MAYORISTA", "PROXIMITY", "OTROS"}
     return out
 
 
@@ -8141,7 +8177,8 @@ def gerencia_cierre_mes():
             for (vend_cod, seg), grp in vac.groupby(["vend_cod", "segmento"]):
                 cn = clean_code(str(int(vend_cod)))
                 if cn not in ccc_por_vend:
-                    ccc_por_vend[cn] = {"TRADICIONAL": 0, "AUTOSERVICIO": 0, "ON_PREMISE_VTK": 0, "OTROS": 0}
+                    ccc_por_vend[cn] = {"TRADICIONAL": 0, "AUTOSERVICIO": 0, "ON_PREMISE_VTK": 0,
+                                        "PROXIMITY": 0, "OTROS": 0}
                 ccc_por_vend[cn][seg] = int(grp["Cliente"].nunique())
         except Exception:
             pass
@@ -8168,7 +8205,7 @@ def gerencia_cierre_mes():
         ccc_trad  = ccc.get("TRADICIONAL", 0)
         ccc_auto  = 0 if cn == "3" else ccc.get("AUTOSERVICIO", 0)
         ccc_op    = ccc.get("ON_PREMISE_VTK", 0)
-        ccc_total = ccc_trad + ccc_auto + ccc_op + ccc.get("OTROS", 0)
+        ccc_total = ccc_trad + ccc_auto + ccc_op + ccc.get("PROXIMITY", 0) + ccc.get("OTROS", 0)
 
         vendedores.append({
             "codigo":           cn,
@@ -8551,7 +8588,8 @@ def _cierre_ccc_por_vend_segmento(vmes_df):
     df = df.dropna(subset=["_cli", "_vend"])
     for (vend, seg), grp in df.groupby([df["_vend"].astype(int), "_seg"]):
         cn = clean_code(str(int(vend)))
-        out.setdefault(cn, {"TRADICIONAL": 0, "AUTOSERVICIO": 0, "ON_PREMISE_VTK": 0, "OTROS": 0})
+        out.setdefault(cn, {"TRADICIONAL": 0, "AUTOSERVICIO": 0, "ON_PREMISE_VTK": 0,
+                            "PROXIMITY": 0, "OTROS": 0})
         out[cn][seg] = int(grp["_cli"].nunique())
     return out
 
@@ -8590,7 +8628,7 @@ def _cierre_objetivos_avance(files):
         ccc_trad = ccc.get("TRADICIONAL", 0)
         ccc_auto = 0 if cn == "3" else ccc.get("AUTOSERVICIO", 0)   # V3 no AS
         ccc_op   = 0 if cn == "3" else ccc.get("ON_PREMISE_VTK", 0) # V3 no On Premise
-        ccc_total = ccc_trad + ccc_auto + ccc_op + ccc.get("OTROS", 0)
+        ccc_total = ccc_trad + ccc_auto + ccc_op + ccc.get("PROXIMITY", 0) + ccc.get("OTROS", 0)
         vendedores.append({
             "codigo": cn, "nombre": ob.get("nombre") or nombre_config,
             "objetivo": objetivo, "acumulado": acumulado, "avance_pct": avance_pct,

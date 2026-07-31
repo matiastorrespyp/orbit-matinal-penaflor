@@ -2235,7 +2235,7 @@ function _faltRows(fl){
     <span>${c.cliente_nombre||('#'+c.cliente_id)}${c.localidad?' · '+c.localidad:''}</span>
     <span style="color:var(--bd);white-space:nowrap;">${c.botellas}/${c.umbral} bot</span></div>`).join('');
 }
-const _COB_SEG_ORDER=['AUTOSERVICIO','TRADICIONAL','ON_PREMISE','MAYORISTA'];
+const _COB_SEG_ORDER=['AUTOSERVICIO','TRADICIONAL','ON_PREMISE','PROXIMITY','MAYORISTA'];
 async function gCobVendToggle(vid,divId){
   const el=document.getElementById(divId), arr=document.getElementById(divId+'-arr');
   if(!el) return;

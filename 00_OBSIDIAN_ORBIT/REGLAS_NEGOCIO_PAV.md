@@ -36,8 +36,10 @@ V1, V2, V5 y V20 se excluyen de **todos** los reportes, filtros, sumas y denomin
 
 **Si aparece un `Empresa == 'Empresa'` nuevo en el código, es un bug.** Única excepción legítima: un corte donde la razón social **es** el dato pedido (ej. conciliar facturación por entidad).
 
-### V3 — Nadia Gambino — SOLO Tradicional almacén/despensa/kiosco
-V3 trabaja **únicamente** el canal Tradicional, subsegmentos **Almacén / Despensa / Kiosco** (NO Autoservicio, NO On Premise/Vinoteca, NO Mayorista, NI tradicionales que no sean almacén/despensa/kiosco como fiambrería/panadería). Aplica a **TODO su perfil** (ampliado 2026-06-18):
+### V3 — Nadia Gambino — Tradicional completo + Proximity
+V3 trabaja el canal **Tradicional completo** y **Proximity** (NO Autoservicio, NO On Premise/Vinoteca, NO Mayorista). Aplica a **TODO su perfil** (ampliado 2026-06-18):
+
+> **Corregido 2026-07-30:** antes esto decía "sólo almacén/despensa/kiosco" y había una lista blanca por SubSegmento en `generar_cobertura_acum()`. Esa lista se comía las **carnicerías, verdulerías y panaderías** de su ruta, que son tradicionales y que V3 **sí** atiende: su cartera pasó de 268 a 293 clientes. Alcanza con el segmento (`TRADICIONAL`), que ya excluye AS / On Premise / Mayorista. Las estaciones de servicio (canal Proximity) también son suyas: 8 clientes. En el motor son las constantes `_V3_SEGMENTOS` y `_V3_SUBCANALES`, no listas sueltas repetidas.
 - CCC (mes/día), cobertura, 11T, objetivos, Plan vs Real, planificación: AS=0 y On Premise=0; cobertura acumulada solo TRADICIONAL almacén/despensa/kiosco.
 - **Ruta** (`/api/vendedor/V3/ruta`): whitelist por SubSegmento ALMACEN/DESPENSA/KIOSCO.
 - **Clientes** (`/api/clientes` + `_clientes_por_dia`): sin clientes no-tradicionales.
@@ -84,6 +86,8 @@ V3 trabaja **únicamente** el canal Tradicional, subsegmentos **Almacén / Despe
 | Tradicional / Almacén / Kiosco | 3 |
 | Autoservicio | 6 |
 | On Premise / Vinoteca | 6 |
+| Proximity (estaciones de servicio) | 6 |
+| Mayorista | 6 |
 
 ### Reglas de denominador
 - El denominador **siempre** debe ser explícito: ¿cuántos clientes del universo definido?
@@ -265,14 +269,39 @@ Plan frío = **1 Six Pack de Smirnoff ICE en lata SIN CARGO** por cliente listad
 
 ## Segmentos — clasificación
 
-Función: `_clasificar_segmento(ramo, subsegmento)` en `server_orbit.py`.
+**Son CUATRO clasificadores espejo y tienen que dar el mismo resultado.** Chequeo: clasificar los 2.139 clientes de `clientes.xlsx` con los cuatro y exigir **0 discrepancias**.
 
-| Segmento | Palabras clave en Ramo/Subramo |
-|----------|-------------------------------|
-| AUTOSERVICIO | AUTOSERVICIO, CADENA REGIONAL, SAR, LARGE FORMAT, PROXIMITY, CASH&CARRY, MAYORISTA |
-| ON_PREMISE_VTK | ON PREMISE, AWAY FROM HOME, VINOTECA, BAR, RESTAURANT, ESTACION DE SERVICIO, CATERING |
-| TRADICIONAL | TRADITIONAL TRADE, ALMACEN, DESPENSA, KIOSCO, MAXIKIOSCO, FIAMBRERIA, PANADERIA |
-| OTROS | Todo lo que no clasifica arriba |
+| Archivo | Función | Alimenta |
+|---------|---------|----------|
+| `server_orbit.py` | `_clasificar_segmento()` | el portal (CCC del mes, tarjetas, acciones) |
+| `generar_datasets_acum.py` | `_clasificar()` + `_clasificar_subcanal()` | cobertura, innovaciones, 11T, acciones |
+| `LEGACY/orbit_matinal_v42.py` | `clasificar_segmento_operativo()` | `mod_ccc_segmento.csv` = **el CCC del DÍA** |
+| `tools/generar_cierre_mensual.py` | `_seg()` | el cierre de mes |
+
+| Segmento | Palabras clave |
+|----------|----------------|
+| MAYORISTA | MAYORISTA(S), CASH&CARRY |
+| AUTOSERVICIO | AUTOSERVICIO, CADENA REGIONAL, **CADENAS REGIONALES**, SAR, LARGE FORMAT, TIENDA DE BEBIDAS |
+| PROXIMITY | PROXIMITY, ESTACION DE SERVICIO |
+| ON_PREMISE_VTK | ON PREMISE, AWAY FROM HOME, VINOTECA, BAR, RESTAURANT, CATERING, EVENTOS, TEMPORADA |
+| TRADICIONAL | TRADITIONAL TRADE, ALMACEN, DESPENSA, KIOSCO, **KIOSK**, MAXIKIOSCO, FIAMBRERIA, CARNICERIA, GRANJA, PANADERIA, CASA DE PASTAS, **VERDULERIA** |
+| OTROS | Todo lo que no clasifica arriba (empleados, consumidor final) |
+
+### El SubSegmento MANDA sobre el Ramo (regla general, 2026-07-30)
+
+Orden obligatorio: **Mayorista → Autoservicio → Proximity → SubSegmento solo (OP, después Trad) → recién ahí el Ramo como fallback**.
+
+El ERP mete carnicerías, verdulerías, panaderías y casas de pastas bajo `Ramo = AWAY FROM HOME`. Mirando Ramo y SubSegmento a la vez, el Ramo ganaba y **57 clientes tradicionales se medían como On Premise**: se les exigía 6 botellas de cobertura en vez de 3. Es la generalización de la regla de Autoservicio de más abajo, que arreglaba el mismo problema sólo para AS.
+
+**Grafías del ERP:** `KIOSKO` con K no estaba en las claves y esos clientes caían en **OTROS**, que no es ningún subcanal de las tarjetas → quedaban fuera de todo.
+
+**Falsos positivos por substring:** `CADENAS REGIONALES (BAR)` es un **formato de supermercado grande**, no un bar (el `(BAR)` matcheaba la clave `BAR`). Se resuelve en el bloque de Autoservicio, que corre antes — **no** sacando la clave `BAR`, porque `Ramo = BAR` existe y es un bar real, igual que `RESTAURANT CON BARRA`.
+
+### PROXIMITY — canal propio (decisión del negocio 2026-07-30)
+
+Las **32 estaciones de servicio** no son On Premise ni Autoservicio: canal propio, **umbral 6 botellas**, **V3 sí lo trabaja**, **fuera del 11T** (que se mide en AS + Almacén + Kiosco) y **sin objetivo** en `objccc.xlsx`.
+
+**Al agregar un canal, el riesgo no es clasificar: es que se pierda en los totales.** Varios lugares sumaban `TRAD + AS + OP (+ OTROS)` con lista fija y el canal nuevo desaparecía sin aviso. Hay que revisar: `_ccc_mes_por_vendedor`, `ccc_total`/`ccc_dia_total` (dashboard y ficha de vendedor), `SEGMENTOS_POSIBLES` de `real_ayer_segmento`, el ranking de gerencia, el cierre mensual, `_acc_seg_canon` (una acción **sin canal declarado** dejaba afuera al canal nuevo) y `_COB_SEG_ORDER` en `portal.html`.
 
 **Despensa = Almacén (regla agregada 2026-06-13):** dentro de TRADICIONAL, el subcanal *Despensa* se trata igual que *Almacén* en **todas** las estadísticas. En el motor de acciones se canoniza `despensa → almacén` (`_ACC_SUBSEG_TRAD` y el `_subseg` de la venta en `_acc_preparar_ventas`). Una acción acotada a "almacén/kiosco" también cubre despensa. El resto del sistema ya colapsaba almacén/despensa/kiosco en TRADICIONAL por igual.
 

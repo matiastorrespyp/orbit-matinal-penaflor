@@ -1,5 +1,84 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-30 - feat(canal): PROXIMITY (estaciones de servicio) pasa a ser canal propio
+
+**Decisión del negocio:** las 32 estaciones de servicio no son On Premise ni Autoservicio. Canal propio, **umbral de cobertura 6 botellas**, y **V3 sí lo trabaja** (a diferencia de AS y On Premise).
+
+- **Contexto:** venían clasificadas distinto en cada lado — el motor las mandaba a On Premise (por el SubSegmento `Estacion de Servicio - AXION`) y el portal a Autoservicio (por la clave `PROXIMITY` del Ramo). Era la última discrepancia entre clasificadores.
+- **Cambio 1 — los CUATRO clasificadores** (apareció un cuarto: `LEGACY/orbit_matinal_v42.py:clasificar_segmento_operativo()`, que genera `mod_ccc_segmento.csv` y alimenta el **CCC del día**; si no se tocaba, el CCC del día y el del mes se contradecían). `PROXIMITY` se resuelve **antes** que On Premise en los cuatro, y se sacó `ESTACION DE SERVICIO` de las claves de On Premise y `PROXIMITY` de las de Autoservicio/Tradicional.
+- **Cambio 2 — umbral 6.** `UMBRAL["PROXIMITY"] = 6` en el motor y `threshold_cobertura()` en el legacy.
+- **Cambio 3 — V3 trabaja Proximity.** Constantes nuevas `_V3_SEGMENTOS` / `_V3_SUBCANALES` en el motor, en vez de las listas sueltas `["ALMACEN","KIOSCO"]` repetidas en cobertura e innovaciones. Sus 8 estaciones entran a su cartera.
+- **Cambio 4 — que no se pierdan en ningún total.** Este es el riesgo real de agregar un canal: varios lugares sumaban canal por canal con lista fija y el cliente nuevo desaparecía sin que nada avisara. Revisados y corregidos **uno por uno**:
+  - `_ccc_mes_por_vendedor()`: nueva clave `proximity` y **entra al `total`**.
+  - Dashboard de vendedores y ficha de vendedor: `ccc_proximity` / `ccc_dia_proximity` y los dos totales (`ccc_total`, `ccc_dia_total`).
+  - `real_ayer_segmento`: `SEGMENTOS_POSIBLES` (si no, la venta de esas estaciones no aparecía en ninguna fila).
+  - Ranking de gerencia y cierre mensual: `ccc_total` sumaba `TRAD+AS+OP+OTROS` y se comía Proximity.
+  - Plan vs Real del día: `ccc_prox` en el desglose (el `ccc_total` ya usaba `nunique()`, ese no se perdía).
+  - Acciones comerciales: `_acc_seg_canon()` — una acción **sin canal declarado** (= aplica a todos) dejaba afuera a Proximity. Ahora está en el conjunto, y se detecta el canal explícito si la regla lo nombra.
+  - Tarjeta de canales de gerencia (`/api/diagnostico`): cuarta fila **Proximity** con color propio.
+  - `portal.html`: `_COB_SEG_ORDER` (sin esto el bloque quedaba ordenado antes que Autoservicio).
+- **Lo que queda afuera a propósito:** el **11T** (se mide en AS + Almacén + Kiosco; se agregó la rama explícita en `clasificar_segmento_11t` para que no sea un olvido) y la **planificación** del vendedor, que sigue con 3 canales — tocar `PLAN_SHEET_COLS` implica cambiar el esquema de Google Sheets, que es la fuente de verdad ([[project_gsheets_planificaciones]]).
+- **Validado con el pipeline real, en el orden del .bat** (`test_legacy_run.py` → `test_datasets_orbit.py` → `generar_datasets_acum.py`; el exportador legacy **pisa** `mod_innovaciones_segmento.csv`, por eso el orden importa):
+  - **Los 4 clasificadores dan el mismo resultado en los 2.139 clientes: 0 discrepancias.** Era el objetivo pendiente de la entrada anterior.
+  - Cobertura: canal **PROXIMITY con 32 clientes** (V4 11, V3 8, V6 6, V10 4, V9 3), umbral 6. On Premise 148 → **124**.
+  - `clientes_dia.csv`: las estaciones salen como PROXIMITY, las carnicerías/verdulerías/panaderías como TRADICIONAL.
+  - **Cubiertos 0 en Proximity y eso es el dato real, no un cálculo faltante**: en todo julio hay **una sola** venta a una estación (`#391 BORTOLON Y URQUIZA`, V4, 1 botella de JW Red el 24/07). Aparece como `ccc_proximity: 1` en V4 y no llega al umbral de 6, por eso cubiertos 0.
+  - Innovaciones: subcanal PROXIMITY presente, V3 con ALMACEN + KIOSCO + PROXIMITY, 26 de 27 productos reconcilian exacto contra `ventas.csv`.
+  - 24 endpoints en 200 + `node --check` del JS del portal.
+
+## 2026-07-30 - fix(clasificación): el SubSegmento manda sobre el Ramo — 60 clientes estaban en el canal equivocado
+
+**Reporte del negocio:** `#525 Velazquez Florencia` es un almacén/kiosco de V8, `#7215` una verdulería y `#7533` una carnicería de V3. La tarjeta las tenía en OTROS y en On Premise.
+
+- **Causa raíz — el Ramo le ganaba al SubSegmento.** El ERP mete carnicerías, verdulerías, panaderías y casas de pastas bajo `Ramo = AWAY FROM HOME`. Los tres clasificadores miraban las palabras clave de On Premise contra Ramo **y** SubSegmento a la vez, así que el Ramo definía el canal y el SubSegmento fino (`Carniceria/Granja`, `Verduleria`) no llegaba a leerse nunca. Es **la misma clase de bug** que [[business_rule_autoservicio_subramo]] (Autoservicio por Subramo, corregido el 20/07): ahí se arregló para AS, pero la precedencia general quedó al revés.
+- **Segunda causa — `KIOSKO` con K.** `_TR_KEYWORDS` tenía `KIOSCO`/`MAXIKIOSCO` pero no la grafía con K que usa el ERP, así que esos clientes caían en **OTROS** y quedaban fuera de todas las tarjetas (la de Innovaciones mide 5 subcanales, OTROS no es ninguno). Eran 3: `#525`, `#1247` y `#1412`.
+- **Cambio 1 — los tres clasificadores, que estaban duplicados y ahora dicen lo mismo:**
+  `generar_datasets_acum.py:_clasificar()`, `server_orbit.py:_clasificar_segmento()` y `tools/generar_cierre_mensual.py:_seg()`. Orden nuevo: Mayorista → Autoservicio → **SubSegmento solo** (On Premise, después Tradicional) → **recién ahí el Ramo** como fallback. Se agregó `KIOSK` (cubre las dos grafías) y `VERDULERIA` a las claves de Tradicional.
+- **Cambio 2 — `generar_cobertura_acum()`, lista blanca de V3.** Para V3 se exigía además que el SubSegmento dijera `ALMACEN|DESPENSA|KIOSCO`: se comía las carnicerías, verdulerías y panaderías de su ruta, que V3 **sí** atiende. Alcanza con `segmento == TRADICIONAL`, que ya excluye AS / On Premise / Mayorista.
+- **Impacto medido (60 clientes cambian de canal, sobre 2.139):** `Carniceria/Granja` 38, `Panaderia` 12, `Verduleria` 4 y `Casa de Pastas` 3 pasan de **On Premise a Tradicional**; los 3 `KIOSKO` de **OTROS a Kiosco**. Tocan a los 7 vendedores (V9 18, V3 14, V6 11, V4 9, V10 6, V7 1, V8 1).
+  - **Cobertura:** cartera On Premise **191 → 148**, Tradicional **1.622 → 1.693**. Cambia el umbral con que se los mide: **3 botellas en vez de 6**. Sube el % de On Premise de todos (menos cartera, casi los mismos cubiertos) y se mueve el de Tradicional. V3: cartera 268 → **293**, cubiertos 21 → **26**.
+  - **Innovaciones:** la tarjeta pasa a reconciliar **26 de 27 productos exactos** contra `ventas.csv` (antes 23). CCC total 480 → **485**.
+- **Validado:**
+  - Los tres clientes reportados caen donde tienen que caer: `#525` → KIOSCO de V8, `#7215` y `#7533` → ALMACEN de V3, y aparecen como faltantes en esas filas.
+  - El motor y el portal dan el **mismo** resultado en los 2.139 clientes salvo 33 discrepancias que ya existían antes del cambio y no se tocaron (ver PENDIENTE: estaciones de servicio).
+  - Reglas de negocio intactas: V3 sigue con `ccc_autoservicio = 0` y `ccc_onpremise = 0`, y sus filas de Innovaciones siguen siendo sólo ALMACEN y KIOSCO.
+  - **Heurística de [[business_rule_autoservicio_subramo]]** (si el objetivo del canal supera su cartera, la clasificación está mal): objetivo CCC On Premise + Vinotecas + OP Noche = 56 sobre cartera 148; Tradicionales 845 sobre 1.693; Autoservicios 145 sobre 199. Ningún canal quedó por debajo de su objetivo.
+  - 23 endpoints en 200 (dashboard, alertas, innovaciones, cobertura, 11T ×3, sell out ×2, planes AS, incentivo FARO, acciones, días de stock, clientes, vendedor V3/V8/V9).
+- **Cambio 3 — `CADENAS REGIONALES (BAR)` no es un bar** (dato del negocio: es un formato de supermercado grande). El clasificador del portal y el del cierre buscaban `CADENA REGIONAL` en singular, no matcheaban el plural, y caían en la clave `"BAR"` del bloque On Premise por el `(BAR)` del nombre → **falso positivo por substring**. Se agregó `CADENAS REGIONALES` a las claves de Autoservicio de los tres clasificadores, que se evalúan antes que On Premise. Afecta a `#786 ANSELMI` (70 líneas de venta en julio). **No se tocó la clave `"BAR"`**: `#7934 ZAMORA BUSTOS` tiene `Ramo = BAR` y es un bar de verdad; `#1278 RESTAURANT CON BARRA` también queda On Premise. Verificados los tres.
+- **Los tres clasificadores ahora dan el mismo resultado** en los 2.139 clientes, salvo las 32 estaciones de servicio (`Ramo = PROXIMITY`) que siguen pendientes de definición (el motor las manda a On Premise, el portal a Autoservicio; es previo a este cambio).
+- **Lo que NO se tocó:** `#7174` y `#7231` son bares que el maestro tiene asignados a **V3**, y el negocio confirma que son de **V8**. Eso es una corrección de cartera en el ERP, no de código: editar el export a mano se pierde en la próxima bajada y tapa el problema. Quedan en `NEXT_TASK.md` con los otros huecos del maestro. Son la última diferencia que queda en Innovaciones (Cazador Malbec mide 170 sobre 174 reales: estos 2 bares + `#1458` y `#1459`, que no están en el maestro).
+
+## 2026-07-30 - change(innovaciones): la compra cuenta para el vendedor que la facturó + causa real de las diferencias de CCC
+
+**Definición del negocio:** en Innovaciones la venta le cuenta a **quien la hizo**, no al dueño de la cartera.
+
+- **Cambio — `generar_datasets_acum.py:generar_innovaciones_segmento()`:**
+  - `clientes_compraron` = clientes **de ese subcanal** a los que **ese vendedor** le facturó el producto, esté o no en su cartera. Antes era la intersección con la cartera propia, así que una venta cruzada se caía entre las dos puntas.
+  - **Un par (producto, cliente) le cuenta a un solo vendedor** (si dos le facturaron el mismo producto al mismo cliente, se lo queda el de mayor volumen). Sin esto el total de gerencia — que suma por vendedor — contaría dos veces al cliente. Hoy no hay ningún caso, es un seguro.
+  - Se abre la fila vendedor × subcanal también cuando el vendedor **vendió** ahí sin tener cartera propia (antes se saltaba con `continue` y la venta desaparecía de nuevo).
+  - `clientes_faltantes` (el plan de acción del vendedor) ahora descuenta a los clientes que **ya compraron el producto a cualquier vendedor**: no se manda a visitar a alguien que ya lo tiene. Es lo único que movió números hoy — 8 filas de V3, entre 1 y 7 faltantes menos cada una.
+  - La regla **V3 sin AS / On Premise / Mayorista** se mantiene explícita (`if vend_cod == 3 and seg not in ...`), ver [[business_rule_v3_sin_onpremise]].
+- **El CCC no se movió en ninguna fila** (810 filas comparadas contra el dataset anterior, 0 diferencias en `clientes_compraron`) y hay que decirlo con todas las letras: **la causa de las diferencias que se habían reportado era otra**, no el criterio de atribución.
+- **Causa real (verificada cliente por cliente):**
+  1. **`clientes.xlsx` tiene 10 clientes cargados dos veces**, una fila en la ruta de **V3** y otra en la de **V8** (`#272, #320, #1065, #1257, #1336, #1366, #1392, #1414, #1424, #4758` — mismo día de visita, rutas distintas). Como estaban en las **dos** carteras, sus compras ya le contaban a V8: por eso el criterio nuevo no cambia nada. **Efecto colateral: inflan el denominador**, esos 10 clientes cuentan dos veces en `clientes_cartera` de toda la tarjeta.
+  2. **`#1458` y `#1459` no están en el maestro** (compraron Cazador Malbec por V8). Sin cliente en `clientes.xlsx` no hay subcanal, así que no entran en ninguna fila.
+  3. **`#525 VELAZQUEZ FLORENCIA`** tiene subcanal **OTROS** (8 clientes del maestro están así): la tarjeta mide 5 subcanales, OTROS queda afuera por diseño. Explica 1 cliente de diferencia en Cazador Malbec, Cazador Blanco Dulce y Dada Lata Tinto Verano.
+  4. **4 ventas de V3 a clientes On Premise** (`#7174`, `#7231` en Cazador Malbec; `#7215`, `#7533` en Cinzano Rosso). Acá el criterio nuevo choca de frente con la regla "V3 no trabaja On Premise": V3 vendió, pero no se le mide. **Se dejó ganar la regla de V3** — es una regla explícita del contrato y no se puede deducir de esta definición. Si el negocio quiere que también cuenten, es una línea.
+- **Validado:** 810 filas antes/después, `pct_cobertura > 1` en 0 filas, 0 filas de V3 en AS/OP/Mayorista, CCC total de la tarjeta 480. Endpoints 200: `innovaciones_total`, `innovaciones_segmento` (gerencia), `innovaciones_segmento` y `plan_innovaciones` de V3 y V8, `dashboard`, `alertas`. El plan de V3 sigue trayendo sólo ALMACEN y KIOSCO.
+
+## 2026-07-30 - fix(innovaciones): Don David Torrontés Low con 0 coberturas — código mal tipeado en Innovaciones.xlsx
+
+- **Reporte:** en gerencia → pantalla **Innovaciones**, `Don David Torrontes Low 6x750` mostraba **0 clientes** teniendo 1 cliente con compra real.
+- **Causa raíz:** `01_INPUTS/INNOVACIONES/Innovaciones.xlsx` celda **B22** decía `42337 - Don David Torrontes Low 6x750`. El código real del SKU en el ERP es **42377** (`DON DAVID TORRON LOW ALC 6X750`). El `42337` **no existe** en ningún lado: ni en el maestro de productos (`RAW_PRODUCTOS/productosjulio.xlsx`), ni en `04D`, ni en los dos archivos de stock, ni en ninguna venta. Como el motor cruza por código exacto, el producto quedaba con CCC 0 por definición. Ojo: `42375` es el Don David Torrontés **común**, otro SKU — no confundir.
+- **Cambio:** una celda del input, `B22` → `42377 - Don David Torrontes Low 6x750`. **No se tocó código**: `Innovaciones.xlsx` es la fuente única y la leen `generar_datasets_acum.py` y `server_orbit.py` (innovaciones por segmento, plan de acción, Planes AS, días de stock, acciones "lista cerrada"). Un solo arreglo propaga a todo.
+- **Validado (datos reales de hoy):**
+  - Regenerado `mod_innovaciones_segmento.csv`. `42377` → **1 cliente** en V8 · AUTOSERVICIO (`#30033 MARTINICH VIVIANA RITA`, 12 u el 28/07 facturadas por **P&P Logística**; se cuenta bien porque innovaciones no filtra por Empresa, ver [[business_rule_empresa_ambas]]).
+  - `/api/gerencia/innovaciones_total` → AUTOSERVICIO 1/199 (0,5%), resto de los subcanales en 0. Los 27 productos siguen en la tarjeta.
+  - **Arrastre a Días de Stock:** el producto ahora aparece con **174 u / 87 días** en PyP y 60 u en VSB Cuyo. Venía saliendo como "no está en el archivo de stock" (lo habíamos registrado como dato el 28/07 sin ver que era el mismo typo).
+- **Auditoría del resto de la tarjeta (los 27 códigos, uno por uno contra maestro de productos + stock + `ventas.csv`):** 25 códigos correctos y con el CCC que corresponde. Sobre los otros dos:
+  - **`14425 TERMIDOR TRAD B-D SLIM 12X1L`** — mismo síntoma (código inexistente en maestro, stock y ventas). **El negocio confirmó que es el `14578`** y se corrigió la celda **B9** → `14578 - TERMIDOR TRAD B-D SLIM 12X1L` (se conserva el nombre comercial de la lista; en el ERP figura como `TERMIDOR BLANCO DULCE 12x1000` / `TERMIDOR B. DULCE 12x1L`). Regenerado y validado: pasa de 0 a **2 clientes** en V8 · AUTOSERVICIO (`#1006` el 20/07 y `#538` el 22 y el 29/07, 12 u cada una), 2/199 = 1,0%. **Arrastre a Días de Stock:** aparece como **crítico** — 12 u disponibles, **3 días de stock**, 12 en tránsito, 96 u vendidas en el mes. Era una alerta comercial real que estaba tapada por el código mal tipeado.
+  - **81 líneas de venta facturadas por V8 sobre clientes de la cartera de V3.** Diferencias medidas en Cazador Malbec (169 vs 174 clientes), Cazador Blanco Dulce, Dada Lata Tinto Verano y Cinzano Rosso. Ver la entrada siguiente: el criterio de atribución se cambió por definición del negocio, y al implementarlo apareció que la causa de esas diferencias era otra.
+
 ## 2026-07-30 - fix(clientes): la ficha de gerencia decía "sin compras" en los clientes que compran por Depósito
 
 - **Reporte:** en gerencia → pantalla **Clientes**, `#786 ANSELMI Y CIA S.R.L.` salía **"Sin compras en el mes vigente"** teniendo venta real (70 líneas en `ventas.csv`, 2.747,7 L / $15.475.505 en julio).
