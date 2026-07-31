@@ -285,11 +285,36 @@ def snapshot_acumulado_resultado(ventas):
     print(f"  Snapshot acumulado resultado.xlsx -> {fecha} ({len(snap)} vendedores)")
 
 
+def _dedup_clientes(df, origen=""):
+    """Un cliente = una fila. El ERP exportó 10 clientes DOS veces (una en la ruta de V3
+    y otra en la de V8) y, al estar en las dos carteras, inflaban el denominador de
+    cobertura, CCC y planes sin que nada lo avisara — el error más caro de encontrar
+    porque no rompe nada, sólo empeora los porcentajes.
+
+    Acá NO se puede resolver a quién pertenece el cliente (no hay ventas a mano), así
+    que se corta por lo sano: se deja la primera fila y se AVISA con nombre y apellido.
+    La asignación correcta se arregla en el ERP, no acá."""
+    if "Codigo" not in df.columns:
+        return df
+    dup = df[df.duplicated(subset=["Codigo"], keep=False) & df["Codigo"].notna()]
+    if not dup.empty:
+        det = []
+        for cod, g in dup.groupby("Codigo"):
+            vend = "/".join(str(v) for v in g["codven"].tolist()) if "codven" in g.columns else "?"
+            det.append(f"#{int(cod)} (codven {vend})")
+        print(f"  [AVISO] clientes.xlsx: {dup['Codigo'].nunique()} cliente(s) DUPLICADO(S)"
+              f"{' en ' + origen if origen else ''} — se deja la primera fila de cada uno."
+              f" Corregir la cartera en el ERP: {', '.join(det)}")
+        df = df.drop_duplicates(subset=["Codigo"], keep="first").copy()
+    return df
+
+
 def cargar_clientes():
     p = BASE / "01_INPUTS" / "clientes.xlsx"
     df = pd.read_excel(p)
     df["codven"] = pd.to_numeric(df["codven"], errors="coerce")
     df["Codigo"] = pd.to_numeric(df["Codigo"], errors="coerce")
+    df = _dedup_clientes(df, "generar_datasets_acum")
     df = df[~df["codven"].isin(VENDEDORES_EXCLUIDOS)]
     sub_col = next((c for c in df.columns if "subseg" in c.lower() or "subramo" in c.lower()), None)
     df["_seg"] = df.apply(

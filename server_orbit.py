@@ -1341,6 +1341,15 @@ def _clientes_maestro(incluir_deposito=False):
         df["_vend"] = pd.to_numeric(df.get("codven"), errors="coerce")
         df = df.dropna(subset=["_cliente_id"]).copy()
         df["_cliente_id"] = df["_cliente_id"].astype(int)
+        # Un cliente = una fila. Si el ERP vuelve a exportar un cliente en dos rutas,
+        # sin esto queda en las DOS carteras e infla el denominador de todas las
+        # tarjetas en silencio (pasó con 10 clientes en V3/V8, corregido 2026-07-30).
+        _dups = df[df.duplicated(subset=["_cliente_id"], keep=False)]
+        if not _dups.empty:
+            print(f"[AVISO] clientes.xlsx: {_dups['_cliente_id'].nunique()} cliente(s) duplicado(s) "
+                  f"{sorted(_dups['_cliente_id'].unique().tolist())} — se deja la primera fila. "
+                  f"Corregir la cartera en el ERP.")
+            df = df.drop_duplicates(subset=["_cliente_id"], keep="first").copy()
         df["_vend_id"] = df["_vend"].apply(lambda x: f"V{int(x)}" if pd.notna(x) else "")
         _CLIENTES_MAESTRO_CACHE.clear()
         _CLIENTES_MAESTRO_CACHE[key] = df

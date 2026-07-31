@@ -1,5 +1,21 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-07-30 - fix(maestro): los 10 clientes duplicados quedan asignados a V8, con guard para que no vuelva a pasar
+
+**Criterio del negocio:** el cliente es de la vendedora que **le supo vender**.
+
+- **Historial revisado:** `02_HISTORY/historial_ventas.csv` + `historial_ventas_cliente.csv` + `ventas.csv` + `ventas_acumulada.csv`. Rango **2024-04-15 → 2026-07-29**, sin fechas nulas.
+- **Resultado: los 10 van a V8**, y no es un empate resuelto a dedo:
+  - **3 clientes le compraron SÓLO a V8** y nunca a V3: `#1336`, `#1414`, `#1424`.
+  - **7 le compraron a las dos, pero con un patrón de traspaso de ruta**: V3 vendía hasta junio 2026 y deja de aparecer; V8 arranca en junio/julio y es **la última en los 10 casos**. Ejemplos: `#272` (V3 hasta 24/06, V8 hasta 22/07), `#1065` (V3 hasta 12/06, V8 hasta 29/07), `#1257` (V3 hasta 03/06, V8 hasta 29/07).
+  - **`#320 RABINO JOSE JUAN` es el caso al revés y refuerza lo mismo**: V8 le vende desde 2024-04 (177 líneas, $16,5M en 24 meses) y V3 le hizo 2 líneas sueltas en mayo 2026. Siempre fue de V8.
+  - Para que quede dicho: en `#272` y `#1065` **V3 tiene más historia** (16-17 meses, 40 líneas cada uno) pero cortada en junio. Si el traspaso de ruta no fue tal, son los dos a revisar.
+- **Cambio 1 — `01_INPUTS/clientes.xlsx`:** borradas las 10 filas con `codven = 3`. El maestro pasa de **2.139 filas / 2.129 códigos** a **2.129 / 2.129**: un cliente, una fila. El archivo está versionado en git y en el allowlist del cierre, así que el arreglo viaja a Render y es reversible.
+- **Cambio 2 — guard en los dos loaders** (`_dedup_clientes()` en `generar_datasets_acum.py`, y el bloque equivalente en `_clientes_maestro()` de `server_orbit.py`): si el ERP vuelve a exportar un cliente en dos rutas, se deja **una** fila y se imprime `[AVISO]` con los códigos y los `codven` en conflicto. Ninguno de los dos puede resolver a quién pertenece el cliente (no tienen las ventas a mano), así que **no adivinan**: cortan la duplicación —que es el daño silencioso— y piden que se corrija en el ERP.
+- **Por qué importaba:** al estar en las **dos** carteras, esos clientes contaban dos veces en el denominador de cobertura, CCC y planes. Es el error más caro de encontrar porque no rompe nada: sólo empeora los porcentajes.
+- **Impacto medido:** cartera Tradicional **1.693 → 1.684**, V3 Tradicional **293 → 284** (9 de los duplicados eran tradicionales; el décimo, `#320`, es On Premise y V3 no tiene esa fila). **V8 no pierde ninguno**: ya tenía su propia fila para los 10. Total de cartera 2.059 → 2.050.
+- **Validado:** pipeline completo en el orden del .bat, el guard probado con un duplicado sintético (avisa y deja 1 fila), los 10 clientes con `codven = 8` en el maestro, la ficha de `#272` muestra ALVAREZ VANESA, y 23 endpoints en 200 con serialización JSON verificada.
+
 ## 2026-07-30 - feat(canal): PROXIMITY (estaciones de servicio) pasa a ser canal propio
 
 **Decisión del negocio:** las 32 estaciones de servicio no son On Premise ni Autoservicio. Canal propio, **umbral de cobertura 6 botellas**, y **V3 sí lo trabaja** (a diferencia de AS y On Premise).
