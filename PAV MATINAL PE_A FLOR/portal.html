@@ -4440,7 +4440,7 @@ function gIncentivoAlmaMora(p){
         <div class="dd-kpi"><span class="dd-kn ${cls}">${avance.toLocaleString('es-AR',{maximumFractionDigits:1})}%</span><span class="dd-kl">Avance</span></div>
       </div>
       <div class="dd-bar"><div class="dd-bar-fill ${cls}" style="width:${barW}%"></div></div>
-      <div class="dd-note">Cliente logrado = autoservicio de la cartera con compra neta &gt; 0 del código ${prod.codigo||''}. Cobertura actual: ${d.cobertura_pct}% de los ${d.cartera_as} autoservicios. Excluye V2/V5/V20.${d.fuera_as?` · ${d.fuera_as} cliente(s) compraron el producto fuera de autoservicio (no suman).`:''}</div>
+      <div class="dd-note">Cliente logrado = autoservicio de la cartera con compra neta &gt; 0 del código ${prod.codigo||''} y <b>mínimo ${d.min_botellas||6} botellas</b> (cobertura Autoservicio). Cobertura actual: ${d.cobertura_pct}% de los ${d.cartera_as} autoservicios. Excluye V2/V5/V20.${d.fuera_as?` · ${d.fuera_as} cliente(s) compraron el producto fuera de autoservicio (no suman).`:''}</div>
 
       <div class="dd-sub">Logrados por vendedor</div>
       <div class="dd-vlist">${
@@ -4450,6 +4450,23 @@ function gIncentivoAlmaMora(p){
             <span class="dd-vnums"><b>${v.clientes}</b> cli · ${v.botellas} bot. ▸</span>
           </div>`).join('') || '<div class="dd-empty">Sin clientes logrados aún.</div>'
       }</div>
+
+      ${(d.parciales||[]).length?`
+      <div class="dd-sub">A un paso · compraron pero no llegan a ${d.min_botellas||6} botellas (${d.parciales.length})</div>
+      <div class="dd-tblwrap">
+        <table class="dd-tbl">
+          <thead><tr><th>Cliente</th><th>Segmento</th><th>Vend.</th><th style="text-align:right;">Bot.</th><th style="text-align:right;">Faltan</th><th>Última compra</th></tr></thead>
+          <tbody>${d.parciales.map(c=>`
+            <tr>
+              <td>${c.nombre||'Dato no disponible'} <span class="dd-id">#${c.cliente_id}</span></td>
+              <td>${[c.segmento,c.localidad].filter(Boolean).join(' · ')}</td>
+              <td>${c.vendedor_id||'—'}</td>
+              <td style="text-align:right;font-variant-numeric:tabular-nums;">${c.botellas}</td>
+              <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--wn);font-weight:700;">${c.faltan_botellas}</td>
+              <td>${fmtF((c.fechas&&c.fechas.length?c.fechas[c.fechas.length-1]:c.fecha))}</td>
+            </tr>`).join('')}</tbody>
+        </table>
+      </div>`:''}
 
       <div class="dd-fuente">Fuente: ${d.fuente||''}${per.desde?` · acumulado ${fmtF(per.desde)} → ${fmtF(per.hasta)}`:''}</div>
     </div>
@@ -4467,7 +4484,7 @@ function amVerLogrados(vid){
   const div=document.createElement('div'); div.className='emod-bg open'; div.id='emodBg';
   div.innerHTML=`<div class="emod-card" style="max-width:560px;">
     <div class="emod-title">Clientes logrados · Alma Mora Malbec Low</div>
-    <div style="font-size:12px;color:var(--text3);margin:-10px 0 14px;">${d.logrado} de ${d.objetivo} · tocá un vendedor para ver sus clientes</div>
+    <div style="font-size:12px;color:var(--text3);margin:-10px 0 14px;">${d.logrado} de ${d.objetivo} · mínimo ${d.min_botellas||6} botellas · tocá un vendedor para ver sus clientes</div>
     <div class="dd-clilist" id="amModalList">${amFilasVend()}</div>
     <div class="emod-actions"><button class="g-ghost" onclick="closeModal()">Cerrar</button></div>
   </div>`;

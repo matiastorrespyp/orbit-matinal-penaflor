@@ -8111,6 +8111,7 @@ def gerencia_incentivo_dada():
 # (no hay planilla de objetivo: se calcula sobre clientes.xlsx, que es la cartera viva).
 _ALMAMORA_CODIGO   = "74887"
 _ALMAMORA_PCT_OBJ  = 0.22
+_ALMAMORA_COB_MIN  = 6   # Cobertura Autoservicio = mínimo 6 botellas (CLAUDE.md)
 _ALMAMORA_IMG      = "/almamora_low.png"   # KV exportado de 01_INPUTS/incentivo/*.pdf
 _ALMAMORA_CACHE = {}
 
@@ -8148,8 +8149,11 @@ def _incentivo_almamora():
 
     Fuente ventas: 01_INPUTS/ventas_acumulada.csv (acumulado vivo, sin filtro de fecha —
     mismo criterio que Incentivo FARO y 11T). Cliente logrado = autoservicio de la cartera
-    con compra NETA > 0 del código (los rechazos restan). Excluye V1/V2/V5/V20.
-    Objetivo = 22% de la cartera de autoservicios. Devuelve None si falta la fuente."""
+    con compra NETA > 0 del código (los rechazos restan) Y al menos 6 botellas: cobertura
+    de Autoservicio son 6 botellas (CLAUDE.md), igual que el Incentivo Dada. Los que
+    compraron pero no llegan a 6 salen aparte como `parciales` (es la lista accionable).
+    Excluye V1/V2/V5/V20. Objetivo = 22% de la cartera de autoservicios.
+    Devuelve None si falta la fuente."""
     path = INPUTS / "ventas_acumulada.csv"
     if not path.exists():
         return None
@@ -8188,7 +8192,7 @@ def _incentivo_almamora():
 
     cartera_as, cartera_det = _cartera_autoservicios()
 
-    logrados, fuera_as = [], 0
+    logrados, parciales, fuera_as = [], [], 0
     for cid, g in df.groupby("_cli"):
         cid = int(cid)
         neto = float(g["_imp"].sum())
@@ -8206,17 +8210,26 @@ def _incentivo_almamora():
         vend_nom = m["vendedor_nombre"]
         if "Vendedor" in pos.columns and not pos["Vendedor"].dropna().empty:
             vend_nom = str(pos["Vendedor"].mode().iloc[0]).strip()
-        logrados.append({
+        botellas = int(pos["_cant"].sum())
+        reg = {
             "cliente_id": cid,
             "nombre":     m["nombre"],
             "localidad":  m["localidad"],
             "segmento":   m["segmento"] or "Autoservicio",
             "vendedor_id": vend_id, "vendedor_nombre": vend_nom,
-            "botellas":   int(pos["_cant"].sum()),
+            "botellas":   botellas,
             "importe":    round(neto, 2),
             "fecha":      fechas[0] if fechas else "",
             "fechas":     fechas,
-        })
+        }
+        # Cobertura AS = 6 botellas. El que compró menos NO cuenta, pero se muestra:
+        # es el cliente más barato de convertir (le faltan pocas botellas).
+        if botellas >= _ALMAMORA_COB_MIN:
+            logrados.append(reg)
+        else:
+            reg["faltan_botellas"] = _ALMAMORA_COB_MIN - botellas
+            parciales.append(reg)
+    parciales.sort(key=lambda c: (c["faltan_botellas"], c["vendedor_id"], c["nombre"]))
 
     por_vend = {}
     for c in logrados:
@@ -8250,7 +8263,9 @@ def _incentivo_almamora():
         "faltan": max(objetivo - logrado, 0),
         "avance_pct": avance,
         "cobertura_pct": cob_pct,
+        "min_botellas": _ALMAMORA_COB_MIN,
         "fuera_as": fuera_as,
+        "parciales": parciales,
         "por_vendedor": por_vendedor,
         "clientes": sorted(logrados, key=lambda c: (c["vendedor_id"], c["nombre"])),
         "periodo": periodo,

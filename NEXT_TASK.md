@@ -5,10 +5,11 @@
 ### HECHO
 - [x] Pantalla de gerencia **Incentivo Alma Mora Low**, debajo de Incentivo Dada: KV del producto, tarjeta con objetivo / acumulado / faltan / avance, y drill-down acumulado → vendedor → cliente (segmento + fecha de compra).
 - [x] Endpoint `GET /api/gerencia/incentivo_almamora`. Fuente `ventas_acumulada.csv` (acumulado completo, sin filtro de fecha) + `clientes.xlsx` para la cartera AS. Objetivo = 22% de los autoservicios de la cartera, calculado en vivo (no hay planilla de objetivo).
-- [x] Validado con datos reales: cartera AS 244 → objetivo 54, logrado 1 (`#8125`, V9), faltan 53.
+- [x] **Cobertura AS = mínimo 6 botellas** (corrección del negocio sobre la primera versión, que contaba con la sola compra). Los que compraron menos salen en la tabla **"A un paso"** con cuántas botellas les faltan.
+- [x] Validado con datos reales: cartera AS 244 → objetivo 54, logrado **0**, faltan 54. `#8125` (V9) compró 3 botellas → "A un paso".
 
 ### PENDIENTE
-- [ ] **Sin commitear** — el código (`server_orbit.py`, `portal.html`) y `PAV MATINAL PE_A FLOR/almamora_low.png` necesitan commit + push para que la pantalla llegue a Render. Ojo: mientras estén sin commitear, `check_git_cierre.py` **aborta el cierre diario**.
+- [ ] **`#1093 RAMIREZ LUISINA AINELEN` (V9, Autoservicio Tradicional) llevó las 6 botellas pero 100% bonificadas** (neto 0). Hoy **no** cuenta, por la regla CCC = importe neto > 0. Si el negocio quiere que el sin cargo valga como cobertura en este incentivo, es cambiar una condición y el logrado pasa a 1.
 - [ ] **Definir si el incentivo tiene fecha de arranque.** Hoy mide todo lo que hay en `ventas_acumulada.csv` (arrancó el 01/07, se resetea por trimestre), así que la compra del 21/07 de `#8125` ya suma. Si la campaña arranca en agosto, hay que agregar una fecha de corte.
 - [ ] **No hay planilla de objetivo**: el 22% está en la constante `_ALMAMORA_PCT_OBJ` de `server_orbit.py`. Si el negocio va a moverlo o quiere objetivo por vendedor, conviene pasarlo a un xlsx de input como hace el Incentivo Dada.
 - [ ] **Es sólo pantalla de gerencia**: el vendedor no la ve. Si se quiere en la app del vendedor, hay que agregar el endpoint filtrado por `vendedor_id` (ya está la estructura `por_vendedor`).
