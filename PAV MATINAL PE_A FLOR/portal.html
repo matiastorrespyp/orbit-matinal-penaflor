@@ -527,6 +527,40 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 .dd-empty { color:var(--text3); padding:12px 4px; font-size:12.5px; text-align:center; }
 .dd-fuente { font-size:10.5px; color:var(--text3); border-top:1px solid var(--b); padding-top:10px; }
 
+/* ── Plan Cobertura (reusa dd-tbl / dd-sub; propio: badges, chips y ficha) ── */
+.pc-kpis { margin-bottom:14px; }
+.pc-click { cursor:pointer; }
+.pc-click:hover td { background:var(--surf3); }
+.pc-sub2 { font-size:10.5px; color:var(--text3); margin-top:2px; }
+.pc-obs { font-size:11px; color:var(--text3); max-width:260px; }
+.pc-vend { font-weight:600; }
+.pc-vend-none { color:var(--text3); font-weight:400; font-style:italic; }
+.pc-badge { display:inline-block; font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px;
+  text-transform:uppercase; letter-spacing:.3px; white-space:nowrap; }
+.pc-badge.ok { background:var(--ok-s); color:var(--ok); }
+.pc-badge.wn { background:var(--wn-s); color:var(--wn); }
+.pc-badge.bad { background:var(--bd-s); color:var(--bd); }
+.pc-planhd { font-family:var(--f-dis); font-weight:700; font-size:13px; color:var(--text2); cursor:pointer; }
+.pc-planline { font-size:12px; color:var(--text2); margin-top:8px; }
+.pc-planul { margin:10px 0 0 18px; padding:0; font-size:11.5px; color:var(--text3); line-height:1.6; }
+.pc-modmeta { font-size:12px; color:var(--text3); margin:-10px 0 14px; line-height:1.6; }
+.pc-obsmod { margin-top:6px; color:var(--text2); font-style:italic; }
+.pc-modkpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(96px,1fr)); gap:8px; margin-bottom:6px; }
+.pc-modkpis > div { background:var(--surf2); border:1px solid var(--b); border-radius:10px; padding:9px 10px;
+  display:flex; flex-direction:column; gap:2px; }
+.pc-modkpis span { font-size:10px; color:var(--text3); }
+.pc-modkpis b { font-size:14px; font-variant-numeric:tabular-nums; }
+.pc-modkpis b.ok { color:var(--ok); } .pc-modkpis b.wn { color:var(--wn); }
+.pc-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.pc-chip { font-size:11px; color:var(--text2); background:var(--surf3); border:1px solid var(--b);
+  border-radius:20px; padding:4px 10px; font-variant-numeric:tabular-nums; }
+.pc-chip.act { border-color:var(--mg); color:var(--text); }
+.pc-chip i { font-style:normal; font-size:9.5px; color:var(--mg); text-transform:uppercase; }
+.pc-acc { font-size:11.5px; color:var(--text2); background:var(--surf2); border:1px solid var(--b);
+  border-radius:9px; padding:8px 11px; margin-bottom:6px; }
+.pc-sc { font-size:11.5px; color:var(--text2); background:var(--ok-s); border:1px solid var(--ok);
+  border-radius:9px; padding:7px 11px; margin-top:6px; }
+
 /* ── Incentivo Alma Mora Low (reusa dd-*; sólo el acordeón por vendedor) ── */
 .am-vrow { cursor:pointer; transition:border-color .15s,background .15s; }
 .am-vrow:hover { border-color:var(--mg); background:var(--surf3); }
@@ -1242,6 +1276,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       <div class="gs-item" data-sc="plan_frizze" onclick="gSw('plan_frizze',this)"><span class="gs-ico">🥂</span>Plan Frizze</div>
       <div class="gs-item" data-sc="incentivo_dada" onclick="gSw('incentivo_dada',this)"><span class="gs-ico">🍷</span>Incentivo Dada</div>
       <div class="gs-item" data-sc="incentivo_almamora" onclick="gSw('incentivo_almamora',this)"><span class="gs-ico">🍇</span>Incentivo Alma Mora Low</div>
+      <div class="gs-item" data-sc="plan_cobertura" onclick="gSw('plan_cobertura',this)"><span class="gs-ico">🍽️</span>Plan Cobertura</div>
       <div class="gs-item" data-sc="stock_sin_venta" onclick="gSw('stock_sin_venta',this)"><span class="gs-ico">📦</span>Stock sin Venta</div>
       <div class="gs-sec">Reportes</div>
       <div class="gs-item" data-sc="cierre_mes" onclick="gSw('cierre_mes',this)"><span class="gs-ico">🏁</span>Cierre de Mes</div>
@@ -1559,7 +1594,7 @@ async function loadRole(){
 
 async function reloadData(){
   const savedDay = currentDay;
-  SEM=null; STK=null;   // Semanal se carga lazy: forzar refetch al Actualizar
+  SEM=null; STK=null; PCOB=null;   // Semanal y Plan Cobertura se cargan lazy: forzar refetch al Actualizar
   const p = document.getElementById('gPage');
   if(p) p.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);">↻ Actualizando datos…</div>';
   await loadAll();
@@ -1670,7 +1705,7 @@ function gSw(id,el){
   gScreen=id;
   document.querySelectorAll('.gs-item').forEach(n=>n.classList.remove('active'));
   (el||document.querySelector(`[data-sc="${id}"]`))?.classList.add('active');
-  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',cliente:'Cliente',planificacion:'Planificación',semanal:'Semanal',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',incentivo_faro:'Incentivo FARO',plan_frizze:'Plan Frizze',incentivo_dada:'Incentivo Dada',incentivo_almamora:'Incentivo Alma Mora Malbec Low',stock_sin_venta:'Stock sin Venta',cierre_mes:'Cierre de Mes'};
+  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',cliente:'Cliente',planificacion:'Planificación',semanal:'Semanal',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',incentivo_faro:'Incentivo FARO',plan_frizze:'Plan Frizze',incentivo_dada:'Incentivo Dada',incentivo_almamora:'Incentivo Alma Mora Malbec Low',plan_cobertura:'Plan Cobertura',stock_sin_venta:'Stock sin Venta',cierre_mes:'Cierre de Mes'};
   document.getElementById('gTopTitle').textContent=tt[id]||'';
   gRender();
 }
@@ -1691,6 +1726,7 @@ function gRender(){
   else if(gScreen==='plan_frizze')           gPlanFrizze(p);
   else if(gScreen==='incentivo_dada')        gIncentivoDada(p);
   else if(gScreen==='incentivo_almamora')    gIncentivoAlmaMora(p);
+  else if(gScreen==='plan_cobertura')        gPlanCobertura(p);
   else if(gScreen==='stock_sin_venta')       gStockSinVenta(p);
   else if(gScreen==='cierre_mes')            gCierreMes(p);
 }
@@ -4518,6 +4554,200 @@ function amFilasVend(){
       ${abierto?`<div class="am-clis">${cli}</div>`:''}
     </div>`;
   }).join('');
+}
+
+/* ════ PLAN COBERTURA (On Premise B&C · restaurantes y bares con carta) ════
+   Se carga lazy: el padrón + el historial de compras no tienen por qué demorar el login.
+   Tres grupos: capturados (dados de alta, con seguimiento de activación y recompras),
+   potenciales y no atendidos. A los dos últimos se les sugiere vendedor por zona. */
+let PCOB=null;
+
+const pcFecha = s=>{const q=(s||'').split('-');return q.length===3?`${q[2]}/${q[1]}/${q[0]}`:(s||'');};
+const pcMes   = s=>{const q=(s||'').split('-');if(q.length<2) return s||'';
+  const M=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${M[parseInt(q[1],10)-1]||q[1]} ${q[0].slice(2)}`;};
+
+function gPlanCobertura(p){
+  p.innerHTML=`<div class="gph"><div><div class="gph-title">Plan Cobertura</div>
+      <div class="gph-sub">On Premise categoría B y C · restaurantes y bares con carta de bebida</div></div></div>
+    <div id="pc-body"><div class="card"><div class="card-body"><div class="empty">
+      <div class="eico" style="font-size:28px">⏳</div><p>Cargando padrón e historial de compras…</p>
+    </div></div></div></div>`;
+  if(PCOB){ pcRender(); return; }
+  safe('/api/gerencia/plan_cobertura').then(j=>{
+    if(gScreen!=='plan_cobertura') return;      // el usuario ya cambió de pantalla
+    const b=document.getElementById('pc-body');
+    if(!j || j.error){
+      if(b) b.innerHTML=`<div class="card"><div class="card-body"><div class="empty">
+        <div class="eico" style="font-size:28px">🍽️</div>
+        <p>${(j&&j.error)||'No se pudo cargar /api/gerencia/plan_cobertura.'}</p></div></div></div>`;
+      return;
+    }
+    PCOB=j; pcRender();
+  });
+}
+
+function pcRender(){
+  const b=document.getElementById('pc-body'); if(!b||!PCOB) return;
+  const d=PCOB, r=d.resumen||{}, pl=d.plan||{};
+  const cap=d.capturados||[], sinCod=d.atendidos_sin_codigo||[],
+        pot=d.potenciales||[], noat=d.no_atendidos||[];
+
+  const vendCell=c=>c.vendedor_id
+    ? `<span class="pc-vend" title="${c.asignacion_detalle||''}">${c.vendedor_id}${c.vendedor_nombre?' · '+c.vendedor_nombre:''}</span>`
+    : `<span class="pc-vend pc-vend-none" title="${c.asignacion_detalle||''}">Sin asignar</span>`;
+
+  const filaCap=(c,i)=>{
+    const est=c.estado_compra==='con_recompra'?['ok','Recompra']
+             :c.estado_compra==='solo_activacion'?['wn','Sin recompra']:['bad','Sin compras'];
+    return `<tr class="pc-click" onclick="pcDetalle(${i})">
+      <td><b>${c.nombre||''}</b> <span class="dd-id">#${c.cliente_id}</span>
+          <div class="pc-sub2">${[c.segmento_plan,c.tipo].filter(Boolean).join(' · ')}</div></td>
+      <td>${c.localidad||''}</td>
+      <td>${c.vendedor_id||'—'}</td>
+      <td>${c.activacion?pcFecha(c.activacion):'—'}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;">${c.meses_con_compra}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;">${c.recompras}</td>
+      <td>${c.ultima_compra?pcFecha(c.ultima_compra):'—'}</td>
+      <td><span class="pc-badge ${est[0]}">${est[1]}</span></td>
+    </tr>`;};
+
+  const filaZona=(c,extra)=>`<tr>
+      <td><b>${c.nombre||''}</b><div class="pc-sub2">${[c.segmento_plan,c.tipo].filter(Boolean).join(' · ')}${c.direccion?' · '+c.direccion:''}</div></td>
+      <td>${c.localidad||''}<div class="pc-sub2">${c.partido||''}</div></td>
+      <td>${vendCell(c)}<div class="pc-sub2">${c.asignacion==='partido'?'por partido':(c.asignacion==='localidad'?'por localidad':'')}</div></td>
+      ${extra?extra(c):''}
+      <td class="pc-obs">${c.observaciones||''}</td>
+    </tr>`;
+
+  b.innerHTML=`
+  <div class="dd-kpis pc-kpis">
+    <div class="dd-kpi"><span class="dd-kn">${r.padron||0}</span><span class="dd-kl">PDV del padrón relevado</span></div>
+    <div class="dd-kpi"><span class="dd-kn ok">${r.capturados_clientes||0}</span><span class="dd-kl">Capturados · ${r.capturados||0} PDV dados de alta</span></div>
+    <div class="dd-kpi"><span class="dd-kn ${r.con_recompra?'ok':'wn'}">${r.con_recompra||0}</span><span class="dd-kl">Con recompra tras activarse</span></div>
+    <div class="dd-kpi"><span class="dd-kn wn">${r.potenciales||0}</span><span class="dd-kl">Potenciales para captar</span></div>
+    <div class="dd-kpi"><span class="dd-kn bad">${r.no_atendidos||0}</span><span class="dd-kl">No atendidos · ${r.sin_relevar||0} sin relevar</span></div>
+  </div>
+
+  <div class="card"><div class="card-body">
+    <div class="pc-planhd" onclick="pcTogglePlan()"><span id="pc-plan-ar">▸</span> Cómo funciona el plan</div>
+    <div id="pc-plan" style="display:none">
+      <div class="pc-planline"><b>Objetivo:</b> ${pl.objetivo||''}</div>
+      <div class="pc-planline"><b>Destinado a:</b> ${pl.destinatarios||''}</div>
+      <div class="pc-planline"><b>Medición:</b> ${pl.medicion||''}</div>
+      <ul class="pc-planul">${(pl.acciones||[]).map(a=>`<li>${a}</li>`).join('')}</ul>
+    </div>
+  </div></div>
+
+  <div class="card"><div class="card-body">
+    <div class="dd-sub" style="border-top:none;padding-top:0;">Capturados · dados de alta y comprando (${cap.length})</div>
+    <div class="dd-note">Tocá un cliente para ver los artículos que compró, sus recompras mes a mes y las ofertas que recibió. La activación es la fecha de su <b>primera compra</b>.</div>
+    <div class="dd-tblwrap"><table class="dd-tbl">
+      <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vend.</th><th>Activación</th>
+        <th style="text-align:right;">Meses</th><th style="text-align:right;">Recompras</th><th>Última compra</th><th>Estado</th></tr></thead>
+      <tbody>${cap.map(filaCap).join('')||'<tr><td colspan="8" class="dd-empty">Sin clientes capturados en el padrón.</td></tr>'}</tbody>
+    </table></div>
+    ${sinCod.length?`
+      <div class="dd-sub">Atendidos sin código de cliente cargado (${sinCod.length})</div>
+      <div class="dd-note">El relevamiento dice que los atendemos, pero el padrón no tiene el código: hasta que se cargue no se les puede medir activación ni recompra.</div>
+      <div class="dd-tblwrap"><table class="dd-tbl">
+        <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vendedor de la zona</th><th>Observaciones</th></tr></thead>
+        <tbody>${sinCod.map(c=>filaZona(c,null)).join('')}</tbody>
+      </table></div>`:''}
+  </div></div>
+
+  <div class="card"><div class="card-body">
+    <div class="dd-sub" style="border-top:none;padding-top:0;">Clientes potenciales (${pot.length})</div>
+    <div class="dd-note">Relevados como potenciales: todavía no están dados de alta. El vendedor sale de quién atiende esa localidad según el maestro.</div>
+    <div class="dd-tblwrap"><table class="dd-tbl">
+      <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vendedor que correspondería</th><th>Observaciones</th></tr></thead>
+      <tbody>${pot.map(c=>filaZona(c,null)).join('')||'<tr><td colspan="4" class="dd-empty">Sin potenciales.</td></tr>'}</tbody>
+    </table></div>
+  </div></div>
+
+  <div class="card"><div class="card-body">
+    <div class="dd-sub" style="border-top:none;padding-top:0;">No los estamos atendiendo (${noat.length})</div>
+    <div class="dd-note">Relevados como no atendidos${r.sin_relevar?` (incluye ${r.sin_relevar} sin dato de relevamiento)`:''}, con el vendedor al que le correspondería la zona.</div>
+    <div class="dd-tblwrap"><table class="dd-tbl">
+      <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vendedor que correspondería</th><th>Relevamiento</th><th>Observaciones</th></tr></thead>
+      <tbody>${noat.map(c=>filaZona(c,x=>`<td>${x.relevado?'No atiende':'<span class="pc-badge wn">Sin relevar</span>'}</td>`)).join('')||'<tr><td colspan="5" class="dd-empty">Sin registros.</td></tr>'}</tbody>
+    </table></div>
+  </div></div>
+
+  <div class="dd-fuente">Fuente: ${d.fuente||''}${d.acciones_mes?` · acciones del catálogo ${d.acciones_mes}`:''}</div>`;
+}
+
+function pcTogglePlan(){
+  const el=document.getElementById('pc-plan'), ar=document.getElementById('pc-plan-ar');
+  if(!el) return;
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'block';
+  if(ar) ar.textContent=open?'▸':'▾';
+}
+
+/* Modal: ficha del cliente capturado — artículos, recompras mes a mes y ofertas */
+function pcDetalle(i){
+  const c=(PCOB?.capturados||[])[i]; if(!c) return;
+  const mesAct=(c.activacion||'').slice(0,7);
+  const chips=(c.meses||[]).map(m=>`
+    <span class="pc-chip ${m.mes===mesAct?'act':''}" title="${m.lineas} línea(s) · ${fmtM(m.importe)}">
+      ${pcMes(m.mes)} · <b>${m.botellas}</b> bot.${m.mes===mesAct?' <i>activación</i>':''}</span>`).join('')
+    || '<span class="dd-ped dd-ped-nd">Sin compras registradas</span>';
+
+  const arts=(c.articulos||[]).map(a=>`<tr>
+      <td>${a.articulo}${a.marca?`<div class="pc-sub2">${a.marca}</div>`:''}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;">${a.botellas}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;">${a.veces}</td>
+      <td>${pcFecha(a.primera)}</td><td>${pcFecha(a.ultima)}</td>
+    </tr>`).join('') || '<tr><td colspan="5" class="dd-empty">Sin artículos.</td></tr>';
+
+  const accs=(c.acciones||[]).map(a=>`<div class="pc-acc">🏷️ <b>${a.accion||a.id_accion}</b>${a.escala?' · '+a.escala:''}${a.descuento_pct?' · '+a.descuento_pct+'%':''}</div>`).join('');
+  const descs=(c.descuentos||[]).map(x=>`<tr><td>${x.articulo}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;">${x.pct}%</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;">${x.botellas}</td>
+      <td>${pcFecha(x.ultima)}</td></tr>`).join('');
+  const scs=(c.sin_cargos||[]).map(x=>`<div class="pc-sc">🎁 ${pcFecha(x.fecha)} · ${x.articulo} · <b>${x.botellas}</b> bot.</div>`).join('');
+
+  document.getElementById('emodBg')?.remove();
+  const div=document.createElement('div'); div.className='emod-bg open'; div.id='emodBg';
+  div.innerHTML=`<div class="emod-card" style="max-width:660px;">
+    <div class="emod-title">${c.nombre||''}</div>
+    <div class="pc-modmeta">
+      ${c.razon_social?`<b>${c.razon_social}</b> · `:''}#${c.cliente_id}
+      ${c.en_maestro?'':' · <span class="pc-badge bad">No está en el maestro</span>'}
+      <div>${[c.segmento_plan,c.tipo,c.subcanal].filter(Boolean).join(' · ')}</div>
+      <div>${[c.localidad,c.partido].filter(Boolean).join(' · ')} · ${c.vendedor_id||'sin vendedor'}${c.vendedor_nombre?' · '+c.vendedor_nombre:''}</div>
+      ${c.observaciones?`<div class="pc-obsmod">📝 ${c.observaciones}</div>`:''}
+    </div>
+
+    <div class="pc-modkpis">
+      <div><span>Activación</span><b>${c.activacion?pcFecha(c.activacion):'—'}</b></div>
+      <div><span>Meses con compra</span><b>${c.meses_con_compra}</b></div>
+      <div><span>Recompras</span><b class="${c.recompras?'ok':'wn'}">${c.recompras}</b></div>
+      <div><span>Botellas</span><b>${c.botellas}</b></div>
+      <div><span>Facturado</span><b>${fmtM(c.importe||0)}</b></div>
+    </div>
+
+    <div class="dd-sub">Recompras mes a mes</div>
+    <div class="pc-chips">${chips}</div>
+
+    <div class="dd-sub">Artículos que compró (${(c.articulos||[]).length})</div>
+    <div class="dd-tblwrap" style="max-height:220px;overflow-y:auto;"><table class="dd-tbl">
+      <thead><tr><th>Artículo</th><th style="text-align:right;">Bot.</th><th style="text-align:right;">Veces</th><th>Primera</th><th>Última</th></tr></thead>
+      <tbody>${arts}</tbody></table></div>
+
+    <div class="dd-sub">Acciones comerciales y ofertas</div>
+    ${accs||''}
+    ${descs?`<div class="dd-tblwrap"><table class="dd-tbl">
+      <thead><tr><th>Compró con descuento</th><th style="text-align:right;">%</th><th style="text-align:right;">Bot.</th><th>Última</th></tr></thead>
+      <tbody>${descs}</tbody></table></div>`:''}
+    ${scs||''}
+    ${(!accs&&!descs&&!scs)?'<div class="dd-empty">Sin descuentos ni sin cargos registrados en sus compras.</div>':''}
+
+    <div class="emod-actions"><button class="g-ghost" onclick="closeModal()">Cerrar</button></div>
+  </div>`;
+  document.body.appendChild(div);
+  div.addEventListener('click',e=>{if(e.target===div) closeModal();});
 }
 
 async function guardarEditPlan(id,esV3){

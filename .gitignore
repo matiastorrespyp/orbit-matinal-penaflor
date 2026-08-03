@@ -65,3 +65,7 @@ ESTADO_*.txt
 
 # Salidas/backups temporales del loader de acciones (no versionar)
 01_INPUTS/ACCIONES COMERCIALES/*/salida/
+
+# Archivos de bloqueo de Excel: aparecen mientras el usuario tiene el xlsx abierto
+# y el cierre stagea carpetas enteras (ej. 01_INPUTS/Plan cobertura).
+~$*

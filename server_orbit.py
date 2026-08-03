@@ -8284,6 +8284,525 @@ def gerencia_incentivo_almamora():
     return jsonify(_to_native({"generado_en": _now_ar(), **data}))
 
 
+# ====== PLAN COBERTURA (On Premise B&C · restaurantes y bares con carta) ======
+# Plan de Grupo Peñaflor: incrementar cobertura en clientes categoría B y C del canal
+# On Premise (restaurantes / bares con carta de bebida). Se mide por CCC únicos del
+# canal, de JULIO a DICIEMBRE 2026. Fuente del padrón relevado: el xlsx de la carpeta
+# 01_INPUTS/Plan cobertura (el PDF del mismo directorio es el resumen de la mecánica).
+PLAN_COB_DIR = INPUTS / "Plan cobertura"
+_PLAN_COB_CACHE = {}
+_PLAN_COB_VENTAS_CACHE = {}
+
+
+def _plan_cob_norm(s):
+    """Texto comparable: sin acentos, mayúsculas, espacios colapsados."""
+    import unicodedata as _ud
+    t = _ud.normalize("NFKD", str(s or "")).encode("ascii", "ignore").decode().upper()
+    return " ".join(t.split())
+
+
+def _plan_cob_padron_path():
+    """Primer .xlsx de la carpeta del plan (ignora los temporales ~$ de Excel)."""
+    if not PLAN_COB_DIR.exists():
+        return None
+    xs = [p for p in sorted(PLAN_COB_DIR.glob("*.xlsx")) if not p.name.startswith("~$")]
+    return xs[0] if xs else None
+
+
+def _plan_cob_padron():
+    """Padrón relevado del plan. El xlsx trae dos filas de encabezado (grupos de columnas):
+    la buena es la segunda. Devuelve (DataFrame normalizado, nombre del archivo).
+
+    NO se usa pd.read_excel: el export viene inflado (la hoja declara ~1.048.000 filas
+    para 205 reales) y abrirlo así tarda ~15 s, que es toda la pantalla. Con openpyxl en
+    read_only y corte por filas vacías tarda milisegundos. Mismo patrón que
+    `producto activos.xlsx` (ver CHANGELOG 2026-06)."""
+    path = _plan_cob_padron_path()
+    if path is None:
+        return pd.DataFrame(), ""
+    import openpyxl
+    try:
+        wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+        ws = wb[wb.sheetnames[0]]
+        filas, vacias = [], 0
+        for r in ws.iter_rows(values_only=True):
+            if all(v is None or str(v).strip() == "" for v in r):
+                vacias += 1
+                if filas and vacias >= 25:
+                    break
+                continue
+            vacias = 0
+            filas.append(r)
+        wb.close()
+    except Exception as e:
+        print(f"[WARN] plan_cobertura padrón: {e}")
+        return pd.DataFrame(), path.name
+    if len(filas) < 3:
+        return pd.DataFrame(), path.name
+    hdr = []
+    for i, x in enumerate(filas[1]):
+        n = str(x).strip() if x is not None else ""
+        hdr.append(n if n and n.lower() != "none" else f"_c{i}")
+    df = pd.DataFrame(filas[2:], columns=hdr)
+    df.columns = [str(c).strip() for c in df.columns]
+
+    def col(*claves):
+        for c in df.columns:
+            cn = _plan_cob_norm(c)
+            if any(k in cn for k in claves):
+                return c
+        return None
+
+    c_id   = col("ID PUNTO DE VENTA", "ID PDV")
+    c_nom  = col("NOMBRE LOCAL")
+    c_dir  = col("DIRECCION")
+    c_part = col("PARTIDO")
+    c_loc  = col("LOCALIDAD")
+    c_seg  = col("SEGMENTO")
+    c_tipo = col("TIPO")
+    c_at   = col("LO ATIENDE")
+    c_cod  = col("COD. CLIENTE", "CODIGO CLIENTE", "COD CLIENTE")
+    c_obs  = col("OBSERVACIONES")
+    if c_nom is None or c_loc is None:
+        return pd.DataFrame(), path.name
+
+    out = pd.DataFrame({
+        "pdv_id":     df[c_id].astype(str).str.strip() if c_id else "",
+        "nombre":     df[c_nom].astype(str).str.strip(),
+        "direccion":  df[c_dir].fillna("").astype(str).str.strip() if c_dir else "",
+        "partido":    df[c_part].fillna("").astype(str).str.strip() if c_part else "",
+        "localidad":  df[c_loc].fillna("").astype(str).str.strip(),
+        "segmento":   df[c_seg].fillna("").astype(str).str.strip().str.title() if c_seg else "",
+        "tipo":       df[c_tipo].fillna("").astype(str).str.strip() if c_tipo else "",
+        "observaciones": df[c_obs].fillna("").astype(str).str.strip() if c_obs else "",
+    })
+    out["cliente_id"] = pd.to_numeric(df[c_cod], errors="coerce") if c_cod else pd.NA
+    # "Sí / si / SI" y "No / no" vienen sin criterio de mayúsculas ni acento en el relevamiento.
+    at = df[c_at].fillna("").map(_plan_cob_norm) if c_at else pd.Series([""] * len(df))
+    out["atiende_raw"] = df[c_at].fillna("").astype(str).str.strip() if c_at else ""
+
+    def _estado(v):
+        if v == "SI":
+            return "ATENDIDO"
+        if v.startswith("POTENCIAL"):
+            return "POTENCIAL"
+        if v == "NO":
+            return "NO_ATENDIDO"
+        return "SIN_RELEVAR"
+    out["estado"] = at.map(_estado)
+    out["_loc"]  = out["localidad"].map(_plan_cob_norm)
+    out["_part"] = out["partido"].map(_plan_cob_norm)
+    return out, path.name
+
+
+def _plan_cob_vendedor_por_zona(padron):
+    """Vendedor sugerido para un PDV que NO está dado de alta: el que más clientes tiene
+    en esa localidad según el maestro. Si la localidad no tiene ni un cliente nuestro,
+    cae al vendedor dominante del PARTIDO (mismo departamento, según el propio padrón).
+    Devuelve (dict localidad -> asignación, dict partido -> asignación)."""
+    cli = _clientes_maestro()
+    por_loc = {}
+    if not cli.empty and "Localidad" in cli.columns:
+        cli = cli.copy()
+        cli["_loc"] = cli["Localidad"].fillna("").map(_plan_cob_norm)
+        nombres = {}
+        for _, r in cli.iterrows():
+            vid = str(r.get("_vend_id", "") or "")
+            if vid and vid not in nombres:
+                nombres[vid] = str(r.get("Vendedor", "") or "").strip()
+        for loc, g in cli.groupby("_loc"):
+            if not loc:
+                continue
+            vc = g["_vend_id"].replace("", pd.NA).dropna().value_counts()
+            if vc.empty:
+                continue
+            vid = vc.index[0]
+            por_loc[loc] = {"vendedor_id": vid, "vendedor_nombre": nombres.get(vid, ""),
+                            "clientes_zona": int(vc.iloc[0]), "clientes_total": int(vc.sum()),
+                            "fuente": "localidad"}
+    # Partido: se arma con las localidades del padrón que sí tienen dueño.
+    por_part = {}
+    if not padron.empty:
+        for part, g in padron.groupby("_part"):
+            if not part:
+                continue
+            conteo = {}
+            for loc in g["_loc"].unique():
+                a = por_loc.get(loc)
+                if a:
+                    conteo[a["vendedor_id"]] = conteo.get(a["vendedor_id"], 0) + a["clientes_zona"]
+            if conteo:
+                vid = max(conteo, key=conteo.get)
+                por_part[part] = {"vendedor_id": vid,
+                                  "vendedor_nombre": por_loc_nombre(por_loc, vid),
+                                  "clientes_zona": conteo[vid], "clientes_total": sum(conteo.values()),
+                                  "fuente": "partido"}
+    return por_loc, por_part
+
+
+def por_loc_nombre(por_loc, vid):
+    for a in por_loc.values():
+        if a["vendedor_id"] == vid and a["vendedor_nombre"]:
+            return a["vendedor_nombre"]
+    return ""
+
+
+def _plan_cob_ventas(ids):
+    """Historial de compras COMPLETO de los clientes del plan, encadenando las cuatro
+    fuentes que cubren la línea de tiempo sin huecos:
+      02_HISTORY/historial_ventas.csv          2024-03 → 2026-05 (archivo histórico congelado)
+      02_HISTORY/historial_ventas_cliente.csv  2026-05 → último cierre
+      01_INPUTS/ventas_acumulada.csv           trimestre vivo
+      01_INPUTS/ventas.csv                     día vivo
+    Se filtra a los clientes del plan apenas se lee (son un puñado) y se deduplica por
+    fecha+cliente+artículo+cantidad+importe, que es donde se solapan las fuentes.
+    Sólo líneas con importe > 0: una devolución o un sin cargo no activan un cliente."""
+    ids = {int(i) for i in ids}
+    if not ids:
+        return pd.DataFrame()
+    paths = [BASE / "02_HISTORY" / "historial_ventas.csv",
+             BASE / "02_HISTORY" / "historial_ventas_cliente.csv",
+             INPUTS / "ventas_acumulada.csv", INPUTS / "ventas.csv"]
+    key = (tuple(sorted(ids)),
+           tuple((p.name, os.path.getmtime(p) if p.exists() else 0) for p in paths))
+    cached = _PLAN_COB_VENTAS_CACHE.get(key)
+    if cached is not None:
+        return cached
+
+    frames = []
+    for p in paths:
+        if not p.exists():
+            continue
+        norm_cols = (p.name == "historial_ventas_cliente.csv")
+        # utf-8-sig PRIMERO: historial_ventas_cliente.csv se escribe con BOM y leído como
+        # latin1 la primera columna queda "ï»¿fecha_comprobante" → el chequeo de columnas
+        # fallaba y la fuente se descartaba en silencio (clientes activos con 0 compras).
+        encs = ("utf-8-sig", "latin1", "utf-8") if norm_cols else ("latin1", "utf-8-sig", "utf-8")
+        # Sólo las columnas que se usan: historial_ventas.csv son 129k filas x 59 columnas
+        # y leerlo entero se llevaba casi todo el tiempo de la pantalla.
+        cols_erp = ["Cliente", "FechaComprobante", "Codigo", "Articulo", "Marca",
+                    "CantBase", "ImporteNetoItem", "CodVendedor", "Descuento", "valorDescuento"]
+        df = None
+        for enc in encs:
+            try:
+                df = pd.read_csv(p, sep=("," if norm_cols else ";"), encoding=enc,
+                                 dtype=str, low_memory=False, on_bad_lines="skip",
+                                 usecols=(None if norm_cols else
+                                          (lambda c: str(c).strip() in cols_erp)))
+                break
+            except Exception:
+                continue
+        if df is None or df.empty:
+            continue
+        df.columns = [str(c).strip().lstrip("﻿") for c in df.columns]
+        if norm_cols:
+            ren = {"fecha_comprobante": "_f", "cliente_id": "_cli", "articulo": "_art",
+                   "marca": "_marca", "cant_base": "_cant", "importe_neto": "_imp",
+                   "vendedor_codigo": "_vend", "descuento_pct": "_pct"}
+            if not set(ren).issubset(df.columns):
+                continue
+            d = df.rename(columns=ren)[list(ren.values())].copy()
+            d["_cod"] = ""
+            d["_f"] = pd.to_datetime(d["_f"], errors="coerce")
+            for c in ("_cant", "_imp", "_pct"):
+                d[c] = pd.to_numeric(d[c], errors="coerce").fillna(0)
+        else:
+            req = {"Cliente", "FechaComprobante", "Articulo", "CantBase", "ImporteNetoItem"}
+            if not req.issubset(set(df.columns)):
+                continue
+            d = pd.DataFrame({
+                "_f":    pd.to_datetime(df["FechaComprobante"], dayfirst=True, errors="coerce"),
+                "_cli":  df["Cliente"],
+                "_art":  df["Articulo"].fillna("").astype(str).str.strip(),
+                "_marca": df["Marca"].fillna("").astype(str).str.strip() if "Marca" in df.columns else "",
+                "_cod":  (df["Codigo"].astype(str).str.replace(r"\.0$", "", regex=True).str.strip()
+                          if "Codigo" in df.columns else ""),
+                "_cant": df["CantBase"].apply(_parse_num_ar),
+                "_imp":  df["ImporteNetoItem"].apply(_parse_num_ar),
+                "_vend": df["CodVendedor"] if "CodVendedor" in df.columns else None,
+                # "Descuento" viene como texto tipo "20,00%"
+                "_pct":  (df["Descuento"].astype(str).str.replace("%", "", regex=False).apply(_parse_num_ar)
+                          if "Descuento" in df.columns else 0.0),
+            })
+        d["_cli"] = pd.to_numeric(d["_cli"], errors="coerce")
+        d = d[d["_cli"].isin(ids)]
+        if d.empty:
+            continue
+        d["_vend"] = pd.to_numeric(d.get("_vend"), errors="coerce")
+        frames.append(d.dropna(subset=["_f"]))
+
+    if not frames:
+        out = pd.DataFrame()
+    else:
+        out = pd.concat(frames, ignore_index=True)
+        # Se conservan las líneas de importe 0: son los sin cargo de los combos del plan
+        # (1+2, 5+1, 2+1), que el negocio necesita ver. Los rechazos (cantidad negativa)
+        # sí se descartan. La activación y las recompras se miden sólo con importe > 0.
+        out = out[(out["_imp"] > 0) | ((out["_imp"] <= 0) & (out["_cant"] > 0))].copy()
+        out["_cli"] = out["_cli"].astype(int)
+        out["_artn"] = out["_art"].map(_plan_cob_norm)
+        out["_fd"] = out["_f"].dt.strftime("%Y-%m-%d")
+        out = out.drop_duplicates(subset=["_fd", "_cli", "_artn", "_cant", "_imp"])
+        out["_mes"] = out["_f"].dt.strftime("%Y-%m")
+    _PLAN_COB_VENTAS_CACHE.clear()
+    _PLAN_COB_VENTAS_CACHE[key] = out
+    return out
+
+
+def _plan_cob_acciones_por_cliente():
+    """cliente_id -> acciones comerciales del catálogo VIGENTE que el cliente efectivamente
+    usó. Se invierte el payload de Acciones Comerciales en vez de re-detectar acá: esa
+    pantalla ya aplica 'acción = uso' (el % aplicado tiene que ser el tramo de la acción)
+    y no queremos dos criterios distintos conviviendo."""
+    try:
+        pay = _acciones_mes_payload(None) or {}
+    except Exception as e:
+        print(f"[WARN] plan_cobertura acciones: {e}")
+        return {}, ""
+    mapa = {}
+    for a in pay.get("acciones", []):
+        etiqueta = " · ".join(x for x in [str(a.get("tipo", "")).strip(),
+                                          str(a.get("marcas", "")).strip()] if x)
+        for c in a.get("clientes_detalle", []):
+            cid = c.get("cliente_id")
+            if cid is None:
+                continue
+            mapa.setdefault(int(cid), []).append({
+                "id_accion": a.get("id_accion", ""),
+                "accion": etiqueta or a.get("id_accion", ""),
+                "escala": a.get("escala", ""),
+                "descuento_pct": a.get("descuento_pct", ""),
+                "litros": c.get("litros", 0),
+                "cant_base": c.get("cant_base", 0),
+                "fecha_ultima": c.get("fecha_ultima", ""),
+            })
+    return mapa, pay.get("mes", "")
+
+
+def _plan_cobertura():
+    """Seguimiento del Plan Cobertura sobre el padrón relevado.
+
+    Tres grupos, que son los que pidió el negocio:
+      capturados  → PDV con código de cliente cargado (dados de alta). Se les mide
+                    activación (fecha de la PRIMERA compra), recompras por mes,
+                    artículos comprados y acciones comerciales usadas.
+      potenciales → relevados como 'Potencial': todavía no son clientes.
+      no_atendidos→ relevados como 'No' (más los que quedaron sin relevar).
+    A los dos últimos, que no tienen código, se les sugiere vendedor por zona.
+    Devuelve None si falta el padrón."""
+    # La clave del caché se arma ANTES de parsear nada: si no, cada request volvía a
+    # abrir el xlsx y el padrón es lo más caro de la pantalla.
+    padron_p = _plan_cob_padron_path()
+    if padron_p is None:
+        return None
+    fuentes = [padron_p, INPUTS / "clientes.xlsx", INPUTS / "ventas.csv",
+               INPUTS / "ventas_acumulada.csv",
+               BASE / "02_HISTORY" / "historial_ventas_cliente.csv"]
+    key = tuple((p.name, os.path.getmtime(p) if p.exists() else 0) for p in fuentes)
+    cached = _PLAN_COB_CACHE.get(key)
+    if cached is not None:
+        return cached
+
+    padron, fuente = _plan_cob_padron()
+    if padron.empty:
+        return None
+
+    por_loc, por_part = _plan_cob_vendedor_por_zona(padron)
+    maestro = _clientes_maestro()
+    m_idx = {}
+    if not maestro.empty:
+        for _, r in maestro.iterrows():
+            m_idx[int(r["_cliente_id"])] = r
+
+    def _sugerido(row):
+        a = por_loc.get(row["_loc"]) or por_part.get(row["_part"])
+        if not a:
+            return {"vendedor_id": "", "vendedor_nombre": "", "asignacion": "sin_zona",
+                    "asignacion_detalle": "No tenemos clientes en esa zona"}
+        det = (f'{a["clientes_zona"]} de {a["clientes_total"]} clientes de {row["localidad"]}'
+               if a["fuente"] == "localidad"
+               else f'Sin clientes en {row["localidad"]}; dominante en el partido {row["partido"]}')
+        return {"vendedor_id": a["vendedor_id"], "vendedor_nombre": a["vendedor_nombre"],
+                "asignacion": a["fuente"], "asignacion_detalle": det}
+
+    def _base(row):
+        return {
+            "pdv_id": row["pdv_id"], "nombre": row["nombre"], "direccion": row["direccion"],
+            "localidad": row["localidad"], "partido": row["partido"],
+            "segmento_plan": row["segmento"], "tipo": row["tipo"],
+            "observaciones": row["observaciones"],
+        }
+
+    con_codigo = padron[padron["cliente_id"].notna()].copy()
+    ids = {int(x) for x in con_codigo["cliente_id"].tolist()}
+    ventas = _plan_cob_ventas(ids)
+    acc_map, acc_mes = _plan_cob_acciones_por_cliente()
+
+    capturados = []
+    for _, row in con_codigo.iterrows():
+        cid = int(row["cliente_id"])
+        m = m_idx.get(cid)
+        todo = ventas[ventas["_cli"] == cid] if not ventas.empty else pd.DataFrame()
+        # Compras = importe > 0 (es lo que activa y lo que cuenta como recompra).
+        # Sin cargo = lo que entregamos por los combos del plan, se muestra aparte.
+        g  = todo[todo["_imp"] > 0] if not todo.empty else todo
+        sc = todo[todo["_imp"] <= 0] if not todo.empty else todo
+        d = _base(row)
+        d["cliente_id"] = cid
+        d["en_maestro"] = m is not None
+        d["razon_social"] = str(m.get("Razon_Social", "")).strip() if m is not None else ""
+        d["subcanal"] = (str(m.get("SubSegmento", "") or m.get("Ramo", "")).strip()
+                         if m is not None else "")
+        if m is not None:
+            d["vendedor_id"] = str(m.get("_vend_id", "") or "")
+            d["vendedor_nombre"] = str(m.get("Vendedor", "") or "").strip()
+            d["asignacion"] = "maestro"
+            d["asignacion_detalle"] = "Cartera asignada en el maestro"
+        else:
+            d.update(_sugerido(row))
+            d["asignacion_detalle"] = "El código no figura en el maestro · " + d["asignacion_detalle"]
+
+        def _lineas_sc(df_sc):
+            if df_sc is None or df_sc.empty:
+                return []
+            out = [{"fecha": r["_f"].strftime("%Y-%m-%d"), "articulo": r["_art"],
+                    "botellas": int(r["_cant"])} for _, r in df_sc.iterrows()]
+            out.sort(key=lambda x: x["fecha"], reverse=True)
+            return out
+
+        def _lineas_desc(df_c):
+            """Compras con descuento aplicado, agrupadas por artículo y %. Es el dato duro
+            de la factura: qué se compró y con qué descuento. No se le pone nombre de
+            acción salvo que el catálogo vigente la reconozca (campo `acciones`)."""
+            if df_c is None or df_c.empty or "_pct" not in df_c.columns:
+                return []
+            dd = df_c[df_c["_pct"] > 0]
+            if dd.empty:
+                return []
+            filas = []
+            for (art, pct), ga in dd.groupby(["_art", "_pct"]):
+                filas.append({"articulo": art, "pct": round(float(pct), 1),
+                              "botellas": int(ga["_cant"].sum()),
+                              "ultima": ga["_f"].max().strftime("%Y-%m-%d")})
+            filas.sort(key=lambda x: (-x["pct"], -x["botellas"]))
+            return filas
+
+        d["sin_cargos"] = _lineas_sc(sc)
+        d["descuentos"] = _lineas_desc(g)
+        d["acciones"] = acc_map.get(cid, [])
+
+        if g.empty:
+            d.update({"activacion": "", "ultima_compra": "", "meses_con_compra": 0,
+                      "recompras": 0, "recompro": False, "botellas": 0, "importe": 0.0,
+                      "estado_compra": "sin_compras", "meses": [], "articulos": []})
+            capturados.append(d)
+            continue
+
+        act = g["_f"].min()
+        ult = g["_f"].max()
+        mes_act = act.strftime("%Y-%m")
+        meses = []
+        for mes, gm in g.groupby("_mes"):
+            meses.append({"mes": mes, "botellas": int(gm["_cant"].sum()),
+                          "importe": round(float(gm["_imp"].sum()), 0),
+                          "lineas": int(len(gm))})
+        meses.sort(key=lambda x: x["mes"])
+        recompras = sum(1 for x in meses if x["mes"] > mes_act)
+
+        articulos = []
+        for art, ga in g.groupby("_art"):
+            articulos.append({
+                "articulo": art,
+                "marca": str(ga["_marca"].replace("", pd.NA).dropna().mode().iloc[0])
+                         if not ga["_marca"].replace("", pd.NA).dropna().empty else "",
+                "botellas": int(ga["_cant"].sum()),
+                "importe": round(float(ga["_imp"].sum()), 0),
+                "primera": ga["_f"].min().strftime("%Y-%m-%d"),
+                "ultima":  ga["_f"].max().strftime("%Y-%m-%d"),
+                "veces": int(ga["_f"].dt.strftime("%Y-%m-%d").nunique()),
+            })
+        articulos.sort(key=lambda a: -a["botellas"])
+
+        d.update({
+            "activacion": act.strftime("%Y-%m-%d"),
+            "ultima_compra": ult.strftime("%Y-%m-%d"),
+            "meses_con_compra": len(meses),
+            "recompras": recompras,
+            "recompro": recompras > 0,
+            "botellas": int(g["_cant"].sum()),
+            "importe": round(float(g["_imp"].sum()), 0),
+            "estado_compra": "con_recompra" if recompras > 0 else "solo_activacion",
+            "meses": meses,
+            "articulos": articulos,
+        })
+        capturados.append(d)
+    capturados.sort(key=lambda c: (c["estado_compra"] == "sin_compras", -c["recompras"], c["nombre"]))
+
+    # Atendidos que NO tienen el código cargado en el padrón: no se pueden seguir hasta
+    # que alguien complete la columna. Se listan aparte para que el pendiente se vea.
+    sin_codigo = [{**_base(r), **_sugerido(r), "atiende": r["atiende_raw"]}
+                  for _, r in padron[(padron["estado"] == "ATENDIDO")
+                                     & (padron["cliente_id"].isna())].iterrows()]
+    sin_codigo.sort(key=lambda c: c["nombre"])
+
+    potenciales = [{**_base(r), **_sugerido(r)}
+                   for _, r in padron[padron["estado"] == "POTENCIAL"].iterrows()]
+    potenciales.sort(key=lambda c: (c["vendedor_id"] or "ZZ", c["localidad"], c["nombre"]))
+
+    no_at = padron[padron["estado"].isin(["NO_ATENDIDO", "SIN_RELEVAR"])]
+    no_atendidos = [{**_base(r), **_sugerido(r), "relevado": r["estado"] == "NO_ATENDIDO"}
+                    for _, r in no_at.iterrows()]
+    no_atendidos.sort(key=lambda c: (not c["relevado"], c["vendedor_id"] or "ZZ",
+                                     c["localidad"], c["nombre"]))
+
+    comprando = [c for c in capturados if c["estado_compra"] != "sin_compras"]
+    data = {
+        "plan": {
+            "objetivo": "Incrementar la cobertura en clientes de categoría B y C",
+            "destinatarios": "Restaurantes o bares con carta de bebida (On Premise)",
+            "medicion": "CCC únicos del canal On Premise segmento B&C, de julio a diciembre 2026",
+            "acciones": [
+                "Incorporación: 1 + 2 cajas por línea comercial (Premium 1 + 1). Tope 1 combo por PDV por LC, máximo 4 LC.",
+                "Alma Mora debe estar en todas las cartas. 5 + 1 botellas con tope de 2 combos por PDV hasta diciembre, sólo para los CCC capturados del plan.",
+                "Recompra: 2 + 1 en botella para incorporar Cinzano. 1 combo por PDV.",
+                "Premium: 5 + 1 en La Mascota para clientes nuevos que hayan incorporado Alma Mora y La Mascota. Tope 1 por PDV.",
+                "1 + 1 a los 6 meses para clientes que hayan comprado al menos 1 LC en los últimos 6 meses.",
+                "Para el reconocimiento hay que bajar el sin cargo en el campo 'Cantidad sin cargo UM' del cubo de sell out.",
+            ],
+        },
+        "resumen": {
+            "padron": int(len(padron)),
+            "capturados": len(capturados),
+            # El padrón repite algún PDV con el mismo código (el relevamiento marca
+            # "repetido"): el CCC se cuenta por cliente, no por fila.
+            "capturados_clientes": len({c["cliente_id"] for c in capturados}),
+            "comprando": len(comprando),
+            "con_recompra": sum(1 for c in capturados if c["recompro"]),
+            "sin_codigo": len(sin_codigo),
+            "potenciales": len(potenciales),
+            "no_atendidos": len(no_atendidos),
+            "sin_relevar": sum(1 for c in no_atendidos if not c["relevado"]),
+        },
+        "capturados": capturados,
+        "atendidos_sin_codigo": sin_codigo,
+        "potenciales": potenciales,
+        "no_atendidos": no_atendidos,
+        "acciones_mes": acc_mes,
+        "fuente": f"{fuente} + clientes.xlsx + historial de ventas (02_HISTORY + ventas_acumulada + ventas)",
+    }
+    _PLAN_COB_CACHE.clear()
+    _PLAN_COB_CACHE[key] = data
+    return data
+
+
+@app.route("/api/gerencia/plan_cobertura")
+def gerencia_plan_cobertura():
+    data = _plan_cobertura()
+    if data is None:
+        return jsonify({"error": "Plan Cobertura no disponible: falta el padrón en 01_INPUTS/Plan cobertura/*.xlsx."}), 404
+    return jsonify(_to_native({"generado_en": _now_ar(), **data}))
+
+
 # ====== CIERRE DE MES ======
 @app.route("/api/gerencia/cierre_mes")
 def gerencia_cierre_mes():

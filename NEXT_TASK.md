@@ -1,5 +1,20 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-03 - Plan Cobertura (On Premise B&C)
+
+### HECHO
+- [x] Pantalla de gerencia **Plan Cobertura** (carga lazy) + endpoint `GET /api/gerencia/plan_cobertura`. Fuente: `01_INPUTS/Plan cobertura/on premise.xlsx` (autodetecta el xlsx de la carpeta) + maestro + historial de ventas encadenado.
+- [x] Tarjeta **Capturados** con activación (primera compra), recompras mes a mes, artículos, descuentos y sin cargos. Tarjetas **Potenciales** y **No atendidos** con el vendedor que correspondería por localidad (fallback por partido).
+- [x] **Bug del BOM**: `historial_ventas_cliente.csv` es UTF-8 con BOM y se descartaba en silencio al leerlo como latin1 → 3 clientes activos figuraban sin compras. Corregido.
+- [x] **Padrón inflado**: el xlsx declara ~1.048.000 filas; se pasa a openpyxl read_only (15,6 s → milisegundos).
+
+### PENDIENTE
+- [ ] **Sin commitear** — código + `01_INPUTS/Plan cobertura/` (el padrón y el PDF no están en git todavía). Mientras siga así, `check_git_cierre.py` aborta el cierre diario.
+- [ ] **El padrón no está en el allowlist del cierre.** Si el relevamiento se va a actualizar seguido, hay que agregar `01_INPUTS/Plan cobertura/*.xlsx` al `.bat` o la pantalla se queda con la foto del último commit manual (mismo patrón que ERR-014).
+- [ ] **17 PDV atendidos sin código de cliente cargado** en el padrón: hasta que se complete la columna `CÓD. CLIENTE` no se les puede medir activación ni recompra. Es la mejora más grande de la pantalla y es carga de dato, no código.
+- [ ] **Las acciones del plan no se ven como acción sino como descuento.** El catálogo de Acciones Comerciales es del mes vigente, así que para compras viejas la ficha muestra el % de descuento y los sin cargo de la factura, no el nombre del combo. Si el negocio quiere ver "1+2 Alma Mora" con nombre, hay que declarar las acciones del Plan Cobertura en el catálogo mensual.
+- [ ] **El plan mide jul–dic 2026** pero la pantalla muestra toda la historia del cliente (la activación se pidió como primera compra, sin corte). Si se quiere el CCC del plan contra el target (TGT 2026 = 60 según el resumen de Peñaflor), hay que agregar el corte de fecha y la fila de objetivo.
+
 ## Sesion 2026-08-03 - Incentivo Alma Mora Malbec Low (74887)
 
 ### HECHO

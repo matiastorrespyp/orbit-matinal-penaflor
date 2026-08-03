@@ -159,6 +159,9 @@ git add "01_INPUTS/ventas-clubfaro.csv"
 git add "01_INPUTS/incentivo_club_faro*.xlsx"
 git add "01_INPUTS/INNOVACIONES/Innovaciones.xlsx"
 git add "01_INPUTS/Planes AASS"
+REM Padron del Plan Cobertura: lo actualizan a mano a medida que se dan de alta
+REM clientes nuevos, asi que viaja con el cierre diario como el resto de los inputs.
+git add "01_INPUTS/Plan cobertura"
 REM Stock de los dos depositos: los lee la tarjeta Dias de Stock (pantalla Semanal)
 REM y Stock sin Venta. Sin estas dos lineas el cierre no los publica y Render
 REM sigue mostrando la foto del ultimo commit manual (mismo patron que ERR-014).
