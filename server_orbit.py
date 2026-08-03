@@ -8105,6 +8105,170 @@ def gerencia_incentivo_dada():
     return jsonify(_to_native({"generado_en": _now_ar(), **data}))
 
 
+# ====== INCENTIVO ALMA MORA MALBEC LOW (cobertura 74887 · autoservicios) ======
+# Mecánica (definida por el usuario 2026-08-03): cliente con compra del código 74887,
+# medido SOLO sobre autoservicios. El objetivo es el 22% de la cartera de autoservicios
+# (no hay planilla de objetivo: se calcula sobre clientes.xlsx, que es la cartera viva).
+_ALMAMORA_CODIGO   = "74887"
+_ALMAMORA_PCT_OBJ  = 0.22
+_ALMAMORA_IMG      = "/almamora_low.png"   # KV exportado de 01_INPUTS/incentivo/*.pdf
+_ALMAMORA_CACHE = {}
+
+
+def _cartera_autoservicios():
+    """(cantidad, dict cliente_id -> datos) de la cartera Autoservicio del maestro.
+    Clasifica con _clasificar_segmento (EL SUBSEGMENTO MANDA SOBRE EL RAMO) — mismo
+    criterio y mismo denominador que la tarjeta de cobertura del dashboard."""
+    cli = _clientes_maestro()
+    if cli.empty:
+        return 0, {}
+    ramo_col = next((c for c in cli.columns if c.lower() == "ramo"), None)
+    sub_col  = next((c for c in cli.columns if "subramo" in c.lower() or "subseg" in c.lower()), None)
+    if not ramo_col:
+        return 0, {}
+    rm = cli[ramo_col].fillna("").astype(str)
+    sb = cli[sub_col].fillna("").astype(str) if sub_col else pd.Series([""] * len(cli), index=cli.index)
+    seg_map = {par: _clasificar_segmento(par[0], par[1]) for par in set(zip(rm, sb))}
+    seg = pd.Series([seg_map[(a, b)] for a, b in zip(rm, sb)], index=cli.index)
+    aut = cli[seg == "AUTOSERVICIO"]
+    detalle = {}
+    for _, r in aut.iterrows():
+        detalle[int(r["_cliente_id"])] = {
+            "nombre":     str(r.get("Razon_Social", "") or "").strip() or "Dato no disponible",
+            "localidad":  str(r.get("Localidad", "") or "").strip(),
+            "segmento":   (str(r.get(sub_col, "") or "").strip() if sub_col else "") or str(r.get(ramo_col, "") or "").strip(),
+            "vendedor_id":     str(r.get("_vend_id", "") or ""),
+            "vendedor_nombre": str(r.get("Vendedor", "") or "").strip(),
+        }
+    return len(aut), detalle
+
+
+def _incentivo_almamora():
+    """Cobertura del código 74887 (Alma Mora Malbec Dulce Low) en autoservicios.
+
+    Fuente ventas: 01_INPUTS/ventas_acumulada.csv (acumulado vivo, sin filtro de fecha —
+    mismo criterio que Incentivo FARO y 11T). Cliente logrado = autoservicio de la cartera
+    con compra NETA > 0 del código (los rechazos restan). Excluye V1/V2/V5/V20.
+    Objetivo = 22% de la cartera de autoservicios. Devuelve None si falta la fuente."""
+    path = INPUTS / "ventas_acumulada.csv"
+    if not path.exists():
+        return None
+    try:
+        key = (os.path.getmtime(path), os.path.getmtime(INPUTS / "clientes.xlsx") if (INPUTS / "clientes.xlsx").exists() else 0)
+    except OSError:
+        key = (0, 0)
+    cached = _ALMAMORA_CACHE.get(key)
+    if cached is not None:
+        return cached
+
+    df = pd.DataFrame()
+    for enc in ("latin1", "utf-8-sig", "utf-8"):
+        try:
+            df = pd.read_csv(path, sep=";", encoding=enc, dtype=str, low_memory=False)
+            break
+        except Exception:
+            continue
+    req = {"Cliente", "CodVendedor", "ImporteNetoItem", "Codigo", "CantBase", "FechaComprobante"}
+    if df.empty or not req.issubset(set(df.columns)):
+        return None
+
+    cod = df["Codigo"].astype(str).str.replace(r"\.0$", "", regex=True).str.strip()
+    df = df[cod == _ALMAMORA_CODIGO].copy()
+    df["_cli"]  = pd.to_numeric(df["Cliente"], errors="coerce")
+    df["_vend"] = pd.to_numeric(df["CodVendedor"], errors="coerce")
+    df["_imp"]  = df["ImporteNetoItem"].apply(_parse_num_ar)
+    df["_cant"] = pd.to_numeric(df["CantBase"], errors="coerce").fillna(0)
+    df["_fec"]  = pd.to_datetime(df["FechaComprobante"], dayfirst=True, errors="coerce")
+    df = df.dropna(subset=["_cli"])
+    df = df[~df["_vend"].isin(_VENDEDORES_EXCLUIDOS)].copy()
+
+    articulo = ""
+    if "Articulo" in df.columns and not df["Articulo"].dropna().empty:
+        articulo = str(df["Articulo"].dropna().mode().iloc[0])
+
+    cartera_as, cartera_det = _cartera_autoservicios()
+
+    logrados, fuera_as = [], 0
+    for cid, g in df.groupby("_cli"):
+        cid = int(cid)
+        neto = float(g["_imp"].sum())
+        if neto <= 0:                      # sin cargo / rechazado: no es CCC
+            continue
+        m = cartera_det.get(cid)
+        if m is None:                      # compró el producto pero no es autoservicio
+            fuera_as += 1
+            continue
+        pos = g[g["_imp"] > 0]
+        fechas = sorted({f.strftime("%Y-%m-%d") for f in pos["_fec"].dropna()})
+        vc = pos["_vend"].dropna()
+        # La venta le cuenta a quien la facturó; si no hay, al dueño de la cartera.
+        vend_id = f"V{int(vc.mode().iloc[0])}" if not vc.empty else m["vendedor_id"]
+        vend_nom = m["vendedor_nombre"]
+        if "Vendedor" in pos.columns and not pos["Vendedor"].dropna().empty:
+            vend_nom = str(pos["Vendedor"].mode().iloc[0]).strip()
+        logrados.append({
+            "cliente_id": cid,
+            "nombre":     m["nombre"],
+            "localidad":  m["localidad"],
+            "segmento":   m["segmento"] or "Autoservicio",
+            "vendedor_id": vend_id, "vendedor_nombre": vend_nom,
+            "botellas":   int(pos["_cant"].sum()),
+            "importe":    round(neto, 2),
+            "fecha":      fechas[0] if fechas else "",
+            "fechas":     fechas,
+        })
+
+    por_vend = {}
+    for c in logrados:
+        k = c["vendedor_id"] or "—"
+        d = por_vend.setdefault(k, {"vendedor_id": c["vendedor_id"], "vendedor_nombre": c["vendedor_nombre"],
+                                    "clientes": 0, "botellas": 0, "detalle": []})
+        d["clientes"] += 1
+        d["botellas"] += c["botellas"]
+        d["detalle"].append(c)
+    for d in por_vend.values():
+        d["detalle"].sort(key=lambda c: (c["fecha"], c["nombre"]))
+    por_vendedor = sorted(por_vend.values(), key=lambda d: (-d["clientes"], d["vendedor_id"]))
+
+    objetivo = int(cartera_as * _ALMAMORA_PCT_OBJ + 0.5)
+    logrado  = len(logrados)
+    avance   = round(logrado / objetivo * 100, 1) if objetivo else 0.0
+    cob_pct  = round(logrado / cartera_as * 100, 1) if cartera_as else 0.0
+
+    fechas_src = df["_fec"].dropna()
+    periodo = {"desde": fechas_src.min().strftime("%Y-%m-%d") if not fechas_src.empty else "",
+               "hasta": fechas_src.max().strftime("%Y-%m-%d") if not fechas_src.empty else ""}
+
+    data = {
+        "producto": {"codigo": _ALMAMORA_CODIGO,
+                     "articulo": articulo or "ALMA MORA MALBEC DULCE LOW 6X750",
+                     "imagen": _ALMAMORA_IMG},
+        "cartera_as": cartera_as,
+        "pct_objetivo": round(_ALMAMORA_PCT_OBJ * 100, 1),
+        "objetivo": objetivo,
+        "logrado": logrado,
+        "faltan": max(objetivo - logrado, 0),
+        "avance_pct": avance,
+        "cobertura_pct": cob_pct,
+        "fuera_as": fuera_as,
+        "por_vendedor": por_vendedor,
+        "clientes": sorted(logrados, key=lambda c: (c["vendedor_id"], c["nombre"])),
+        "periodo": periodo,
+        "fuente": "ventas_acumulada.csv + clientes.xlsx",
+    }
+    _ALMAMORA_CACHE.clear()
+    _ALMAMORA_CACHE[key] = data
+    return data
+
+
+@app.route("/api/gerencia/incentivo_almamora")
+def gerencia_incentivo_almamora():
+    data = _incentivo_almamora()
+    if data is None:
+        return jsonify({"error": "Incentivo Alma Mora no disponible: falta 01_INPUTS/ventas_acumulada.csv o columnas requeridas."}), 404
+    return jsonify(_to_native({"generado_en": _now_ar(), **data}))
+
+
 # ====== CIERRE DE MES ======
 @app.route("/api/gerencia/cierre_mes")
 def gerencia_cierre_mes():

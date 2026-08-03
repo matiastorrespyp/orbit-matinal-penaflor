@@ -527,6 +527,16 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 .dd-empty { color:var(--text3); padding:12px 4px; font-size:12.5px; text-align:center; }
 .dd-fuente { font-size:10.5px; color:var(--text3); border-top:1px solid var(--b); padding-top:10px; }
 
+/* ── Incentivo Alma Mora Low (reusa dd-*; sólo el acordeón por vendedor) ── */
+.am-vrow { cursor:pointer; transition:border-color .15s,background .15s; }
+.am-vrow:hover { border-color:var(--mg); background:var(--surf3); }
+.am-vhd { cursor:pointer; }
+.am-vblock { padding:10px 12px; }
+.am-clis { display:flex; flex-direction:column; gap:8px; margin-top:10px;
+  border-top:1px solid var(--b); padding-top:10px; }
+.am-cli { background:var(--surf3); border:1px solid var(--b); border-radius:9px; padding:9px 11px; }
+.am-cli-hd { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+
 /* ═══════════════════════════════════════════════════════════
    COMPONENTES COMPARTIDOS
 ═══════════════════════════════════════════════════════════ */
@@ -1231,6 +1241,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       <div class="gs-item" data-sc="incentivo_faro" onclick="gSw('incentivo_faro',this)"><span class="gs-ico">🌟</span>Incentivo FARO</div>
       <div class="gs-item" data-sc="plan_frizze" onclick="gSw('plan_frizze',this)"><span class="gs-ico">🥂</span>Plan Frizze</div>
       <div class="gs-item" data-sc="incentivo_dada" onclick="gSw('incentivo_dada',this)"><span class="gs-ico">🍷</span>Incentivo Dada</div>
+      <div class="gs-item" data-sc="incentivo_almamora" onclick="gSw('incentivo_almamora',this)"><span class="gs-ico">🍇</span>Incentivo Alma Mora Low</div>
       <div class="gs-item" data-sc="stock_sin_venta" onclick="gSw('stock_sin_venta',this)"><span class="gs-ico">📦</span>Stock sin Venta</div>
       <div class="gs-sec">Reportes</div>
       <div class="gs-item" data-sc="cierre_mes" onclick="gSw('cierre_mes',this)"><span class="gs-ico">🏁</span>Cierre de Mes</div>
@@ -1513,7 +1524,7 @@ async function loadRole(){
     if(planFrizzeV) D.plan_frizze_v=planFrizzeV;
   }
   if(userData?.rol==='gerencia'){
-    const [cccEmp,onceTit,onceTitDia,inov,cobAcum,t11Acum,inovTot,plasAS,sellLitros,accRank,planFrizzeG,incentivoDadaG,stockSinVentaG]=await Promise.all([
+    const [cccEmp,onceTit,onceTitDia,inov,cobAcum,t11Acum,inovTot,plasAS,sellLitros,accRank,planFrizzeG,incentivoDadaG,incentivoAlmaMoraG,stockSinVentaG]=await Promise.all([
       safe('/api/gerencia/ccc_empresa'),
       safe('/api/gerencia/once_titulares'),
       safe('/api/gerencia/once_titulares_zona?dia='+(currentDay||'')),
@@ -1526,6 +1537,7 @@ async function loadRole(){
       safe('/api/gerencia/acciones_mes'),
       safe('/api/gerencia/plan_frizze'),
       safe('/api/gerencia/incentivo_dada'),
+      safe('/api/gerencia/incentivo_almamora'),
       safe('/api/gerencia/stock_sin_venta')
     ]);
     if(cccEmp)      D.cccEmpresa=cccEmp;
@@ -1540,6 +1552,7 @@ async function loadRole(){
     if(accRank)     D.acc_mes=accRank;
     if(planFrizzeG) D.plan_frizze_g=planFrizzeG;
     if(incentivoDadaG) D.incentivo_dada_g=incentivoDadaG;
+    if(incentivoAlmaMoraG) D.incentivo_almamora_g=incentivoAlmaMoraG;
     if(stockSinVentaG) D.stock_sin_venta=stockSinVentaG;
   }
 }
@@ -1657,7 +1670,7 @@ function gSw(id,el){
   gScreen=id;
   document.querySelectorAll('.gs-item').forEach(n=>n.classList.remove('active'));
   (el||document.querySelector(`[data-sc="${id}"]`))?.classList.add('active');
-  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',cliente:'Cliente',planificacion:'Planificación',semanal:'Semanal',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',incentivo_faro:'Incentivo FARO',plan_frizze:'Plan Frizze',incentivo_dada:'Incentivo Dada',stock_sin_venta:'Stock sin Venta',cierre_mes:'Cierre de Mes'};
+  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',cliente:'Cliente',planificacion:'Planificación',semanal:'Semanal',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',incentivo_faro:'Incentivo FARO',plan_frizze:'Plan Frizze',incentivo_dada:'Incentivo Dada',incentivo_almamora:'Incentivo Alma Mora Malbec Low',stock_sin_venta:'Stock sin Venta',cierre_mes:'Cierre de Mes'};
   document.getElementById('gTopTitle').textContent=tt[id]||'';
   gRender();
 }
@@ -1677,6 +1690,7 @@ function gRender(){
   else if(gScreen==='incentivo_faro')        gIncentivoFaro(p);
   else if(gScreen==='plan_frizze')           gPlanFrizze(p);
   else if(gScreen==='incentivo_dada')        gIncentivoDada(p);
+  else if(gScreen==='incentivo_almamora')    gIncentivoAlmaMora(p);
   else if(gScreen==='stock_sin_venta')       gStockSinVenta(p);
   else if(gScreen==='cierre_mes')            gCierreMes(p);
 }
@@ -4393,6 +4407,100 @@ function ddVerClientes(){
   </div>`;
   document.body.appendChild(div);
   div.addEventListener('click',e=>{if(e.target===div) closeModal();});
+}
+
+/* ════ INCENTIVO ALMA MORA MALBEC LOW (cobertura 74887 · autoservicios) ════ */
+function gIncentivoAlmaMora(p){
+  const d=D.incentivo_almamora_g;
+  if(!d || d.error){
+    p.innerHTML=`<div class="gph"><div><div class="gph-title">Incentivo Alma Mora Malbec Low</div></div></div>
+      <div class="card"><div class="card-body"><div class="empty"><div class="eico">🍇</div>
+      <p>${(d&&d.error)||'Falta la fuente (01_INPUTS/ventas_acumulada.csv o clientes.xlsx).'}</p></div></div></div>`;
+    return;
+  }
+  const prod=d.producto||{};
+  const avance=Number(d.avance_pct||0);
+  const cls=avance>=100?'ok':(avance>=60?'wn':'bad');
+  const barW=Math.min(avance,100);
+  const per=d.periodo||{};
+  const fmtF=s=>{const q=(s||'').split('-');return q.length===3?`${q[2]}/${q[1]}/${q[0]}`:(s||'');};
+
+  p.innerHTML=`
+  <div class="gph"><div><div class="gph-title">Incentivo Alma Mora Malbec Low</div>
+    <div class="gph-sub">Cobertura ${prod.articulo||('Cód. '+(prod.codigo||''))} · Autoservicios</div></div></div>
+
+  <div class="dd-hero"><img src="${prod.imagen||'/almamora_low.png'}" alt="Alma Mora Malbec Low" loading="lazy"></div>
+
+  <div class="card dd-card">
+    <div class="card-body">
+      <div class="dd-kpis">
+        <div class="dd-kpi"><span class="dd-kn">${d.objetivo}</span><span class="dd-kl">Objetivo (${d.pct_objetivo}% de ${d.cartera_as} AS)</span></div>
+        <div class="dd-kpi dd-kpi-click" title="Ver clientes logrados por vendedor" onclick="amVerLogrados()"><span class="dd-kn ${cls}">${d.logrado}</span><span class="dd-kl">Acumulado logrado ▸</span></div>
+        <div class="dd-kpi"><span class="dd-kn ${d.faltan?'bad':'ok'}">${d.faltan}</span><span class="dd-kl">Faltan para el objetivo</span></div>
+        <div class="dd-kpi"><span class="dd-kn ${cls}">${avance.toLocaleString('es-AR',{maximumFractionDigits:1})}%</span><span class="dd-kl">Avance</span></div>
+      </div>
+      <div class="dd-bar"><div class="dd-bar-fill ${cls}" style="width:${barW}%"></div></div>
+      <div class="dd-note">Cliente logrado = autoservicio de la cartera con compra neta &gt; 0 del código ${prod.codigo||''}. Cobertura actual: ${d.cobertura_pct}% de los ${d.cartera_as} autoservicios. Excluye V2/V5/V20.${d.fuera_as?` · ${d.fuera_as} cliente(s) compraron el producto fuera de autoservicio (no suman).`:''}</div>
+
+      <div class="dd-sub">Logrados por vendedor</div>
+      <div class="dd-vlist">${
+        (d.por_vendedor||[]).map(v=>`
+          <div class="dd-vrow am-vrow" onclick="amVerLogrados('${v.vendedor_id||''}')" title="Ver clientes de ${v.vendedor_id||''}">
+            <span class="dd-vname">${v.vendedor_id||'—'}${v.vendedor_nombre?' · '+v.vendedor_nombre:''}</span>
+            <span class="dd-vnums"><b>${v.clientes}</b> cli · ${v.botellas} bot. ▸</span>
+          </div>`).join('') || '<div class="dd-empty">Sin clientes logrados aún.</div>'
+      }</div>
+
+      <div class="dd-fuente">Fuente: ${d.fuente||''}${per.desde?` · acumulado ${fmtF(per.desde)} → ${fmtF(per.hasta)}`:''}</div>
+    </div>
+  </div>`;
+}
+
+/* Modal: clientes logrados por vendedor; click en el vendedor abre/cierra su detalle */
+let amVendAbierto=null;
+function amVerLogrados(vid){
+  const d=D.incentivo_almamora_g; if(!d) return;
+  // Desde la pantalla: si vino un vendedor, el modal abre con ese detalle desplegado.
+  // Dentro del modal el que abre/cierra es amTogglVend.
+  amVendAbierto = (vid!==undefined && vid!==null) ? vid : null;
+  document.getElementById('emodBg')?.remove();
+  const div=document.createElement('div'); div.className='emod-bg open'; div.id='emodBg';
+  div.innerHTML=`<div class="emod-card" style="max-width:560px;">
+    <div class="emod-title">Clientes logrados · Alma Mora Malbec Low</div>
+    <div style="font-size:12px;color:var(--text3);margin:-10px 0 14px;">${d.logrado} de ${d.objetivo} · tocá un vendedor para ver sus clientes</div>
+    <div class="dd-clilist" id="amModalList">${amFilasVend()}</div>
+    <div class="emod-actions"><button class="g-ghost" onclick="closeModal()">Cerrar</button></div>
+  </div>`;
+  document.body.appendChild(div);
+  div.addEventListener('click',e=>{if(e.target===div) closeModal();});
+}
+function amTogglVend(vid){
+  amVendAbierto = amVendAbierto===vid ? null : vid;
+  const l=document.getElementById('amModalList');
+  if(l) l.innerHTML=amFilasVend();
+}
+function amFilasVend(){
+  const d=D.incentivo_almamora_g||{};
+  const vs=d.por_vendedor||[];
+  if(!vs.length) return `<div class="dd-empty">Sin clientes logrados aún.</div>`;
+  const fmtF=s=>{const q=(s||'').split('-');return q.length===3?`${q[2]}/${q[1]}/${q[0]}`:(s||'');};
+  return vs.map(v=>{
+    const abierto = amVendAbierto===(v.vendedor_id||'');
+    const cli=(v.detalle||[]).map(c=>`
+      <div class="am-cli">
+        <div class="am-cli-hd"><span class="dd-cliname">${c.nombre||'Dato no disponible'} <span class="dd-id">#${c.cliente_id}</span></span>
+          <span class="dd-clitot">${c.botellas} bot.</span></div>
+        <div class="dd-climeta">${[c.segmento,c.localidad].filter(Boolean).join(' · ')}</div>
+        <div class="dd-peds">${(c.fechas&&c.fechas.length?c.fechas:[c.fecha]).filter(Boolean).map(f=>`<span class="dd-ped">📅 ${fmtF(f)}</span>`).join('')||'<span class="dd-ped dd-ped-nd">Sin fecha registrada</span>'}</div>
+      </div>`).join('') || '<div class="dd-empty">Sin detalle.</div>';
+    return `<div class="dd-clirow am-vblock">
+      <div class="dd-clihd am-vhd" onclick="amTogglVend('${v.vendedor_id||''}')">
+        <span class="dd-cliname">${abierto?'▾':'▸'} ${v.vendedor_id||'—'}${v.vendedor_nombre?' · '+v.vendedor_nombre:''}</span>
+        <span class="dd-clitot">${v.clientes} cli · ${v.botellas} bot.</span>
+      </div>
+      ${abierto?`<div class="am-clis">${cli}</div>`:''}
+    </div>`;
+  }).join('');
 }
 
 async function guardarEditPlan(id,esV3){

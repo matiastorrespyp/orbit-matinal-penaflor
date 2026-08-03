@@ -1,5 +1,19 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-03 - feat(gerencia): pantalla Incentivo Alma Mora Malbec Low (código 74887)
+
+**Mecánica pedida por el negocio:** cliente con compra del **código 74887** (ALMA MORA MALBEC DULCE LOW 6X750), medido **sólo sobre autoservicios**. Objetivo = **22% de la cartera de autoservicios**. Sin mínimo de botellas (a diferencia del Incentivo Dada, que pide 6): alcanza con la compra.
+
+- **Backend — `server_orbit.py`** (bloque nuevo debajo del Incentivo Dada):
+  - `_cartera_autoservicios()`: cantidad y detalle de la cartera AS desde `clientes.xlsx`, clasificando con `_clasificar_segmento` (el SubSegmento manda sobre el Ramo). Es el **mismo denominador** que la tarjeta de cobertura del dashboard, así que el 22% no se calcula sobre otro universo.
+  - `_incentivo_almamora()`: lee `01_INPUTS/ventas_acumulada.csv` **completo, sin filtro de fecha** (mismo criterio que 11T e Incentivo FARO), filtra el código, excluye V1/V2/V5/V20 y agrupa por cliente. **Cliente logrado = autoservicio de la cartera con compra NETA > 0**: los rechazos restan y un envío 100% bonificado (importe 0) **no** cuenta como CCC. Cacheado por mtime de las dos fuentes.
+  - La venta se le atribuye a **quien facturó** (`CodVendedor`), con el dueño de la cartera como fallback — misma regla que Innovaciones.
+  - Endpoint `GET /api/gerencia/incentivo_almamora`. Devuelve objetivo, logrado, faltan, avance, cobertura %, `por_vendedor` con el detalle de cada cliente (segmento del maestro + fechas de compra) y el período que cubre la fuente.
+- **Frontend — `PAV MATINAL PE_A FLOR/portal.html`**: item de menú **Incentivo Alma Mora Low** debajo de Incentivo Dada, `gIncentivoAlmaMora()` con el KV del producto, tarjeta con 4 KPIs (objetivo / acumulado logrado / faltan / avance) y barra de avance. **Click en el acumulado** abre el modal de logrados por vendedor y **click en un vendedor** despliega sus clientes con **segmento, localidad y fecha de compra** (también se llega directo tocando el vendedor en la pantalla). Reusa las clases `dd-*` del Incentivo Dada; sólo se agregó el acordeón `am-*`.
+- **Imagen**: `01_INPUTS/incentivo/Alma Mora Malbec Low (74887).pdf` exportado a `PAV MATINAL PE_A FLOR/almamora_low.png` (el PDF es una sola página con el KV, sin mecánica escrita).
+- **Validado con datos reales (2026-08-03):** cartera AS **244** → objetivo **54** (22%). Logrado **1** (`#8125 CEBALLOS CARLOS JULIO`, V9, Autoservicio Tradicional, 21/07/2026, 3 bot.), faltan **53**, avance 1,9%. Los otros tres compradores del código quedan afuera y **por el motivo correcto**: `#1082` es ALMACENES (se informa como "1 cliente fuera de autoservicio"), `#1093` fue 100% bonificado (neto 0) y `#8195` es almacén y además rechazado. Endpoint en 200 con JSON serializable y las dos rutas del drill-down probadas en el portal.
+- **Fuentes ya publicadas por el cierre**: `ventas_acumulada.csv` y `clientes.xlsx` están en el allowlist del `.bat`, así que la pantalla se actualiza sola con el cierre diario. **El código y el PNG hay que commitearlos aparte** (el cierre aborta si quedan cambios de desarrollo sin commitear).
+
 ## 2026-07-30 - fix(maestro): los 10 clientes duplicados quedan asignados a V8, con guard para que no vuelva a pasar
 
 **Criterio del negocio:** el cliente es de la vendedora que **le supo vender**.
