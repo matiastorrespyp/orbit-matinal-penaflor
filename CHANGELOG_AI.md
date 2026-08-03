@@ -1,5 +1,15 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-03 - feat(plan cobertura): candidatos por dirección para los atendidos sin código
+
+Los 17 PDV que el relevamiento marca como atendidos pero no tienen `CÓD. CLIENTE` cargado ahora muestran **posibles clientes del maestro** cruzados por dirección.
+
+- **Propone, no asigna.** Se midió el cruce automático sobre los 17 casos reales antes de escribir la pantalla: **sólo 1 da coincidencia sólida** (`Maxikiosco Porteña` → `#4405 DELLA TORRE`, misma calle y misma altura). El resto son vecinos de la misma calle con otra altura — 3 candidatos distintos en Rivadavia, 3 en Av. San Martín. Asignarlos automáticamente sería inventar el dato, así que el portal los lista y el negocio confirma escribiendo el código en el Excel.
+- **Tampoco se filtra por canal.** Probado: restringir los candidatos a la cartera On Premise empeora el cruce, porque varios de estos PDV se abastecen por el almacén o el kiosco de al lado (lo dice el propio relevamiento: *"tiene un almacén al lado que me compra"*, *"compra en kiosco y se abastece así"*). El canal del candidato se muestra como dato, no como filtro.
+- **Cómo puntúa** (`_plan_cob_candidatos`): misma calle + misma altura → confianza **alta**; misma calle, otra altura → **media**; nombre del PDV parecido a la razón social → **media**; calle parecida → **baja**. Máximo 3 por PDV, ordenados por confianza. Las abreviaturas del ERP se unifican (AVENIDA/AV, BOULEVARD/BV, DOCTOR/DR).
+- **La última compra del candidato viaja en la tarjeta**: es lo que termina de confirmar si es ese cliente. Para eso los códigos candidatos se suman al set de IDs antes de leer el historial (una sola lectura, sin costo extra).
+- **Resultado con los datos de hoy:** 8 de 17 quedan con candidato (1 alta, 7 media); los otros 9 no tienen coincidencia porque la dirección del relevamiento no trae altura o no hay clientes nuestros en esa calle. Endpoint sigue en ~3 s en frío y 0,008 s cacheado.
+
 ## 2026-08-03 - feat(gerencia): pantalla Plan Cobertura (On Premise B&C)
 
 **Plan de Grupo Peñaflor** (resumen en `01_INPUTS/Plan cobertura/RESUMEN PLAN COBERTURA.pdf`): incrementar cobertura en clientes **categoría B y C**, destinado a **restaurantes y bares con carta de bebida**. Se mide por **CCC únicos del canal On Premise B&C, de julio a diciembre 2026**. La mecánica (1+2 cajas por línea comercial, Premium 1+1, 5+1 en Alma Mora sólo para capturados, 2+1 de Cinzano en recompra, 5+1 de La Mascota) queda en la pantalla, en el bloque plegable "Cómo funciona el plan".

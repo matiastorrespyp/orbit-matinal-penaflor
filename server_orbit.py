@@ -8395,6 +8395,69 @@ def _plan_cob_padron():
     return out, path.name
 
 
+def _plan_cob_calle(d):
+    """Calle sin número ni ruido, con las abreviaturas del ERP unificadas."""
+    t = _plan_cob_norm(d)
+    for a, b in (("AVENIDA", "AV"), ("BOULEVARD", "BV"), ("BOULEVAR", "BV"),
+                 ("BV.", "BV"), ("AV.", "AV"), ("CALLE", ""), ("DOCTOR", "DR")):
+        t = t.replace(a, b)
+    return " ".join(_re.sub(r"[^A-Z ]", " ", t).split())
+
+
+def _plan_cob_altura(d):
+    """Altura de la calle (último número de 2 a 5 dígitos)."""
+    n = _re.findall(r"\b(\d{2,5})\b", _plan_cob_norm(d))
+    return n[-1] if n else ""
+
+
+def _plan_cob_candidatos(row, zona):
+    """Posibles clientes del maestro para un PDV atendido SIN código cargado.
+
+    NO asigna: propone. Se probó el cruce automático por dirección sobre los 17 casos
+    reales y sólo 1 da una coincidencia sólida (misma calle y misma altura); el resto
+    son vecinos de la misma calle con otra altura. Asignarlos sería inventar el dato.
+    Tampoco se filtra por canal: varios de estos PDV se abastecen por el almacén o el
+    kiosco de al lado (lo dice el propio relevamiento), así que el cliente real no está
+    clasificado como On Premise.
+    Devuelve hasta 3 candidatos ordenados, con el motivo de la coincidencia."""
+    import difflib
+    if zona is None or zona.empty:
+        return []
+    calle_p = _plan_cob_calle(row["direccion"])
+    alt_p   = _plan_cob_altura(row["direccion"])
+    nom_p   = _plan_cob_norm(row["nombre"])
+    out = []
+    for _, c in zona.iterrows():
+        dir_c = str(c.get("Direccion", "") or "")
+        calle_c = _plan_cob_calle(dir_c)
+        sc = difflib.SequenceMatcher(None, calle_p, calle_c).ratio() if calle_p and calle_c else 0.0
+        nm = difflib.SequenceMatcher(None, nom_p, _plan_cob_norm(c.get("Razon_Social", ""))).ratio()
+        misma_altura = bool(alt_p) and alt_p == _plan_cob_altura(dir_c)
+        if misma_altura and sc >= 0.70:
+            conf, motivo = "alta", "Misma calle y misma altura"
+        elif sc >= 0.85:
+            conf, motivo = "media", "Misma calle, otra altura"
+        elif nm >= 0.65:
+            conf, motivo = "media", "Nombre parecido al del maestro"
+        elif sc >= 0.70 and nm >= 0.45:
+            conf, motivo = "baja", "Calle parecida"
+        else:
+            continue
+        out.append({
+            "cliente_id": int(c["_cliente_id"]),
+            "razon_social": str(c.get("Razon_Social", "") or "").strip(),
+            "direccion": dir_c.strip(),
+            "subcanal": str(c.get("SubSegmento", "") or c.get("Ramo", "") or "").strip(),
+            "vendedor_id": str(c.get("_vend_id", "") or ""),
+            "confianza": conf, "motivo": motivo,
+            "_orden": (0 if conf == "alta" else 1 if conf == "media" else 2, -sc, -nm),
+        })
+    out.sort(key=lambda x: x["_orden"])
+    for x in out:
+        x.pop("_orden", None)
+    return out[:3]
+
+
 def _plan_cob_vendedor_por_zona(padron):
     """Vendedor sugerido para un PDV que NO está dado de alta: el que más clientes tiene
     en esa localidad según el maestro. Si la localidad no tiene ni un cliente nuestro,
@@ -8635,8 +8698,34 @@ def _plan_cobertura():
 
     con_codigo = padron[padron["cliente_id"].notna()].copy()
     ids = {int(x) for x in con_codigo["cliente_id"].tolist()}
+
+    # Atendidos sin código: se les buscan candidatos en el maestro por dirección ANTES de
+    # leer ventas, para poder mostrar también la última compra del candidato — que es lo
+    # que termina de confirmar si es ese cliente o no.
+    zona_idx = {}
+    if not maestro.empty and "Localidad" in maestro.columns:
+        mz = maestro.copy()
+        mz["_loc"] = mz["Localidad"].fillna("").map(_plan_cob_norm)
+        zona_idx = {loc: g for loc, g in mz.groupby("_loc")}
+    sin_codigo = []
+    for _, r in padron[(padron["estado"] == "ATENDIDO") & (padron["cliente_id"].isna())].iterrows():
+        fila = {**_base(r), **_sugerido(r), "atiende": r["atiende_raw"]}
+        fila["candidatos"] = _plan_cob_candidatos(fila, zona_idx.get(r["_loc"]))
+        ids |= {c["cliente_id"] for c in fila["candidatos"]}
+        sin_codigo.append(fila)
+    sin_codigo.sort(key=lambda c: (not c["candidatos"], c["nombre"]))
+
     ventas = _plan_cob_ventas(ids)
     acc_map, acc_mes = _plan_cob_acciones_por_cliente()
+    ult_compra = {}
+    if not ventas.empty:
+        vpos = ventas[ventas["_imp"] > 0]
+        if not vpos.empty:
+            ult_compra = {int(k): v.strftime("%Y-%m-%d")
+                          for k, v in vpos.groupby("_cli")["_f"].max().items()}
+    for fila in sin_codigo:
+        for c in fila["candidatos"]:
+            c["ultima_compra"] = ult_compra.get(c["cliente_id"], "")
 
     capturados = []
     for _, row in con_codigo.iterrows():
@@ -8740,11 +8829,6 @@ def _plan_cobertura():
 
     # Atendidos que NO tienen el código cargado en el padrón: no se pueden seguir hasta
     # que alguien complete la columna. Se listan aparte para que el pendiente se vea.
-    sin_codigo = [{**_base(r), **_sugerido(r), "atiende": r["atiende_raw"]}
-                  for _, r in padron[(padron["estado"] == "ATENDIDO")
-                                     & (padron["cliente_id"].isna())].iterrows()]
-    sin_codigo.sort(key=lambda c: c["nombre"])
-
     potenciales = [{**_base(r), **_sugerido(r)}
                    for _, r in padron[padron["estado"] == "POTENCIAL"].iterrows()]
     potenciales.sort(key=lambda c: (c["vendedor_id"] or "ZZ", c["localidad"], c["nombre"]))

@@ -556,6 +556,9 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
   border-radius:20px; padding:4px 10px; font-variant-numeric:tabular-nums; }
 .pc-chip.act { border-color:var(--mg); color:var(--text); }
 .pc-chip i { font-style:normal; font-size:9.5px; color:var(--mg); text-transform:uppercase; }
+.pc-cand { font-size:11.5px; color:var(--text2); background:var(--surf2); border:1px solid var(--b);
+  border-radius:9px; padding:7px 10px; margin-bottom:5px; max-width:340px; }
+.pc-cand .pc-badge { margin-right:6px; }
 .pc-acc { font-size:11.5px; color:var(--text2); background:var(--surf2); border:1px solid var(--b);
   border-radius:9px; padding:8px 11px; margin-bottom:6px; }
 .pc-sc { font-size:11.5px; color:var(--text2); background:var(--ok-s); border:1px solid var(--ok);
@@ -4649,10 +4652,23 @@ function pcRender(){
     </table></div>
     ${sinCod.length?`
       <div class="dd-sub">Atendidos sin código de cliente cargado (${sinCod.length})</div>
-      <div class="dd-note">El relevamiento dice que los atendemos, pero el padrón no tiene el código: hasta que se cargue no se les puede medir activación ni recompra.</div>
+      <div class="dd-note">El relevamiento dice que los atendemos, pero el padrón no tiene el código: hasta que se cargue no se les puede medir activación ni recompra.
+        La columna de la derecha <b>propone</b> clientes del maestro que coinciden por dirección — <b>hay que confirmarlos y escribir el código en el Excel</b>, el portal no los asigna solo.</div>
       <div class="dd-tblwrap"><table class="dd-tbl">
-        <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vendedor de la zona</th><th>Observaciones</th></tr></thead>
-        <tbody>${sinCod.map(c=>filaZona(c,null)).join('')}</tbody>
+        <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vendedor de la zona</th><th>¿Es alguno de estos clientes?</th></tr></thead>
+        <tbody>${sinCod.map(c=>`<tr>
+          <td><b>${c.nombre||''}</b><div class="pc-sub2">${[c.segmento_plan,c.tipo].filter(Boolean).join(' · ')}${c.direccion?' · '+c.direccion:''}</div>
+              ${c.observaciones?`<div class="pc-sub2">📝 ${c.observaciones}</div>`:''}</td>
+          <td>${c.localidad||''}<div class="pc-sub2">${c.partido||''}</div></td>
+          <td>${vendCell(c)}</td>
+          <td>${(c.candidatos||[]).length
+            ? c.candidatos.map(k=>`<div class="pc-cand">
+                <span class="pc-badge ${k.confianza==='alta'?'ok':(k.confianza==='media'?'wn':'bad')}">${k.confianza}</span>
+                <b>#${k.cliente_id}</b> ${k.razon_social}
+                <div class="pc-sub2">${[k.direccion,k.subcanal,k.vendedor_id].filter(Boolean).join(' · ')} · ${k.motivo}${k.ultima_compra?` · última compra ${pcFecha(k.ultima_compra)}`:' · sin compras'}</div>
+              </div>`).join('')
+            : '<span class="pc-sub2">Sin coincidencias por dirección en esa localidad</span>'}</td>
+        </tr>`).join('')}</tbody>
       </table></div>`:''}
   </div></div>
 
