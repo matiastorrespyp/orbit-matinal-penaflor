@@ -1,14 +1,12 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
-## 2026-08-03 - feat(plan cobertura): candidatos por dirección para los atendidos sin código
+## 2026-08-03 - revert(plan cobertura): sin sugerencia de candidatos por dirección
 
-Los 17 PDV que el relevamiento marca como atendidos pero no tienen `CÓD. CLIENTE` cargado ahora muestran **posibles clientes del maestro** cruzados por dirección.
+Se había agregado, para los 17 PDV atendidos sin `CÓD. CLIENTE` cargado, una columna que proponía clientes del maestro cruzados por dirección. **Revertido a pedido del negocio, y con razón**: los PDV del plan son **On Premise** (restaurantes y bares con carta) y los candidatos que devolvía el cruce eran almacenes y kioscos de la misma calle. No es que la coincidencia sea débil — **no existe**, así que mostrarla sólo agrega ruido y riesgo de que alguien la cargue por error.
 
-- **Propone, no asigna.** Se midió el cruce automático sobre los 17 casos reales antes de escribir la pantalla: **sólo 1 da coincidencia sólida** (`Maxikiosco Porteña` → `#4405 DELLA TORRE`, misma calle y misma altura). El resto son vecinos de la misma calle con otra altura — 3 candidatos distintos en Rivadavia, 3 en Av. San Martín. Asignarlos automáticamente sería inventar el dato, así que el portal los lista y el negocio confirma escribiendo el código en el Excel.
-- **Tampoco se filtra por canal.** Probado: restringir los candidatos a la cartera On Premise empeora el cruce, porque varios de estos PDV se abastecen por el almacén o el kiosco de al lado (lo dice el propio relevamiento: *"tiene un almacén al lado que me compra"*, *"compra en kiosco y se abastece así"*). El canal del candidato se muestra como dato, no como filtro.
-- **Cómo puntúa** (`_plan_cob_candidatos`): misma calle + misma altura → confianza **alta**; misma calle, otra altura → **media**; nombre del PDV parecido a la razón social → **media**; calle parecida → **baja**. Máximo 3 por PDV, ordenados por confianza. Las abreviaturas del ERP se unifican (AVENIDA/AV, BOULEVARD/BV, DOCTOR/DR).
-- **La última compra del candidato viaja en la tarjeta**: es lo que termina de confirmar si es ese cliente. Para eso los códigos candidatos se suman al set de IDs antes de leer el historial (una sola lectura, sin costo extra).
-- **Resultado con los datos de hoy:** 8 de 17 quedan con candidato (1 alta, 7 media); los otros 9 no tienen coincidencia porque la dirección del relevamiento no trae altura o no hay clientes nuestros en esa calle. Endpoint sigue en ~3 s en frío y 0,008 s cacheado.
+- El cruce por dirección se probó contra los 17 casos reales: 1 sola coincidencia de calle + altura y el resto vecinos con otra altura. Ni siquiera ese único caso pasa el filtro de canal.
+- **Decisión: el código de cliente lo averigua el negocio y lo carga en el Excel.** La pantalla sigue listando los 17 PDV atendidos sin código para que el pendiente esté a la vista, sin proponer nada.
+- **No volver a implementarlo** salvo que aparezca una llave real (un ID de PDV compartido con el ERP, o el relevamiento con la dirección completa y el canal correcto). Cruzar por calle sin altura, o por nombre contra la razón social —que en el maestro es el nombre de la persona, no el del local— no alcanza.
 
 ## 2026-08-03 - feat(gerencia): pantalla Plan Cobertura (On Premise B&C)
 
