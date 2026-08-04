@@ -162,6 +162,10 @@ git add "01_INPUTS/Planes AASS"
 REM Padron del Plan Cobertura: lo actualizan a mano a medida que se dan de alta
 REM clientes nuevos, asi que viaja con el cierre diario como el resto de los inputs.
 git add "01_INPUTS/Plan cobertura"
+REM Plan Frizze: el negocio suma clientes al plan editando el xlsx a mano.
+REM Sin esta linea el cierre no lo publica y Render sigue mostrando la lista
+REM vieja aunque el archivo local este actualizado (mismo patron que ERR-014).
+git add "01_INPUTS/PLAN FRIZZE/planfrizze.xlsx"
 REM Stock de los dos depositos: los lee la tarjeta Dias de Stock (pantalla Semanal)
 REM y Stock sin Venta. Sin estas dos lineas el cierre no los publica y Render
 REM sigue mostrando la foto del ultimo commit manual (mismo patron que ERR-014).
