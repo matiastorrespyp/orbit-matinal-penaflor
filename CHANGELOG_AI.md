@@ -1,5 +1,14 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-04 - fix(cierre): el xlsx del Plan Frizze no llegaba a Render
+
+**Síntoma:** el negocio agregó los clientes **1462 y 1463** a la línea `Clientes activos:` de `01_INPUTS/PLAN FRIZZE/planfrizze.xlsx` y **no aparecían en el portal**.
+
+- **El parser está bien**: con el archivo actual, `/api/gerencia/plan_frizze` devuelve las 4 tarjetas (301, 1443, 1462, 1463) y por vendedor **V8** = 301 + 1462 + 1463 (DANGUISE DISTRIBUCIONES, San Francisco, dos códigos con el mismo nombre) y **V10** = 1443. No hay que tocar código.
+- **La causa es de publicación**: `01_INPUTS/PLAN FRIZZE` **no estaba en el allowlist de `git add` de `CIERRE_DIA_ORBIT.bat`**, y el cierre no hace `git add .`. El archivo se editaba en la PC y quedaba modificado para siempre: Render seguía sirviendo la versión commiteada, con 2 clientes. **Y el cierre cerraba en verde**, porque `check_git_cierre.py` clasifica todo `01_INPUTS/**` como operativo permitido — ese guard bloquea código colado, no verifica que los datos viajen. Mismo patrón que ERR-014 (dadatinto).
+- **Arreglo**: `git add "01_INPUTS/PLAN FRIZZE/planfrizze.xlsx"` sumado al allowlist (respetando CRLF del .bat) y el xlsx actualizado commiteado, así los dos clientes nuevos salen en el próximo deploy.
+- **Regla para la próxima**: todo input que el negocio edite a mano tiene que entrar al allowlist en el mismo cambio en que se lo empieza a leer. Chequeo rápido: `git status --short 01_INPUTS/` después de un cierre exitoso — lo que siga modificado no llegó al portal.
+
 ## 2026-08-04 - feat(plan cobertura): pantalla en el perfil del vendedor
 
 El Plan Cobertura era **sólo de gerencia**: el vendedor no veía ni sus capturados ni los PDV de sus localidades. Ahora cada vendedor tiene su propia pantalla con **los PDV que le tocan**, con el mismo padrón y los mismos criterios que gerencia (nada se recalcula aparte).
