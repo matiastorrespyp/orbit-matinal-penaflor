@@ -214,6 +214,8 @@ Tarjeta **"📊 Cobertura acumulada del mes"**. Mide cobertura sobre el período
 | /api/clientes | DESFASADO PARCIAL | clientes_dia.ccc_mes_flag | Usado para lista Clientes Críticos, no para KPI cards |
 | /api/alertas | Pendiente auditar | mod_alertas_descuentos | — |
 | /api/planificacion | OK — SQLite | orbit.db | — |
+| /api/gerencia/plan_cobertura | OK | padrón `Plan cobertura/*.xlsx` + maestro + historial encadenado | Caché por mtime; cada PDV trae `clave` estable |
+| /api/gerencia/plan_cobertura/notas | OK — SQLite | orbit.db (`plan_cob_nota`) | Mensaje por PDV, clave = `PDV:<ID PUNTO DE VENTA>`; vacío = borra. Ver [[BITACORA_2026-08-03]] |
 
 ---
 
