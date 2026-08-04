@@ -1,5 +1,19 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-04 - feat(plan cobertura): pantalla en el perfil del vendedor
+
+El Plan Cobertura era **sólo de gerencia**: el vendedor no veía ni sus capturados ni los PDV de sus localidades. Ahora cada vendedor tiene su propia pantalla con **los PDV que le tocan**, con el mismo padrón y los mismos criterios que gerencia (nada se recalcula aparte).
+
+- **Backend — `server_orbit.py`**, endpoint nuevo `GET /api/vendedor/<vid>/plan_cobertura`. Reusa `_plan_cobertura()` (mismo caché por mtime, no vuelve a abrir el xlsx ni a leer el historial) y filtra por `vendedor_id`:
+  - **capturados** → los de **su cartera** según el maestro de clientes;
+  - **potenciales / no atendidos / atendidos sin código** → los de **sus localidades**, con el criterio de zona que ya usaba gerencia (vendedor dominante de la localidad, y si no tenemos clientes ahí, el dominante del partido).
+  - El `resumen` se recalcula sobre su subconjunto, así que los KPI son suyos y no del padrón entero.
+- **Mensaje por PDV, de sólo lectura para el vendedor**: lo que gerencia escribe en la columna "Mensaje" (tabla `plan_cob_nota`) viaja en cada fila del payload (`mensaje`, `mensaje_autor`, `mensaje_fecha`). Se lee **fuera del caché del plan** (`_plan_cob_notas_map()`, el mismo SELECT que ya usaba el endpoint de notas), porque el mensaje se edita a mano en cualquier momento. Guardar y borrar siguen siendo de gerencia.
+- **V3 queda fuera del plan**: no trabaja On Premise (sólo tradicional almacén/despensa/kiosco), así que el endpoint le devuelve listas vacías con `no_aplica` y el portal le **oculta la pestaña**, igual que ya hace con Plan AS.
+- **Corrección del vendedor por zona (afecta también a gerencia)**: V3 se excluye del cálculo del dominante por localidad/partido en `_plan_cob_vendedor_por_zona`. Antes **28 PDV** (1 atendido sin código + 20 potenciales + 7 no atendidos) quedaban asignados a V3 — que no puede trabajar un bar — y con el filtro por vendedor **no le llegaban a nadie**. Ahora los 205 PDV del padrón caen en un vendedor que sí trabaja el canal (los 28 pasaron casi todos a V8, que va de 7 a 35 PDV) y ninguno queda sin asignar.
+- **Frontend — `portal.html`**: pestaña **🍽️ Cobertura** en el menú inferior del vendedor. **Carga lazy al tocarla** (el padrón + el historial no tienen por qué demorar el login) y se vuelve a pedir al Actualizar sólo si el vendedor ya la había abierto. Vista de celular con **tarjetas, no tablas**: 6 KPI propios, el plegable "Cómo funciona el plan", y las cuatro listas (capturados / sin código / potenciales / no atendidos) con badge de estado, por qué le corresponde ese PDV (localidad o partido), las observaciones del relevamiento y el mensaje 📝 de gerencia. Tocar un capturado abre **la misma ficha** que en gerencia (`pcModalCliente`, extraída de `pcDetalle` para compartirla): activación, recompras mes a mes, artículos, descuentos y sin cargos.
+- **Validado con datos reales (2026-08-04)**: los 205 PDV del padrón se reparten V7 65 · V9 47 · V8 35 · V6 24 · V10 22 · V4 13, **cero sin asignar**, y la suma por vendedor coincide con las listas de gerencia (206 con la fila repetida del padrón, que sale en capturados y en potenciales). V9: 47 PDV, 7 capturados (6 clientes), 1 con recompra, 40 no atendidos; ficha de `#1216 Salomon y W` abierta desde el celular con sus 6 meses de compra y 17 artículos. V3: `no_aplica` y pestaña oculta. Mensaje de gerencia probado alta → visible en la vista del vendedor → borrado (la tabla `plan_cob_nota` queda como estaba, vacía). Sin errores de consola; `node --check` sobre el JS del portal OK.
+
 ## 2026-08-03 - feat(plan cobertura): buscador y mensaje por punto de venta
 
 Dos pedidos del negocio sobre la pantalla **Plan Cobertura**: poder buscar dentro de los 205 PDV y poder dejar escrito qué hay que hacer con cada uno.

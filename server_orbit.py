@@ -8415,11 +8415,15 @@ def _plan_cob_vendedor_por_zona(padron):
     """Vendedor sugerido para un PDV que NO está dado de alta: el que más clientes tiene
     en esa localidad según el maestro. Si la localidad no tiene ni un cliente nuestro,
     cae al vendedor dominante del PARTIDO (mismo departamento, según el propio padrón).
-    Devuelve (dict localidad -> asignación, dict partido -> asignación)."""
+    Devuelve (dict localidad -> asignación, dict partido -> asignación).
+
+    V3 queda FUERA del cálculo: no trabaja On Premise (sólo tradicional almacén /
+    despensa / kiosco), así que un bar del plan no puede ser suyo. Sin esto, 28 PDV
+    caían en la cartera de V3 y no le llegaban a ningún vendedor."""
     cli = _clientes_maestro()
     por_loc = {}
     if not cli.empty and "Localidad" in cli.columns:
-        cli = cli.copy()
+        cli = cli[cli["_vend_id"].astype(str).str.upper() != "V3"].copy()
         cli["_loc"] = cli["Localidad"].fillna("").map(_plan_cob_norm)
         nombres = {}
         for _, r in cli.iterrows():
@@ -8820,6 +8824,90 @@ def gerencia_plan_cobertura():
     return jsonify(_to_native({"generado_en": _now_ar(), **data}))
 
 
+def _plan_cob_notas_map():
+    """clave del PDV -> {mensaje, autor, updated_at}. Los mensajes viven en orbit.db
+    (no en el padrón) y se editan a mano en cualquier momento: se leen siempre frescos,
+    fuera del caché del plan."""
+    try:
+        conn = sqlite3.connect(str(DB_PATH), timeout=10, check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute(
+                "SELECT clave, mensaje, autor, updated_at FROM plan_cob_nota").fetchall()
+        finally:
+            conn.close()
+    except Exception as e:
+        print(f"[WARN] plan_cobertura notas: {e}")
+        return {}
+    return {r["clave"]: {"mensaje": r["mensaje"], "autor": r["autor"],
+                         "updated_at": r["updated_at"]} for r in rows}
+
+
+@app.route("/api/vendedor/<vid>/plan_cobertura")
+def vendedor_plan_cobertura(vid):
+    """Plan Cobertura del vendedor: los PDV del padrón que le tocan a él.
+
+      capturados            → los de SU cartera según el maestro.
+      potenciales /
+      no atendidos /
+      atendidos sin código  → los de SUS localidades, con el mismo criterio de zona que
+                              usa gerencia (localidad → vendedor dominante del partido).
+
+    El mensaje que dejó gerencia por PDV viaja en cada fila (sólo lectura del lado del
+    vendedor). V3 no trabaja On Premise (sólo tradicional almacén/despensa/kiosco), así
+    que el plan no le aplica: devuelve listas vacías con `no_aplica`."""
+    data = _plan_cobertura()
+    if data is None:
+        return jsonify({"error": "Plan Cobertura no disponible: falta el padrón en 01_INPUTS/Plan cobertura/*.xlsx."}), 404
+    vid_u = str(vid).upper()
+    vacio = {"capturados": [], "atendidos_sin_codigo": [], "potenciales": [], "no_atendidos": []}
+    if vid_u == "V3":
+        return jsonify(_to_native({
+            "generado_en": _now_ar(), "vendedor": vid_u, "no_aplica": True,
+            "motivo": "V3 no trabaja On Premise: el Plan Cobertura no le aplica.",
+            "plan": data["plan"], "resumen": {k: 0 for k in
+                ("padron", "capturados", "capturados_clientes", "comprando", "con_recompra",
+                 "sin_codigo", "potenciales", "no_atendidos", "sin_relevar")},
+            **vacio, "fuente": data.get("fuente", "")}))
+
+    notas = _plan_cob_notas_map()
+
+    def _mios(lst):
+        # Copia por fila: las listas del payload de gerencia están cacheadas en memoria,
+        # no se les puede colgar el mensaje encima.
+        out = []
+        for c in lst:
+            if str(c.get("vendedor_id") or "").upper() != vid_u:
+                continue
+            n = notas.get(c.get("clave", "")) or {}
+            out.append({**c, "mensaje": n.get("mensaje", ""),
+                        "mensaje_autor": n.get("autor", ""),
+                        "mensaje_fecha": n.get("updated_at", "")})
+        return out
+
+    cap = _mios(data["capturados"])
+    sin_cod = _mios(data["atendidos_sin_codigo"])
+    pot = _mios(data["potenciales"])
+    noat = _mios(data["no_atendidos"])
+    resumen = {
+        "padron": len(cap) + len(sin_cod) + len(pot) + len(noat),
+        "capturados": len(cap),
+        "capturados_clientes": len({c["cliente_id"] for c in cap}),
+        "comprando": sum(1 for c in cap if c["estado_compra"] != "sin_compras"),
+        "con_recompra": sum(1 for c in cap if c["recompro"]),
+        "sin_codigo": len(sin_cod),
+        "potenciales": len(pot),
+        "no_atendidos": len(noat),
+        "sin_relevar": sum(1 for c in noat if not c["relevado"]),
+    }
+    return jsonify(_to_native({
+        "generado_en": _now_ar(), "vendedor": vid_u, "no_aplica": False,
+        "plan": data["plan"], "resumen": resumen,
+        "capturados": cap, "atendidos_sin_codigo": sin_cod,
+        "potenciales": pot, "no_atendidos": noat,
+        "acciones_mes": data.get("acciones_mes", ""), "fuente": data.get("fuente", "")}))
+
+
 @app.route("/api/gerencia/plan_cobertura/notas", methods=["GET", "POST"])
 def gerencia_plan_cobertura_notas():
     """Mensaje libre por punto de venta del Plan Cobertura (lo que hay que hacer con ese
@@ -8855,6 +8943,7 @@ def gerencia_plan_cobertura_notas():
                                      "updated_at": r["updated_at"]} for r in rows})
     finally:
         conn.close()
+# (el mismo SELECT, sin request, está en _plan_cob_notas_map() para la vista del vendedor)
 
 
 # ====== CIERRE DE MES ======

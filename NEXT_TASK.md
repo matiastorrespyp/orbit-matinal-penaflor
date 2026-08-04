@@ -1,5 +1,18 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-04 - Plan Cobertura en el perfil del vendedor
+
+### HECHO
+- [x] Pestaña **🍽️ Cobertura** en el menú inferior del vendedor + endpoint `GET /api/vendedor/<vid>/plan_cobertura`. Reusa el payload cacheado de gerencia y filtra: capturados = su cartera del maestro; potenciales / no atendidos / atendidos sin código = **sus localidades** (dominante de la localidad, fallback al partido). KPI recalculados sobre su subconjunto.
+- [x] **Mensajes de gerencia visibles para el vendedor** (sólo lectura), leídos fuera del caché del plan. Cierra el primer pendiente de la sesión anterior.
+- [x] **V3 fuera del plan**: no trabaja On Premise → endpoint con `no_aplica` y pestaña oculta, como Plan AS.
+- [x] **28 PDV que no le llegaban a nadie**: V3 era el vendedor dominante de esas zonas. Se lo excluye del cálculo por localidad/partido (`_plan_cob_vendedor_por_zona`), así que ahora los 205 PDV caen en un vendedor que sí trabaja el canal. **Cambia también lo que ve gerencia**, y es lo correcto: antes proponía a V3 para bares que V3 no puede trabajar.
+
+### PENDIENTE
+- [ ] **El vendedor no puede responder el mensaje.** Hoy lee lo que dejó gerencia. Si el negocio quiere ida y vuelta (que el vendedor conteste "visitado, no le interesó"), hay que decidir si es el mismo campo o uno aparte, y quién pisa a quién.
+- [ ] **Confirmar el reparto con el negocio.** El vendedor de un PDV no dado de alta se deduce del maestro (quién tiene más clientes en esa localidad), no hay padrón de zonas. Con V3 afuera, V8 pasó de 7 a 35 PDV: vale la pena que gerencia valide esa lista antes de que los vendedores salgan a visitarla.
+- [ ] **El padrón repite una fila**: un PDV relevado como Potencial que ya tiene código de cliente sale en las dos listas (capturados y potenciales), por eso las cuatro listas suman 206 sobre 205 filas. Es del criterio de gerencia, viene de antes; si molesta, decidir cuál manda.
+
 ## Sesion 2026-08-03 - Plan Cobertura (On Premise B&C)
 
 ### HECHO
@@ -13,7 +26,7 @@
 - [x] **Columna "Mensaje"** por punto de venta en las cuatro tablas, con guardar y borrar. Persiste en `orbit.db` (`plan_cob_nota`) vía `GET/POST /api/gerencia/plan_cobertura/notas`, colgada del **ID del PDV** (`clave`), así que sobrevive al reemplazo del xlsx del padrón.
 
 ### PENDIENTE
-- [ ] **Los mensajes por PDV son sólo de gerencia**: el vendedor no los ve. Si el negocio quiere que le lleguen al vendedor que atiende la zona, hay que exponerlos en la app del vendedor (la clave y el vendedor sugerido ya vienen en el payload).
+- [x] ~~**Los mensajes por PDV son sólo de gerencia**: el vendedor no los ve.~~ **HECHO 2026-08-04**: pantalla Plan Cobertura en el perfil del vendedor, con los mensajes de sólo lectura.
 - [ ] **`plan_cob_nota` no se exporta a CSV de seguridad** como sí hace `planificacion`. Vive en `orbit.db` (disco persistente en Render, backup por arranque). Si el negocio va a cargar muchos mensajes, conviene sumarla al export.
 - [ ] **17 PDV atendidos sin código de cliente cargado** en el padrón: hasta que se complete la columna `CÓD. CLIENTE` no se les puede medir activación ni recompra. Es la mejora más grande de la pantalla y es **carga de dato, la hace el negocio**. Se probó sugerir candidatos cruzando por dirección y **se descartó** (2026-08-03): los PDV del plan son On Premise y el cruce devolvía almacenes y kioscos de la misma calle — no hay coincidencia real. No reimplementarlo sin una llave real (ID de PDV compartido con el ERP, o dirección completa con altura).
 - [ ] **Las acciones del plan no se ven como acción sino como descuento.** El catálogo de Acciones Comerciales es del mes vigente, así que para compras viejas la ficha muestra el % de descuento y los sin cargo de la factura, no el nombre del combo. Si el negocio quiere ver "1+2 Alma Mora" con nombre, hay que declarar las acciones del Plan Cobertura en el catálogo mensual.

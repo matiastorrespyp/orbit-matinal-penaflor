@@ -578,6 +578,29 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
   padding:4px 7px; font-size:11px; line-height:1.2; cursor:pointer; }
 .pc-notab:hover { border-color:var(--mg); }
 .pc-notam { font-size:9.5px; color:var(--text3); margin-top:3px; min-height:11px; }
+/* Plan Cobertura · vista del vendedor (celular): tarjetas, no tablas */
+.pcv-kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
+.pcv-kpi { background:var(--surf2); border:1px solid var(--b); border-radius:11px; padding:9px 8px;
+  display:flex; flex-direction:column; align-items:center; gap:3px; text-align:center; }
+.pcv-kn { font-size:19px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.5px; }
+.pcv-kn.ok { color:var(--ok); } .pcv-kn.wn { color:var(--wn); } .pcv-kn.bd { color:var(--bd); }
+.pcv-kl { font-size:9px; color:var(--text3); line-height:1.25; text-transform:uppercase; letter-spacing:.2px; }
+.pcv-sec { font-size:12px; font-weight:700; color:var(--text2); margin:16px 2px 4px; }
+.pcv-secnote { font-size:10.5px; color:var(--text3); margin:0 2px 8px; line-height:1.45; }
+.pcv-card { background:var(--surf); border:1px solid var(--b); border-radius:11px;
+  padding:10px 11px; margin-bottom:8px; }
+.pcv-card.tap { cursor:pointer; }
+.pcv-card.tap:active { border-color:var(--mg); }
+.pcv-name { font-size:12.5px; font-weight:700; line-height:1.3; }
+.pcv-id { font-size:10px; color:var(--text3); font-weight:500; }
+.pcv-nums { display:flex; flex-wrap:wrap; gap:4px 12px; margin-top:8px; font-size:10.5px; color:var(--text3); }
+.pcv-nums b { color:var(--text2); font-size:12px; font-variant-numeric:tabular-nums; margin-left:3px; }
+.pcv-msg { margin-top:8px; background:var(--mg-s,rgba(226,20,122,.10)); border:1px solid var(--mg);
+  border-radius:9px; padding:7px 9px; font-size:11.5px; color:var(--text2); line-height:1.45; }
+.pcv-msgm { display:block; font-size:9.5px; color:var(--text3); margin-top:3px; }
+.pcv-obs { margin-top:6px; font-size:11px; color:var(--text3); font-style:italic; line-height:1.45; }
+.pcv-tap { font-size:10px; color:var(--mg); margin-top:7px; font-weight:600; }
+.pcv-empty { font-size:11.5px; color:var(--text3); padding:8px 2px 4px; }
 
 /* ── Incentivo Alma Mora Low (reusa dd-*; sólo el acordeón por vendedor) ── */
 .am-vrow { cursor:pointer; transition:border-color .15s,background .15s; }
@@ -1365,6 +1388,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
   <div class="vcont" id="vT-planes_as"></div>
   <div class="vcont" id="vT-faro"></div>
   <div class="vcont" id="vT-plan_frizze"></div>
+  <div class="vcont" id="vT-plan_cob"></div>
 
   <nav class="vbnav">
     <div class="vtab active" onclick="vSw('inicio',this)"><span class="vtab-ico">🏠</span><span>Inicio</span></div>
@@ -1379,6 +1403,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
     <div class="vtab" id="vtab-planesas" onclick="vSw('planes_as',this)"><span class="vtab-ico">🏆</span><span>Plan AS</span></div>
     <div class="vtab" onclick="vSw('faro',this)"><span class="vtab-ico">🌟</span><span>FARO</span></div>
     <div class="vtab" id="vtab-planfrizze" onclick="vSw('plan_frizze',this)"><span class="vtab-ico">🥂</span><span>Frizze</span></div>
+    <div class="vtab" id="vtab-plancob" onclick="vSw('plan_cob',this);vPlanCobertura()"><span class="vtab-ico">🍽️</span><span>Cobertura</span></div>
   </nav>
 </div>
 
@@ -1612,7 +1637,7 @@ async function loadRole(){
 
 async function reloadData(){
   const savedDay = currentDay;
-  SEM=null; STK=null; PCOB=null;   // Semanal y Plan Cobertura se cargan lazy: forzar refetch al Actualizar
+  SEM=null; STK=null; PCOB=null; PCOBV=null;   // Semanal y Plan Cobertura se cargan lazy: forzar refetch al Actualizar
   const p = document.getElementById('gPage');
   if(p) p.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);">↻ Actualizando datos…</div>';
   await loadAll();
@@ -1654,9 +1679,10 @@ function showApp(){
     const h=new Date().getHours();
     document.getElementById('vGreet').textContent=(h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches')+' · '+(userData.nombre||'').split(' ')[0];
     buildVDaySel(diag.dia_operativo);
-    // V3 (Nadia) no trabaja Autoservicio → sin pestaña Plan AS
+    // V3 (Nadia) no trabaja Autoservicio ni On Premise → sin Plan AS ni Plan Cobertura
     if((userData.vendedor_id||'').toUpperCase()==='V3'){
       const t=document.getElementById('vtab-planesas'); if(t) t.style.display='none';
+      const c=document.getElementById('vtab-plancob'); if(c) c.style.display='none';
     }
     // Plan Frizze: el tab se muestra/oculta en vPlanFrizze() según los datos ya cargados
     // (D.plan_frizze_v llega en loadRole, después de showApp).
@@ -2756,7 +2782,14 @@ function vSw(tab,el){
   el.classList.add('active');
 }
 
-function vRenderAll(){ vInicio(); vRuta(); vKpis(); vPlan(); vAlertas(); vCliente(); vPlanesAS(); vFaro(); vPlanFrizze(); }
+function vRenderAll(){ vInicio(); vRuta(); vKpis(); vPlan(); vAlertas(); vCliente(); vPlanesAS(); vFaro(); vPlanFrizze(); vPlanCobRefrescar(); }
+
+/* Plan Cobertura se pide recién al tocar la pestaña (padrón + historial = pesado).
+   Si el vendedor ya la había abierto, al Actualizar se vuelve a pedir. */
+function vPlanCobRefrescar(){
+  const el=document.getElementById('vT-plan_cob');
+  if(el && el.innerHTML.trim()) vPlanCobertura();
+}
 
 function vCliente(){
   const cont=document.getElementById('vT-cliente'); if(!cont) return;
@@ -4855,9 +4888,14 @@ function pcTogglePlan(){
   if(ar) ar.textContent=open?'▸':'▾';
 }
 
-/* Modal: ficha del cliente capturado — artículos, recompras mes a mes y ofertas */
+/* Modal: ficha del cliente capturado — artículos, recompras mes a mes y ofertas.
+   Gerencia entra por índice de la tabla; el vendedor pasa el cliente directo. */
 function pcDetalle(i){
   const c=(PCOB?.capturados||[])[i]; if(!c) return;
+  pcModalCliente(c);
+}
+function pcModalCliente(c){
+  if(!c) return;
   const mesAct=(c.activacion||'').slice(0,7);
   const chips=(c.meses||[]).map(m=>`
     <span class="pc-chip ${m.mes===mesAct?'act':''}" title="${m.lineas} línea(s) · ${fmtM(m.importe)}">
@@ -4918,6 +4956,144 @@ function pcDetalle(i){
   </div>`;
   document.body.appendChild(div);
   div.addEventListener('click',e=>{if(e.target===div) closeModal();});
+}
+
+/* ════ PLAN COBERTURA · VISTA DEL VENDEDOR ════
+   Mismo padrón que gerencia, filtrado del lado del server a SUS clientes (cartera del
+   maestro) y a SUS localidades (vendedor sugerido por zona), vía
+   /api/vendedor/<vid>/plan_cobertura. Se carga lazy al tocar la pestaña: el padrón + el
+   historial de compras no tienen por qué demorar el login. El mensaje que dejó gerencia
+   por punto de venta se muestra de sólo lectura. */
+let PCOBV=null;
+
+function vPlanCobertura(){
+  const el=document.getElementById('vT-plan_cob'); if(!el) return;
+  if(PCOBV){ el.innerHTML=_pcvRender(PCOBV); return; }
+  el.innerHTML=`<div class="vsh">🍽️ Plan Cobertura</div>
+    <div style="text-align:center;padding:24px;color:var(--text3);">Cargando tus puntos de venta…</div>`;
+  const vid=(userData?.vendedor_id||'').toUpperCase();
+  safe('/api/vendedor/'+vid+'/plan_cobertura').then(j=>{
+    if(!j || j.error){
+      el.innerHTML=`<div class="vsh">🍽️ Plan Cobertura</div>
+        <div class="pcv-empty">${(j&&j.error)||'No se pudo cargar el Plan Cobertura.'}</div>`;
+      return;
+    }
+    PCOBV=j; el.innerHTML=_pcvRender(j);
+  });
+}
+function pcvDetalle(i){ pcModalCliente((PCOBV?.capturados||[])[i]); }
+function pcvTogglePlan(){
+  const el=document.getElementById('pcv-plan'), ar=document.getElementById('pcv-plan-ar');
+  if(!el) return;
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'block';
+  if(ar) ar.textContent=open?'▸':'▾';
+}
+
+function _pcvMsg(c){
+  if(!c.mensaje) return '';
+  const meta=[c.mensaje_autor,c.mensaje_fecha].filter(Boolean).join(' · ');
+  return `<div class="pcv-msg">📝 ${pcEsc(c.mensaje)}${meta?`<span class="pcv-msgm">${pcEsc(meta)}</span>`:''}</div>`;
+}
+function _pcvSub(c){
+  return pcEsc([c.localidad,c.segmento_plan,c.tipo].filter(Boolean).join(' · '));
+}
+function _pcvCap(c,i){
+  const est=c.estado_compra==='con_recompra'?['ok','Recompró']
+           :c.estado_compra==='solo_activacion'?['wn','Sin recompra']:['bd','Sin compras'];
+  return `<div class="pcv-card tap" onclick="pcvDetalle(${i})">
+    <div class="row-b" style="gap:8px;align-items:flex-start;">
+      <div style="min-width:0;">
+        <div class="pcv-name">${pcEsc(c.nombre)} <span class="pcv-id">#${c.cliente_id}</span></div>
+        <div class="xs" style="color:var(--text3)">${_pcvSub(c)}</div>
+      </div>
+      <span class="chip ${est[0]}" style="font-size:9px;white-space:nowrap;">${est[1]}</span>
+    </div>
+    <div class="pcv-nums">
+      <span>Activación<b>${c.activacion?pcFecha(c.activacion):'—'}</b></span>
+      <span>Meses<b>${c.meses_con_compra}</b></span>
+      <span>Recompras<b>${c.recompras}</b></span>
+      <span>Botellas<b>${c.botellas}</b></span>
+    </div>
+    ${_pcvMsg(c)}
+    <div class="pcv-tap">Tocá para ver qué compró y las ofertas que recibió →</div>
+  </div>`;
+}
+/* PDV sin código de cliente: potenciales, no atendidos y atendidos sin código.
+   Le corresponden por zona (localidad, o el partido si no tenemos clientes ahí). */
+function _pcvZona(c,badge){
+  return `<div class="pcv-card">
+    <div class="row-b" style="gap:8px;align-items:flex-start;">
+      <div style="min-width:0;">
+        <div class="pcv-name">${pcEsc(c.nombre)}</div>
+        <div class="xs" style="color:var(--text3)">${_pcvSub(c)}</div>
+        ${c.direccion?`<div class="xs" style="color:var(--text3)">📍 ${pcEsc(c.direccion)}</div>`:''}
+      </div>
+      ${badge||''}
+    </div>
+    <div class="xs" style="color:var(--text3);margin-top:6px;">
+      Te corresponde ${c.asignacion==='partido'?'por partido':'por localidad'}${c.partido?' · '+pcEsc(c.partido):''}</div>
+    ${c.observaciones?`<div class="pcv-obs">📝 ${pcEsc(c.observaciones)}</div>`:''}
+    ${_pcvMsg(c)}
+  </div>`;
+}
+function _pcvLista(items, render, vacio){
+  return items.length ? items.map(render).join('') : `<div class="pcv-empty">${vacio}</div>`;
+}
+
+function _pcvRender(d){
+  const pl=d.plan||{}, r=d.resumen||{};
+  const cap=d.capturados||[], sinCod=d.atendidos_sin_codigo||[],
+        pot=d.potenciales||[], noat=d.no_atendidos||[];
+  const hd=`<div class="vsh">🍽️ Plan Cobertura</div>
+    <div style="font-size:11px;color:var(--text3);margin:-6px 0 12px;">On Premise categoría B y C · restaurantes y bares con carta de bebida</div>`;
+  if(d.no_aplica){
+    return hd+`<div class="pcv-empty">${pcEsc(d.motivo||'El Plan Cobertura no aplica a tu cartera.')}</div>`;
+  }
+  if(!r.padron){
+    return hd+`<div class="pcv-empty">No tenés puntos de venta del Plan Cobertura en tus localidades.</div>`;
+  }
+  return hd+`
+  <div class="pcv-kpis">
+    <div class="pcv-kpi"><span class="pcv-kn">${r.padron}</span><span class="pcv-kl">PDV tuyos en el plan</span></div>
+    <div class="pcv-kpi"><span class="pcv-kn ok">${r.capturados_clientes}</span><span class="pcv-kl">Capturados</span></div>
+    <div class="pcv-kpi"><span class="pcv-kn ${r.con_recompra?'ok':'wn'}">${r.con_recompra}</span><span class="pcv-kl">Con recompra</span></div>
+    <div class="pcv-kpi"><span class="pcv-kn wn">${r.potenciales}</span><span class="pcv-kl">Potenciales</span></div>
+    <div class="pcv-kpi"><span class="pcv-kn bd">${r.no_atendidos}</span><span class="pcv-kl">No atendidos</span></div>
+    <div class="pcv-kpi"><span class="pcv-kn ${r.sin_codigo?'wn':''}">${r.sin_codigo}</span><span class="pcv-kl">Sin código</span></div>
+  </div>
+
+  <div class="pcv-card">
+    <div onclick="pcvTogglePlan()" style="font-weight:700;font-size:12px;color:var(--text2);cursor:pointer;">
+      <span id="pcv-plan-ar">▸</span> Cómo funciona el plan</div>
+    <div id="pcv-plan" style="display:none">
+      <div class="pcv-obs" style="font-style:normal;color:var(--text2);"><b>Objetivo:</b> ${pcEsc(pl.objetivo||'')}</div>
+      <div class="pcv-obs" style="font-style:normal;color:var(--text2);"><b>Medición:</b> ${pcEsc(pl.medicion||'')}</div>
+      <ul style="margin:8px 0 0 16px;padding:0;font-size:11px;color:var(--text3);line-height:1.6;">
+        ${(pl.acciones||[]).map(a=>`<li>${pcEsc(a)}</li>`).join('')}</ul>
+    </div>
+  </div>
+
+  <div class="pcv-sec">Tus clientes capturados (${cap.length})</div>
+  <div class="pcv-secnote">Dados de alta. La activación es la fecha de su <b>primera compra</b>. Tocá el cliente para ver artículos, recompras mes a mes y ofertas.</div>
+  ${_pcvLista(cap,(c,i)=>_pcvCap(c,i),'Todavía no tenés clientes del plan dados de alta.')}
+
+  ${sinCod.length?`
+    <div class="pcv-sec">Los atendés pero falta el código (${sinCod.length})</div>
+    <div class="pcv-secnote">El relevamiento dice que los atendemos, pero el padrón no tiene el código de cliente: hasta que se cargue no se les puede medir activación ni recompra.</div>
+    ${_pcvLista(sinCod,c=>_pcvZona(c,'<span class="chip wn" style="font-size:9px;">Sin código</span>'),'')}`:''}
+
+  <div class="pcv-sec">Potenciales para captar (${pot.length})</div>
+  <div class="pcv-secnote">Relevados como potenciales: todavía no están dados de alta y están en tus localidades.</div>
+  ${_pcvLista(pot,c=>_pcvZona(c,'<span class="chip wn" style="font-size:9px;">Potencial</span>'),'Sin potenciales en tus localidades.')}
+
+  <div class="pcv-sec">No los estamos atendiendo (${noat.length})</div>
+  <div class="pcv-secnote">Relevados como no atendidos${r.sin_relevar?` (incluye ${r.sin_relevar} sin dato de relevamiento)`:''}, en tus localidades.</div>
+  ${_pcvLista(noat,c=>_pcvZona(c,c.relevado
+      ?'<span class="chip bd" style="font-size:9px;">No atiende</span>'
+      :'<span class="chip wn" style="font-size:9px;">Sin relevar</span>'),'Sin registros en tus localidades.')}
+
+  <div class="xs" style="color:var(--text3);padding:12px 2px 20px;">Fuente: ${pcEsc(d.fuente||'')}. Los mensajes 📝 los deja gerencia por punto de venta.</div>`;
 }
 
 async function guardarEditPlan(id,esV3){
