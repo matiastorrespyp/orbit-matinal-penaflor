@@ -560,6 +560,24 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
   border-radius:9px; padding:8px 11px; margin-bottom:6px; }
 .pc-sc { font-size:11.5px; color:var(--text2); background:var(--ok-s); border:1px solid var(--ok);
   border-radius:9px; padding:7px 11px; margin-top:6px; }
+/* Buscador (cliente / localidad / vendedor) y columna de mensaje por PDV */
+.pc-search { display:flex; align-items:center; gap:8px; }
+.pc-search input { flex:1; padding:9px 12px; border-radius:9px; border:1px solid var(--b);
+  background:var(--surf2); color:var(--text); font-size:13px; font-family:inherit; }
+.pc-search input:focus { outline:none; border-color:var(--mg); }
+.pc-searchx { border:1px solid var(--b); background:transparent; color:var(--text3);
+  border-radius:9px; padding:8px 11px; cursor:pointer; font-size:12px; }
+.pc-searchx:hover { border-color:var(--mg); color:var(--text2); }
+.pc-searchhint { font-size:10.5px; color:var(--text3); margin-top:7px; }
+.pc-nota { min-width:225px; }
+.pc-notaw { display:flex; align-items:center; gap:4px; }
+.pc-notai { flex:1; min-width:110px; padding:5px 8px; font-size:11px; border-radius:7px;
+  border:1px solid var(--b); background:var(--surf2); color:var(--text); font-family:inherit; }
+.pc-notai:focus { outline:none; border-color:var(--mg); }
+.pc-notab { border:1px solid var(--b); background:transparent; color:var(--text2); border-radius:7px;
+  padding:4px 7px; font-size:11px; line-height:1.2; cursor:pointer; }
+.pc-notab:hover { border-color:var(--mg); }
+.pc-notam { font-size:9.5px; color:var(--text3); margin-top:3px; min-height:11px; }
 
 /* ── Incentivo Alma Mora Low (reusa dd-*; sólo el acordeón por vendedor) ── */
 .am-vrow { cursor:pointer; transition:border-color .15s,background .15s; }
@@ -4561,11 +4579,17 @@ function amFilasVend(){
    Tres grupos: capturados (dados de alta, con seguimiento de activación y recompras),
    potenciales y no atendidos. A los dos últimos se les sugiere vendedor por zona. */
 let PCOB=null;
+let PCOB_NOTAS={};   // clave del PDV -> {mensaje, autor, updated_at} guardados en el server
+let PC_NDRAFT={};    // clave -> texto tipeado y todavía sin guardar (sobrevive al filtrado)
+let PC_NKEYS=[];     // índice de render -> clave, para los ids del DOM de cada mensaje
+let PC_Q='';         // último texto del buscador (se conserva al volver a la pantalla)
 
 const pcFecha = s=>{const q=(s||'').split('-');return q.length===3?`${q[2]}/${q[1]}/${q[0]}`:(s||'');};
 const pcMes   = s=>{const q=(s||'').split('-');if(q.length<2) return s||'';
   const M=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   return `${M[parseInt(q[1],10)-1]||q[1]} ${q[0].slice(2)}`;};
+const pcEsc   = s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 function gPlanCobertura(p){
   p.innerHTML=`<div class="gph"><div><div class="gph-title">Plan Cobertura</div>
@@ -4573,6 +4597,7 @@ function gPlanCobertura(p){
     <div id="pc-body"><div class="card"><div class="card-body"><div class="empty">
       <div class="eico" style="font-size:28px">⏳</div><p>Cargando padrón e historial de compras…</p>
     </div></div></div></div>`;
+  pcNotasCargar();                              // los mensajes se editan a mano: siempre frescos
   if(PCOB){ pcRender(); return; }
   safe('/api/gerencia/plan_cobertura').then(j=>{
     if(gScreen!=='plan_cobertura') return;      // el usuario ya cambió de pantalla
@@ -4587,39 +4612,130 @@ function gPlanCobertura(p){
   });
 }
 
+/* ── Buscador: una sola caja que filtra las cuatro listas ──
+   Coincide si TODAS las palabras aparecen en el texto del PDV (nombre, razón social,
+   código, dirección, localidad, partido, vendedor). Así "merlo nadia" trae los PDV de
+   Merlo que atiende V3. */
+function pcTexto(c){
+  if(c._t) return c._t;
+  c._t=[c.nombre,c.razon_social,c.cliente_id,c.pdv_id,c.direccion,c.localidad,c.partido,
+        c.vendedor_id,c.vendedor_nombre,c.segmento_plan,c.tipo,c.subcanal,c.observaciones]
+    .filter(Boolean).join(' ').toLowerCase();
+  return c._t;
+}
+function pcMatch(c,pal){
+  if(!pal.length) return true;
+  const t=pcTexto(c);
+  return pal.every(w=>t.includes(w));
+}
+function pcLimpiarBusqueda(){
+  const i=document.getElementById('pcSearch');
+  if(i){ i.value=''; i.focus(); }
+  pcFiltrar();
+}
+
+/* ── Mensaje por punto de venta (columna de la derecha) ──
+   Se guarda en orbit.db vía /api/gerencia/plan_cobertura/notas, colgado del ID del PDV:
+   no toca el padrón ni el historial de compras. Vacío = borrado. */
+function pcNotaCell(c){
+  const k=c.clave||'';
+  if(!k) return '<td class="pc-nota"></td>';
+  const i=PC_NKEYS.length; PC_NKEYS.push(k);
+  const n=PCOB_NOTAS[k]||{};
+  const draft=(k in PC_NDRAFT);
+  const val=draft?PC_NDRAFT[k]:(n.mensaje||'');
+  const meta=draft?'sin guardar':(n.mensaje?`✓ ${n.autor||''} · ${n.updated_at||''}`:'');
+  return `<td class="pc-nota" onclick="event.stopPropagation()">
+    <div class="pc-notaw">
+      <input id="pcn_${i}" class="pc-notai" placeholder="📝 Escribí un mensaje…" value="${pcEsc(val)}"
+        oninput="pcNotaDraft(${i})" onkeydown="if(event.key==='Enter')pcNotaGuardar(${i})">
+      <button class="pc-notab" title="Guardar el mensaje" onclick="pcNotaGuardar(${i})">💾</button>
+      <button class="pc-notab" title="Borrar el mensaje" onclick="pcNotaBorrar(${i})">🗑</button>
+    </div>
+    <div class="pc-notam" id="pcnm_${i}">${meta}</div>
+  </td>`;
+}
+function pcNotaDraft(i){
+  const k=PC_NKEYS[i], inp=document.getElementById('pcn_'+i); if(!k||!inp) return;
+  PC_NDRAFT[k]=inp.value;
+  const m=document.getElementById('pcnm_'+i); if(m) m.textContent='sin guardar';
+}
+async function pcNotaGuardar(i){
+  const k=PC_NKEYS[i]; if(!k) return;
+  const inp=document.getElementById('pcn_'+i), meta=document.getElementById('pcnm_'+i);
+  const msg=((inp&&inp.value)||'').trim();
+  if(meta) meta.textContent='guardando…';
+  try{
+    const r=await fetch('/api/gerencia/plan_cobertura/notas',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({clave:k,mensaje:msg,autor:(userData&&userData.nombre)||'Gerencia'})});
+    const d=await r.json();
+    if(!r.ok||!d.ok) throw new Error((d&&d.error)||('HTTP '+r.status));
+    delete PC_NDRAFT[k];
+    if(msg){
+      PCOB_NOTAS[k]={mensaje:msg,autor:d.autor,updated_at:d.updated_at};
+      if(meta) meta.textContent='✓ '+(d.autor||'')+' · '+(d.updated_at||'');
+    }else{
+      delete PCOB_NOTAS[k];
+      if(meta) meta.textContent='';
+    }
+  }catch(e){ if(meta) meta.textContent='no se pudo guardar'; }
+}
+function pcNotaBorrar(i){
+  const k=PC_NKEYS[i]; if(!k) return;
+  if(PCOB_NOTAS[k] && !confirm('¿Borrar el mensaje guardado de este punto de venta?')) return;
+  const inp=document.getElementById('pcn_'+i); if(inp) inp.value='';
+  delete PC_NDRAFT[k];
+  pcNotaGuardar(i);
+}
+async function pcNotasCargar(){
+  try{
+    const r=await fetch('/api/gerencia/plan_cobertura/notas'); if(!r.ok) return;
+    PCOB_NOTAS=(await r.json())||{};
+    if(gScreen==='plan_cobertura') pcFiltrar();   // si la tabla ya está pintada, la refresca
+  }catch(e){}
+}
+
+function pcVendCell(c){
+  return c.vendedor_id
+    ? `<span class="pc-vend" title="${pcEsc(c.asignacion_detalle||'')}">${c.vendedor_id}${c.vendedor_nombre?' · '+c.vendedor_nombre:''}</span>`
+    : `<span class="pc-vend pc-vend-none" title="${pcEsc(c.asignacion_detalle||'')}">Sin asignar</span>`;
+}
+function pcFilaCap(c,i){
+  const est=c.estado_compra==='con_recompra'?['ok','Recompra']
+           :c.estado_compra==='solo_activacion'?['wn','Sin recompra']:['bad','Sin compras'];
+  return `<tr class="pc-click" onclick="pcDetalle(${i})">
+    <td><b>${c.nombre||''}</b> <span class="dd-id">#${c.cliente_id}</span>
+        <div class="pc-sub2">${[c.segmento_plan,c.tipo].filter(Boolean).join(' · ')}</div></td>
+    <td>${c.localidad||''}</td>
+    <td>${c.vendedor_id||'—'}</td>
+    <td>${c.activacion?pcFecha(c.activacion):'—'}</td>
+    <td style="text-align:right;font-variant-numeric:tabular-nums;">${c.meses_con_compra}</td>
+    <td style="text-align:right;font-variant-numeric:tabular-nums;">${c.recompras}</td>
+    <td>${c.ultima_compra?pcFecha(c.ultima_compra):'—'}</td>
+    <td><span class="pc-badge ${est[0]}">${est[1]}</span></td>
+    ${pcNotaCell(c)}
+  </tr>`;
+}
+function pcFilaZona(c,extra){
+  return `<tr>
+    <td><b>${c.nombre||''}</b><div class="pc-sub2">${[c.segmento_plan,c.tipo].filter(Boolean).join(' · ')}${c.direccion?' · '+c.direccion:''}</div></td>
+    <td>${c.localidad||''}<div class="pc-sub2">${c.partido||''}</div></td>
+    <td>${pcVendCell(c)}<div class="pc-sub2">${c.asignacion==='partido'?'por partido':(c.asignacion==='localidad'?'por localidad':'')}</div></td>
+    ${extra?extra(c):''}
+    <td class="pc-obs">${c.observaciones||''}</td>
+    ${pcNotaCell(c)}
+  </tr>`;
+}
+
 function pcRender(){
   const b=document.getElementById('pc-body'); if(!b||!PCOB) return;
   const d=PCOB, r=d.resumen||{}, pl=d.plan||{};
   const cap=d.capturados||[], sinCod=d.atendidos_sin_codigo||[],
         pot=d.potenciales||[], noat=d.no_atendidos||[];
 
-  const vendCell=c=>c.vendedor_id
-    ? `<span class="pc-vend" title="${c.asignacion_detalle||''}">${c.vendedor_id}${c.vendedor_nombre?' · '+c.vendedor_nombre:''}</span>`
-    : `<span class="pc-vend pc-vend-none" title="${c.asignacion_detalle||''}">Sin asignar</span>`;
-
-  const filaCap=(c,i)=>{
-    const est=c.estado_compra==='con_recompra'?['ok','Recompra']
-             :c.estado_compra==='solo_activacion'?['wn','Sin recompra']:['bad','Sin compras'];
-    return `<tr class="pc-click" onclick="pcDetalle(${i})">
-      <td><b>${c.nombre||''}</b> <span class="dd-id">#${c.cliente_id}</span>
-          <div class="pc-sub2">${[c.segmento_plan,c.tipo].filter(Boolean).join(' · ')}</div></td>
-      <td>${c.localidad||''}</td>
-      <td>${c.vendedor_id||'—'}</td>
-      <td>${c.activacion?pcFecha(c.activacion):'—'}</td>
-      <td style="text-align:right;font-variant-numeric:tabular-nums;">${c.meses_con_compra}</td>
-      <td style="text-align:right;font-variant-numeric:tabular-nums;">${c.recompras}</td>
-      <td>${c.ultima_compra?pcFecha(c.ultima_compra):'—'}</td>
-      <td><span class="pc-badge ${est[0]}">${est[1]}</span></td>
-    </tr>`;};
-
-  const filaZona=(c,extra)=>`<tr>
-      <td><b>${c.nombre||''}</b><div class="pc-sub2">${[c.segmento_plan,c.tipo].filter(Boolean).join(' · ')}${c.direccion?' · '+c.direccion:''}</div></td>
-      <td>${c.localidad||''}<div class="pc-sub2">${c.partido||''}</div></td>
-      <td>${vendCell(c)}<div class="pc-sub2">${c.asignacion==='partido'?'por partido':(c.asignacion==='localidad'?'por localidad':'')}</div></td>
-      ${extra?extra(c):''}
-      <td class="pc-obs">${c.observaciones||''}</td>
-    </tr>`;
-
+  // El shell se arma UNA vez: si se re-renderizara entero en cada tecla, el input del
+  // buscador se destruiría y perdería el foco. Las filas las pinta pcFiltrar().
   b.innerHTML=`
   <div class="dd-kpis pc-kpis">
     <div class="dd-kpi"><span class="dd-kn">${r.padron||0}</span><span class="dd-kl">PDV del padrón relevado</span></div>
@@ -4628,6 +4744,15 @@ function pcRender(){
     <div class="dd-kpi"><span class="dd-kn wn">${r.potenciales||0}</span><span class="dd-kl">Potenciales para captar</span></div>
     <div class="dd-kpi"><span class="dd-kn bad">${r.no_atendidos||0}</span><span class="dd-kl">No atendidos · ${r.sin_relevar||0} sin relevar</span></div>
   </div>
+
+  <div class="card"><div class="card-body">
+    <div class="pc-search">
+      <input id="pcSearch" type="text" autocomplete="off" value="${pcEsc(PC_Q)}"
+        placeholder="🔎 Buscar por cliente, localidad o vendedor…" oninput="pcFiltrar()">
+      <button class="pc-searchx" onclick="pcLimpiarBusqueda()" title="Limpiar la búsqueda">✕ Limpiar</button>
+    </div>
+    <div class="pc-searchhint">Filtra las cuatro listas a la vez. Se puede escribir más de una palabra: <b>merlo nadia</b> deja los PDV de Merlo que atiende V3.</div>
+  </div></div>
 
   <div class="card"><div class="card-body">
     <div class="pc-planhd" onclick="pcTogglePlan()"><span id="pc-plan-ar">▸</span> Cómo funciona el plan</div>
@@ -4640,41 +4765,86 @@ function pcRender(){
   </div></div>
 
   <div class="card"><div class="card-body">
-    <div class="dd-sub" style="border-top:none;padding-top:0;">Capturados · dados de alta y comprando (${cap.length})</div>
-    <div class="dd-note">Tocá un cliente para ver los artículos que compró, sus recompras mes a mes y las ofertas que recibió. La activación es la fecha de su <b>primera compra</b>.</div>
+    <div class="dd-sub" style="border-top:none;padding-top:0;">Capturados · dados de alta y comprando (<span id="pccCap">${cap.length}</span>)</div>
+    <div class="dd-note">Tocá un cliente para ver los artículos que compró, sus recompras mes a mes y las ofertas que recibió. La activación es la fecha de su <b>primera compra</b>. El mensaje de la derecha se guarda por punto de venta.</div>
     <div class="dd-tblwrap"><table class="dd-tbl">
       <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vend.</th><th>Activación</th>
-        <th style="text-align:right;">Meses</th><th style="text-align:right;">Recompras</th><th>Última compra</th><th>Estado</th></tr></thead>
-      <tbody>${cap.map(filaCap).join('')||'<tr><td colspan="8" class="dd-empty">Sin clientes capturados en el padrón.</td></tr>'}</tbody>
+        <th style="text-align:right;">Meses</th><th style="text-align:right;">Recompras</th><th>Última compra</th><th>Estado</th><th>Mensaje</th></tr></thead>
+      <tbody id="pcbCap"></tbody>
     </table></div>
     ${sinCod.length?`
-      <div class="dd-sub">Atendidos sin código de cliente cargado (${sinCod.length})</div>
+      <div class="dd-sub">Atendidos sin código de cliente cargado (<span id="pccSin">${sinCod.length}</span>)</div>
       <div class="dd-note">El relevamiento dice que los atendemos, pero el padrón no tiene el código: hasta que se cargue no se les puede medir activación ni recompra.</div>
       <div class="dd-tblwrap"><table class="dd-tbl">
-        <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vendedor de la zona</th><th>Observaciones</th></tr></thead>
-        <tbody>${sinCod.map(c=>filaZona(c,null)).join('')}</tbody>
+        <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vendedor de la zona</th><th>Observaciones</th><th>Mensaje</th></tr></thead>
+        <tbody id="pcbSin"></tbody>
       </table></div>`:''}
   </div></div>
 
   <div class="card"><div class="card-body">
-    <div class="dd-sub" style="border-top:none;padding-top:0;">Clientes potenciales (${pot.length})</div>
+    <div class="dd-sub" style="border-top:none;padding-top:0;">Clientes potenciales (<span id="pccPot">${pot.length}</span>)</div>
     <div class="dd-note">Relevados como potenciales: todavía no están dados de alta. El vendedor sale de quién atiende esa localidad según el maestro.</div>
     <div class="dd-tblwrap"><table class="dd-tbl">
-      <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vendedor que correspondería</th><th>Observaciones</th></tr></thead>
-      <tbody>${pot.map(c=>filaZona(c,null)).join('')||'<tr><td colspan="4" class="dd-empty">Sin potenciales.</td></tr>'}</tbody>
+      <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vendedor que correspondería</th><th>Observaciones</th><th>Mensaje</th></tr></thead>
+      <tbody id="pcbPot"></tbody>
     </table></div>
   </div></div>
 
   <div class="card"><div class="card-body">
-    <div class="dd-sub" style="border-top:none;padding-top:0;">No los estamos atendiendo (${noat.length})</div>
+    <div class="dd-sub" style="border-top:none;padding-top:0;">No los estamos atendiendo (<span id="pccNoat">${noat.length}</span>)</div>
     <div class="dd-note">Relevados como no atendidos${r.sin_relevar?` (incluye ${r.sin_relevar} sin dato de relevamiento)`:''}, con el vendedor al que le correspondería la zona.</div>
     <div class="dd-tblwrap"><table class="dd-tbl">
-      <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vendedor que correspondería</th><th>Relevamiento</th><th>Observaciones</th></tr></thead>
-      <tbody>${noat.map(c=>filaZona(c,x=>`<td>${x.relevado?'No atiende':'<span class="pc-badge wn">Sin relevar</span>'}</td>`)).join('')||'<tr><td colspan="5" class="dd-empty">Sin registros.</td></tr>'}</tbody>
+      <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vendedor que correspondería</th><th>Relevamiento</th><th>Observaciones</th><th>Mensaje</th></tr></thead>
+      <tbody id="pcbNoat"></tbody>
     </table></div>
   </div></div>
 
-  <div class="dd-fuente">Fuente: ${d.fuente||''}${d.acciones_mes?` · acciones del catálogo ${d.acciones_mes}`:''}</div>`;
+  <div class="dd-fuente">Fuente: ${d.fuente||''}${d.acciones_mes?` · acciones del catálogo ${d.acciones_mes}`:''} · los mensajes se guardan en orbit.db</div>`;
+
+  pcFiltrar();
+}
+
+function _pcPintar(id,html,cols,vacio){
+  const tb=document.getElementById(id); if(!tb) return;
+  tb.innerHTML = html || `<tr><td colspan="${cols}" class="dd-empty">${vacio}</td></tr>`;
+}
+function _pcCount(id,n,total){
+  const el=document.getElementById(id); if(!el) return;
+  el.textContent = (n===total) ? String(total) : `${n} de ${total}`;
+}
+
+/* Re-pinta SÓLO las filas de las cuatro tablas según el buscador. */
+function pcFiltrar(){
+  if(!PCOB || !document.getElementById('pcbCap')) return;
+  const inp=document.getElementById('pcSearch');
+  if(inp) PC_Q=inp.value;
+  const pal=PC_Q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const filtrando=pal.length>0;
+  const vacio=filtrando?'Sin coincidencias con la búsqueda.':null;
+  PC_NKEYS=[];                                  // los ids del DOM se renumeran en cada pintada
+
+  const d=PCOB, cap=d.capturados||[], sinCod=d.atendidos_sin_codigo||[],
+        pot=d.potenciales||[], noat=d.no_atendidos||[];
+
+  // Capturados: se conserva el índice original porque es el que abre la ficha del cliente.
+  const fcap=cap.map((c,i)=>[c,i]).filter(x=>pcMatch(x[0],pal));
+  _pcPintar('pcbCap', fcap.map(x=>pcFilaCap(x[0],x[1])).join(''), 9,
+            vacio||'Sin clientes capturados en el padrón.');
+  _pcCount('pccCap', fcap.length, cap.length);
+
+  const fsin=sinCod.filter(c=>pcMatch(c,pal));
+  _pcPintar('pcbSin', fsin.map(c=>pcFilaZona(c,null)).join(''), 5, vacio||'Sin registros.');
+  _pcCount('pccSin', fsin.length, sinCod.length);
+
+  const fpot=pot.filter(c=>pcMatch(c,pal));
+  _pcPintar('pcbPot', fpot.map(c=>pcFilaZona(c,null)).join(''), 5, vacio||'Sin potenciales.');
+  _pcCount('pccPot', fpot.length, pot.length);
+
+  const fnoat=noat.filter(c=>pcMatch(c,pal));
+  _pcPintar('pcbNoat', fnoat.map(c=>pcFilaZona(c,
+      x=>`<td>${x.relevado?'No atiende':'<span class="pc-badge wn">Sin relevar</span>'}</td>`)).join(''),
+    6, vacio||'Sin registros.');
+  _pcCount('pccNoat', fnoat.length, noat.length);
 }
 
 function pcTogglePlan(){

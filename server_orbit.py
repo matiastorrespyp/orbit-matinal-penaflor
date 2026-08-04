@@ -97,6 +97,11 @@ def init_db():
     # esta tabla es el registro de "ya la vi, no me la muestres más". Ver _alerta_clave().
     c.execute("""CREATE TABLE IF NOT EXISTS alerta_descartada(
         clave TEXT PRIMARY KEY, autor TEXT, resumen TEXT, descartada_at TEXT)""")
+    # Mensaje de seguimiento por punto de venta del Plan Cobertura (columna "Mensaje"
+    # de la pantalla de gerencia). Clave = ID PUNTO DE VENTA del padrón (único en el
+    # relevamiento); ver _plan_cob_clave(). Es carga manual: no toca el padrón.
+    c.execute("""CREATE TABLE IF NOT EXISTS plan_cob_nota(
+        clave TEXT PRIMARY KEY, mensaje TEXT, autor TEXT, updated_at TEXT)""")
     # Planificación semanal del mes (pantalla Semanal de gerencia): % del mes que
     # esperamos hacer en cada una de las 4 semanas, por KPI. Es carga manual de
     # gerencia — el real se calcula siempre desde las ventas, nunca desde acá.
@@ -8395,6 +8400,17 @@ def _plan_cob_padron():
     return out, path.name
 
 
+def _plan_cob_clave(row):
+    """Clave estable de un PDV del padrón, para colgarle el mensaje de seguimiento.
+    El 'ID PUNTO DE VENTA' del relevamiento es único (205 de 205 filas), así que el
+    mensaje sobrevive a que se reordene o se recargue el xlsx. Si algún día viniera
+    vacío, cae a nombre + localidad normalizados."""
+    pid = str(row.get("pdv_id", "") or "").strip()
+    if pid and pid.lower() not in ("nan", "none"):
+        return "PDV:" + pid
+    return "NOM:" + _plan_cob_norm(row.get("nombre")) + "|" + _plan_cob_norm(row.get("localidad"))
+
+
 def _plan_cob_vendedor_por_zona(padron):
     """Vendedor sugerido para un PDV que NO está dado de alta: el que más clientes tiene
     en esa localidad según el maestro. Si la localidad no tiene ni un cliente nuestro,
@@ -8627,6 +8643,7 @@ def _plan_cobertura():
 
     def _base(row):
         return {
+            "clave": _plan_cob_clave(row),
             "pdv_id": row["pdv_id"], "nombre": row["nombre"], "direccion": row["direccion"],
             "localidad": row["localidad"], "partido": row["partido"],
             "segmento_plan": row["segmento"], "tipo": row["tipo"],
@@ -8801,6 +8818,43 @@ def gerencia_plan_cobertura():
     if data is None:
         return jsonify({"error": "Plan Cobertura no disponible: falta el padrón en 01_INPUTS/Plan cobertura/*.xlsx."}), 404
     return jsonify(_to_native({"generado_en": _now_ar(), **data}))
+
+
+@app.route("/api/gerencia/plan_cobertura/notas", methods=["GET", "POST"])
+def gerencia_plan_cobertura_notas():
+    """Mensaje libre por punto de venta del Plan Cobertura (lo que hay que hacer con ese
+    PDV, qué se habló, quién lo va a visitar). Va aparte del payload del plan porque ése
+    se cachea por mtime de los archivos y el mensaje se edita a mano en cualquier momento.
+    GET  -> {clave: {mensaje, autor, updated_at}}
+    POST -> {"clave": ..., "mensaje": ..., "autor": ...}; mensaje vacío BORRA la nota."""
+    conn = sqlite3.connect(str(DB_PATH), timeout=10, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    try:
+        if request.method == "POST":
+            d = request.get_json(silent=True) or {}
+            clave = str(d.get("clave", "")).strip()
+            if not clave:
+                return jsonify({"error": "falta 'clave'"}), 400
+            mensaje = str(d.get("mensaje", "")).strip()[:1000]
+            autor = str(d.get("autor", "Gerencia")).strip() or "Gerencia"
+            ts = _now_ar()
+            if mensaje:
+                conn.execute(
+                    """INSERT INTO plan_cob_nota(clave, mensaje, autor, updated_at)
+                       VALUES(?,?,?,?)
+                       ON CONFLICT(clave) DO UPDATE SET mensaje=excluded.mensaje,
+                           autor=excluded.autor, updated_at=excluded.updated_at""",
+                    (clave, mensaje, autor, ts))
+            else:
+                conn.execute("DELETE FROM plan_cob_nota WHERE clave=?", (clave,))
+            conn.commit()
+            return jsonify({"ok": True, "clave": clave, "mensaje": mensaje,
+                            "autor": autor, "updated_at": ts})
+        rows = conn.execute("SELECT clave, mensaje, autor, updated_at FROM plan_cob_nota").fetchall()
+        return jsonify({r["clave"]: {"mensaje": r["mensaje"], "autor": r["autor"],
+                                     "updated_at": r["updated_at"]} for r in rows})
+    finally:
+        conn.close()
 
 
 # ====== CIERRE DE MES ======
