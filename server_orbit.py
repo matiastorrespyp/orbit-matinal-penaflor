@@ -8295,6 +8295,9 @@ def gerencia_incentivo_almamora():
 # canal, de JULIO a DICIEMBRE 2026. Fuente del padrón relevado: el xlsx de la carpeta
 # 01_INPUTS/Plan cobertura (el PDF del mismo directorio es el resumen de la mecánica).
 PLAN_COB_DIR = INPUTS / "Plan cobertura"
+# Meta del plan a diciembre 2026: 60 clientes nuevos dados de alta (los del padrón
+# relevado + las altas que aparecieron fuera de ese listado, contadas por cliente).
+PLAN_COB_OBJETIVO_ALTAS = 60
 _PLAN_COB_CACHE = {}
 _PLAN_COB_VENTAS_CACHE = {}
 
@@ -8398,6 +8401,73 @@ def _plan_cob_padron():
     out["_loc"]  = out["localidad"].map(_plan_cob_norm)
     out["_part"] = out["partido"].map(_plan_cob_norm)
     return out, path.name
+
+
+def _plan_cob_altas_fuera():
+    """Altas del plan que NO figuraban en el padrón relevado.
+
+    El negocio las carga a mano en una hoja aparte del MISMO xlsx (la que tiene "fuera"
+    en el nombre): son PDV que se dieron de alta durante el plan y que el relevamiento
+    original no tenía. Columnas: código de cliente, nombre y número de vendedor.
+    Devuelve DataFrame con cliente_id / nombre / vend_hoja (vacío si no está la hoja).
+
+    Mismo cuidado que el padrón: openpyxl read_only, nunca pd.read_excel (el export
+    viene inflado, ver `_plan_cob_padron`)."""
+    path = _plan_cob_padron_path()
+    if path is None:
+        return pd.DataFrame()
+    import openpyxl
+    try:
+        wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+        hoja = next((n for n in wb.sheetnames if "FUERA" in _plan_cob_norm(n)), None)
+        if hoja is None:
+            wb.close()
+            return pd.DataFrame()
+        filas, vacias = [], 0
+        for r in wb[hoja].iter_rows(values_only=True):
+            if all(v is None or str(v).strip() == "" for v in r):
+                vacias += 1
+                if filas and vacias >= 25:
+                    break
+                continue
+            vacias = 0
+            filas.append(r)
+        wb.close()
+    except Exception as e:
+        print(f"[WARN] plan_cobertura altas fuera del listado: {e}")
+        return pd.DataFrame()
+    if len(filas) < 2:
+        return pd.DataFrame()
+
+    # El encabezado no arranca en la columna A (la hoja tiene una columna vacía al
+    # principio): se ubican las columnas por su título, no por posición.
+    hdr = filas[0]
+    i_cod = i_nom = i_ven = None
+    for i, x in enumerate(hdr):
+        n = _plan_cob_norm(x)
+        if i_cod is None and n.startswith("COD"):
+            i_cod = i
+        elif i_nom is None and n.startswith("NOMBRE"):
+            i_nom = i
+        elif i_ven is None and n.startswith("VENDEDOR"):
+            i_ven = i
+    if i_cod is None:
+        return pd.DataFrame()
+
+    out = []
+    for r in filas[1:]:
+        cod = pd.to_numeric(r[i_cod] if i_cod < len(r) else None, errors="coerce")
+        if pd.isna(cod):
+            continue
+        ven = r[i_ven] if (i_ven is not None and i_ven < len(r)) else None
+        ven = pd.to_numeric(ven, errors="coerce")
+        out.append({
+            "cliente_id": int(cod),
+            "nombre": str(r[i_nom]).strip() if (i_nom is not None and i_nom < len(r)
+                                                and r[i_nom] is not None) else "",
+            "vend_hoja": f"V{int(ven)}" if pd.notna(ven) else "",
+        })
+    return pd.DataFrame(out)
 
 
 def _plan_cob_clave(row):
@@ -8655,59 +8725,54 @@ def _plan_cobertura():
         }
 
     con_codigo = padron[padron["cliente_id"].notna()].copy()
+    fuera_df = _plan_cob_altas_fuera()
     ids = {int(x) for x in con_codigo["cliente_id"].tolist()}
+    if not fuera_df.empty:
+        ids |= {int(x) for x in fuera_df["cliente_id"].tolist()}
     ventas = _plan_cob_ventas(ids)
     acc_map, acc_mes = _plan_cob_acciones_por_cliente()
 
-    capturados = []
-    for _, row in con_codigo.iterrows():
-        cid = int(row["cliente_id"])
+    def _lineas_sc(df_sc):
+        if df_sc is None or df_sc.empty:
+            return []
+        out = [{"fecha": r["_f"].strftime("%Y-%m-%d"), "articulo": r["_art"],
+                "botellas": int(r["_cant"])} for _, r in df_sc.iterrows()]
+        out.sort(key=lambda x: x["fecha"], reverse=True)
+        return out
+
+    def _lineas_desc(df_c):
+        """Compras con descuento aplicado, agrupadas por artículo y %. Es el dato duro
+        de la factura: qué se compró y con qué descuento. No se le pone nombre de
+        acción salvo que el catálogo vigente la reconozca (campo `acciones`)."""
+        if df_c is None or df_c.empty or "_pct" not in df_c.columns:
+            return []
+        dd = df_c[df_c["_pct"] > 0]
+        if dd.empty:
+            return []
+        filas = []
+        for (art, pct), ga in dd.groupby(["_art", "_pct"]):
+            filas.append({"articulo": art, "pct": round(float(pct), 1),
+                          "botellas": int(ga["_cant"].sum()),
+                          "ultima": ga["_f"].max().strftime("%Y-%m-%d")})
+        filas.sort(key=lambda x: (-x["pct"], -x["botellas"]))
+        return filas
+
+    def _ficha(d, cid):
+        """Completa la ficha de un cliente dado de alta: datos del maestro + qué compró
+        (activación = primera compra, recompras mes a mes, artículos, descuentos y sin
+        cargos). Es la misma medición para los capturados del padrón y para las altas
+        fuera del listado, por eso está acá y no dentro del loop."""
         m = m_idx.get(cid)
         todo = ventas[ventas["_cli"] == cid] if not ventas.empty else pd.DataFrame()
         # Compras = importe > 0 (es lo que activa y lo que cuenta como recompra).
         # Sin cargo = lo que entregamos por los combos del plan, se muestra aparte.
         g  = todo[todo["_imp"] > 0] if not todo.empty else todo
         sc = todo[todo["_imp"] <= 0] if not todo.empty else todo
-        d = _base(row)
         d["cliente_id"] = cid
         d["en_maestro"] = m is not None
         d["razon_social"] = str(m.get("Razon_Social", "")).strip() if m is not None else ""
         d["subcanal"] = (str(m.get("SubSegmento", "") or m.get("Ramo", "")).strip()
                          if m is not None else "")
-        if m is not None:
-            d["vendedor_id"] = str(m.get("_vend_id", "") or "")
-            d["vendedor_nombre"] = str(m.get("Vendedor", "") or "").strip()
-            d["asignacion"] = "maestro"
-            d["asignacion_detalle"] = "Cartera asignada en el maestro"
-        else:
-            d.update(_sugerido(row))
-            d["asignacion_detalle"] = "El código no figura en el maestro · " + d["asignacion_detalle"]
-
-        def _lineas_sc(df_sc):
-            if df_sc is None or df_sc.empty:
-                return []
-            out = [{"fecha": r["_f"].strftime("%Y-%m-%d"), "articulo": r["_art"],
-                    "botellas": int(r["_cant"])} for _, r in df_sc.iterrows()]
-            out.sort(key=lambda x: x["fecha"], reverse=True)
-            return out
-
-        def _lineas_desc(df_c):
-            """Compras con descuento aplicado, agrupadas por artículo y %. Es el dato duro
-            de la factura: qué se compró y con qué descuento. No se le pone nombre de
-            acción salvo que el catálogo vigente la reconozca (campo `acciones`)."""
-            if df_c is None or df_c.empty or "_pct" not in df_c.columns:
-                return []
-            dd = df_c[df_c["_pct"] > 0]
-            if dd.empty:
-                return []
-            filas = []
-            for (art, pct), ga in dd.groupby(["_art", "_pct"]):
-                filas.append({"articulo": art, "pct": round(float(pct), 1),
-                              "botellas": int(ga["_cant"].sum()),
-                              "ultima": ga["_f"].max().strftime("%Y-%m-%d")})
-            filas.sort(key=lambda x: (-x["pct"], -x["botellas"]))
-            return filas
-
         d["sin_cargos"] = _lineas_sc(sc)
         d["descuentos"] = _lineas_desc(g)
         d["acciones"] = acc_map.get(cid, [])
@@ -8716,8 +8781,7 @@ def _plan_cobertura():
             d.update({"activacion": "", "ultima_compra": "", "meses_con_compra": 0,
                       "recompras": 0, "recompro": False, "botellas": 0, "importe": 0.0,
                       "estado_compra": "sin_compras", "meses": [], "articulos": []})
-            capturados.append(d)
-            continue
+            return d, m
 
         act = g["_f"].min()
         ult = g["_f"].max()
@@ -8756,8 +8820,57 @@ def _plan_cobertura():
             "meses": meses,
             "articulos": articulos,
         })
+        return d, m
+
+    capturados = []
+    for _, row in con_codigo.iterrows():
+        d, m = _ficha(_base(row), int(row["cliente_id"]))
+        if m is not None:
+            d["vendedor_id"] = str(m.get("_vend_id", "") or "")
+            d["vendedor_nombre"] = str(m.get("Vendedor", "") or "").strip()
+            d["asignacion"] = "maestro"
+            d["asignacion_detalle"] = "Cartera asignada en el maestro"
+        else:
+            d.update(_sugerido(row))
+            d["asignacion_detalle"] = "El código no figura en el maestro · " + d["asignacion_detalle"]
         capturados.append(d)
     capturados.sort(key=lambda c: (c["estado_compra"] == "sin_compras", -c["recompras"], c["nombre"]))
+
+    # Altas FUERA del listado: PDV que se dieron de alta durante el plan y que el
+    # relevamiento original no tenía. Vienen de la hoja aparte del padrón, sin ID de
+    # punto de venta ni localidad: lo que falta se completa con el maestro. El vendedor
+    # sale del maestro (cartera real) y, si el cliente todavía no está ahí, del número
+    # que cargaron en la hoja.
+    ids_padron = {c["cliente_id"] for c in capturados}
+    altas_fuera = []
+    for _, row in (fuera_df.iterrows() if not fuera_df.empty else []):
+        cid = int(row["cliente_id"])
+        d, m = _ficha({
+            "clave": f"CLI:{cid}", "pdv_id": "", "nombre": str(row["nombre"] or "").strip(),
+            "direccion": "", "localidad": "", "partido": "",
+            "segmento_plan": "", "tipo": "", "observaciones": "",
+        }, cid)
+        if m is not None:
+            d["nombre"] = d["nombre"] or d["razon_social"]
+            d["direccion"] = str(m.get("Direccion", "") or "").strip()
+            d["localidad"] = str(m.get("Localidad", "") or "").strip()
+            d["vendedor_id"] = str(m.get("_vend_id", "") or "")
+            d["vendedor_nombre"] = str(m.get("Vendedor", "") or "").strip()
+            d["asignacion"] = "maestro"
+            d["asignacion_detalle"] = "Cartera asignada en el maestro"
+            if row["vend_hoja"] and row["vend_hoja"] != d["vendedor_id"]:
+                d["asignacion_detalle"] += (f' · la hoja de altas dice {row["vend_hoja"]}')
+        else:
+            d["vendedor_id"] = row["vend_hoja"]
+            d["vendedor_nombre"] = ""
+            d["asignacion"] = "planilla"
+            d["asignacion_detalle"] = ("El código no figura en el maestro · vendedor "
+                                       "declarado en la hoja de altas")
+        # El mismo cliente puede estar además en el padrón (lo cargaron en los dos
+        # lados): se muestra igual, pero el total de altas lo cuenta una sola vez.
+        d["ya_en_padron"] = cid in ids_padron
+        altas_fuera.append(d)
+    altas_fuera.sort(key=lambda c: (c["estado_compra"] == "sin_compras", -c["recompras"], c["nombre"]))
 
     # Atendidos que NO tienen el código cargado en el padrón: no se pueden seguir hasta
     # que alguien complete la columna. Se listan aparte para que el pendiente se vea.
@@ -8777,11 +8890,17 @@ def _plan_cobertura():
                                      c["localidad"], c["nombre"]))
 
     comprando = [c for c in capturados if c["estado_compra"] != "sin_compras"]
+    # Altas del plan = clientes dados de alta, del listado relevado + fuera del listado.
+    # Se cuenta por CLIENTE, no por fila: el padrón repite algún PDV con el mismo código
+    # y algún cliente está en las dos hojas.
+    altas_ids = {c["cliente_id"] for c in capturados} | {c["cliente_id"] for c in altas_fuera}
     data = {
         "plan": {
             "objetivo": "Incrementar la cobertura en clientes de categoría B y C",
             "destinatarios": "Restaurantes o bares con carta de bebida (On Premise)",
             "medicion": "CCC únicos del canal On Premise segmento B&C, de julio a diciembre 2026",
+            "objetivo_altas": PLAN_COB_OBJETIVO_ALTAS,
+            "objetivo_altas_texto": f"{PLAN_COB_OBJETIVO_ALTAS} clientes nuevos dados de alta a diciembre 2026",
             "acciones": [
                 "Incorporación: 1 + 2 cajas por línea comercial (Premium 1 + 1). Tope 1 combo por PDV por LC, máximo 4 LC.",
                 "Alma Mora debe estar en todas las cartas. 5 + 1 botellas con tope de 2 combos por PDV hasta diciembre, sólo para los CCC capturados del plan.",
@@ -8798,13 +8917,26 @@ def _plan_cobertura():
             # "repetido"): el CCC se cuenta por cliente, no por fila.
             "capturados_clientes": len({c["cliente_id"] for c in capturados}),
             "comprando": len(comprando),
-            "con_recompra": sum(1 for c in capturados if c["recompro"]),
+            # Recompra sobre TODAS las altas (padrón + fuera del listado), por cliente:
+            # es el mismo universo que el KPI de altas de arriba. Si contara sólo los
+            # capturados, quedaría un número sobre otro denominador al lado del otro.
+            "con_recompra": len({c["cliente_id"] for c in capturados + altas_fuera
+                                 if c["recompro"]}),
             "sin_codigo": len(sin_codigo),
             "potenciales": len(potenciales),
             "no_atendidos": len(no_atendidos),
             "sin_relevar": sum(1 for c in no_atendidos if not c["relevado"]),
+            "altas_fuera": len(altas_fuera),
+            "altas_fuera_nuevas": sum(1 for c in altas_fuera if not c["ya_en_padron"]),
+            "altas_total": len(altas_ids),
+            "altas_objetivo": PLAN_COB_OBJETIVO_ALTAS,
+            "altas_faltan": max(0, PLAN_COB_OBJETIVO_ALTAS - len(altas_ids)),
+            "altas_pct": round(len(altas_ids) * 100.0 / PLAN_COB_OBJETIVO_ALTAS, 1),
+            "altas_comprando": len({c["cliente_id"] for c in capturados + altas_fuera
+                                    if c["estado_compra"] != "sin_compras"}),
         },
         "capturados": capturados,
+        "altas_fuera": altas_fuera,
         "atendidos_sin_codigo": sin_codigo,
         "potenciales": potenciales,
         "no_atendidos": no_atendidos,
@@ -8848,6 +8980,8 @@ def vendedor_plan_cobertura(vid):
     """Plan Cobertura del vendedor: los PDV del padrón que le tocan a él.
 
       capturados            → los de SU cartera según el maestro.
+      altas fuera del
+      listado               → las de SU cartera, de la hoja aparte del padrón.
       potenciales /
       no atendidos /
       atendidos sin código  → los de SUS localidades, con el mismo criterio de zona que
@@ -8860,14 +8994,16 @@ def vendedor_plan_cobertura(vid):
     if data is None:
         return jsonify({"error": "Plan Cobertura no disponible: falta el padrón en 01_INPUTS/Plan cobertura/*.xlsx."}), 404
     vid_u = str(vid).upper()
-    vacio = {"capturados": [], "atendidos_sin_codigo": [], "potenciales": [], "no_atendidos": []}
+    vacio = {"capturados": [], "altas_fuera": [], "atendidos_sin_codigo": [],
+             "potenciales": [], "no_atendidos": []}
     if vid_u == "V3":
         return jsonify(_to_native({
             "generado_en": _now_ar(), "vendedor": vid_u, "no_aplica": True,
             "motivo": "V3 no trabaja On Premise: el Plan Cobertura no le aplica.",
             "plan": data["plan"], "resumen": {k: 0 for k in
                 ("padron", "capturados", "capturados_clientes", "comprando", "con_recompra",
-                 "sin_codigo", "potenciales", "no_atendidos", "sin_relevar")},
+                 "sin_codigo", "potenciales", "no_atendidos", "sin_relevar",
+                 "altas_fuera", "altas_total", "altas_comprando")},
             **vacio, "fuente": data.get("fuente", "")}))
 
     notas = _plan_cob_notas_map()
@@ -8886,24 +9022,33 @@ def vendedor_plan_cobertura(vid):
         return out
 
     cap = _mios(data["capturados"])
+    afuera = _mios(data.get("altas_fuera", []))
     sin_cod = _mios(data["atendidos_sin_codigo"])
     pot = _mios(data["potenciales"])
     noat = _mios(data["no_atendidos"])
+    # Altas del vendedor = sus capturados + sus altas fuera del listado, por CLIENTE.
+    # El objetivo de 60 es del plan entero (no está repartido por vendedor): viaja en
+    # `plan.objetivo_altas` como referencia, no se compara contra el número de él.
+    altas_ids = {c["cliente_id"] for c in cap} | {c["cliente_id"] for c in afuera}
     resumen = {
-        "padron": len(cap) + len(sin_cod) + len(pot) + len(noat),
+        "padron": len(cap) + len(afuera) + len(sin_cod) + len(pot) + len(noat),
         "capturados": len(cap),
         "capturados_clientes": len({c["cliente_id"] for c in cap}),
         "comprando": sum(1 for c in cap if c["estado_compra"] != "sin_compras"),
-        "con_recompra": sum(1 for c in cap if c["recompro"]),
+        "con_recompra": len({c["cliente_id"] for c in cap + afuera if c["recompro"]}),
         "sin_codigo": len(sin_cod),
         "potenciales": len(pot),
         "no_atendidos": len(noat),
         "sin_relevar": sum(1 for c in noat if not c["relevado"]),
+        "altas_fuera": len(afuera),
+        "altas_total": len(altas_ids),
+        "altas_comprando": len({c["cliente_id"] for c in cap + afuera
+                                if c["estado_compra"] != "sin_compras"}),
     }
     return jsonify(_to_native({
         "generado_en": _now_ar(), "vendedor": vid_u, "no_aplica": False,
         "plan": data["plan"], "resumen": resumen,
-        "capturados": cap, "atendidos_sin_codigo": sin_cod,
+        "capturados": cap, "altas_fuera": afuera, "atendidos_sin_codigo": sin_cod,
         "potenciales": pot, "no_atendidos": noat,
         "acciones_mes": data.get("acciones_mes", ""), "fuente": data.get("fuente", "")}))
 

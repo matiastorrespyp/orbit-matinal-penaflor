@@ -529,6 +529,9 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 
 /* ── Plan Cobertura (reusa dd-tbl / dd-sub; propio: badges, chips y ficha) ── */
 .pc-kpis { margin-bottom:14px; }
+/* KPI de altas contra el objetivo de diciembre: número grande + barra de avance. */
+.pc-kalta { grid-column:span 2; min-width:220px; }
+.pc-kobj { font-size:15px; color:var(--text3); font-weight:700; }
 .pc-click { cursor:pointer; }
 .pc-click:hover td { background:var(--surf3); }
 .pc-sub2 { font-size:10.5px; color:var(--text3); margin-top:2px; }
@@ -4645,7 +4648,7 @@ function gPlanCobertura(p){
   });
 }
 
-/* ── Buscador: una sola caja que filtra las cuatro listas ──
+/* ── Buscador: una sola caja que filtra las cinco listas ──
    Coincide si TODAS las palabras aparecen en el texto del PDV (nombre, razón social,
    código, dirección, localidad, partido, vendedor). Así "merlo nadia" trae los PDV de
    Merlo que atiende V3. */
@@ -4734,12 +4737,16 @@ function pcVendCell(c){
     ? `<span class="pc-vend" title="${pcEsc(c.asignacion_detalle||'')}">${c.vendedor_id}${c.vendedor_nombre?' · '+c.vendedor_nombre:''}</span>`
     : `<span class="pc-vend pc-vend-none" title="${pcEsc(c.asignacion_detalle||'')}">Sin asignar</span>`;
 }
-function pcFilaCap(c,i){
+/* Fila de un cliente dado de alta. `fn` es la función que abre la ficha: los capturados
+   del padrón y las altas fuera del listado son dos listas distintas, cada una con su
+   propio índice. */
+function pcFilaCap(c,i,fn){
   const est=c.estado_compra==='con_recompra'?['ok','Recompra']
            :c.estado_compra==='solo_activacion'?['wn','Sin recompra']:['bad','Sin compras'];
-  return `<tr class="pc-click" onclick="pcDetalle(${i})">
+  return `<tr class="pc-click" onclick="${fn||'pcDetalle'}(${i})">
     <td><b>${c.nombre||''}</b> <span class="dd-id">#${c.cliente_id}</span>
-        <div class="pc-sub2">${[c.segmento_plan,c.tipo].filter(Boolean).join(' · ')}</div></td>
+        ${c.ya_en_padron?'<span class="pc-badge wn">También en el listado</span>':''}
+        <div class="pc-sub2">${[c.segmento_plan,c.tipo,c.razon_social&&c.razon_social!==c.nombre?c.razon_social:''].filter(Boolean).join(' · ')}</div></td>
     <td>${c.localidad||''}</td>
     <td>${c.vendedor_id||'—'}</td>
     <td>${c.activacion?pcFecha(c.activacion):'—'}</td>
@@ -4765,14 +4772,25 @@ function pcRender(){
   const b=document.getElementById('pc-body'); if(!b||!PCOB) return;
   const d=PCOB, r=d.resumen||{}, pl=d.plan||{};
   const cap=d.capturados||[], sinCod=d.atendidos_sin_codigo||[],
-        pot=d.potenciales||[], noat=d.no_atendidos||[];
+        pot=d.potenciales||[], noat=d.no_atendidos||[], afu=d.altas_fuera||[];
+
+  // Altas del plan contra el objetivo de diciembre: es el número que mira el negocio.
+  const obj=r.altas_objetivo||0, tot=r.altas_total||0,
+        pct=obj?Math.min(100,Math.round(tot*100/obj)):0,
+        pctCol=pct>=100?'ok':(pct>=50?'wn':'bad');
 
   // El shell se arma UNA vez: si se re-renderizara entero en cada tecla, el input del
   // buscador se destruiría y perdería el foco. Las filas las pinta pcFiltrar().
   b.innerHTML=`
   <div class="dd-kpis pc-kpis">
     <div class="dd-kpi"><span class="dd-kn">${r.padron||0}</span><span class="dd-kl">PDV del padrón relevado</span></div>
-    <div class="dd-kpi"><span class="dd-kn ok">${r.capturados_clientes||0}</span><span class="dd-kl">Capturados · ${r.capturados||0} PDV dados de alta</span></div>
+    <div class="dd-kpi pc-kalta">
+      <span class="dd-kn ${pctCol}">${tot}<span class="pc-kobj"> / ${obj}</span></span>
+      <span class="dd-kl">Clientes dados de alta · objetivo ${obj} a diciembre</span>
+      <div class="dd-bar" style="height:7px;margin:4px 0 2px;"><div class="dd-bar-fill ${pctCol}" style="width:${pct}%"></div></div>
+      <span class="dd-kl">${r.capturados_clientes||0} del listado + ${r.altas_fuera_nuevas||0} fuera del listado${r.altas_faltan?` · faltan ${r.altas_faltan}`:' · objetivo cumplido'}</span>
+    </div>
+    <div class="dd-kpi"><span class="dd-kn ok">${r.altas_comprando||0}</span><span class="dd-kl">De las altas, ya compraron</span></div>
     <div class="dd-kpi"><span class="dd-kn ${r.con_recompra?'ok':'wn'}">${r.con_recompra||0}</span><span class="dd-kl">Con recompra tras activarse</span></div>
     <div class="dd-kpi"><span class="dd-kn wn">${r.potenciales||0}</span><span class="dd-kl">Potenciales para captar</span></div>
     <div class="dd-kpi"><span class="dd-kn bad">${r.no_atendidos||0}</span><span class="dd-kl">No atendidos · ${r.sin_relevar||0} sin relevar</span></div>
@@ -4784,7 +4802,7 @@ function pcRender(){
         placeholder="🔎 Buscar por cliente, localidad o vendedor…" oninput="pcFiltrar()">
       <button class="pc-searchx" onclick="pcLimpiarBusqueda()" title="Limpiar la búsqueda">✕ Limpiar</button>
     </div>
-    <div class="pc-searchhint">Filtra las cuatro listas a la vez. Se puede escribir más de una palabra: <b>merlo nadia</b> deja los PDV de Merlo que atiende V3.</div>
+    <div class="pc-searchhint">Filtra las cinco listas a la vez. Se puede escribir más de una palabra: <b>merlo nadia</b> deja los PDV de Merlo que atiende V3.</div>
   </div></div>
 
   <div class="card"><div class="card-body">
@@ -4793,6 +4811,7 @@ function pcRender(){
       <div class="pc-planline"><b>Objetivo:</b> ${pl.objetivo||''}</div>
       <div class="pc-planline"><b>Destinado a:</b> ${pl.destinatarios||''}</div>
       <div class="pc-planline"><b>Medición:</b> ${pl.medicion||''}</div>
+      ${pl.objetivo_altas_texto?`<div class="pc-planline"><b>Objetivo de altas:</b> ${pl.objetivo_altas_texto}</div>`:''}
       <ul class="pc-planul">${(pl.acciones||[]).map(a=>`<li>${a}</li>`).join('')}</ul>
     </div>
   </div></div>
@@ -4812,6 +4831,16 @@ function pcRender(){
         <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vendedor de la zona</th><th>Observaciones</th><th>Mensaje</th></tr></thead>
         <tbody id="pcbSin"></tbody>
       </table></div>`:''}
+  </div></div>
+
+  <div class="card"><div class="card-body">
+    <div class="dd-sub" style="border-top:none;padding-top:0;">Altas fuera del listado (<span id="pccAfu">${afu.length}</span>)</div>
+    <div class="dd-note">Clientes dados de alta por el plan que <b>no estaban</b> en el padrón relevado: los carga el negocio en la hoja <b>“altas fuera del listado”</b> del mismo Excel. Se miden igual que los capturados —tocá el cliente para ver su ficha— y suman al objetivo de ${obj} altas.</div>
+    <div class="dd-tblwrap"><table class="dd-tbl">
+      <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vend.</th><th>Activación</th>
+        <th style="text-align:right;">Meses</th><th style="text-align:right;">Recompras</th><th>Última compra</th><th>Estado</th><th>Mensaje</th></tr></thead>
+      <tbody id="pcbAfu"></tbody>
+    </table></div>
   </div></div>
 
   <div class="card"><div class="card-body">
@@ -4846,7 +4875,7 @@ function _pcCount(id,n,total){
   el.textContent = (n===total) ? String(total) : `${n} de ${total}`;
 }
 
-/* Re-pinta SÓLO las filas de las cuatro tablas según el buscador. */
+/* Re-pinta SÓLO las filas de las cinco tablas según el buscador. */
 function pcFiltrar(){
   if(!PCOB || !document.getElementById('pcbCap')) return;
   const inp=document.getElementById('pcSearch');
@@ -4857,13 +4886,18 @@ function pcFiltrar(){
   PC_NKEYS=[];                                  // los ids del DOM se renumeran en cada pintada
 
   const d=PCOB, cap=d.capturados||[], sinCod=d.atendidos_sin_codigo||[],
-        pot=d.potenciales||[], noat=d.no_atendidos||[];
+        pot=d.potenciales||[], noat=d.no_atendidos||[], afu=d.altas_fuera||[];
 
   // Capturados: se conserva el índice original porque es el que abre la ficha del cliente.
   const fcap=cap.map((c,i)=>[c,i]).filter(x=>pcMatch(x[0],pal));
   _pcPintar('pcbCap', fcap.map(x=>pcFilaCap(x[0],x[1])).join(''), 9,
             vacio||'Sin clientes capturados en el padrón.');
   _pcCount('pccCap', fcap.length, cap.length);
+
+  const fafu=afu.map((c,i)=>[c,i]).filter(x=>pcMatch(x[0],pal));
+  _pcPintar('pcbAfu', fafu.map(x=>pcFilaCap(x[0],x[1],'pcDetalleAfu')).join(''), 9,
+            vacio||'Sin altas fuera del listado.');
+  _pcCount('pccAfu', fafu.length, afu.length);
 
   const fsin=sinCod.filter(c=>pcMatch(c,pal));
   _pcPintar('pcbSin', fsin.map(c=>pcFilaZona(c,null)).join(''), 5, vacio||'Sin registros.');
@@ -4892,6 +4926,10 @@ function pcTogglePlan(){
    Gerencia entra por índice de la tabla; el vendedor pasa el cliente directo. */
 function pcDetalle(i){
   const c=(PCOB?.capturados||[])[i]; if(!c) return;
+  pcModalCliente(c);
+}
+function pcDetalleAfu(i){
+  const c=(PCOB?.altas_fuera||[])[i]; if(!c) return;
   pcModalCliente(c);
 }
 function pcModalCliente(c){
@@ -4982,6 +5020,7 @@ function vPlanCobertura(){
   });
 }
 function pcvDetalle(i){ pcModalCliente((PCOBV?.capturados||[])[i]); }
+function pcvDetalleAfu(i){ pcModalCliente((PCOBV?.altas_fuera||[])[i]); }
 function pcvTogglePlan(){
   const el=document.getElementById('pcv-plan'), ar=document.getElementById('pcv-plan-ar');
   if(!el) return;
@@ -4998,14 +5037,17 @@ function _pcvMsg(c){
 function _pcvSub(c){
   return pcEsc([c.localidad,c.segmento_plan,c.tipo].filter(Boolean).join(' · '));
 }
-function _pcvCap(c,i){
+/* Cliente dado de alta. `fn` es la función que abre la ficha: los capturados del padrón
+   y las altas fuera del listado son dos listas distintas, cada una con su índice. */
+function _pcvCap(c,i,fn){
   const est=c.estado_compra==='con_recompra'?['ok','Recompró']
            :c.estado_compra==='solo_activacion'?['wn','Sin recompra']:['bd','Sin compras'];
-  return `<div class="pcv-card tap" onclick="pcvDetalle(${i})">
+  return `<div class="pcv-card tap" onclick="${fn||'pcvDetalle'}(${i})">
     <div class="row-b" style="gap:8px;align-items:flex-start;">
       <div style="min-width:0;">
         <div class="pcv-name">${pcEsc(c.nombre)} <span class="pcv-id">#${c.cliente_id}</span></div>
-        <div class="xs" style="color:var(--text3)">${_pcvSub(c)}</div>
+        <div class="xs" style="color:var(--text3)">${[_pcvSub(c),
+          (c.razon_social&&c.razon_social!==c.nombre)?pcEsc(c.razon_social):''].filter(Boolean).join(' · ')}</div>
       </div>
       <span class="chip ${est[0]}" style="font-size:9px;white-space:nowrap;">${est[1]}</span>
     </div>
@@ -5044,7 +5086,7 @@ function _pcvLista(items, render, vacio){
 function _pcvRender(d){
   const pl=d.plan||{}, r=d.resumen||{};
   const cap=d.capturados||[], sinCod=d.atendidos_sin_codigo||[],
-        pot=d.potenciales||[], noat=d.no_atendidos||[];
+        pot=d.potenciales||[], noat=d.no_atendidos||[], afu=d.altas_fuera||[];
   const hd=`<div class="vsh">🍽️ Plan Cobertura</div>
     <div style="font-size:11px;color:var(--text3);margin:-6px 0 12px;">On Premise categoría B y C · restaurantes y bares con carta de bebida</div>`;
   if(d.no_aplica){
@@ -5056,7 +5098,7 @@ function _pcvRender(d){
   return hd+`
   <div class="pcv-kpis">
     <div class="pcv-kpi"><span class="pcv-kn">${r.padron}</span><span class="pcv-kl">PDV tuyos en el plan</span></div>
-    <div class="pcv-kpi"><span class="pcv-kn ok">${r.capturados_clientes}</span><span class="pcv-kl">Capturados</span></div>
+    <div class="pcv-kpi"><span class="pcv-kn ok">${r.altas_total||0}</span><span class="pcv-kl">Clientes dados de alta</span></div>
     <div class="pcv-kpi"><span class="pcv-kn ${r.con_recompra?'ok':'wn'}">${r.con_recompra}</span><span class="pcv-kl">Con recompra</span></div>
     <div class="pcv-kpi"><span class="pcv-kn wn">${r.potenciales}</span><span class="pcv-kl">Potenciales</span></div>
     <div class="pcv-kpi"><span class="pcv-kn bd">${r.no_atendidos}</span><span class="pcv-kl">No atendidos</span></div>
@@ -5069,6 +5111,7 @@ function _pcvRender(d){
     <div id="pcv-plan" style="display:none">
       <div class="pcv-obs" style="font-style:normal;color:var(--text2);"><b>Objetivo:</b> ${pcEsc(pl.objetivo||'')}</div>
       <div class="pcv-obs" style="font-style:normal;color:var(--text2);"><b>Medición:</b> ${pcEsc(pl.medicion||'')}</div>
+      ${pl.objetivo_altas_texto?`<div class="pcv-obs" style="font-style:normal;color:var(--text2);"><b>Objetivo de altas:</b> ${pcEsc(pl.objetivo_altas_texto)} (de todo el equipo)</div>`:''}
       <ul style="margin:8px 0 0 16px;padding:0;font-size:11px;color:var(--text3);line-height:1.6;">
         ${(pl.acciones||[]).map(a=>`<li>${pcEsc(a)}</li>`).join('')}</ul>
     </div>
@@ -5077,6 +5120,11 @@ function _pcvRender(d){
   <div class="pcv-sec">Tus clientes capturados (${cap.length})</div>
   <div class="pcv-secnote">Dados de alta. La activación es la fecha de su <b>primera compra</b>. Tocá el cliente para ver artículos, recompras mes a mes y ofertas.</div>
   ${_pcvLista(cap,(c,i)=>_pcvCap(c,i),'Todavía no tenés clientes del plan dados de alta.')}
+
+  ${afu.length?`
+    <div class="pcv-sec">Tus altas fuera del listado (${afu.length})</div>
+    <div class="pcv-secnote">Clientes tuyos dados de alta por el plan que <b>no estaban</b> en el padrón relevado. Se miden igual que los capturados y suman al objetivo de altas.</div>
+    ${_pcvLista(afu,(c,i)=>_pcvCap(c,i,'pcvDetalleAfu'),'')}`:''}
 
   ${sinCod.length?`
     <div class="pcv-sec">Los atendés pero falta el código (${sinCod.length})</div>

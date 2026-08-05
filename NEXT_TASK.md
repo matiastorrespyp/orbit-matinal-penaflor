@@ -1,5 +1,18 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-05 - Plan Cobertura: altas fuera del listado + objetivo de diciembre
+
+### HECHO
+- [x] **Tarjeta "Altas fuera del listado"** en la pantalla de gerencia, con la hoja nueva del mismo xlsx (`_plan_cob_altas_fuera`). Se miden igual que los capturados (activación, recompras, ficha, mensaje) reusando `_ficha()`.
+- [x] **Códigos de cliente nuevos del padrón**: ya entraban solos (el padrón se relee por mtime). Con la actualización el padrón pasó a 203 filas, 16 capturados / 14 clientes.
+- [x] **Objetivo del plan: 60 altas a diciembre 2026** (`PLAN_COB_OBJETIVO_ALTAS`). KPI nuevo en el resumen superior con barra de avance: **24 de 60**, contadas **por cliente** (del listado + fuera del listado, sin duplicar el 1409 que está en las dos hojas).
+- [x] **El vendedor también ve sus altas fuera del listado**: tarjeta propia en la pestaña 🍽️ Cobertura (V8 6 · V9 5), KPI "Clientes dados de alta" = capturados + fuera. El objetivo de 60 se muestra como del equipo, no repartido por vendedor.
+
+### PENDIENTE
+- [ ] **Publicar el xlsx actualizado con el cierre.** `01_INPUTS/Plan cobertura` ya está en el allowlist de `CIERRE_DIA_ORBIT.bat`, así que el próximo cierre lo lleva a Render. Verificar con `git status --short 01_INPUTS/` que no quede modificado.
+- [ ] **¿El objetivo de 60 se reparte por vendedor?** Hoy es una meta del equipo. Si el negocio define cuántas altas le tocan a cada uno, hay que agregar la tabla (o una columna en el xlsx) y el KPI del vendedor pasa a ser `x / y` como el de gerencia.
+- [ ] **De dónde salen las próximas altas.** La hoja la carga el negocio a mano; nada avisa si dan de alta un On Premise nuevo y no lo anotan. Se podría cruzar contra el maestro (clientes On Premise con alta posterior al inicio del plan) para proponer los que faltan.
+
 ## Sesion 2026-08-04 - Plan Cobertura en el perfil del vendedor
 
 ### HECHO

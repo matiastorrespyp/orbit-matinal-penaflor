@@ -214,8 +214,9 @@ Tarjeta **"📊 Cobertura acumulada del mes"**. Mide cobertura sobre el período
 | /api/clientes | DESFASADO PARCIAL | clientes_dia.ccc_mes_flag | Usado para lista Clientes Críticos, no para KPI cards |
 | /api/alertas | Pendiente auditar | mod_alertas_descuentos | — |
 | /api/planificacion | OK — SQLite | orbit.db | — |
-| /api/gerencia/plan_cobertura | OK | padrón `Plan cobertura/*.xlsx` + maestro + historial encadenado | Caché por mtime; cada PDV trae `clave` estable |
-| /api/gerencia/plan_cobertura/notas | OK — SQLite | orbit.db (`plan_cob_nota`) | Mensaje por PDV, clave = `PDV:<ID PUNTO DE VENTA>`; vacío = borra. Ver [[BITACORA_2026-08-03]] |
+| /api/gerencia/plan_cobertura | OK | padrón `Plan cobertura/*.xlsx` (2 hojas) + maestro + historial encadenado | Caché por mtime; cada PDV trae `clave` estable. `altas_fuera` = hoja "altas fuera del listado"; altas contadas por cliente vs objetivo 60 a dic-2026. Ver [[BITACORA_2026-08-05]] |
+| /api/gerencia/plan_cobertura/notas | OK — SQLite | orbit.db (`plan_cob_nota`) | Mensaje por PDV, clave = `PDV:<ID PUNTO DE VENTA>`, o `CLI:<código>` en las altas fuera del listado; vacío = borra. Ver [[BITACORA_2026-08-03]] |
+| /api/vendedor/&lt;vid&gt;/plan_cobertura | OK | mismo payload cacheado de gerencia | Filtra las 5 listas por `vendedor_id` (capturados y altas fuera = su cartera; el resto, sus localidades). V3 → `no_aplica` |
 
 ---
 

@@ -245,6 +245,29 @@ Los spirits (códigos 30xxx de Diageo/P&P) **sí están** en el maestro 04D con 
 
 ---
 
+## Plan Cobertura (On Premise B&C)
+
+Plan de Grupo Peñaflor para subir cobertura en **restaurantes y bares con carta** de categoría **B y C**. Medición oficial: **CCC únicos On Premise B&C, julio a diciembre 2026**. Fuente: `01_INPUTS/Plan cobertura/*.xlsx`, que el negocio edita a mano y viaja con el cierre (el PDF de la carpeta es la mecánica). Pantalla de gerencia + pestaña 🍽️ Cobertura del vendedor.
+
+**El padrón tiene DOS hojas** (2026-08-05):
+
+| Hoja | Qué trae | Cómo se usa |
+|---|---|---|
+| Padrón relevado | 203 PDV, columna `¿LO ATIENDE?` + `CÓD. CLIENTE` | Capturados (Sí + código), atendidos sin código, potenciales, no atendidos |
+| `altas fuera del listado` | Clientes dados de alta durante el plan que no estaban relevados | Tarjeta propia; se miden igual que los capturados |
+
+**Objetivo: 60 altas a diciembre 2026** (`PLAN_COB_OBJETIVO_ALTAS`). Es meta **del equipo**, no está repartida por vendedor.
+
+**Las altas se cuentan por CLIENTE, no por fila** — y no es un detalle: el padrón repite PDV con el mismo código (1195, 1417) y hay clientes cargados en las dos hojas (1409). Contar filas daría 27 en vez de **24**. Misma regla para `con_recompra`, que cubre **todas** las altas (padrón + fuera del listado), no sólo los capturados.
+
+**Activación = fecha de la PRIMERA compra** del cliente, sin corte de fecha; recompra = mes con compra posterior al de activación. Sólo líneas con importe > 0 (un sin cargo o una devolución no activan).
+
+**Vendedor de un PDV**: si el cliente está en el maestro, manda **la cartera real**; el número de la planilla es fallback. Para los PDV que no son clientes, el vendedor se sugiere por zona: el que más clientes tiene en esa localidad, y si no tenemos ninguno, el dominante del partido. **V3 queda fuera de ese cálculo** (no trabaja On Premise) y el plan entero le devuelve `no_aplica`.
+
+> Detalle de implementación y validación en [[BITACORA_2026-08-05]] (altas fuera del listado y objetivo), [[BITACORA_2026-08-03]] (buscador y mensajes por PDV) y [[MAPA_DATOS_PAV]].
+
+---
+
 ## Alertas, Acciones Comerciales y Planes AS — fuentes
 
 | Indicador | Fuente ventas | Fuente complementaria | Período |
