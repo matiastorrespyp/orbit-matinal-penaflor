@@ -1842,7 +1842,7 @@ function gDashboard(p){
             <div class="rdot" style="background:${col}">${ini(v.vendedor_nombre)}</div>
             <div class="rinfo">
               <b>${v.vendedor_id} · ${v.vendedor_nombre}</b>
-              <div class="rsub">${fmtM(k.acumulado)} / ${fmtM(k.objetivo)} · CCC Mes: ${k.ccc_total||0} · 11T: ${k.once_titulares_cumplidos||0} · Sin Comp. Día: ${k.clientes_pendientes||0}</div>
+              <div class="rsub">${fmtM(k.acumulado)} / ${fmtM(k.objetivo)} · CCC Mes: ${k.ccc_total||0} · 11T: ${k.once_titulares_cumplidos||0}/${k.once_titulares_total||11} · Sin Comp. Día: ${k.clientes_pendientes||0}</div>
               <div style="margin-top:5px;"><div class="bar"><div class="bar-f ${cl}" style="width:${clamp(av,0,100)}%"></div></div></div>
             </div>
             <div class="rpct" style="color:var(--${cl})">${av.toFixed(1)}%</div>
@@ -1906,13 +1906,13 @@ function gDashboard(p){
   // right: 11T CCC vs Objetivo + 11T CCC zona + Ranking rechazos
   let right=`<div>`;
   right+=`<div class="card" id="card-11t-obj">
-    <div class="card-hd"><span class="card-title">🏅 11 Titulares · CCC vs Objetivo</span><span class="chip" id="chip-11t-obj">cargando…</span></div>
+    <div class="card-hd"><span class="card-title">🏅 11 Titulares · Cobertura vs Objetivo</span><span class="chip" id="chip-11t-obj">cargando…</span></div>
     <div class="card-body nop" id="body-11t-obj">
       <div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;">Cargando datos…</div>
     </div>
   </div>`;
   right+=`<div class="card" id="card-11t-zona" style="margin-top:13px;">
-    <div class="card-hd"><span class="card-title">🏅 11 Titulares · CCC zona <span id="lbl-11t-zona">${currentDay||'–'}</span></span><span class="chip" id="chip-11t-zona">cargando…</span></div>
+    <div class="card-hd"><span class="card-title">🏅 11 Titulares · Cobertura zona <span id="lbl-11t-zona">${currentDay||'–'}</span></span><span class="chip" id="chip-11t-zona">cargando…</span></div>
     <div class="card-body nop" id="body-11t-zona">
       <div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">Cargando datos…</div>
     </div>
@@ -1962,23 +1962,25 @@ function gDashboard(p){
       if(chipEl) chipEl.textContent=marcas.length+' marcas';
       if(!marcas.length){ bodyEl.innerHTML=`<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">Sin datos — ejecute el pipeline de ventas acumuladas</div>`; return; }
       const fuente=data.fuente||'';
-      const depTot=data.ccc_deposito_total||0;
+      const per=(data.periodo_desde&&data.periodo_hasta)?`${data.periodo_desde} a ${data.periodo_hasta}`:'';
       bodyEl.innerHTML=`<table class="tbl">
-        <thead><tr><th>Marca</th><th style="text-align:right">CCC</th><th style="text-align:right">Objetivo</th><th style="text-align:right">Avance</th><th style="text-align:right" title="CCC del Depósito V20 (venta directa) — aparte, no suma al objetivo de ruta">Dep.V20</th><th style="min-width:80px"></th></tr></thead>
+        <thead><tr><th>Marca</th><th style="text-align:right" title="Clientes que alcanzaron el mínimo de botellas de su segmento: 3 en Tradicional, 6 en Autoservicio">Cubiertos</th><th style="text-align:right" title="Clientes cubiertos en Almacén / Kiosco (mínimo 3 botellas)">Trad.</th><th style="text-align:right" title="Clientes cubiertos en Autoservicio (mínimo 6 botellas)">AS</th><th style="text-align:right">Objetivo</th><th style="text-align:right">Avance</th><th style="min-width:80px"></th></tr></thead>
         <tbody>${marcas.map(m=>{
-          const ccc=m.ccc||0,obj=m.objetivo_ccc||0,pctObj=m.pct_objetivo,dep=m.ccc_deposito||0;
+          const ccc=m.cubiertos??m.ccc??0,obj=m.objetivo_ccc||0,pctObj=m.pct_objetivo;
+          const cTr=m.cubiertos_tradicional||0,cAs=m.cubiertos_autoservicio||0;
           const pctBar=obj?Math.min(Math.round(ccc/obj*100),100):0;
           const cl=pctBar>=80?'ok':pctBar>=50?'wn':'bd';
           return `<tr>
             <td style="font-size:12px;font-weight:600;">${m.marca}</td>
-            <td style="text-align:right;font-size:12px;">${ccc.toLocaleString('es-AR')}</td>
+            <td style="text-align:right;font-size:12px;font-weight:600;">${ccc.toLocaleString('es-AR')}</td>
+            <td style="text-align:right;font-size:12px;color:var(--text3);font-variant-numeric:tabular-nums;">${cTr||'–'}</td>
+            <td style="text-align:right;font-size:12px;color:var(--text3);font-variant-numeric:tabular-nums;">${cAs||'–'}</td>
             <td style="text-align:right;font-size:12px;color:var(--text3);">${obj||'–'}</td>
             <td style="text-align:right;"><span class="chip ${cl}" style="font-size:9px;">${pctObj!=null?pctObj+'%':'–'}</span></td>
-            <td style="text-align:right;font-size:12px;color:var(--text3);font-variant-numeric:tabular-nums;">${dep?('+'+dep):'–'}</td>
             <td><div class="bar" style="height:4px;"><div class="bar-f ${cl}" style="width:${pctBar}%"></div></div></td>
           </tr>`;}).join('')}
         </tbody>
-      </table>${depTot?`<div style="font-size:10px;color:var(--text3);padding:2px 12px 0;">📦 Dep.V20 = CCC del depósito (venta directa), informativo aparte. Total ${depTot} clientes-marca.</div>`:''}${fuente?`<div style="font-size:9px;color:var(--text3);padding:4px 12px 6px;">Fuente: ${fuente}</div>`:''}`;
+      </table><div style="font-size:10px;color:var(--text3);padding:2px 12px 0;">Cubierto = 3 botellas acumuladas en Tradicional (almacén/kiosco) · 6 en Autoservicio.${per?` Período ${per}.`:''}</div>${fuente?`<div style="font-size:9px;color:var(--text3);padding:4px 12px 6px;">Fuente: ${fuente}</div>`:''}`;
     }catch(e){
       if(bodyEl) bodyEl.innerHTML=`<div style="padding:16px;color:var(--bd);font-size:12px;">Error: ${e.message}</div>`;
     }
@@ -2003,7 +2005,7 @@ function gDashboard(p){
       if(!marcas.length){ bodyEl.innerHTML=`<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">Sin datos para zona ${dia}</div>`; return; }
       const maxCCC=Math.max(...marcas.map(m=>m.ccc||0),1);
       bodyEl.innerHTML=`<table class="tbl">
-        <thead><tr><th>Marca</th><th style="text-align:right">CCC</th><th style="min-width:90px"></th></tr></thead>
+        <thead><tr><th>Marca</th><th style="text-align:right" title="Clientes de la zona que alcanzaron el mínimo (3 Tradicional / 6 Autoservicio)">Cubiertos</th><th style="min-width:90px"></th></tr></thead>
         <tbody>${marcas.map(m=>{
           const ccc=m.ccc||0;
           const pctBar=Math.round(ccc/maxCCC*100);
@@ -6125,17 +6127,19 @@ function gCierreMes(p){
               </table>
             </div></div>`;
         }
-        // ── 11 Titulares: CCC vs Objetivo (congelado) ──
+        // ── 11 Titulares: cobertura vs Objetivo (congelado) ──
         if(t11.length){
           const sob=t11e.marcas_sobre_objetivo||0, totM=t11e.total_marcas||t11.length;
           h+=`<div class="card" style="margin-top:14px;">
-            <div class="card-hd"><span class="card-title">🏅 11 Titulares · CCC vs Objetivo</span><span class="chip ${avc(sob>=totM?100:sob/totM*100)}">${sob}/${totM} marcas ≥ 100%</span></div>
+            <div class="card-hd"><span class="card-title">🏅 11 Titulares · Cobertura vs Objetivo</span><span class="chip ${avc(sob>=totM?100:sob/totM*100)}">${sob}/${totM} marcas ≥ 100%</span></div>
             <div class="card-body nop">
               <table class="tbl" style="font-size:12px;">
-                <thead><tr><th>Marca</th><th style="text-align:right">Clientes cubiertos</th><th style="text-align:right">Objetivo</th><th style="text-align:right">Avance</th></tr></thead>
+                <thead><tr><th>Marca</th><th style="text-align:right" title="Clientes que alcanzaron 3 botellas en Tradicional o 6 en Autoservicio">Cubiertos</th><th style="text-align:right">Trad.</th><th style="text-align:right">AS</th><th style="text-align:right">Objetivo</th><th style="text-align:right">Avance</th></tr></thead>
                 <tbody>${t11.map(mm=>{const p=mm.pct||0;return `<tr>
                   <td style="font-weight:600">${mm.marca}</td>
-                  <td style="text-align:right">${fmtNum(mm.ccc)}</td>
+                  <td style="text-align:right;font-weight:600">${fmtNum(mm.cubiertos??mm.ccc)}</td>
+                  <td style="text-align:right;color:var(--text3)">${fmtNum(mm.cubiertos_tradicional||0)}</td>
+                  <td style="text-align:right;color:var(--text3)">${fmtNum(mm.cubiertos_autoservicio||0)}</td>
                   <td style="text-align:right;color:var(--text3)">${fmtNum(mm.objetivo)}</td>
                   <td style="text-align:right"><span class="chip ${avc(p)}" style="font-size:10px;">${p}%</span></td>
                 </tr>`;}).join('')}</tbody>

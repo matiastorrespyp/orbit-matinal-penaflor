@@ -1,0 +1,887 @@
+﻿cliente_codigo,cliente_nombre,vendedor,segmento,segmentos_distintos,lineas_originales,lineas_positivas,lineas_cero,lineas_negativas,comprobantes,comprobantes_NCR,importe_positivo,importe_nc_devoluciones,importe_neto_consolidado,ccc_orbit,ccc_regla_correcta,motivo
+4,OLGA GROSSO,V4,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+12,QUINTEROS JOEL ENRIQUE,V10,TRADICIONAL,1,2,2,0,0,1,0,196650.18,0.0,196650.18,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+15,"BELTRAMO, DUTTO Y DUTTO S.R.L.",V8,AUTOSERVICIO,1,8,8,0,0,1,0,1271256.1,0.0,1271256.1,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+19,BOGLIONE FRANCO,V4,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+21,BORGIATINO DAVID HERNAN+,V6,ON_PREMISE_VTK,1,11,11,0,0,3,0,1698903.58,0.0,1698903.58,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+22,MACHADO DANIELA,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+25,PACHECO HECTOR GABRIEL,V6,TRADICIONAL,1,3,3,0,0,2,0,36942.48,0.0,36942.48,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+26,SPERANZA MELISA ROCIO BELEN,V8,ON_PREMISE_VTK,1,2,2,0,0,1,0,78660.08,0.0,78660.08,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30,AMANTINI MARICEL MARCELA,V8,TRADICIONAL,1,2,2,0,0,1,0,15700.46,0.0,15700.46,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+31,PERALTA DIEGO JOSE,V8,TRADICIONAL,1,2,2,0,0,1,0,14900.12,0.0,14900.12,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+32,ALVAREZ ANA LAURA,V10,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+33,ROMINA ARDILES,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+34,CRAVERO SUSANA BEATRIZ,V4,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+35,DELLA LIBERA JUAN CARLOS,V4,AUTOSERVICIO,1,7,7,0,0,1,0,837196.96,0.0,837196.96,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+37,LA CAJA BUSINESS S.R.L.,V8,ON_PREMISE_VTK,1,2,2,0,0,1,0,78660.08,0.0,78660.08,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+40,MORENO LIBIA ROXANA,V6,TRADICIONAL,1,2,2,0,0,1,0,31423.47,0.0,31423.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+45,COOP. AGR. GANAD. MORTEROS SUC,V4,AUTOSERVICIO,1,15,15,0,0,2,0,1582841.2,0.0,1582841.2,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+46,BATTAN CARLOS RUBEN,V8,ON_PREMISE_VTK,1,2,2,0,0,1,0,51376.38,0.0,51376.38,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+47,PINTO GALLARDO MARCELO LEONARDO,V8,TRADICIONAL,1,5,5,0,0,1,0,48818.33,0.0,48818.33,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+52,LA SIRENA S.R.L.,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+53,STASSI HECTOR ADRIAN,V8,TRADICIONAL,1,2,2,0,0,1,0,18886.02,0.0,18886.02,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+54,FERREYRA MARIA PAULA,V8,TRADICIONAL,1,3,3,0,0,1,0,41806.23,0.0,41806.23,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+56,HERRERA MARIA LAURA CEFERINA,V4,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+57,BOCCO MATIAS GASTON,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+58,PEREZ ARIADNA LAURA,V4,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+59,ASOCIACION MUTUAL CLUB ATENEO JUVENIL ACCION,V6,AUTOSERVICIO,1,7,7,0,0,1,0,956403.17,0.0,956403.17,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+60,LUQUE JUAN CARLOS,V10,TRADICIONAL,1,7,7,0,0,2,0,75983.19,0.0,75983.19,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+62,GRUPO DIOS BACO EN FORMACION S.A.,V4,AUTOSERVICIO,1,15,15,0,0,2,0,1384234.17,0.0,1384234.17,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+67,AMBROGGIO GUSTAVO,V4,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+69,JUNCOS HECTOR,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+74,VALERO LILIANA ESTHER,V4,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+80,MURATURE NANCI,V4,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+83,ANGUS SOCIEDAD DE RESPONSABILIDAD LIMITADA,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+86,RUI EVANGELINA MARIA,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+87,BUFFA SUSANA ISABEL,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+88,FERNANDEZ PATRICIA DEL VALLE,V8,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+90,PRATTO BRUNO NICOLAS,V4,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+91,BONAUDI GEORGINA DE LOURDES,V6,AUTOSERVICIO,1,6,6,0,0,2,0,167457.85,0.0,167457.85,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+95,BALDO LEANDRO EZEQUIEL,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+97,GROSSO MONICA,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+98,BERTOLA CLAUDIA IRENE,V8,TRADICIONAL,1,6,6,0,0,2,0,56376.58,0.0,56376.58,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+99,DARDANO DEMA,V4,AUTOSERVICIO,1,15,15,0,0,2,0,1662048.07,0.0,1662048.07,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+100,YANDEN S.A.S,V4,AUTOSERVICIO,1,4,4,0,0,1,0,43450.08,0.0,43450.08,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+101,MAGALLAN CLAUDIA BEATRIZ,V4,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+102,MALANO JESICA,V4,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+110,ASOC SOC BOMBEROS VOLUNTARIOS DE SAN FRANCISCO,V8,ON_PREMISE_VTK,1,2,2,0,0,1,0,78660.08,0.0,78660.08,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+113,ORTEGA DALL AGATA IGNACIO RAFAEL,V8,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+114,CLEMENTE JORGE LUIS,V4,AUTOSERVICIO,1,7,7,0,0,1,0,945482.01,0.0,945482.01,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+115,SOC DE SOCORROS MUTUOS SAN ROQUE,V6,AUTOSERVICIO,1,7,7,0,0,1,0,866722.39,0.0,866722.39,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+116,PERALTA MARIANA SOLEDAD,V4,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+118,BOGLIONE CARLA NOEMI,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+120,VACHETTA ALEJANDRO JORGE,V4,AUTOSERVICIO,1,7,7,0,0,1,0,890202.66,0.0,890202.66,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+122,AGUIRRE ALCIRA VERONICA,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+123,"COOPERATIVA DE TAMBEROS, AGRICOLA GANADERA ""EL TRA",V10,TRADICIONAL,1,12,12,0,0,2,0,126346.03,0.0,126346.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+124,CARIGNANO FABRICIO,V4,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+126,ALMADA  ANA  EUGENIA,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+131,FILIPPA LILIANA,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+132,ARGUELLO SERGIO,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+134,COLAZO FABIO MAURICIO,V10,TRADICIONAL,1,3,3,0,0,1,0,45238.53,0.0,45238.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+135,LEIVA CINDY,V10,TRADICIONAL,1,4,4,0,0,1,0,31714.73,0.0,31714.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+137,ROLANDO SOLEDAD,V4,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+139,DALMAZZO FAVIO ALEXIS,V10,TRADICIONAL,1,11,11,0,0,2,0,179677.44,0.0,179677.44,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+140,GHIRARDOTTI MARISEL BEATRIZ,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+141,FERRERO VIRGINIA,V4,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+143,RIVERO MONICA,V4,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+144,MIÑO GABRIELA ANDREA,V4,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+145,DIAZ MARISA SILVANA,V4,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+152,FERREYRA NOELIA AYELEN,V3,TRADICIONAL,1,5,5,0,0,2,0,74095.44,0.0,74095.44,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+155,AUBONE JUAN BAUTISTA,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+156,ARCE PAOLA NATALIA,V6,TRADICIONAL,1,1,1,0,0,1,0,12314.16,0.0,12314.16,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+157,MICHLIG LUCIANA VANESA,V4,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+158,MEZZOPEVA FERNANDA PAOLA,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+161,YANDEN S.A.S,V4,AUTOSERVICIO,1,4,4,0,0,1,0,40593.81,0.0,40593.81,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+164,GASTALDELLO CAROLINA,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+166,ROMERO GEORGINA AMALIA,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+168,RICCHIARDI MARTA GABRIELA,V4,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+169,GONZALES ZULMA,V10,TRADICIONAL,1,2,2,0,0,1,0,18417.47,0.0,18417.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+172,GIORDANA ENELE GERMAN,V8,AUTOSERVICIO,1,28,20,8,0,6,0,656562.42,0.0,656562.42,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+173,ROMERA ELISA NATALIA,V10,TRADICIONAL,1,11,7,0,4,3,1,83018.33,-34837.86,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+175,ARGAÑARAZ LUZ MARIA,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+176,GUAN LILING,V4,AUTOSERVICIO,1,7,7,0,0,1,0,1034661.68,0.0,1034661.68,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+178,NIEVAS GABRIELA DEL VALLE,V6,ON_PREMISE_VTK,1,2,2,0,0,2,0,42775.15,0.0,42775.15,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+180,SU XIANHUI,V4,AUTOSERVICIO,1,11,11,0,0,1,0,530077.84,0.0,530077.84,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+181,WANG XUEQUING,V4,AUTOSERVICIO,1,7,7,0,0,1,0,822132.56,0.0,822132.56,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+184,CLEMENTE CLAUDIA,V4,AUTOSERVICIO,1,4,4,0,0,2,0,37368.54,0.0,37368.54,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+185,ARGUELLO ALFONSINA LAURA ,V4,AUTOSERVICIO,1,7,7,0,0,1,0,857756.99,0.0,857756.99,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+188,BARRERA RAUL OMAR,V4,AUTOSERVICIO,1,5,5,0,0,3,0,59611.2,0.0,59611.2,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+191,GAVIGLIO ANDREA DE LOURDES,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+196,BORDA BOSSANA MARIELA,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+197,COOP. AGR. GANAD. MORTEROS,V4,AUTOSERVICIO,1,7,7,0,0,1,0,803646.81,0.0,803646.81,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+198,PERALTA JESICA SOL,V8,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+204,VACHETTA JUAN MANUEL,V4,AUTOSERVICIO,1,7,7,0,0,1,0,844093.42,0.0,844093.42,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+205,BOSCAROL BRISA,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+206,BIDERBOST JOSE MARIA,V4,AUTOSERVICIO,1,4,4,0,0,1,0,53356.08,0.0,53356.08,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+207,LENTA MARCELA CARINA,V4,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+208,FERRERO MATIAS,V8,TRADICIONAL,1,18,18,0,0,3,0,187234.84,0.0,187234.84,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+209,PATTACINI GUSTAVO EMILIO ,V6,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+210,MAINARDI MATIAS,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+211,ARIAS MARILINA EMILCE,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+213,RIBOTTA VICTOR HUGO,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+214,MOSCHIETTO YANINA RAQUEL,V4,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+215,OLIVERO PATRICIA SOLEDAD ,V4,AUTOSERVICIO,1,7,7,0,0,1,0,913650.56,0.0,913650.56,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+217,ANGONOA ROBERTO AGUSTIN,V4,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+218,RASPO SEBASTIAN,V4,TRADICIONAL,1,1,1,0,0,1,0,23788.86,0.0,23788.86,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+222,COMBA PAOLA ANDREA,V4,AUTOSERVICIO,1,7,7,0,0,1,0,908273.46,0.0,908273.46,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+223,OLIVETA MILENA,V10,TRADICIONAL,1,15,11,4,0,1,0,223727.07,0.0,223727.07,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+225,LEMOS NANCY TERESITA,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+226,ELISEO DAVID GOMEZ,V7,TRADICIONAL,1,10,10,0,0,3,0,287940.24,0.0,287940.24,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+227,KANTOR MARIELA BEATRIZ,V8,TRADICIONAL,1,3,3,0,0,1,0,41806.23,0.0,41806.23,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+234,COLLO MAXIMILIANO,V9,AUTOSERVICIO,1,13,13,0,0,1,0,328799.5,0.0,328799.5,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+236,CASA BENJAMIN SARTORI (NVA ESPERANZA),V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+237,LAZZURI SOLANGE LISETTE,V8,ON_PREMISE_VTK,1,2,2,0,0,1,0,31308.02,0.0,31308.02,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+239,PAULETO SUSANA,V10,TRADICIONAL,1,2,2,0,0,1,0,25518.6,0.0,25518.6,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+243,MALDONADO STEFANI DESIREE,V10,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+245,TURQUETTI MARIA CRISTINA,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+257,PEREZ MARCELA,V4,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+260,SUPER LAS HERAS S.A.S.,V4,AUTOSERVICIO,1,7,7,0,0,1,0,864502.58,0.0,864502.58,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+266,PORCHETTO DANIEL,V6,ON_PREMISE_VTK,1,2,2,0,0,1,0,31814.54,0.0,31814.54,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+272,URQUIA OMAR MARCELO,V8,TRADICIONAL,1,8,8,0,0,3,0,270532.94,0.0,270532.94,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+273,FONTANA DANIEL OCTAVIO ,V10,AUTOSERVICIO,1,5,5,0,0,3,0,36142847.52,0.0,36142847.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+275,MARE MARISA GABRIELA ,V3,TRADICIONAL,1,1,1,0,0,1,0,14868.52,0.0,14868.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+278,AVENATTI LUCIO MAURICIO ,V6,ON_PREMISE_VTK,1,19,19,0,0,2,0,3368471.32,0.0,3368471.32,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+279,JUAREZ MARIELA ALEJANDRA,V3,TRADICIONAL,1,1,1,0,0,1,0,29737.04,0.0,29737.04,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+282,YANDEN S.A.S,V4,AUTOSERVICIO,1,7,7,0,0,1,0,875542.31,0.0,875542.31,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+289,ITEGA SA,V4,AUTOSERVICIO,1,8,8,0,0,2,0,954707.48,0.0,954707.48,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+293,RENJIFO CAROLINA,V6,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+295,PAOLASSI PABLO JOSE ,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+296,MENDOZA YOANA BELEN ,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+297,LUDUEÑA SOFIA DEL CARMEN ,V6,TRADICIONAL,1,4,4,0,0,3,0,55714.12,0.0,55714.12,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+298,LUIS MARCELO MICOL,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+299,SUBELZA LIMA EFRAIN,V6,AUTOSERVICIO,1,7,7,0,0,1,0,862579.16,0.0,862579.16,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+300,LUCERO JULIO C. Y MIGUEL A.,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+301,CAMAR SRL (ATLANTIS DISCO),V8,ON_PREMISE_VTK,1,2,1,1,0,1,0,112032.72,0.0,112032.72,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+302,GUZMAN ROCIO DEL MILAGRO,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+303,ACEVEDO MARIBEL ROSANA,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+304,CLEMENTE C Y J S.A.S.,V4,AUTOSERVICIO,1,1,1,0,0,1,0,32199.26,0.0,32199.26,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+305,SORIA MARIA ELENA,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+306,MALANO ERIKA NOELIA ,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+307,VIVAS GABRIELA,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+309,CONIGLIO FERRERO Y MARSILLOU MARTEK S.R.L.,V8,AUTOSERVICIO,1,50,48,2,0,12,0,1673791.87,0.0,1673791.87,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+313,HASAM CRISTINA NELIDA ,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+315,GOIRAN JULIAN ROBERTO ,V3,TRADICIONAL,1,3,3,0,0,2,0,29081.71,0.0,29081.71,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+317,VILLARREAL HECTOR ARTURO ,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+320,RABINO JOSE JUAN ,V8,ON_PREMISE_VTK,1,36,36,0,0,35,0,2563710.17,0.0,2563710.17,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+323,LOTUSRB S.A.S.,V8,ON_PREMISE_VTK,1,1,1,0,0,1,0,19661.64,0.0,19661.64,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+328,GARAY MARIA LUZ,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+329,TOSOLINI VERONICA LILIANA,V4,AUTOSERVICIO,1,7,7,0,0,1,0,1081589.86,0.0,1081589.86,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+330,MJE S.A.S.,V7,TRADICIONAL,1,1,1,0,0,1,0,362353.59,0.0,362353.59,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+334,VERNETTI DANIEL FERNANDO,V4,AUTOSERVICIO,1,6,6,0,0,4,0,105235.86,0.0,105235.86,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+335,PEREZ CINDY,V4,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+336,VEGA NESTOR RAUL,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+337,BIGLIA ESTELA,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+338,GONZALEZ JORGE ANDRES,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+340,ZHUANG BIN ,V9,AUTOSERVICIO,1,2,2,0,0,1,0,199590.91,0.0,199590.91,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+344,GHIONE RICARDO MAURO LUJAN  ,V10,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+350,CASTRO DARIO FABIAN,V8,ON_PREMISE_VTK,1,2,2,0,0,1,0,56092.67,0.0,56092.67,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+351,PEREZ ERICA,V4,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+352,DALL AGATA NATALIA MARIA,V4,TRADICIONAL,1,8,8,0,0,3,0,93222.33,0.0,93222.33,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+353,BAUER MARCELA ALEJANDRA,V10,TRADICIONAL,1,4,4,0,0,2,0,40076.57,0.0,40076.57,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+356,ASOC.MUT.AFIL ATILRA FREYRE,V4,AUTOSERVICIO,1,7,7,0,0,1,0,905353.24,0.0,905353.24,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+358,ESPINDOLA DANIELLE,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+363,MOLINA AGUSTIN NAHUEL (CAFETERIA OTILIA),V4,ON_PREMISE_VTK,1,2,2,0,0,1,0,38172.6,0.0,38172.6,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+365,JUAREZ ANA CAROLINA,V8,TRADICIONAL,1,3,3,0,0,1,0,51213.49,0.0,51213.49,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+366,PRATO MELINA,V4,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+370,HUANG WEIZHEN,V4,AUTOSERVICIO,1,21,20,0,1,5,1,561523.55,-17658.77,543864.78,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+373,MANFREY,V4,AUTOSERVICIO,1,7,7,0,0,1,0,822132.54,0.0,822132.54,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+375,ALVAREZ MUÑOZ MARTIN ALBERTO ,V9,TRADICIONAL,1,7,7,0,0,2,0,243791.21,0.0,243791.21,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+376,FENOGLIO OLGA MARIA CAROLINA,V4,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+378,VILLEGAS CUENCA RAFAEL ,V4,AUTOSERVICIO,1,7,7,0,0,1,0,886377.29,0.0,886377.29,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+379,GUTIERREZ  BEATRIZ TERESA,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+383,BEARZI EVELINA ROXANA,V6,TRADICIONAL,1,6,6,0,0,1,0,55196.9,0.0,55196.9,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+388, OVIEDO JUAN JOSE,V9,TRADICIONAL,1,4,4,0,0,2,0,688840.2,0.0,688840.2,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+390,MIRANDA SEBASTIAN LEONARDO,V8,AUTOSERVICIO,1,36,35,1,0,7,0,799029.89,0.0,799029.89,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+391,BORTOLON Y URQUIZA COMB. SRL,V4,PROXIMITY,1,1,1,0,0,1,0,22778.39,0.0,22778.39,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+393,GALLEGOS OSCAR ALBERTO,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+398,GAITE MONICA ALEJANDRA,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+400,GARAY SOLEDAD ANDREA,V6,TRADICIONAL,1,10,10,0,0,3,0,344981.52,0.0,344981.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+404,LUNA ADRIANA MARIA,V6,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+406,PEYRONEL PRADO GUILLERMINA,V6,TRADICIONAL,1,6,6,0,0,1,0,58744.84,0.0,58744.84,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+409,TAPIERO PAOLA DEL CARMEN ,V3,TRADICIONAL,1,1,1,0,0,1,0,44605.57,0.0,44605.57,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+411,SOSA GERARDO RAUL ,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+422,BURGOS VANESA SOLEDAD ,V3,TRADICIONAL,1,1,1,0,0,1,0,59474.09,0.0,59474.09,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+427,D' ALESSANDRI MARA NOELIA,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+435,MARTINEZ DANIELA JORGELINA,V4,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+437,VICENTE MARIANELA,V10,TRADICIONAL,1,2,2,0,0,1,0,162804.08,0.0,162804.08,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+439,SUPERVEINTINUEVE S.R.L.,V4,AUTOSERVICIO,1,7,7,0,0,1,0,931818.42,0.0,931818.42,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+440,ACEVEDO MONICA,V10,TRADICIONAL,1,5,5,0,0,4,0,73884.96,0.0,73884.96,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+446,ARNAUDO MARIA ANGEL,V6,TRADICIONAL,1,5,5,0,0,4,0,389066.38,0.0,389066.38,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+447,BEJARANO JORGE RODOLFO ,V4,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+449,BARBONAGLIA MARCELA ANAHI,V4,TRADICIONAL,1,4,4,0,0,1,0,42587.28,0.0,42587.28,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+450,SIMON DANIELA AGUSTINA,V8,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+453,NOLE SOFIA AGUSTINA,V6,TRADICIONAL,1,2,2,0,0,1,0,31423.47,0.0,31423.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+455,GIACCONE RENZO NICOLAS ,V8,TRADICIONAL,1,7,7,0,0,2,0,69586.36,0.0,69586.36,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+458,MONESTEROLO VANESA (BIEN BARATO MINIMARKET),V10,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+459,TORASSA CARINA BEATRIZ,V4,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+462,MONTES DANIEL ALBERTO,V10,TRADICIONAL,1,3,3,0,0,1,0,45238.53,0.0,45238.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+468,SCALERANDI ALAN GABRIEL,V4,AUTOSERVICIO,1,12,12,0,0,2,0,392577.31,0.0,392577.31,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+472,AREVALO VANESA SOLEDAD,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+476,SABENA BLANCA ESTHER ISABEL ,V8,ON_PREMISE_VTK,1,4,2,2,0,1,0,437000.4,0.0,437000.4,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+478,LEON MATEO,V7,TRADICIONAL,1,3,3,0,0,1,0,33962.37,0.0,33962.37,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+485,FERREYRA YOLI EDITH,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+487,CAGLIERO PAULA ANDREA ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+489,GABRIELA ALEJANDRA AGUERO,V7,TRADICIONAL,1,1,1,0,0,1,0,12314.16,0.0,12314.16,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+497,MONZON LAZARO MISAEL ,V8,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+498,NIVOLI MARISA ALEJANDRA,V4,ON_PREMISE_VTK,1,2,2,0,0,1,0,31814.54,0.0,31814.54,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+500,BERTORELLO CHRISTIAN ALEJANDRO ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+503,GULLINO ROMINA MARIA,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+508,RICCIARDI DIEGO ALBERTO ,V4,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+509,FRANCESCHI HERMANOS SRL,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+512,HEREDIA DANIEL GERMAN ,V8,TRADICIONAL,1,3,3,0,0,1,0,46103.77,0.0,46103.77,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+515,RUIZ RAUL ALEJANDRO ,V6,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+517,PEREZ PABLO EZEQUIEL ,V8,AUTOSERVICIO,1,15,15,0,0,2,0,1342564.58,0.0,1342564.58,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+518,BRITO MAXIMILIANO LUIS,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+519,WENZHI LI,V8,AUTOSERVICIO,1,38,34,4,0,6,0,1073479.09,0.0,1073479.09,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+521,PENTACOMB S.A.,V8,TRADICIONAL,1,3,3,0,0,1,0,41806.23,0.0,41806.23,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+525,VELAZQUEZ FLORENCIA DE LOURDES,V8,TRADICIONAL,1,7,7,0,0,2,0,68734.83,0.0,68734.83,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+527,BROCHERO SILVIA VIVIANA,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+531,VILLAREAL JENIFER ,V8,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+532,CARLE CLAUDIO AMERICO ,V8,TRADICIONAL,1,6,6,0,0,2,0,63223.89,0.0,63223.89,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+536,HERRERA RESTREPO MARTHA LUCIA ,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+538,ZHAO JIAHUI,V8,AUTOSERVICIO,1,42,37,5,0,6,0,1331962.74,0.0,1331962.74,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+539,BOETTO LILIANA DEL CARMEN ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+540,PEREZ MARIA SANDRA,V8,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+544,CORDOBA GISEL AYELEN,V10,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+546,SEPEDA VANINA BELEN ,V4,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+551,MARIA RAFAELA CARRIZO,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+553,CEBALLOS FERNANDA NATACHA,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+554,PERALTA MANUEL LUCIO ,V8,TRADICIONAL,1,3,3,0,0,1,0,46103.77,0.0,46103.77,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+558,LUDUEÑA JORGE LUIS ,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+562,AGUIRRE ALDANA ABIGAIL,V6,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+563,LUDUEÑA ALEJANDRA DEL VALLE,V4,TRADICIONAL,1,8,8,0,0,2,0,113931.6,0.0,113931.6,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+564,OVIEDO ZULMA RITA ,V8,TRADICIONAL,1,3,3,0,0,1,0,41806.23,0.0,41806.23,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+566,PEYRONEL VALERIA BEATRIZ ,V6,TRADICIONAL,1,2,2,0,0,1,0,138975.22,0.0,138975.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+571,BASUALDO CELIA MARIA ,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+572,DELLA LIBERA CARLOS DANIEL ,V4,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+575,BORGOGNO SILVIO MATIAS BORGOGNO,V8,TRADICIONAL,1,2,2,0,0,2,0,123003.3,0.0,123003.3,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+576,MAIDANA ELVIO LIBER,V10,TRADICIONAL,1,6,6,0,0,2,0,70231.96,0.0,70231.96,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+581,VILLAGRAN NOEMI LAURA ,V10,TRADICIONAL,1,6,6,0,0,2,0,83990.54,0.0,83990.54,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+583,MARTINA  ANDRES,V4,TRADICIONAL,1,1,1,0,0,1,0,15312.12,0.0,15312.12,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+584,MI FAMILIA S.A.S. S. A. S.,V6,AUTOSERVICIO,1,1,1,0,0,1,0,881588.85,0.0,881588.85,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+585,BAZAN YANINA MARIEL ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+586,GOETTE ROMINA SOLEDAD ,V8,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+589,BATTAN CARLOS RUBEN ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+590,GODONE SUSANA,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+593,TEOBALDO NARA BELEN ,V8,TRADICIONAL,1,3,3,0,0,1,0,41806.23,0.0,41806.23,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+595,NARVAEZ IVAN MAXIMILIANO ,V8,TRADICIONAL,1,3,3,0,0,1,0,41806.23,0.0,41806.23,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+596,YBAÑEZ ALICIA RAQUEL,V8,AUTOSERVICIO,1,54,51,3,0,12,0,1639184.82,0.0,1639184.82,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+597,ALBARRACIN .ALBERTO RUBEN ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+599,JALILES S.A.S.,V6,TRADICIONAL,1,1,1,0,0,1,0,147769.92,0.0,147769.92,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+600,MARIA EUGENIA GARCIA,V8,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+602,MATUCHESKI HECTOR RICARDO ,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+604,DEMATTIAS SANTIAGO LEONARDO ,V8,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+605,GIMENEZ MORETTO CAROLINA ELIZABETH ,V8,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+606,MILANESIO VICTORIA,V8,TRADICIONAL,1,1,1,0,0,1,0,12759.3,0.0,12759.3,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+607,BATTISTON MARIANO DANIEL ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+611,RAM LUDUEÑA ALEJANDRO JAVIER ,V8,ON_PREMISE_VTK,1,2,2,0,0,1,0,78660.08,0.0,78660.08,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+612,DURANDO HNOS. FREYRE S.A.S.,V4,ON_PREMISE_VTK,1,2,2,0,0,1,0,38172.6,0.0,38172.6,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+613,BASSANO EZEQUIEL LUIS Y BASSANO CESAR MATIAS,V8,TRADICIONAL,1,1,1,0,0,1,0,11300.11,0.0,11300.11,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+615,LI WENFANG  (SUC. PLAZA),V8,AUTOSERVICIO,1,29,29,0,0,5,0,1380166.59,0.0,1380166.59,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+616,SANDRA VERONICA VALDEZ,V8,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+619,PIOLI RICARDO CARLOS ,V8,TRADICIONAL,1,4,4,0,0,1,0,38347.57,0.0,38347.57,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+625,FARIAS ESTELA MARIS,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+626,CUIZA MARINO ROLANDO ,V8,AUTOSERVICIO,1,15,15,0,0,2,0,1397461.35,0.0,1397461.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+628,AGHEMO PABLO FABIAN ,V8,TRADICIONAL,1,4,4,0,0,3,0,46190.71,0.0,46190.71,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+630,DELPRATO MARIA PAZ,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+631,ORELLANO GEORGINA MICAELA ,V8,TRADICIONAL,1,3,3,0,0,1,0,46103.77,0.0,46103.77,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+633,AGUIRRE CARINA MARIELA ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+634,BESUZZO EVANGELINA PATRICIA ,V8,TRADICIONAL,1,8,8,0,0,3,0,144805.28,0.0,144805.28,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+635,FRANCONE GASTON NICOLAS ,V8,ON_PREMISE_VTK,1,2,2,0,0,1,0,78660.08,0.0,78660.08,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+637,ZORGNIOTTI MARIA EMILIA,V10,TRADICIONAL,1,14,14,0,0,5,0,262909.84,0.0,262909.84,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+642,ALVARADO MARIA PILAR HERRERA ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+643,ROVASIO RICARDO LUIS ,V8,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+651,RICARDO AMERICO TABARES,V8,TRADICIONAL,1,5,5,0,0,2,0,43262.75,0.0,43262.75,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+652,YAN JINQING,V8,AUTOSERVICIO,1,12,12,0,0,4,0,3385711.23,0.0,3385711.23,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+660,BUSTOS LUCIO SEBASTION,V8,TRADICIONAL,1,12,12,0,0,3,0,193105.1,0.0,193105.1,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+665,MIRTA DEL VALLE STRATTA,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+667,GOMEZ ELIZABETH VALERIA,V8,TRADICIONAL,1,4,4,0,0,1,0,102240.29,0.0,102240.29,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+673,BECCARIA RAMIRO GERMAN ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+675,MANZANEL SANTOS JOSE GABRIEL,V9,TRADICIONAL,1,8,8,0,0,3,0,540031.74,0.0,540031.74,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+676,COLLINO MARISEL GUADALUPE,V8,TRADICIONAL,1,3,3,0,0,1,0,46103.77,0.0,46103.77,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+678,DANGUISE DISTRIBUCIONES S.R.L.,V8,AUTOSERVICIO,1,3,3,0,0,1,0,4451354.04,0.0,4451354.04,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+684,SUSANA BEATRIZ FOGLIATA,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+686,FINETTI LORENA ANDREA ,V8,TRADICIONAL,1,3,3,0,0,1,0,46103.77,0.0,46103.77,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+687,CENA CLAUDIA PATRICIA ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+692,MIRANDA SEBASTIAN LEONARDO ,V8,ON_PREMISE_VTK,1,3,2,1,0,1,0,218500.2,0.0,218500.2,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+697,MANSUINO SABRINA SOLEDAD ,V8,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+698,SALAMANCA JACOBO RAMIRO ,V8,ON_PREMISE_VTK,1,72,71,0,1,6,1,6393027.86,-22525.22,6370502.64,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+699,CAVAGLIA RICARDO HORACIO ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+702,MARIA ALEJANDRA ESCUDERO,V9,TRADICIONAL,1,13,13,0,0,3,0,185864.83,0.0,185864.83,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+703,MACHADO GISELLE DAYANA,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+707,COLLINO MAYRA LUCILA,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+708,LEON MICAELA LILIANA ,V7,TRADICIONAL,1,2,2,0,0,1,0,37400.83,0.0,37400.83,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+710,ORCE RAUL ANTONIO ,V8,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+714,NORMA MAGDALENA OLIVA,V8,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+715,ALVAREZ EMILSE SOLEDAD,V9,TRADICIONAL,1,4,4,0,0,1,0,169477.56,0.0,169477.56,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+718,SONTTO RUBEN FABIAN,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+721,AUDISIO SEBASTIAN EUGENIO ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+724,ARIETTI VANESA PAOLA ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+726,PERALTA ADRIANA HAIDEE ,V8,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+729,NOLE ESTEBAN MICAEL,V6,TRADICIONAL,1,3,3,0,0,2,0,123234.12,0.0,123234.12,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+730,TORRES EMILSE NOEMI,V9,TRADICIONAL,1,6,5,0,1,3,1,55889.44,-13089.25,42800.19,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+735,OLMOS JULIO CESAR ,V8,TRADICIONAL,1,2,1,0,1,2,1,130948.56,-130948.56,0.0,Si,No,Orbit SI / regla-correcta NO: neto consolidado <= 0 (NC o devolucion neutraliza la venta)
+736,MARTINEZ CATRIEL,V8,AUTOSERVICIO,1,11,10,0,1,4,1,996645.33,-65474.28,931171.05,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+742,PINTO ALBINA BERNABE ,V6,TRADICIONAL,1,13,13,0,0,2,0,175753.1,0.0,175753.1,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+748,MALANO MERCEDES,V4,AUTOSERVICIO,1,15,15,0,0,2,0,1394433.45,0.0,1394433.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+750,BASSANO BLAS NAHUEL ,V8,TRADICIONAL,1,3,3,0,0,2,0,29540.72,0.0,29540.72,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+751,OVIEDO CLAUDIA ALEJANDRA,V9,AUTOSERVICIO,1,47,47,0,0,3,0,511688.94,0.0,511688.94,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+753,MARCHETTI JOAQUIN DARIO ,V6,ON_PREMISE_VTK,1,1,1,0,0,1,0,21255.36,0.0,21255.36,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+759,BALLARIO GABRIELA SUSANA ,V8,ON_PREMISE_VTK,1,2,2,0,0,1,0,31308.02,0.0,31308.02,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+767,RAMIREZ ELSA,V9,TRADICIONAL,1,6,6,0,0,2,0,87264.11,0.0,87264.11,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+769,PEREYRA PABLO NICOLAS,V9,AUTOSERVICIO,1,34,28,5,1,6,1,1611680.37,-10705.37,1600975.0,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+771,SALOMONE PEDRO IGNACIO,V8,TRADICIONAL,1,5,5,0,0,2,0,100049.8,0.0,100049.8,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+780,CARDO SANTINO AGUSTIN ,V6,TRADICIONAL,1,4,4,0,0,1,0,38156.72,0.0,38156.72,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+781,SORIA LUCAS MATIAS,V4,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+787,ARCE DANIEL CARLOS ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+789,BARRERA RAUL ALBERTO-KIOSCO,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+790,FERNANDEZ SOLEDAD,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+796,OJEDA ROSANA GRACIELA ,V8,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+797,JUAN CARLOS VICTOR ARNAUDO,V8,TRADICIONAL,1,8,8,0,0,4,0,214812.3,0.0,214812.3,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+800,BRUNE VANESA DEL LUJAN,V10,TRADICIONAL,1,11,11,0,0,2,0,120969.75,0.0,120969.75,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+802,MERCADO PABLO YVO ,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+805,AYMAR MARIA SUSANA ,V8,ON_PREMISE_VTK,1,2,2,0,0,1,0,56092.67,0.0,56092.67,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+813,AMAYA SILVIA ANDREA ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+814,ROJAS MAXIMILIANO RUBEN ,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+815,SALDAÑO WALTER SEBASTIAN ,V8,TRADICIONAL,1,16,16,0,0,4,0,244693.06,0.0,244693.06,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+816,SARANZ LILIANA DEL CARMEN ,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+819,ALEGRE MABEL,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+822,CONEJERO GASTON ANDRES ,V7,TRADICIONAL,1,21,14,0,7,7,3,557834.6,-262487.75,295346.85,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+823,DEL VALLE MARINO VANESA,V8,TRADICIONAL,1,2,2,0,0,1,0,18886.02,0.0,18886.02,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+826,MARTINEZ RODRIGO ,V8,AUTOSERVICIO,1,16,16,0,0,5,0,540739.11,0.0,540739.11,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+829,EL GURY SRL,V10,AUTOSERVICIO,1,15,15,0,0,2,0,1837848.29,0.0,1837848.29,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+832,CASSINERIO CARLOS ALBERTO ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+834,CARLOS FROILAN TORRES ZAMBRANO,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+835,BUSTOS CLAUDIO DAMIAN ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+843,PERALTA MAXIMILIANO EZEQUIEL,V4,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+850,GALFRE JUAN ALBERTO ,V8,TRADICIONAL,1,2,2,0,0,1,0,18886.02,0.0,18886.02,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+855,LENCINAS FERNANDA BEATRIZ ,V3,TRADICIONAL,1,3,3,0,0,1,0,34071.57,0.0,34071.57,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+858,BARELLO ALICIA ANDREA ,V8,TRADICIONAL,1,2,2,0,0,1,0,60207.62,0.0,60207.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+860,GONZALEZ PURA RAQUEL,V6,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+863,CACCHARELLI PAOLA ANDREA ,V8,TRADICIONAL,1,13,13,0,0,2,0,469153.87,0.0,469153.87,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+873,LANA PRETTO PAULA DANIELA,V9,TRADICIONAL,1,4,4,0,0,1,0,71084.72,0.0,71084.72,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+874,WENG KUNGUANG,V4,AUTOSERVICIO,1,15,15,0,0,2,0,1589004.89,0.0,1589004.89,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+875,CAMPOS NORMA LIDIA ,V6,TRADICIONAL,1,3,3,0,0,1,0,46103.77,0.0,46103.77,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+876,NAVARRO RAUL MIGUEL ,V8,ON_PREMISE_VTK,1,2,2,0,0,1,0,56092.67,0.0,56092.67,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+878,ESTABLECIMIENTO BOZZANA S.A.S,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+883,LUCERO JULIO C. Y MIGUEL A.,V10,TRADICIONAL,1,7,7,0,0,1,0,108587.3,0.0,108587.3,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+886,BUSTOS GERARDO GABRIEL ,V4,TRADICIONAL,1,19,18,0,1,5,1,375316.2,-2052.36,373263.84,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+897,CORIGLIANI ARIANA,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+901,BERTONE JORGE REINALDO,V10,TRADICIONAL,1,13,11,0,2,5,2,108948.32,-19969.82,88978.5,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+902,MEDRANO HECTOR SERVILIANO,V6,TRADICIONAL,1,3,3,0,0,1,0,46103.77,0.0,46103.77,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+903,CEJAS ALEJANDRA CARINA,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+910,SARMIENTO MARTIN EZEQUIEL ,V8,ON_PREMISE_VTK,1,2,2,0,0,1,0,31308.02,0.0,31308.02,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+913,YAMILA GIORDANO,V8,TRADICIONAL,1,2,2,0,0,1,0,18886.02,0.0,18886.02,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+917,QUIROGA LUCIANO DANIEL ,V7,ON_PREMISE_VTK,1,6,4,2,0,1,0,211913.82,0.0,211913.82,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+918,OLIVERO LEONARDO DARIO ,V8,TRADICIONAL,1,5,5,0,0,2,0,70794.14,0.0,70794.14,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+919,JORGE RUBEN YUDI,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+924,SANDRI JUAN MANUEL ,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+931,MYRIAM MAGDALENA ALVAREZ,V8,TRADICIONAL,1,3,3,0,0,1,0,46103.77,0.0,46103.77,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+932,LAGLAIVE SUSANA NOEMI ,V6,AUTOSERVICIO,1,7,7,0,0,1,0,936430.41,0.0,936430.41,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+937,CALAMANTE CIRO FELIPE,V9,ON_PREMISE_VTK,1,17,17,0,0,3,0,464229.65,0.0,464229.65,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+939,PEREZ CRISTIAN ALBERTO,V10,TRADICIONAL,1,1,1,0,0,1,0,12759.3,0.0,12759.3,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+940,PERALTA NANCI MARIELA,V6,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+941,LUIS ALEJANDRO BAIGORRIA,V6,TRADICIONAL,1,4,4,0,0,2,0,197026.56,0.0,197026.56,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+945,SILVERIO ZARATE,V6,TRADICIONAL,1,3,3,0,0,1,0,46103.77,0.0,46103.77,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+953,NOVERO MIGUEL ANGEL,V6,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+956,MONINA LUCAS SANTIAGO,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+961,ACEVEDO JANET ERIKA ,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+962,MAGAGNO MARCELA ELSA,V8,TRADICIONAL,1,2,2,0,0,1,0,18886.02,0.0,18886.02,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+965,TUSCO TOLABA RAUL ESTEBAN ,V6,TRADICIONAL,1,3,3,0,0,1,0,46103.77,0.0,46103.77,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+974,LUNA FLAVIA MERCEDES ,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+975,FISSORE AGUSTINA JULIA,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+977,ECCHER JUAN PABLO,V9,TRADICIONAL,1,1,1,0,0,1,0,22361.53,0.0,22361.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+978,PERRET STELLA MARIS,V8,TRADICIONAL,1,6,6,0,0,2,0,191858.63,0.0,191858.63,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+981,BAZAN MARCO ANTONIO,V6,TRADICIONAL,1,10,10,0,0,4,0,103931.76,0.0,103931.76,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+989,SANCHEZ HERNAN,V6,TRADICIONAL,1,2,2,0,0,1,0,17323.26,0.0,17323.26,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+997,SOCIEDAD COSMOPOLITA DE SOCORROS  MUTUOS,V10,AUTOSERVICIO,1,37,35,2,0,4,0,990248.84,0.0,990248.84,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1004,ARICCIO MARCELA ALEJANDRA ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1006,LIN HAIJUN,V8,AUTOSERVICIO,1,32,28,3,1,7,1,1500784.7,-2052.36,1498732.34,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1009,FULL DISTRIBUIDORA,V6,AUTOSERVICIO,1,1,1,0,0,1,0,8253172.22,0.0,8253172.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1013,RUELLA FRANCISCO-CHIQUI PUB,V8,ON_PREMISE_VTK,1,2,1,1,0,1,0,218500.2,0.0,218500.2,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1016,GIMENEZ MAXIMILIANO ,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1017,LESTA LUCAS JOEL,V8,ON_PREMISE_VTK,1,4,4,0,0,2,0,104122.21,0.0,104122.21,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1018,SANCHEZ MARIELA OLGA ,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1023,PERALTA NOELIA ESTHER MARGARITA,V4,TRADICIONAL,1,2,2,0,0,1,0,26094.03,0.0,26094.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1024,BOSSIO SERGIO DANIEL,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1026,YAKO DRUGSTORE S.A.S.,V10,TRADICIONAL,1,16,16,0,0,3,0,182089.13,0.0,182089.13,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1031,ECHEZARRETA RUBEN HIPOLITO,V6,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1033,ALFONZO FERNANDEZ CLAUDIO DANIEL,V10,ON_PREMISE_VTK,1,2,2,0,0,1,0,60740.01,0.0,60740.01,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1039,ALTO.VEA.PASE S.A.S.,V8,AUTOSERVICIO,1,29,29,0,0,7,0,948720.4,0.0,948720.4,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1040,CARDOZO LUIS ALBERTO ,V6,TRADICIONAL,1,13,13,0,0,2,0,151011.1,0.0,151011.1,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1042,RACCA CLAUDIO ALBERTO,V4,TRADICIONAL,1,4,4,0,0,1,0,39643.41,0.0,39643.41,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1043,BENGOLEA MARIAS NELLY,V9,TRADICIONAL,1,3,3,0,0,1,0,50513.37,0.0,50513.37,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1049,REVELINO JUAN RAMON,V8,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1052,MARIANI JESUS MARTIN,V6,TRADICIONAL,1,3,3,0,0,1,0,36942.48,0.0,36942.48,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1054,TORRES ZAMBRANO SANDRA PATRICIA,V4,AUTOSERVICIO,1,7,7,0,0,1,0,825257.49,0.0,825257.49,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1056,TOSOLINI NAZARENO FRANCISCO ,V10,TRADICIONAL,1,4,4,0,0,1,0,83932.72,0.0,83932.72,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1061,ZIMMEL VALENTINA,V10,ON_PREMISE_VTK,1,4,3,0,1,3,1,401806.51,-8506.15,393300.36,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1065,PIACENZA MARIA FERNANDA ,V8,TRADICIONAL,1,5,5,0,0,2,0,66497.48,0.0,66497.48,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1072,GARRUDO MARIA MAGDALENA,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1073,MARTINOTTI ALEJANDRA DEL VALLE ,V6,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1074,GIOINO ARIEL NORBERTO,V8,AUTOSERVICIO,1,15,15,0,0,2,0,1805569.63,0.0,1805569.63,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1075,GOMEZ LEANDRO EZEQUIEL,V10,TRADICIONAL,1,3,3,0,0,1,0,45238.53,0.0,45238.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1082,VELASCO PATRICIA ALEJANDRA,V9,TRADICIONAL,1,11,11,0,0,2,0,142359.76,0.0,142359.76,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1083,REARTE PABLO EZEQUIEL,V7,TRADICIONAL,1,1,1,0,0,1,0,25518.6,0.0,25518.6,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1084,PEREYRA ANGELA ESTHER,V9,TRADICIONAL,1,2,1,0,1,2,1,45556.78,-45556.78,0.0,Si,No,Orbit SI / regla-correcta NO: neto consolidado <= 0 (NC o devolucion neutraliza la venta)
+1086,OLMEDO FABIANA MABEL,V9,TRADICIONAL,1,2,2,0,0,1,0,18776.68,0.0,18776.68,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1089,CHEN MIN,V9,AUTOSERVICIO,1,31,24,6,1,6,1,2002710.65,-13631.19,1989079.46,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1091,BUSTOS RAMON ARMANDO,V9,TRADICIONAL,1,4,4,0,0,1,0,94620.53,0.0,94620.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1093,RAMIREZ LUISINA AINELEN,V9,AUTOSERVICIO,1,32,25,6,1,6,1,2327954.41,-11698.45,2316255.96,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1094,VIOTTI PICCIRILLO ANGEL MAXIMILIANO,V9,TRADICIONAL,1,3,3,0,0,1,0,28768.54,0.0,28768.54,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1095,ROMALUZ,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1098,LA FAMILIA,V10,TRADICIONAL,1,5,5,0,0,2,0,64622.02,0.0,64622.02,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1104,TULA NESTOR ADRIAN,V9,TRADICIONAL,1,1,1,0,0,1,0,83030.08,0.0,83030.08,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1106,PALMA MARIA EVA,V9,TRADICIONAL,1,6,3,0,3,2,1,106374.78,-106374.78,0.0,Si,No,Orbit SI / regla-correcta NO: neto consolidado <= 0 (NC o devolucion neutraliza la venta)
+1107,PERALTA PATRICIA GRACIELA,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1109,VINOTECA-DEPOSITO,V8,ON_PREMISE_VTK,1,2,2,0,0,1,0,78660.08,0.0,78660.08,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1115,RIVAROLA JESUS ORLANDO,V7,TRADICIONAL,1,2,2,0,0,1,0,42261.06,0.0,42261.06,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1124,MERCADO RAMON EDUARDO,V9,TRADICIONAL,1,2,2,0,0,1,0,18223.6,0.0,18223.6,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1125,TISSERA DAIANA BELEN,V8,TRADICIONAL,1,3,3,0,0,1,0,46103.77,0.0,46103.77,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1130,ALMEIDA JORGE ANTONIO,V9,TRADICIONAL,1,4,4,0,0,1,0,42032.04,0.0,42032.04,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1131,AGUINALDO MAURO GABRIEL,V6,TRADICIONAL,1,2,2,0,0,2,0,38277.9,0.0,38277.9,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1132,PEREZ SERGIO,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1136,GRABOBI MARIANELA SOLEDAD,V10,TRADICIONAL,1,4,4,0,0,2,0,76972.74,0.0,76972.74,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1138,CASTILLO MATEO-CARNICERIA,V10,TRADICIONAL,1,3,3,0,0,1,0,53403.66,0.0,53403.66,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1139,MARTINEZ CECILIA LORENA,V9,TRADICIONAL,1,5,5,0,0,2,0,67549.52,0.0,67549.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1141,FARIAS CRISTIAN  MATIAS,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1150,FERREYRA MERCEDES ANABEL,V9,TRADICIONAL,1,2,2,0,0,2,0,33548.41,0.0,33548.41,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1151,MENSEGUEZ MARIA VERONICA,V9,TRADICIONAL,1,4,4,0,0,1,0,41122.03,0.0,41122.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1159,BRITEZ FLORENCIA ARIANA,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1161,YAKO DRUGSTORE S.A.S.,V10,TRADICIONAL,1,17,17,0,0,2,0,163617.05,0.0,163617.05,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1165,LEURINO VALENTINA INES,V8,TRADICIONAL,1,8,8,0,0,4,0,69167.58,0.0,69167.58,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1166,BOSSA GIANFRANCO,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1167,CHEN HONGYAN - SUPER MIRAMAR,V6,AUTOSERVICIO,1,7,7,0,0,1,0,883424.71,0.0,883424.71,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1169,ROSSO NEREA EVELIN,V4,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1171,JIMENEZ ANGELICA RUTH,V9,TRADICIONAL,1,2,2,0,0,1,0,25073.46,0.0,25073.46,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1174,GIRAUDO MAXIMILIANO,V6,TRADICIONAL,1,9,8,0,1,4,1,156656.7,-12314.16,144342.54,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1176,MOLEKA S.A.S,V7,TRADICIONAL,1,1,1,0,0,1,0,10348.23,0.0,10348.23,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1178,WANG JINHUA,V10,AUTOSERVICIO,1,24,21,3,0,4,0,708611.1,0.0,708611.1,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1181,TIJUANA BEBIDAS  SOCIEDAD POR  ACCIONES SIMPLIFICADAS,V10,ON_PREMISE_VTK,1,2,2,0,0,1,0,60740.01,0.0,60740.01,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1182,TEDESCHI TOMAS * TOMI´S DRINKS,V8,ON_PREMISE_VTK,1,1,1,0,0,1,0,84910.43,0.0,84910.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1185,PORTA MARIANA ESTELA,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1186,DONIGIAN-FUNES 2009 SAS,V9,TRADICIONAL,1,2,2,0,0,1,0,22361.92,0.0,22361.92,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1187,ESTEVES MARIANO MATEO,V9,TRADICIONAL,1,8,8,0,0,2,0,74003.52,0.0,74003.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1189,GOMEZ ROMERO ELBA GUADALUPE,V7,AUTOSERVICIO,1,2,2,0,0,1,0,20571.56,0.0,20571.56,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1191,RECALDE MARIANO JAVIER,V9,TRADICIONAL,1,6,6,0,0,2,0,139953.37,0.0,139953.37,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1192,LOUREIRO DANIEL OSCAR,V9,TRADICIONAL,1,2,2,0,0,1,0,22258.26,0.0,22258.26,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1193,ASTRADA VIEYRA RICARDO DAVID,V9,AUTOSERVICIO,1,3,3,0,0,1,0,76606.2,0.0,76606.2,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1194,FERRERO FABIO EZEQUIEL,V9,AUTOSERVICIO,1,19,19,0,0,2,0,343793.94,0.0,343793.94,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1196,BARTOLOMEI MARCOS EZEQUIEL,V9,TRADICIONAL,1,7,7,0,0,4,0,69714.69,0.0,69714.69,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1197,GALLEGOS LILIANA VANESA,V10,TRADICIONAL,1,5,5,0,0,2,0,69274.72,0.0,69274.72,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1201,ARMANDO DAIANA,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1202,SOTELO RAUL ALBERTO,V9,TRADICIONAL,1,4,4,0,0,1,0,37859.41,0.0,37859.41,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1207,VILLAFAÑE LAUTARO,V6,TRADICIONAL,1,1,1,0,0,1,0,146931.48,0.0,146931.48,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1218,CAMERLO MARIA JIMENA,V9,TRADICIONAL,1,3,3,0,0,1,0,106180.84,0.0,106180.84,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1219,DAMBOLENA EMILIANO DANIEL,V9,TRADICIONAL,1,1,1,0,0,1,0,22361.53,0.0,22361.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1223,TORRES RODRIGUEZ FELIX PASTOR,V4,AUTOSERVICIO,1,7,7,0,0,1,0,793426.06,0.0,793426.06,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1227,RECALDE MARIANO JAVIER,V9,TRADICIONAL,1,4,4,0,0,2,0,536798.43,0.0,536798.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1228,MONTOYA INDOLFO ALEJANDRO,V9,TRADICIONAL,1,4,4,0,0,2,0,62195.64,0.0,62195.64,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1229,WENDY JACQUELINE,V9,TRADICIONAL,1,3,3,0,0,1,0,119972.56,0.0,119972.56,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1230,PEREZ BRITOS ANA FRANCISCA,V7,TRADICIONAL,1,5,5,0,0,1,0,44950.18,0.0,44950.18,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1233,ARCE ANDRES DIEGO,V9,TRADICIONAL,1,2,2,0,0,1,0,20355.02,0.0,20355.02,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1238,MANSILLA EMANUEL JOSE LUIS,V6,TRADICIONAL,1,2,2,0,0,2,0,43616.89,0.0,43616.89,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1240,BARRALE MARIA SOLEDAD,V10,TRADICIONAL,1,7,7,0,0,3,0,185619.64,0.0,185619.64,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1243,MERLO MACARENA,V9,TRADICIONAL,1,2,2,0,0,1,0,31400.92,0.0,31400.92,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1248,LUDUEÑA MARCELO FABIAN,V6,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1249,ALVARADO MARIA PILAR HERRERA,V8,AUTOSERVICIO,1,26,26,0,0,2,0,1487133.84,0.0,1487133.84,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1251,AVILA LEANDRO MIGUEL,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1254,VACHETTA ALEJANDRO JORGE-SUC,V4,AUTOSERVICIO,1,7,7,0,0,1,0,828964.32,0.0,828964.32,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1255,CLEMENTE C Y J S.A.S.,V4,AUTOSERVICIO,1,16,16,0,0,4,0,427542.83,0.0,427542.83,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1257,GAMBINO EMILIANO DANIEL,V8,TRADICIONAL,1,13,13,0,0,3,0,121656.09,0.0,121656.09,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1259,QUINTERO WILLIAMS ALFREDO,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1260,BURIASCO JESICA ROMINA,V10,TRADICIONAL,1,1,1,0,0,1,0,16368.57,0.0,16368.57,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1261,ASIS ABRAMO JULIETA,V9,AUTOSERVICIO,1,32,32,0,0,5,0,353863.86,0.0,353863.86,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1262,ASIS ABRAMO JULIETA,V9,AUTOSERVICIO,1,17,17,0,0,4,0,258880.95,0.0,258880.95,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1263,LUNA EDGARDO,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1264,OLOCCO NICOLAS JOSE,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1268,DESPENSA EL MILAGRO,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1269,FRANCH JORGELINA,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1273,MAZZONI CASANDRA,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1283,BARBERO RAMIRO,V8,ON_PREMISE_VTK,1,2,2,0,0,1,0,78660.08,0.0,78660.08,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1288,LIN AGUSTIN,V10,AUTOSERVICIO,1,15,15,0,0,2,0,1478419.28,0.0,1478419.28,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1289,VACA MARTIN RODRIGO,V10,TRADICIONAL,1,2,2,0,0,1,0,24628.32,0.0,24628.32,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1290,JUAREZ LEONELA,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1291,LOPEZ CRISTIAN EZEQUIEL,V8,TRADICIONAL,1,13,13,0,0,2,0,224757.02,0.0,224757.02,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1292,GALIMBERTI DAIANA MARIA,V6,TRADICIONAL,1,2,2,0,0,1,0,31423.47,0.0,31423.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1294,FRANCO DISTRIBUCIONES S.R.L,V4,AUTOSERVICIO,1,1,1,0,0,1,0,193255.92,0.0,193255.92,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1296,SOSA MIGUEL ANGEL,V9,TRADICIONAL,1,3,3,0,0,1,0,29108.84,0.0,29108.84,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1299,GALLARDO HORACIO EZEQUIEL,V9,TRADICIONAL,1,5,5,0,0,1,0,44224.9,0.0,44224.9,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1302,BAZAN ANGELICA INES,V10,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1308,BESSONE GABRIEL DARIO,V10,TRADICIONAL,1,1,1,0,0,1,0,50847.12,0.0,50847.12,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1310,RASETTO MARIA FERNANDA,V8,TRADICIONAL,1,6,5,0,1,4,1,140432.23,-17232.21,123200.02,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1311,RAMIREZ VIVIAN LORENA,V9,TRADICIONAL,1,1,1,0,0,1,0,22361.53,0.0,22361.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1313,BAEZ NATALIA EUGENIA,V6,TRADICIONAL,1,18,12,0,6,3,1,107226.16,-53613.08,53613.08,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1319,PERCIVALDI EDGARDO,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1320,BIANCOTTI MARCELO,V8,ON_PREMISE_VTK,1,6,4,2,0,1,0,654643.74,0.0,654643.74,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1325,ACEVEDO M BELEN-SEDE CULTURAL,V10,TRADICIONAL,1,3,3,0,0,1,0,45238.53,0.0,45238.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1330,VIDELA CLAUDIA BEATRIZ,V10,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1335,perez maria alngelica,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1336,ROSTAGNO RAFAEL ERNESTO,V8,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1338,KEMERER FACUNDO,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1339,GIMENEZ SANDRA SOLEDAD,V8,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1340,FEDERICO ARMANDO RAFAEL,V3,TRADICIONAL,1,3,3,0,0,1,0,34162.69,0.0,34162.69,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1341,KIOSCO LAS MELLIS,V3,TRADICIONAL,1,4,4,0,0,2,0,33999.74,0.0,33999.74,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1342,LOPEZ MARIELA,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1348,SCOLASTRICHI NARENA,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1349,INZAGHI ALEJANDRA INES,V10,TRADICIONAL,1,2,2,0,0,1,0,19256.49,0.0,19256.49,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1352,FERRERO DANIEL GERMAN  Y FERREROS JUAN JOSE,V10,AUTOSERVICIO,1,15,15,0,0,2,0,1691713.53,0.0,1691713.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1360,MURUA ELIAS NICOLAS,V9,TRADICIONAL,1,3,3,0,0,2,0,114920.57,0.0,114920.57,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1361,GUDIÑO AINARA,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1364,ROMAN GASTON,V10,TRADICIONAL,1,6,6,0,0,1,0,55478.64,0.0,55478.64,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1366,REVELINO MIGUEL ANGEL,V8,TRADICIONAL,1,2,2,0,0,1,0,31423.47,0.0,31423.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1368,GRUPO RONDA S.A.S. S.A.S.,V8,ON_PREMISE_VTK,1,2,1,1,0,1,0,218500.2,0.0,218500.2,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1370,PEANO SEBASTIAN-MERCADO 9 LA FREYRE,V4,AUTOSERVICIO,1,7,7,0,0,1,0,856269.95,0.0,856269.95,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1371,HURQUIZA HORTENSIA LUCIANA,V9,ON_PREMISE_VTK,1,2,2,0,0,2,0,115537.6,0.0,115537.6,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1372,PRIMO DANIELA RUTH,V3,TRADICIONAL,1,8,8,0,0,4,0,93858.09,0.0,93858.09,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1377,ORTIZ LAURA,V6,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1383,CHEN FANG,V6,AUTOSERVICIO,1,7,7,0,0,1,0,941392.59,0.0,941392.59,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1385,BURGOS FERNANDO MATIAS NICOLAS,V8,TRADICIONAL,1,1,0,0,1,1,1,0.0,-9515.54,-9515.54,No,No,Excluido: sin ninguna linea con neto>0
+1388,LOTUSRB S.A.S.,V3,TRADICIONAL,1,3,3,0,0,1,0,99412.47,0.0,99412.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1389,PAIRE MARISOL GABRIELA,V3,TRADICIONAL,1,20,20,0,0,7,0,799512.23,0.0,799512.23,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1391,DAGATTI VANINA ANAHI,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1392,PASERO GABRIELA FERNANDA,V8,TRADICIONAL,1,2,2,0,0,1,0,31423.47,0.0,31423.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1396,MARTINA MAURICIO ALBERTO,V8,ON_PREMISE_VTK,1,7,7,0,0,4,0,233970.52,0.0,233970.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1397,BRINGAS CAMILO DAVID,V9,TRADICIONAL,1,10,10,0,0,4,0,98516.42,0.0,98516.42,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1400,ANGIOLINI DIEGO MIGUEL,V8,ON_PREMISE_VTK,1,1,1,0,0,1,0,45198.83,0.0,45198.83,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1403,PASERO GABRIELA FERNANDA,V8,TRADICIONAL,1,2,2,0,0,1,0,31423.47,0.0,31423.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1404,YANDEN S.A.S. -SUC,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1406,VELAZCO PATRICIA ALEJANDRA,V9,TRADICIONAL,1,2,2,0,0,1,0,17507.64,0.0,17507.64,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1411,GOMEZ MICAELA SILVANA,V3,TRADICIONAL,1,16,9,0,7,3,1,139714.2,-102569.16,37145.04,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1414,VELAZQUEZ ANDREA SOLEDAD,V8,TRADICIONAL,1,2,2,0,0,1,0,31423.47,0.0,31423.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1415,BANEGA RAUL ANTONIO,V10,TRADICIONAL,1,2,2,0,0,2,0,36377.04,0.0,36377.04,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1419,DALLA RIZZA ROBERTO OSCAR,V3,TRADICIONAL,1,3,3,0,0,1,0,50769.69,0.0,50769.69,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1422,JUAREZ ROSANA NATALI,V6,TRADICIONAL,1,2,2,0,0,1,0,15191.84,0.0,15191.84,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1423,GAILLARD GUSTAVO JOSE,V3,TRADICIONAL,1,4,4,0,0,2,0,157355.97,0.0,157355.97,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1424,IBAÑEZ MARCOS FACUNDO,V8,TRADICIONAL,1,6,6,0,0,2,0,59800.84,0.0,59800.84,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1425,REICH GERMAN RAUL,V9,ON_PREMISE_VTK,1,8,7,0,1,2,1,303509.52,-10238.63,293270.89,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1426,CAMARGO JUAN CRUZ,V6,TRADICIONAL,1,1,1,0,0,1,0,12314.16,0.0,12314.16,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1427,RUBIOLO SOLANA,V10,TRADICIONAL,1,3,3,0,0,2,0,97131.31,0.0,97131.31,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1430,PEREZ PABLO EZEQUIEL,V8,TRADICIONAL,1,2,2,0,0,1,0,31423.47,0.0,31423.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1431,FRARE MELINA SOLEDAD,V8,TRADICIONAL,1,5,5,0,0,2,0,68360.2,0.0,68360.2,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1432,ARMANDO FRANCO,V8,TRADICIONAL,1,6,6,0,0,2,0,79679.7,0.0,79679.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1433,AMAYA ANDINA ANAHI,V6,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1434,REYNOSO MARIELA-POLLERIA,V10,TRADICIONAL,1,2,2,0,0,1,0,15456.36,0.0,15456.36,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1435,MIRA JOS ALBERTO,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1439,MIL NUEVE 82 S.R.L.,V8,ON_PREMISE_VTK,1,1,1,0,0,1,0,257674.56,0.0,257674.56,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1441,ZHANG FANGFANG,V6,AUTOSERVICIO,1,7,7,0,0,1,0,932190.12,0.0,932190.12,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1443,YAKO DRUGSTORE S.A.S - LEROY,V10,ON_PREMISE_VTK,1,6,5,1,0,3,0,2277472.83,0.0,2277472.83,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1445,AIMAR YUDIHT ZULIMA,V8,TRADICIONAL,1,4,4,0,0,2,0,70950.44,0.0,70950.44,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1446,GARCIA EMA RAQUEL-GULAS,V8,ON_PREMISE_VTK,1,8,4,4,0,1,0,107173.38,0.0,107173.38,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1447,ARRIBA LUCAS EZEQUIEL,V10,ON_PREMISE_VTK,1,9,7,2,0,2,0,139787.78,0.0,139787.78,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1448,PAREDES MARIA DOLORES,V9,TRADICIONAL,1,7,7,0,0,2,0,97107.79,0.0,97107.79,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1449,HERRERA ALVARADO HERMELINDA AURELIA,V8,ON_PREMISE_VTK,1,11,8,3,0,1,0,351927.89,0.0,351927.89,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1450,ROSSI ZOE,V3,TRADICIONAL,1,3,3,0,0,1,0,40732.98,0.0,40732.98,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1451,GIL SOFIA AGUSTINA,V7,ON_PREMISE_VTK,1,4,4,0,0,1,0,41797.8,0.0,41797.8,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1452,BERTONE FATIMA MAGALI,V4,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1453,ASTUDILLO MARIA DEOLINDA DEL SAGRADO CORAZON,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1455,TORTOLO ESTEFANIA,V8,ON_PREMISE_VTK,1,9,9,0,0,1,0,181808.91,0.0,181808.91,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1456,DIAZ DAVID,V7,ON_PREMISE_VTK,1,3,3,0,0,1,0,73884.96,0.0,73884.96,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1457,PEREYRA ALCIRA LILIANA,V9,ON_PREMISE_VTK,1,1,1,0,0,1,0,16358.28,0.0,16358.28,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1458,SALUZZO GABRIELA,V8,ON_PREMISE_VTK,1,8,4,4,0,1,0,1190277.24,0.0,1190277.24,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1459,SPERTINO FABIAN,V8,ON_PREMISE_VTK,1,8,4,4,0,1,0,132646.14,0.0,132646.14,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1462,DANGUISE DISTRIBUCIONES,V8,ON_PREMISE_VTK,1,12,7,5,0,1,0,3557486.03,0.0,3557486.03,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+1463,DANGUISE DISTRIBUCIONES,V8,ON_PREMISE_VTK,1,8,4,4,0,1,0,455663.28,0.0,455663.28,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2000,SANTORO FRANCO,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2003,LUNA SILVINA NOEMI,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2005,CAPDEVILA MACIEL,V6,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2011,ORELLANA LUCIANA,V6,TRADICIONAL,1,19,19,0,0,1,0,181301.82,0.0,181301.82,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2012,CANAVESIO OSCAR ROLANDO,V6,TRADICIONAL,1,4,4,0,0,2,0,51357.09,0.0,51357.09,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2016,GARCIA GUSTAVO HORACIO,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2017,GALANZINO GERARDO FAVIO,V6,TRADICIONAL,1,3,3,0,0,2,0,147769.92,0.0,147769.92,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2018,BARA INTEGRAL S.A.S.,V10,TRADICIONAL,1,3,3,0,0,1,0,45238.53,0.0,45238.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2021,ACHILLE PAOLA BEATRIZ DEL VALLE,V10,TRADICIONAL,1,2,2,0,0,2,0,24628.32,0.0,24628.32,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2027,LAVETTI  LUCY AZUCENA,V6,TRADICIONAL,1,2,2,0,0,2,0,36942.48,0.0,36942.48,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2028,BERTORELLO JUAN C. Y DANIELA,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2038,HUANG XIAODONG,V6,AUTOSERVICIO,1,7,7,0,0,1,0,822218.72,0.0,822218.72,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2043,FRANCICA GUILLERMO ANDRES ALFREDO,V10,TRADICIONAL,1,5,5,0,0,2,0,79211.33,0.0,79211.33,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2049,LUNA CARINA,V6,TRADICIONAL,1,3,3,0,0,1,0,42240.8,0.0,42240.8,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2051,INES NAZARENA SACHETTO,V10,TRADICIONAL,1,5,5,0,0,1,0,70560.58,0.0,70560.58,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2052,ARRIETA  MARCELO II,V6,AUTOSERVICIO,1,1,1,0,0,1,0,22362.32,0.0,22362.32,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2057,SIVILOTTI FERNANDA,V6,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2060,PAJON ADRIAN,V6,AUTOSERVICIO,1,7,7,0,0,1,0,813080.97,0.0,813080.97,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2061,BELTRAMO MIRTA,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2066,LOPEZ GUSTAVO EDUARDO,V6,TRADICIONAL,1,3,3,0,0,1,0,42240.8,0.0,42240.8,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2068,VEGA MAXIMILIANO RAUL,V6,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2083,CHEN ZHONGQING,V10,AUTOSERVICIO,1,95,95,0,0,4,0,3325432.72,0.0,3325432.72,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2096,CONTRERAS MAXIMILIANO NESTOR,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2100,FERREYRA MARCELA,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2101,STOLA GABRIELA DEL VALLE,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2102,HERRADOR ESTHER DEL VALLE,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2108,ALMADA MARISEL DEL VALLE ,V10,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2109,BENEDETTI EDUARDO,V10,AUTOSERVICIO,1,15,15,0,0,2,0,1301654.61,0.0,1301654.61,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2121,FERREYRA JOSE,V10,TRADICIONAL,1,5,5,0,0,1,0,75562.6,0.0,75562.6,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2129,MARIA SOLEDAD SANCHEZ,V6,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2130,DAI BIYING,V6,AUTOSERVICIO,1,7,7,0,0,1,0,879017.44,0.0,879017.44,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2133,TADONE JUAN LUIS,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2134,ALVAREZ ANA LAURA,V10,TRADICIONAL,1,19,18,0,1,3,1,1132510.91,-41515.04,1090995.87,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2135,FLORES,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2136,HERNANDEZ MARTA FLORINDA,V10,TRADICIONAL,1,4,4,0,0,1,0,47301.84,0.0,47301.84,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2138,FERREYRA DIEGO VICTOR,V10,TRADICIONAL,1,17,17,0,0,3,0,369395.77,0.0,369395.77,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2139,FUNEZ DAVID EUGENIO,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2140,BIAVA GUSTAVO RUBEN,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2141,TELLO ROBERTO LUIS,V6,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2144,BERTINOTTI DARIO MARTIN,V6,TRADICIONAL,1,1,1,0,0,1,0,15888.12,0.0,15888.12,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2145,ILLARA MARIA ELENA,V6,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2162,MONDINO VANESA PAOLA,V6,TRADICIONAL,1,8,7,0,1,3,1,84720.76,-2052.36,82668.4,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2169,BAZZI CLAUDIA ALEJANDRA,V10,TRADICIONAL,1,3,3,0,0,1,0,45238.53,0.0,45238.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2191,MOREYRA EDIT ESTER,V10,TRADICIONAL,1,12,12,0,0,2,0,320085.62,0.0,320085.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2201,LUNA SANDRA,V10,TRADICIONAL,1,10,10,0,0,2,0,196927.41,0.0,196927.41,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2202,CONTRERAS  LAURA LORENA,V10,TRADICIONAL,1,5,5,0,0,1,0,64014.81,0.0,64014.81,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2203,COSTAMAGNA MARIO A. Y NOELIA,V10,TRADICIONAL,1,3,3,0,0,1,0,45238.53,0.0,45238.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2204,VIGNOLA STELLA MARIS,V6,TRADICIONAL,1,4,4,0,0,2,0,147769.92,0.0,147769.92,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2207,SANCHEZ DANTE EZEQUIEL,V6,TRADICIONAL,1,3,3,0,0,1,0,46103.77,0.0,46103.77,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2208,BARBERIS VALERIA SOLEDAD,V6,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2211,ZHENG HUIJUAN,V10,AUTOSERVICIO,1,52,50,2,0,13,0,1245295.48,0.0,1245295.48,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2224,LUQUE JORGE,V6,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2237,QUINTANA JIMENA LUCIANA,V10,TRADICIONAL,1,10,8,0,2,4,1,173257.69,-49256.64,124001.05,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2246,BUGNONE  MARIA ROSA,V6,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2250,ANGARAMO ANDREA FABIANA,V6,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2255,VACA MARIA LAURA,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2256,BECCARINI EDUARDO JORGE,V10,TRADICIONAL,1,7,7,0,0,3,0,90489.38,0.0,90489.38,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2264,PUCHETA RAQUEL,V10,TRADICIONAL,1,6,6,0,0,2,0,64620.09,0.0,64620.09,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2272,MANCINI GRACIELA BEATRIZ,V10,TRADICIONAL,1,4,4,0,0,1,0,32522.8,0.0,32522.8,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2281,MONGILARDI DAVID OSVALDO,V10,TRADICIONAL,1,3,3,0,0,1,0,45238.53,0.0,45238.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2292,OTTERO  ARI ELIAN,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2293,MONTIEL IVANA SOLEDAD,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2321,ESCUDERO FRANCO SEBASTIAN,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2324,ROMERO CLAUDIO ADRIAN,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2326,SPAHR FERREYRA NATALIA ELIZABETH,V10,TRADICIONAL,1,9,9,0,0,2,0,228717.68,0.0,228717.68,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2327,CABRERA LAURA,V10,TRADICIONAL,1,3,3,0,0,1,0,45238.53,0.0,45238.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2331,SHI JINCHUI,V10,AUTOSERVICIO,1,15,15,0,0,2,0,1474561.57,0.0,1474561.57,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2332,TONINI MARISA ELIZABETH,V10,TRADICIONAL,1,5,5,0,0,3,0,123898.61,0.0,123898.61,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2334,YANG ZHENKUN - LA ESPERANZA 1,V6,AUTOSERVICIO,1,15,15,0,0,1,0,401370.21,0.0,401370.21,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2335,ALMADA MONICA VALERIA,V10,TRADICIONAL,1,6,6,0,0,2,0,72498.75,0.0,72498.75,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2340,SCHOTT ANA MARIA MERCEDES,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2347,CABRERA MARIA JOSE,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2353,HONG CINTHIA,V10,AUTOSERVICIO,1,26,26,0,0,3,0,1104135.68,0.0,1104135.68,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2357,HECTOR IVAN HERNANDEZ,V10,AUTOSERVICIO,1,65,62,2,1,23,1,7581260.23,-16762.63,7564497.6,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2366,MAGNI CLAUDIA ALEJANDRA,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2370,ZORDAN MIRNA LIZET,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2377,HILGUERO J. JORGE ANTONIO-SUC,V10,TRADICIONAL,1,3,3,0,0,1,0,45238.53,0.0,45238.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2378,HILGUERO JORGE ANTONIO,V10,TRADICIONAL,1,3,3,0,0,1,0,45238.53,0.0,45238.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2379,HILGUERO JORGE ANTONIO SUC 3,V10,TRADICIONAL,1,3,3,0,0,1,0,45238.53,0.0,45238.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2380,ZACHER FEDERICO CONRADO,V10,TRADICIONAL,1,12,12,0,0,2,0,123167.07,0.0,123167.07,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2388,RAMOS JULIO MARIO,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2390,CABRERA RODRIGO HECTOR Y CABRERA GONZALO ADRIAN,V10,AUTOSERVICIO,1,15,15,0,0,2,0,1266466.53,0.0,1266466.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2392,CHEN FANG,V6,AUTOSERVICIO,1,1,1,0,0,1,0,440794.43,0.0,440794.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2393,CABRERA RODRIGO HECTOR Y CABRERA GONZALO ADRIAN,V10,AUTOSERVICIO,1,15,15,0,0,2,0,1391394.69,0.0,1391394.69,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2410,SOCIEDAD COSMOPOLITA DE SOCORROS  MUTUOS,V10,AUTOSERVICIO,1,51,51,0,0,7,0,1954805.32,0.0,1954805.32,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2414,RINERO MARIA DE LOS ANGELES,V10,TRADICIONAL,1,15,15,0,0,3,0,472644.96,0.0,472644.96,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2420,ASOCIACION MUTUAL DE AYUDA ENTRE ASOCIADOS Y ADHER,V6,AUTOSERVICIO,1,7,7,0,0,1,0,915838.04,0.0,915838.04,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2425,BRUNO MELISA,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2428,GRIVA DAVID,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2430,BROCHERO RUBEN DARIO,V6,TRADICIONAL,1,5,5,0,0,2,0,70399.84,0.0,70399.84,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2437,NAVARRO MAURICIO GABRIEL,V6,TRADICIONAL,1,5,5,0,0,2,0,75006.13,0.0,75006.13,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2440,GANDINO ANA ESTHER,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2441,JAMAR S.R.L.,V10,AUTOSERVICIO,1,16,16,0,0,3,0,1272558.8,0.0,1272558.8,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2444,GUDIÑO HECTOR UVALDO,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2449,OVIEDO ERNESTO,V10,TRADICIONAL,1,2,2,0,0,1,0,20908.1,0.0,20908.1,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2450,EL GURY SRL,V10,AUTOSERVICIO,1,15,15,0,0,2,0,1716508.46,0.0,1716508.46,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2465,FATIMA COLAZO,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2466,MEJIA GREGORIO NORMA-SUC,V10,AUTOSERVICIO,1,11,11,0,0,2,0,400005.72,0.0,400005.72,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2473,JUNCOS CLAUDIA,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2483,FALCO GRACIELA JUANA M.,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2487,SALVAI CLARA NIEVE CEFERINA,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2496,FERREYRA GERARDO,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2497,PINO ROXANA,V10,TRADICIONAL,1,3,3,0,0,1,0,45238.53,0.0,45238.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2501,MAIDANA LORENA,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2503,CAGNASSO GLADYS ISABEL,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2506,MOYANO JORGE-KIOSCO  JOEL,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2512,TURINETTI FABIAN,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2520,LAS PEKES,V10,TRADICIONAL,1,2,2,0,0,1,0,62230.69,0.0,62230.69,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2523,BONETTO ROBERTO OMAR,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2530,CANELLO DE GIORGIS ESTELA,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2534,CASTILLO CRISTIAN,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2536,GROSSO MAGALI SOLEDAD,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2539,ECO GROUP S.R.L  (EN FORMACION,V10,AUTOSERVICIO,1,8,8,0,0,1,0,485745.07,0.0,485745.07,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2540,SISTERNA ANDREA DEL VALLE,V6,TRADICIONAL,1,1,1,0,0,1,0,18356.56,0.0,18356.56,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2557,YUNOT MARIA ELENA,V6,ON_PREMISE_VTK,1,2,2,0,0,1,0,31814.54,0.0,31814.54,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2574,LUNA NOELIA,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2582,LEONES ROLANDO,V10,TRADICIONAL,1,3,3,0,0,1,0,45238.53,0.0,45238.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2589,GUDIÑO GISELA NEREA MAGALI,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2598,ALMADA BLANCA NORA,V6,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2602,BRESSO JULIO NORBERTO Y BR.,V6,AUTOSERVICIO,1,7,7,0,0,1,0,822132.55,0.0,822132.55,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2606,CARDO LUIS ALBERTO,V6,TRADICIONAL,1,3,3,0,0,1,0,63071.56,0.0,63071.56,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2630,CHEN MEI,V6,AUTOSERVICIO,1,25,25,0,0,6,0,1219103.44,0.0,1219103.44,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2633,RODRIGUEZ FERNANDO RAMON,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2635,OGGERO RENE MARIO,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2646,MUTUAL DE SOCIEDAD CULTURAL SUC LP,V6,AUTOSERVICIO,1,1,1,0,0,1,0,124545.11,0.0,124545.11,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2647,ASOCIACION MUTUAL LIBERTAD BALNEARIA,V6,AUTOSERVICIO,1,7,7,0,0,1,0,906937.32,0.0,906937.32,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2648,MENDEZ RAUL,V6,AUTOSERVICIO,1,2,2,0,0,1,0,85021.42,0.0,85021.42,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2653,GOMEZ MIGUEL ANGEL,V6,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2655,CAMPANA NORMA BEATRIZ,V6,TRADICIONAL,1,3,3,0,0,2,0,88809.84,0.0,88809.84,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2665,BULCHI AMALIA,V6,TRADICIONAL,1,3,3,0,0,1,0,42240.8,0.0,42240.8,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2666,PERRONE DORIS SILVIA,V6,TRADICIONAL,1,3,3,0,0,1,0,42240.8,0.0,42240.8,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2677,GHIONE DIEGO ADALBERTO,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2678,ALMADA SILVINA EDITH,V10,TRADICIONAL,1,3,3,0,0,1,0,45238.53,0.0,45238.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2680,TABLADA ESTELA MARY,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2693,FISSORE LORENA,V6,AUTOSERVICIO,1,1,1,0,0,1,0,148494.58,0.0,148494.58,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2698,BARRALES CARLOS,V10,TRADICIONAL,1,4,4,0,0,2,0,168671.49,0.0,168671.49,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2699,LUDUENA YAMILA,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2714,BROCHERO MARIANA,V6,TRADICIONAL,1,6,6,0,0,2,0,154512.41,0.0,154512.41,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2715,LUQUE ISAIAS ANDRES,V6,TRADICIONAL,1,4,4,0,0,2,0,42948.55,0.0,42948.55,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2716,TORRE MARCELO FABIAN,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2726,LUQUE DANIEL GUSTAVO,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2730,BOLATTI  ROSSANA DEL VALLE,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2741,PIOVANO JENNIFER AYLEN,V6,TRADICIONAL,1,2,2,0,0,1,0,17654.22,0.0,17654.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2752,SANMARTINO EVA,V10,TRADICIONAL,1,6,6,0,0,1,0,229262.7,0.0,229262.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2789,GALLEGOS RENE ALEJANDRO,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2792,SUCESION DE PORTA MIGUEL ANGEL,V4,ON_PREMISE_VTK,1,2,2,0,0,1,0,33994.84,0.0,33994.84,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2796,DALMASSO MARTIN ALEJANDRO,V10,AUTOSERVICIO,1,14,7,0,7,2,1,866490.71,-866490.71,-0.0,Si,No,Orbit SI / regla-correcta NO: neto consolidado <= 0 (NC o devolucion neutraliza la venta)
+2799,CHEN JINHUA,V4,AUTOSERVICIO,1,4,4,0,0,2,0,46600.74,0.0,46600.74,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2802,CUENCA VICTORIA YOLANDA,V10,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2804,MONJES MARIA ROSA,V6,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2805,AGUIRRE JOSE RUBEN,V6,AUTOSERVICIO,1,7,7,0,0,1,0,838748.68,0.0,838748.68,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2808,PEREZ INES,V6,TRADICIONAL,1,3,3,0,0,1,0,46103.77,0.0,46103.77,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2809,COOP.TAMB.LAS CAÑITAS LTDA.SUC,V10,AUTOSERVICIO,1,15,15,0,0,2,0,1437186.06,0.0,1437186.06,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2824,BIRRI VIOLA ANGELA GEORGINA,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2825,SANCHEZ YAMILE,V6,TRADICIONAL,1,10,10,0,0,3,0,100314.31,0.0,100314.31,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2839,VALVERDE ELLENA,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2846,BORDOY MARISEL,V6,TRADICIONAL,1,3,3,0,0,1,0,30101.73,0.0,30101.73,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2857,YANG ZHENKUN-LA ESPERANZA 2,V6,AUTOSERVICIO,1,6,6,0,0,2,0,119613.06,0.0,119613.06,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2862,VILLARRUEL JOSE DANIEL,V6,TRADICIONAL,1,1,1,0,0,1,0,15700.46,0.0,15700.46,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2882,PAJON JOSE LUIS,V6,TRADICIONAL,1,6,6,0,0,2,0,69125.79,0.0,69125.79,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2883,PAREDEZ MIRNA NOEMI,V6,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2886,PUCCI DANIEL,V6,AUTOSERVICIO,1,1,1,0,0,1,0,30753.57,0.0,30753.57,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2890,TOLEDO DANIELA BELEN,V6,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2896,NIEVA ANDRES SEBASTIAN,V6,TRADICIONAL,1,6,6,0,0,4,0,72561.15,0.0,72561.15,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2911,BALDO DE BRUGALETTA ODILIA,V6,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2918,CUELLO LUIS ALBERTO,V6,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2924,DIAZ RAUL ENRIQUE,V6,TRADICIONAL,1,1,1,0,0,1,0,15720.88,0.0,15720.88,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2927,PRIOTTO VALERIA SOLEDAD,V6,AUTOSERVICIO,1,7,7,0,0,1,0,914905.92,0.0,914905.92,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2953,YAKO DRUGSTORE S.A.S.,V10,TRADICIONAL,1,5,5,0,0,2,0,51605.71,0.0,51605.71,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2980,CASSINA MARIA TERESA,V6,AUTOSERVICIO,1,7,7,0,0,1,0,912481.41,0.0,912481.41,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2986,MOYANO PAOLA,V10,TRADICIONAL,1,3,3,0,0,1,0,45238.53,0.0,45238.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+2993,MOYANO CECILIA DEL VALLE,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3011,MARASINI JONATHAN EZEQUIEL,V10,ON_PREMISE_VTK,1,3,3,0,0,2,0,107956.34,0.0,107956.34,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3026,GOMEZ IVANA DANIELA,V10,TRADICIONAL,1,2,2,0,0,1,0,17935.62,0.0,17935.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3069,BAIGORRIA BETIANA SOLEDAD,V10,TRADICIONAL,1,2,2,0,0,1,0,20880.81,0.0,20880.81,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3075,PERRONE JAVIER D.,V10,TRADICIONAL,1,2,2,0,0,1,0,58995.06,0.0,58995.06,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3111,BARRALES RAUL GUILLERMO,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3123,CHEN JINMEI,V6,AUTOSERVICIO,1,10,10,0,0,1,0,220912.47,0.0,220912.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3144,GOMEZ FLAVIA VERONICA,V10,TRADICIONAL,1,10,10,0,0,2,0,145646.67,0.0,145646.67,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3149,MANSILLA EMANUEL JOSE LUIS,V6,TRADICIONAL,1,12,12,0,0,4,0,115973.36,0.0,115973.36,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3166,CUELLO DANIEL ANTONIO,V6,AUTOSERVICIO,1,1,1,0,0,1,0,22361.53,0.0,22361.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3227,BARRAZA RITA DEL VALLE,V6,TRADICIONAL,1,13,9,0,4,3,1,84480.51,-36610.08,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3327,WU DEWANG,V10,AUTOSERVICIO,1,13,13,0,0,3,0,818565.14,0.0,818565.14,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3367,GAITAN MAFALDA DEL VALLE,V6,TRADICIONAL,1,1,1,0,0,1,0,21255.36,0.0,21255.36,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3415,LEIVA DEBORA,V10,TRADICIONAL,1,3,3,0,0,1,0,37642.7,0.0,37642.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3458,FANER PORCHETTO JORGE DENIS,V6,TRADICIONAL,1,3,3,0,0,1,0,75123.61,0.0,75123.61,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3522,SUPERMERCADO GAIDO SRL,V6,AUTOSERVICIO,1,10,10,0,0,2,0,918791.38,0.0,918791.38,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3532,PAEZ MARIO,V10,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3570,AGUINALDO SILVIA DEL VALLE,V6,TRADICIONAL,1,3,3,0,0,1,0,42240.8,0.0,42240.8,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3622,FERRARIS NANCI MARIA,V4,TRADICIONAL,1,12,8,0,4,3,1,72936.96,-36468.48,36468.48,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3645,MICOL LUIS MARCELO,V6,AUTOSERVICIO,1,6,5,0,1,5,1,104110.74,-14237.02,89873.72,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3672,DANIELLE GABRIEL ANTONIO,V10,TRADICIONAL,1,3,3,0,0,1,0,48180.47,0.0,48180.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+3673,RIVADENEIRA ALICIA,V10,TRADICIONAL,1,3,3,0,0,1,0,45238.53,0.0,45238.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+4405,DELLA TORRE LUIS ALBERTO ,V4,ON_PREMISE_VTK,1,2,2,0,0,1,0,38172.6,0.0,38172.6,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+4457,FERRARIS HUGO RUBY,V4,AUTOSERVICIO,1,11,11,0,0,2,0,553459.81,0.0,553459.81,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+4463,LEAL PAOLA MARIA,V4,TRADICIONAL,1,1,1,0,0,1,0,111220.68,0.0,111220.68,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+4467,COOP. AGRIC. CONSUMO,V4,AUTOSERVICIO,1,15,15,0,0,2,0,1418231.59,0.0,1418231.59,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+4519,SANCHEZ CLAUDIA ALEJANDRA,V4,AUTOSERVICIO,1,11,11,0,0,2,0,860790.56,0.0,860790.56,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+4719,SARACCO RASPO MARIA LAURA,V8,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+4758,CEBALLOS LUCIA DERMIRIA,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7036,VIDELA ROSA ISABEL,V3,TRADICIONAL,1,6,6,0,0,1,0,82909.97,0.0,82909.97,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7163,RINAUDO MILAGROS BELEN,V3,TRADICIONAL,1,5,4,0,1,2,1,40128.13,-10348.23,29779.9,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7174,GENERO ALBERTO DANIEL,V3,ON_PREMISE_VTK,1,2,2,0,0,1,0,33994.84,0.0,33994.84,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7215,SCOCCO MYRYAM DEL CARMEN,V3,TRADICIONAL,1,1,1,0,0,1,0,16368.57,0.0,16368.57,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7219,YUMEI HUANG ,V8,AUTOSERVICIO,1,22,19,2,1,5,1,1109809.87,-65224.93,1044584.94,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7221,BELTRAMONE ALFREDO,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7231,FRANCONE GASTON NICOLAS,V3,ON_PREMISE_VTK,1,2,2,0,0,1,0,33994.84,0.0,33994.84,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7232,VILLAREAL JENIFER,V3,TRADICIONAL,1,1,1,0,0,1,0,65474.28,0.0,65474.28,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7240,FUNEZ SOLANGE BEATRIZ,V3,TRADICIONAL,1,2,2,0,0,1,0,24628.32,0.0,24628.32,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7245,BAROVERO DAMIAN JOSE,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7258,ÑAÑEZ GASTON FEDERICO,V3,TRADICIONAL,1,2,2,0,0,1,0,52955.2,0.0,52955.2,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7275,LUNA MIRTHA NOEMI,V3,TRADICIONAL,1,2,2,0,0,1,0,18560.37,0.0,18560.37,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7348,AMAYA SILVIA ANDREA,V3,TRADICIONAL,1,1,1,0,0,1,0,12314.16,0.0,12314.16,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7427,ROSTAGNO DAVID HERNAN,V3,TRADICIONAL,1,4,4,0,0,2,0,74619.86,0.0,74619.86,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7480,AIMAR SERGIO MARCELO,V3,TRADICIONAL,1,4,2,0,2,2,1,20225.36,-20225.36,0.0,Si,No,Orbit SI / regla-correcta NO: neto consolidado <= 0 (NC o devolucion neutraliza la venta)
+7485,KARLEN CESAR ADRIAN,V3,TRADICIONAL,1,2,2,0,0,1,0,45051.3,0.0,45051.3,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7523,DABOVE SERGIO ADRIAN,V3,TRADICIONAL,1,2,2,0,0,2,0,30930.34,0.0,30930.34,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7533,TAVERNA JESICA VERONICA,V3,TRADICIONAL,1,1,1,0,0,1,0,16104.66,0.0,16104.66,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7553,CRAVERO BEATRIZ DEL VALLE,V3,TRADICIONAL,1,3,3,0,0,1,0,26152.77,0.0,26152.77,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7602,BATTAN VANINA CELESTE RITA ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7622,GABRIEL FIXMAN,V8,TRADICIONAL,1,5,5,0,0,2,0,232789.9,0.0,232789.9,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7833,PONCE CESAR DAMIAN,V7,TRADICIONAL,1,6,6,0,0,2,0,83877.49,0.0,83877.49,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7847,MORALES CARRERAS DIANA JESICA ,V9,TRADICIONAL,1,4,4,0,0,2,0,174640.34,0.0,174640.34,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7857,JUAN BRINGAS,V9,TRADICIONAL,1,2,2,0,0,1,0,50835.58,0.0,50835.58,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7863,ROSALES MARIA JULIETA ,V9,TRADICIONAL,1,3,3,0,0,1,0,45155.72,0.0,45155.72,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7869,MATOS ABEL,V9,AUTOSERVICIO,1,3,3,0,0,2,0,1879401.99,0.0,1879401.99,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7882,LIGORRIA SILVIA ELENA ,V9,TRADICIONAL,1,3,3,0,0,1,0,36099.95,0.0,36099.95,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7913,LOPEZ EDITH GABRIELA,V7,AUTOSERVICIO,1,8,8,0,0,2,0,214884.32,0.0,214884.32,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7919,LLANES CRISTIAN JORGE,V7,TRADICIONAL,1,3,3,0,0,2,0,56397.15,0.0,56397.15,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7921,ZORI NICOLAS ALBERTO 2,V7,AUTOSERVICIO,1,7,7,0,0,2,0,145274.98,0.0,145274.98,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7932,ALTAMIRANO LEONARDO DANIEL,V7,TRADICIONAL,1,3,3,0,0,2,0,69184.08,0.0,69184.08,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7934,ZAMORA BUSTOS NICOLAS EMILIANO,V7,ON_PREMISE_VTK,1,2,2,0,0,1,0,24628.32,0.0,24628.32,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7939,LACAMORIA MARIA,V7,TRADICIONAL,1,10,7,0,3,7,2,81028.2,-36068.28,44959.92,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7943,GOMEZ TERESA ADRIANA ,V7,TRADICIONAL,1,1,1,0,0,1,0,9764.13,0.0,9764.13,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7947,VAZQUEZ CAROLINA EDITH MABEL,V7,AUTOSERVICIO,1,1,1,0,0,1,0,24628.32,0.0,24628.32,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7979,LEYRA GUSTAVO FABIAN ,V7,TRADICIONAL,1,3,3,0,0,1,0,59323.83,0.0,59323.83,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7980,BARRERAS MATEO,V7,TRADICIONAL,1,7,7,0,0,1,0,88780.5,0.0,88780.5,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7990,GENTA HECTOR REINALDO ,V7,TRADICIONAL,1,3,3,0,0,1,0,44485.57,0.0,44485.57,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+7996,ARIAS JAVIER ,V7,TRADICIONAL,1,6,4,0,2,3,1,126695.43,-63689.39,63006.04,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8005,LA BANCA IVANA ,V9,TRADICIONAL,1,3,3,0,0,1,0,34580.26,0.0,34580.26,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8006,ARREGUIS CLAUDIA MARCELA,V9,TRADICIONAL,1,12,8,0,4,3,1,117676.6,-58838.3,58838.3,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8008,CALDERON SOLEDAD DEL CARMEN ,V9,TRADICIONAL,1,22,22,0,0,4,0,537372.38,0.0,537372.38,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8009,MURUA DANIEL ALEJANDRO,V9,TRADICIONAL,1,4,4,0,0,1,0,80627.1,0.0,80627.1,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8010,GARAY ELENA DEL VALLE,V9,AUTOSERVICIO,1,36,31,5,0,5,0,2420675.94,0.0,2420675.94,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8011,TRAD WALTER ADRIAN,V9,AUTOSERVICIO,1,1,1,0,0,1,0,1857251.7,0.0,1857251.7,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8020,ALVAREZ MARIA DEL CARMEN,V9,TRADICIONAL,1,10,10,0,0,4,0,190375.48,0.0,190375.48,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8021,DONG MEIZHU,V9,AUTOSERVICIO,1,10,10,0,0,4,0,1317823.76,0.0,1317823.76,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8027,BUSTOS LUCIANA 63,V7,TRADICIONAL,1,1,1,0,0,1,0,19040.74,0.0,19040.74,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8040,MIDEY RUTH ELIZABETH,V7,AUTOSERVICIO,1,11,11,0,0,4,0,380555.16,0.0,380555.16,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8049,UALAS ELIAS EZEQUIEL,V7,AUTOSERVICIO,1,17,17,0,0,4,0,442460.57,0.0,442460.57,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8068,CHEN ZHONGYI,V9,AUTOSERVICIO,1,17,17,0,0,1,0,979671.68,0.0,979671.68,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8075,PEREZ OLGA MELANIA,V9,TRADICIONAL,1,1,1,0,0,1,0,12846.57,0.0,12846.57,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8077,AMMANN ARAYA MARIELA BEATRIZ,V9,AUTOSERVICIO,1,15,15,0,0,3,0,2255984.21,0.0,2255984.21,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8111,VILLALOBO RAMON ENRIQUE,V9,TRADICIONAL,1,1,1,0,0,1,0,15888.12,0.0,15888.12,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8125,CEBALLOS CARLOS JULIO,V9,AUTOSERVICIO,1,23,17,6,0,4,0,1936460.42,0.0,1936460.42,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8139,CHEN XIANYU,V9,AUTOSERVICIO,1,25,19,5,1,6,1,2087340.16,-36628.68,2050711.48,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8147,LIN XIANJIN,V9,AUTOSERVICIO,1,2,2,0,0,1,0,174537.28,0.0,174537.28,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8157,CARRERA MONICA CRISTINA ,V9,TRADICIONAL,1,1,1,0,0,1,0,17507.63,0.0,17507.63,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8161,BELLON FABRICIO,V9,TRADICIONAL,1,8,8,0,0,2,0,5825666.07,0.0,5825666.07,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8163,CARDINALI FACUNDO GABRIEL,V9,TRADICIONAL,1,5,5,0,0,2,0,45118.28,0.0,45118.28,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8170,AMMANN ARAYA MARIELA BEATRIZ,V9,AUTOSERVICIO,1,1,1,0,0,1,0,742900.68,0.0,742900.68,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8183,ROSALES ANA PETRONILA ,V9,TRADICIONAL,1,8,8,0,0,2,0,111818.14,0.0,111818.14,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8188,MORALES CARLOS EDUARDO,V9,TRADICIONAL,1,3,3,0,0,1,0,69899.54,0.0,69899.54,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8192,BENGOLEA GILARDI CESAR ESTEBAN ,V9,TRADICIONAL,1,4,4,0,0,2,0,51277.43,0.0,51277.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8194,SALAS HECTOR FABIAN ,V9,TRADICIONAL,1,3,3,0,0,2,0,36548.83,0.0,36548.83,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8195,AMAYA CLAUDIA MARIELA,V9,TRADICIONAL,1,18,18,0,0,2,0,110533.74,0.0,110533.74,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8197,HUANG JIANPING,V9,AUTOSERVICIO,1,6,6,0,0,1,0,570084.32,0.0,570084.32,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8207,BARROSO RAUL OMAR ,V9,TRADICIONAL,1,6,6,0,0,2,0,795669.64,0.0,795669.64,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8212,CLIENTE MOSTRADOR V20,V9,TRADICIONAL,1,1,1,0,0,1,0,45556.78,0.0,45556.78,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8219,MOLINA JORGE DOMINGO  ,V9,TRADICIONAL,1,1,1,0,0,1,0,7850.23,0.0,7850.23,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+8230,ZHUANG XIAYAN 63,V9,AUTOSERVICIO,1,30,25,5,0,4,0,2574914.99,0.0,2574914.99,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30000,GOIRAN JULIAN ROBERTO ,V8,TRADICIONAL,1,3,3,0,0,1,0,42770.35,0.0,42770.35,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30001,FERNANDEZ PATRICIO JAVIER ,V8,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30005,NAVARRO ROMINA SOLEDAD,V8,TRADICIONAL,1,2,2,0,0,1,0,31423.47,0.0,31423.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30006,ZHENZHEN WU,V8,AUTOSERVICIO,1,34,30,3,1,5,1,1274384.35,-36872.77,1237511.58,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30008,SOLANGE BEATRIZ FUNES,V8,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30010,PRUNELLO LEONARDO ANDRES,V8,TRADICIONAL,1,4,4,0,0,2,0,38197.06,0.0,38197.06,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30011,CHUN JIN ZHANG,V8,AUTOSERVICIO,1,38,31,6,1,5,1,1299762.2,-16762.63,1282999.57,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30012,LAMBERTI LORENA BEATRIZ,V8,TRADICIONAL,1,1,1,0,0,1,0,7850.23,0.0,7850.23,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30013,YBAÑEZ ALICIA RAQUEL ,V8,AUTOSERVICIO,1,42,36,6,0,11,0,1656412.01,0.0,1656412.01,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30014,ALICIA RAQUEL YBAÑEZ,V8,AUTOSERVICIO,1,56,50,6,0,18,0,2344300.09,0.0,2344300.09,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30015,GIACCONE KEVIN ,V8,TRADICIONAL,1,8,8,0,0,2,0,218464.19,0.0,218464.19,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30017,WANG ZHENJIE,V8,AUTOSERVICIO,1,35,28,7,0,5,0,1103302.29,0.0,1103302.29,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30018,MENDOZA SANDRA RITA ,V8,TRADICIONAL,1,12,12,0,0,5,0,97437.53,0.0,97437.53,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30019,CERRA CARLA VALENTINA ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30020,PICATTI DANIEL ALBERTO ,V8,TRADICIONAL,1,3,3,0,0,1,0,41806.23,0.0,41806.23,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30021,CHUN JIN ZHANG,V8,AUTOSERVICIO,1,15,15,0,0,2,0,1628858.76,0.0,1628858.76,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30022,BATTAN VANINA CELESTE RITA ,V8,TRADICIONAL,1,15,15,0,0,2,0,159627.95,0.0,159627.95,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30023,NOVARECIO GUSTAVO FERNANDO ,V8,TRADICIONAL,1,17,17,0,0,4,0,220431.89,0.0,220431.89,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30024,RIEDEL ANDREA VIVIANA ,V8,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30025,DAVID ALEJANDRO CREMASCO,V8,AUTOSERVICIO,1,22,17,0,5,4,1,926085.8,-49728.46,876357.34,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30026,PEDROTTI DISTRIBUCIONES SOCIEDAD DE RESPONSABILIDA,V8,AUTOSERVICIO,1,12,12,0,0,1,0,1130910.87,0.0,1130910.87,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30031,MEIER CECILIA,V8,TRADICIONAL,1,3,3,0,0,1,0,41806.23,0.0,41806.23,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30032,ROSTAGNO SANDRA ISABEL DEL VALLE ,V8,TRADICIONAL,1,4,4,0,0,1,0,75242.4,0.0,75242.4,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30033,MARTINICH VIVIANA RITA ,V8,AUTOSERVICIO,1,68,60,8,0,30,0,3017089.22,0.0,3017089.22,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30035,MONTINI MAURO LEANDRO ,V8,TRADICIONAL,1,7,5,0,2,4,1,886664.81,-286681.23,599983.58,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30037,DIAZ PINEDA HERNAN ALEJANDRO,V8,TRADICIONAL,1,2,2,0,0,1,0,18886.02,0.0,18886.02,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30039,GENERO MARCO ARIEL ,V8,TRADICIONAL,1,2,2,0,0,1,0,18886.02,0.0,18886.02,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30042,MARTINETTI MARTA SUSANA ,V8,TRADICIONAL,1,2,2,0,0,1,0,18886.02,0.0,18886.02,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30043,MORO LILIANA BEATRIZ,V8,TRADICIONAL,1,8,7,0,1,5,1,279351.6,-79144.65,200206.95,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30044,YAQIN XU,V8,AUTOSERVICIO,1,29,21,7,1,6,1,2230970.79,-4956.17,2226014.62,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30045, AIMAR SERGIO MARCELO,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30046,MOLINA SAMUEL ELIAS,V8,TRADICIONAL,1,1,1,0,0,1,0,28076.81,0.0,28076.81,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30047,VILLARREAL ALBANO FABRICIO,V8,TRADICIONAL,1,3,3,0,0,1,0,41806.23,0.0,41806.23,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30049,MAIULLI ANDREA ALEJANDRA,V8,TRADICIONAL,1,3,3,0,0,1,0,41806.23,0.0,41806.23,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30051,ROLFO GABRIEL ,V8,TRADICIONAL,1,3,3,0,0,1,0,30522.52,0.0,30522.52,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30052,PERALTA JUAN IGNACIO ,V8,TRADICIONAL,1,7,7,0,0,2,0,123179.91,0.0,123179.91,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30054,XIAZHANG HUANG,V8,AUTOSERVICIO,1,15,15,0,0,2,0,1286288.41,0.0,1286288.41,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30055,SAEZ ALICIA ,V8,TRADICIONAL,1,2,2,0,0,1,0,18886.02,0.0,18886.02,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30056,CONIGLIO DIEGO ALFONSO ,V8,TRADICIONAL,1,40,35,4,1,12,2,527029.74,-40947.85,486081.89,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30057,FEYMI SOCIEDAD POR ACCIONES SIMPLIFICADA,V8,TRADICIONAL,1,3,3,0,0,1,0,46103.77,0.0,46103.77,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30059,WALTER JAVIER LELL,V8,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30060,AIASSA MARICEL JUDITH,V8,TRADICIONAL,1,10,8,0,2,6,2,312247.76,-31280.69,280967.07,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30061,GIACOMO GABRIEL RAMON,V8,AUTOSERVICIO,1,15,15,0,0,2,0,1480256.51,0.0,1480256.51,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30062,CALDERON LUCAS ANIBAL ,V8,TRADICIONAL,1,5,5,0,0,1,0,47870.43,0.0,47870.43,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30063,YINGYING CHEN (SUP. SAN VICENTE),V8,AUTOSERVICIO,1,22,17,5,0,5,0,1818104.82,0.0,1818104.82,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30064,ANDRADA ROMINA PAOLA ,V8,TRADICIONAL,1,19,19,0,0,5,0,528291.47,0.0,528291.47,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30066,PERALTA JOHANA CRISTINA,V8,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30067,RICCI FRANCISCO JAVIER,V8,TRADICIONAL,1,3,3,0,0,1,0,40545.45,0.0,40545.45,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30068,VASCHETTI IGNACIO ,V8,TRADICIONAL,1,11,11,0,0,3,0,576848.81,0.0,576848.81,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30069,DIAZ LUCIANO,V8,AUTOSERVICIO,1,32,31,0,1,8,1,7023168.35,-1450841.33,5572327.02,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30125,ISSOGLIO SERGIO EDUARDO ,V8,TRADICIONAL,1,2,2,0,0,2,0,37181.94,0.0,37181.94,Si,Si,OK — al menos una linea positiva y neto consolidado positivo
+30397,ROSANA MERCEDES REMI,V8,TRADICIONAL,1,2,2,0,0,1,0,18886.02,0.0,18886.02,Si,Si,OK — al menos una linea positiva y neto consolidado positivo

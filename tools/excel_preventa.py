@@ -34,7 +34,8 @@ except Exception:
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-import generar_datasets_acum as G  # ALIAS_LOOKUP, UMBRAL, _ONCE_TITULARES, cargar_clientes, cargar_ventas_acumulada
+import generar_datasets_acum as G  # cargar_clientes, cargar_ventas_acumulada
+import motor_11t                   # motor autoritativo del 11T (titulares, botellas, umbrales)
 
 OUT_DIR = ROOT / "03_OUTPUTS"
 
@@ -42,12 +43,13 @@ OUT_DIR = ROOT / "03_OUTPUTS"
 DIAS = [("Lu", "Lunes"), ("Ma", "Martes"), ("Mi", "Miercoles"),
         ("Ju", "Jueves"), ("Vi", "Viernes"), ("Sa", "Sabado")]
 
-TITULARES = list(G._ONCE_TITULARES)   # 11 marcas, en orden oficial
+# Los titulares salen de la matriz oficial de SKU, no de una lista propia de este script.
+TITULARES = motor_11t.titulares_oficiales()
 
 
 def _umbral(seg):
-    """3 botellas para TRADICIONAL (kiosco/almacén/despensa); 6 para el resto."""
-    return 3 if str(seg).upper() == "TRADICIONAL" else 6
+    """Mínimo de botellas del segmento, desde el motor (3 tradicional / 6 autoservicio)."""
+    return motor_11t.UMBRALES_11T.get(str(seg).upper(), 6)
 
 
 def main():
@@ -58,16 +60,19 @@ def main():
     clientes["Codigo"] = clientes["Codigo"].astype(int)
 
     ventas = G.cargar_ventas_acumulada()
-    ventas = ventas[ventas["ImporteNetoItem"] > 0].copy()
-    ventas["Cliente"] = pd.to_numeric(ventas["Cliente"], errors="coerce")
-    ventas["marca_obj"] = ventas["Marca"].astype(str).str.upper().str.strip().map(G.ALIAS_LOOKUP)
 
-    # CCC: clientes con alguna compra válida
-    ccc_ids = set(ventas["Cliente"].dropna().astype(int))
-    # botellas por (cliente, marca titular)
-    bot = (ventas[ventas["marca_obj"].notna()]
-           .groupby(["Cliente", "marca_obj"])["CantBase"].sum())
-    bot_map = {(int(c), m): float(v) for (c, m), v in bot.items()}
+    # CCC comercial (para la columna "Compró"): clientes con alguna compra válida.
+    # Es OTRA métrica que la cobertura 11T y se calcula aparte a propósito.
+    _v = ventas[ventas["ImporteNetoItem"] > 0].copy()
+    ccc_ids = set(pd.to_numeric(_v["Cliente"], errors="coerce").dropna().astype(int))
+
+    # Botellas netas por (cliente, titular) desde el motor: match por código de artículo
+    # contra la matriz oficial, no por texto de Marca.
+    _desde, _hasta = motor_11t.periodo_trimestre_en_curso()
+    det, _exc = motor_11t.cobertura_11t(ventas, desde=_desde, hasta=_hasta)
+    bot_map = {(int(c), t): float(b) for c, t, b in
+               zip(det["cliente_id"], det["titular"], det["botellas_netas"])}
+    print(f"  periodo 11T medido: {_desde} -> {_hasta}")
 
     print(f"  clientes en cartera: {len(clientes)}  |  clientes con compra (CCC): {len(ccc_ids)}")
 

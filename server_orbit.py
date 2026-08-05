@@ -14,6 +14,9 @@ def _now_ar():
 
 import os, shutil, csv as _csv, threading
 
+import motor_11t          # motor autoritativo de cobertura 11T (única fuente de la regla)
+import motor_padron       # regla única de pertenencia de cartera (duplicados del padrón)
+
 # M1 (mount embebido en Orbit Home): con PENAFLOR_SKIP_BOOT=1, importar este módulo NO ejecuta
 # el bloque STARTUP (backup/init/restore/export) ni lanza el hilo de warmup: sólo deja el objeto
 # Flask `app` importable de forma segura para montarlo bajo /penaflor. El standalone (sin la
@@ -710,6 +713,11 @@ def _clientes_por_dia(dia: str) -> pd.DataFrame:
     except Exception:
         return pd.DataFrame()
 
+    # Resolver duplicados ANTES de filtrar por día: los clientes 1392 y 1424 traen
+    # DiasVisita distinto en la fila de V3 y en la de V8, así que si se filtra primero
+    # el día decide qué fila sobrevive y el cliente termina en la ruta equivocada.
+    cli, _inc = motor_padron.resolver_padron(cli, col_codigo="Codigo", col_vendedor="codven",
+                                             origen="clientes_por_dia")
     dia_cap = dia.capitalize()
     cli = cli[cli["DiasVisita"].astype(str).str.strip() == dia_cap]
     cli = cli[~cli["codven"].isin([2, 5, 20])]
@@ -885,13 +893,15 @@ def healthz():
 def diagnostico():
     vol = read_csv(DATASETS / "mod_volumen_vendedor.csv")
     ccc_df = read_csv(DATASETS / "mod_ccc_segmento.csv")
-    t11_df = read_csv(DATASETS / "mod_11_titulares.csv")
+    # mod_11_titulares.csv quedó retirado (legacy, tiene_flag siempre 0). El 11T sale de
+    # mod_11t_acum.csv, que genera motor_11t. Ver 08_ARQUITECTURA/RETIRO_mod_11_titulares.md
+    t11_df = read_csv(DATASETS / "mod_11t_acum.csv")
     vend = read_csv(CONFIG / "vendedores_activos.csv")
 
     fuentes = []
     for nombre, path in [("volumen", DATASETS / "mod_volumen_vendedor.csv"),
                           ("ccc", DATASETS / "mod_ccc_segmento.csv"),
-                          ("11t", DATASETS / "mod_11_titulares.csv"),
+                          ("11t", DATASETS / "mod_11t_acum.csv"),
                           ("vendedores", CONFIG / "vendedores_activos.csv")]:
         if path.exists():
             fuentes.append({"archivo": nombre, "path": str(path), "filas": len(read_csv(path)), "estado": "OK"})
@@ -972,7 +982,7 @@ def diagnostico():
                           "clientes": total_cli, "cubiertos": cubiertos, "color": color,
                           "cubiertos_label": "ayer"})
 
-    # Titulares11: agrega tiene_flag por marca desde mod_11_titulares
+    # Titulares11: cobertura por titular desde mod_11t_acum (tiene_flag = llegó al mínimo 3/6)
     titulares11 = []
     if not t11_df.empty and "marca_objetivo" in t11_df.columns and "tiene_flag" in t11_df.columns:
         t11_df["tiene_flag"] = pd.to_numeric(t11_df["tiene_flag"], errors="coerce").fillna(0)
@@ -1071,20 +1081,26 @@ def dashboard():
     vol     = read_csv(DATASETS / "mod_volumen_vendedor.csv")
     vend    = read_csv(CONFIG  / "vendedores_activos.csv")
     ccc_df  = read_csv(DATASETS / "mod_ccc_segmento.csv")   # CCC día (ayer)
-    t11_df  = read_csv(DATASETS / "mod_11_titulares.csv")
+    t11_df  = read_csv(DATASETS / "mod_11t_acum.csv")
     cdia_df = read_csv(DATASETS / "clientes_dia.csv")        # para oportunidades (día base)
 
-    # 11T cumplidos por vendedor: desde mod_11t_acum.csv (cobertura acumulada con mínimo).
-    # mod_11_titulares.csv (objetivo del día) llega del motor con tiene_flag/botellas en 0,
-    # por eso el KPI "11T ✓" daba 0 para todos. mod_11t_acum sí está poblado.
+    # KPI "11T ✓" por vendedor: TITULARES con al menos un cliente cubierto, sobre el total
+    # de titulares oficiales. Fuente: mod_11t_acum.csv (grilla de motor_11t; tiene_flag = el
+    # cliente llegó al mínimo 3/6 de su segmento).
+    # Hasta 2026-08-05 sumaba `tiene_flag`, o sea PARES cliente×marca, bajo una etiqueta que
+    # se lee como "marcas cubiertas" — daba números de tres cifras contra un total de 11 y no
+    # coincidía con el "Marcas 11T" de la pantalla del vendedor, que sí cuenta marcas.
     t11_acum_map = {}
     try:
         _t11a = read_csv(DATASETS / "mod_11t_acum.csv")
-        if not _t11a.empty and {"vendedor_codigo", "tiene_flag"}.issubset(_t11a.columns):
+        if not _t11a.empty and {"vendedor_codigo", "tiene_flag", "marca_objetivo"}.issubset(_t11a.columns):
             _t11a["_tf"] = pd.to_numeric(_t11a["tiene_flag"], errors="coerce").fillna(0)
             _t11a["_cn"] = _t11a["vendedor_codigo"].astype(str).apply(clean_code)
             for _cnk, _g in _t11a.groupby("_cn"):
-                t11_acum_map[_cnk] = {"cumplidos": int(_g["_tf"].sum()), "total": int(len(_g))}
+                t11_acum_map[_cnk] = {
+                    "cumplidos": int(_g.loc[_g["_tf"] == 1, "marca_objetivo"].nunique()),
+                    "total":     int(_g["marca_objetivo"].nunique()),
+                }
     except Exception:
         pass
 
@@ -1204,7 +1220,7 @@ def dashboard():
         ccc_dia_op   = _ccc_dia_seg(cv, "ON_PREMISE|VTK")
         ccc_dia_prox = _ccc_dia_seg(cv, "PROXIMITY")
 
-        # 11T cumplidos desde mod_11t_acum (cobertura real); fallback a mod_11_titulares.
+        # 11T cumplidos desde mod_11t_acum (titulares con al menos un cliente cubierto).
         _t11v = t11_acum_map.get(cn)
         if _t11v is not None:
             t11_cumplidos = _t11v["cumplidos"]
@@ -1348,13 +1364,14 @@ def _clientes_maestro(incluir_deposito=False):
         df["_cliente_id"] = df["_cliente_id"].astype(int)
         # Un cliente = una fila. Si el ERP vuelve a exportar un cliente en dos rutas,
         # sin esto queda en las DOS carteras e infla el denominador de todas las
-        # tarjetas en silencio (pasó con 10 clientes en V3/V8, corregido 2026-07-30).
-        _dups = df[df.duplicated(subset=["_cliente_id"], keep=False)]
-        if not _dups.empty:
-            print(f"[AVISO] clientes.xlsx: {_dups['_cliente_id'].nunique()} cliente(s) duplicado(s) "
-                  f"{sorted(_dups['_cliente_id'].unique().tolist())} — se deja la primera fila. "
-                  f"Corregir la cartera en el ERP.")
-            df = df.drop_duplicates(subset=["_cliente_id"], keep="first").copy()
+        # tarjetas en silencio (pasó con 10 clientes en V3/V8).
+        # La resolución la hace motor_padron (regla única): V3 + V8 -> V8, con la fila
+        # ENTERA de V8 (DiasVisita/Orden incluidos). Antes se dejaba "la primera fila",
+        # que según el orden del Excel mandaba esos 10 clientes a la cartera de V3.
+        df, _inc = motor_padron.resolver_padron(
+            df, col_codigo="_cliente_id", col_vendedor="_vend", origen="server_orbit")
+        motor_padron.avisar_incidencias(_inc, "server_orbit")
+        df = df.copy()
         df["_vend_id"] = df["_vend"].apply(lambda x: f"V{int(x)}" if pd.notna(x) else "")
         _CLIENTES_MAESTRO_CACHE.clear()
         _CLIENTES_MAESTRO_CACHE[key] = df
@@ -1816,7 +1833,7 @@ def vendedor_detalle(vid):
 
     # 11 Titulares por vendedor — cantidad de clientes a los que logró vender cada marca:
     # cubiertos_dia = clientes de la ZONA DEL DÍA; cubiertos = total de todas las zonas.
-    # Fuente: mod_11t_acum.csv (tiene_flag poblado por cliente). mod_11_titulares.csv viene en 0.
+    # Fuente: mod_11t_acum.csv (motor_11t). tiene_flag = el cliente llegó al mínimo 3/6.
     dia_req = request.args.get("dia", "").strip()
     if not dia_req:
         _DIAS_AR = {0: "LU", 1: "MA", 2: "MI", 3: "JU", 4: "VI", 5: "SA", 6: "DO"}
@@ -3351,371 +3368,229 @@ def gerencia_dias_stock():
     })
 
 
-# ====== 11 TITULARES: MATCH POR CÓDIGO DE ARTÍCULO (matriz oficial AS) ======
+# ══════════════════════════════════════════════════════════════════════════════
+# 11 TITULARES — TODO PASA POR motor_11t.py
+# ══════════════════════════════════════════════════════════════════════════════
+# El 11T es COBERTURA: un cliente cubre un titular cuando, después de consolidar todas
+# sus líneas del período, llega al mínimo de su segmento (3 tradicional / 6 autoservicio).
+# NO es el CCC comercial (neto>0 sin mínimo), que sigue definido aparte en este archivo.
+#
 # Contrato de datos: 01_INPUTS/11 titulares autoservicio/11_titulares_autoservicios_match_codigos.xlsx
-# (hoja DETALLE_SKU_11T_AS). El match por Código Art. exacto es la fuente PRIMARIA para asignar
-# cada SKU a su marca titular; el match por texto de Marca queda como FALLBACK (todas las variedades
-# de una marca suman a la misma marca — validado con el usuario 2026-07-06).
-_COD11T_CACHE = {"mtime": None, "map": None}
+# (hoja DETALLE_SKU_11T_AS). El titular sale del CÓDIGO de artículo; el texto de `Marca` solo
+# vale como respaldo exacto cuando la línea no trae código. Prohibido el `contains` sobre la
+# descripción: era lo que metía GORDON'S GIN (30075) y GORDON'S TONIC (35107) dentro de
+# Gordon's Flavours (51 clientes en julio-2026 contra los 32 reales).
 
-def _codigos_11t_map():
-    """codigo_articulo (int) -> marca_objetivo, desde la matriz oficial de 11 Titulares.
-    Si el archivo no está, devuelve {} y el 11T cae al match por texto de Marca (comportamiento previo)."""
-    p = INPUTS / "11 titulares autoservicio" / "11_titulares_autoservicios_match_codigos.xlsx"
-    if not p.exists():
-        return {}
-    mt = p.stat().st_mtime
-    if _COD11T_CACHE["map"] is not None and _COD11T_CACHE["mtime"] == mt:
-        return _COD11T_CACHE["map"]
-    _NORM = {"SMF ICE": "SMIRNOFF ICE"}   # nombre de línea en la matriz -> marca_objetivo canónica
-    out = {}
+_COB11T_CACHE = {}
+
+def _cobertura_11t(src_path, desde=None, hasta=None, sep=";", encoding="latin1"):
+    """Detalle de cobertura 11T (motor_11t) cacheado por (archivo, mtime, período).
+
+    Devuelve (detalle, excepciones). El caché es clave para la velocidad del portal en
+    Render: ventas_acumulada.csv son ~3,5 MB y varios endpoints lo piden en el mismo login."""
+    src_path = Path(src_path)
+    if not src_path.exists():
+        return pd.DataFrame(), pd.DataFrame()
     try:
-        d = pd.read_excel(p, sheet_name="DETALLE_SKU_11T_AS")
-        for _, r in d.iterrows():
-            cod = pd.to_numeric(r.get("codigo_articulo"), errors="coerce")
-            marca = str(r.get("linea_comercial_11t", "")).upper().strip()
-            marca = _NORM.get(marca, marca)
-            if pd.notna(cod) and marca and marca != "NAN":
-                out[int(cod)] = marca
+        mt = os.path.getmtime(src_path)
+    except OSError:
+        mt = 0
+    try:
+        mt_cli = os.path.getmtime(motor_11t.CLIENTES_PATH)
+    except OSError:
+        mt_cli = 0
+    key = (str(src_path), mt, mt_cli, str(desde), str(hasta))
+    cached = _COB11T_CACHE.get(key)
+    if cached is not None:
+        return cached[0].copy(), cached[1].copy()
+    try:
+        ventas = pd.read_csv(src_path, sep=sep, encoding=encoding, low_memory=False)
+        det, exc = motor_11t.cobertura_11t(ventas, desde=desde, hasta=hasta)
     except Exception as e:
-        print(f"[AVISO] 11T códigos matriz: {e}")
-        return {}
-    _COD11T_CACHE["map"], _COD11T_CACHE["mtime"] = out, mt
+        print(f"[AVISO] cobertura 11T ({src_path.name}): {e}")
+        return pd.DataFrame(), pd.DataFrame()
+    _COB11T_CACHE.clear()          # no acumular versiones viejas del mismo archivo
+    _COB11T_CACHE[key] = (det, exc)
+    return det.copy(), exc.copy()
+
+
+def _objetivos_11t(path=None):
+    """titular -> objetivo, desde `objetivo 11T.xlsx` (o el del cierre). Las claves se
+    normalizan con la misma función del motor, así `Simrnoff Flavors`, `Gordons flavours`
+    y `SMF ICE` caen en el titular canónico sin tabla de alias paralela."""
+    p = Path(path) if path else (INPUTS / "objetivo 11T.xlsx")
+    out = {}
+    if not p.exists():
+        return out
+    try:
+        d = pd.read_excel(p, header=1)
+        d = d.dropna(subset=d.columns[1:2])
+        oficiales = {motor_11t._norm(t): t for t in motor_11t.titulares_oficiales()}
+        for _, row in d.iterrows():
+            raw = motor_11t._norm(row.iloc[1])
+            # tolera las erratas del Excel del proveedor (FLAVORS/FLAVOURS, SIMRNOFF, SMF ICE)
+            clave = (raw.replace("FLAVORS", "FLAVOURS").replace("SIMRNOFF", "SMIRNOFF")
+                        .replace("SMF ICE", "SMIRNOFF ICE").replace("GORDONS", "GORDON'S"))
+            titular = oficiales.get(clave) or oficiales.get(raw)
+            if titular is None:
+                continue
+            try:
+                out[titular] = int(float(row.iloc[2]))
+            except (ValueError, TypeError):
+                pass
+    except Exception as e:
+        print(f"[AVISO] objetivo 11T: {e}")
     return out
 
-def _marca_11t_por_codigo(df):
-    """Serie marca_objetivo por match de Codigo exacto contra la matriz (NaN si el código no está)."""
-    lk = _codigos_11t_map()
-    if not lk or "Codigo" not in df.columns:
-        return pd.Series(pd.NA, index=df.index, dtype="object")
-    return pd.to_numeric(df["Codigo"], errors="coerce").map(lk)
+
+def _resumen_excepciones_11t(exc):
+    """Excepciones agregadas por tipo: qué quedó fuera de la medición y cuánto pesa.
+    El detalle fila por fila se publica en 04_DATASETS_ORBIT/mod_11t_excepciones.csv."""
+    if exc is None or exc.empty:
+        return []
+    g = (exc.groupby("tipo")
+            .agg(casos=("tipo", "size"), filas=("filas", "sum"), botellas=("botellas", "sum"))
+            .reset_index())
+    return [{"tipo": r["tipo"], "casos": int(r["casos"]), "filas": int(r["filas"]),
+             "botellas": round(float(r["botellas"]), 1),
+             "detalle": "04_DATASETS_ORBIT/mod_11t_excepciones.csv"}
+            for _, r in g.iterrows()]
 
 
-# ── Superficie de medición del 11T (validado con el usuario 2026-07-06) ──
-# El 11T se mide SOLO en Autoservicio + Almacén + Kiosco (antes sumaba todo canal, lo que
-# inflaba el CCC con On Premise, Vinotecas, Away From Home, etc.). Criterio por Ramo/Subramo:
-#   - Autoservicio : Ramo == AUTOSERVICIO  o  Subramo con "AUTOSERVICIO" (incluye
-#                    "Autoservicio Tradicional" — autoservicios chicos; validado 2026-07-06).
-#                    NO entra Cash&Carry ni Mayoristas (Subramo Mayoristas).
-#   - Almacén      : Subramo Almacén/Despensa  (o Ramo ALMACENES)
-#   - Kiosco       : Subramo Kiosco/Maxikiosco
-# Queda EXCLUIDO: On Premise, Vinotecas, Away From Home, Mayoristas, Cash&Carry, Fiambrería,
-# Carnicería, Panadería y resto de tradicionales sin formato self-service.
-def _mask_superficie_11t(df):
-    """Máscara booleana de filas cuya superficie mide para el 11T (AS + Almacén + Kiosco)."""
-    # Fail-open: si la fuente no trae Ramo ni Subramo no se puede clasificar; se deja pasar
-    # todo (no filtrar) en vez de anular el CCC por columnas ausentes.
-    if "Ramo" not in df.columns and "Subramo" not in df.columns:
-        return pd.Series(True, index=df.index)
-    ramo = (df["Ramo"].astype(str).str.upper().str.strip()
-            if "Ramo" in df.columns else pd.Series("", index=df.index))
-    sub  = (df["Subramo"].astype(str).str.upper()
-            if "Subramo" in df.columns else pd.Series("", index=df.index))
-    es_as  = (ramo == "AUTOSERVICIO") | sub.str.contains("AUTOSERVICIO", regex=False, na=False)
-    es_alm = (sub.str.contains("ALMACEN", regex=False, na=False)
-              | sub.str.contains("DESPENSA", regex=False, na=False)
-              | ramo.str.contains("ALMACEN", regex=False, na=False))
-    es_kio = (sub.str.contains("KIOSCO", regex=False, na=False)
-              | sub.str.contains("MAXIKIOSCO", regex=False, na=False))
-    return es_as | es_alm | es_kio
+def _codigos_11t_map():
+    """codigo_articulo (int) -> titular, desde la MATRIZ OFICIAL (motor_11t.cargar_matriz_11t).
+
+    Lo usa el universo "11T" de la tarjeta de Días de Stock. La lectura de la matriz vive
+    en el motor: acá había un segundo lector con su propia normalización, y dos lectores del
+    mismo Excel es exactamente la clase de duplicación que hizo divergir el 11T."""
+    m = motor_11t.cargar_matriz_11t()
+    if m.empty:
+        return {}
+    return dict(zip(m["codigo_articulo"].astype(int), m["titular"]))
+
+
+# ELIMINADOS 2026-08-05: _marca_11t_por_codigo() y _mask_superficie_11t().
+# La asignación de titular por SKU y la superficie de medición (Autoservicio + Almacén +
+# Kiosco) ahora las resuelve motor_11t sobre el PADRÓN de clientes, no sobre el Ramo/Subramo
+# de cada línea de venta: el padrón es la fuente autoritativa del segmento y no cambia según
+# cómo el ERP haya etiquetado una factura suelta.
 
 
 # ====== GERENCIA: 11 TITULARES POR MARCA ======
 @app.route("/api/gerencia/once_titulares")
 def gerencia_once_titulares():
-    """11 Titulares: CCC acumulado vs objetivo CCC.
-    REGLA:
-      - Período = TRIMESTRE calendario en curso (ene-mar / abr-jun / jul-sep / oct-dic);
-        en julio arranca de cero. Se filtra por FechaComprobante >= inicio del trimestre.
-      - NO se filtra por Empresa (corregido 2026-07-13 contra reporte de Peñaflor). P&P
-        Logística es nuestra segunda razón social, no otro distribuidor: Proveedor =
-        GRUPO PEÑAFLOR SA en el 100% de las filas. El filtro Empresa=='Empresa' anterior
-        borraba 135 de 229 clientes con compra (V6 y V10 perdían el 88% de su cartera) y
-        dejaba el CCC en la mitad del que reporta Peñaflor.
-      - CCC = clientes únicos con compra válida (neto>0) por marca titular; excluye V2/V5/V20.
-    Fuente primaria : ventas_acumulada.csv.
-    Fuente fallback : mod_11_titulares.csv  (tiene_flag = 1).
-    Fuente objetivo : objetivo 11T.xlsx."""
+    """11 Titulares: COBERTURA por titular vs objetivo.
 
-    # ── Brand alias lookup ──
-    _MARCA_LOOKUP = {
-        "ALMA MORA": "ALMA MORA", "ALARIS": "ALARIS", "TRAPICHE ALARIS": "ALARIS",
-        "DON DAVID": "DON DAVID", "DADA": "DADA", "LOS ARBOLES": "LOS ARBOLES",
-        "FINCA LAS MORAS": "FINCA LAS MORAS", "F LAS MORAS": "FINCA LAS MORAS",
-        "TRAPICHE RESERVA": "TRAPICHE RESERVA",
-        "FOND DE CAVE": "FOND DE CAVE", "FOND CAVE": "FOND DE CAVE",
-        "CAZADOR": "CAZADOR", "ANTARES": "ANTARES",
-        "GORDON'S FLAVOURS": "GORDON'S FLAVOURS", "GORDONS FLAVOURS": "GORDON'S FLAVOURS",
-        "GORDON'S": "GORDON'S FLAVOURS", "GORDONS": "GORDON'S FLAVOURS",
-        "GORDON S": "GORDON'S FLAVOURS",
-        "SMIRNOFF": "SMIRNOFF FLAVOURS",
-        "SMIRNOFF FLAVOURS": "SMIRNOFF FLAVOURS",
-        "SMIRNOFF ICE FLAVOURS": "SMIRNOFF ICE",
-        "SMIRNOFF ICE": "SMIRNOFF ICE",
-        "JW": "JW BLACK", "JW BLACK": "JW BLACK", "JW RED": "JW RED",
-        "MASCOTA": "MASCOTA", "LA MASCOTA": "MASCOTA",
-        "NC ESPUMANTES": "NC ESPUMANTES", "NAVARRO CORREAS": "NC ESPUMANTES",
-        "TRAPICHE MEDALLA": "TRAPICHE MEDALLA", "GRAN MEDALLA": "TRAPICHE MEDALLA",
-    }
-    _ART_KW = [
-        ("SMIRNOFF ICE", "SMIRNOFF ICE"), ("SMF ICE", "SMIRNOFF ICE"),
-        ("SMIRNOFF", "SMIRNOFF FLAVOURS"), ("GORDON", "GORDON'S FLAVOURS"),
-        ("ANTARES", "ANTARES"), ("CAZADOR", "CAZADOR"),
-        ("FOND DE CAVE", "FOND DE CAVE"), ("ALMA MORA", "ALMA MORA"),
-        ("LOS ARBOLES", "LOS ARBOLES"), ("DADA", "DADA"),
-        ("FINCA LAS MORAS", "FINCA LAS MORAS"), ("F.LAS MORAS", "FINCA LAS MORAS"),
-        ("DON DAVID", "DON DAVID"), ("ALARIS", "ALARIS"),
-        ("TRAPICHE RESERVA", "TRAPICHE RESERVA"),
-        ("JW BLACK", "JW BLACK"), ("JW RED", "JW RED"),
-    ]
+    REGLA (motor_11t.cobertura_11t — única fuente):
+      - Cubierto = el cliente llega al mínimo de su segmento DESPUÉS de consolidar todas
+        sus botellas netas del período: 3 tradicional (almacén/kiosco) / 6 autoservicio.
+        Hasta 2026-08-05 esto contaba "cualquier cliente con neto>0", que no es cobertura:
+        en Gordon's julio-2026 daba 51 clientes contra los 32 reales.
+      - Titular por CÓDIGO de artículo contra la matriz oficial. Sin `contains` de texto.
+      - Período = TRIMESTRE calendario en curso (el 11T resetea en ene/abr/jul/oct). Se
+        devuelve explícito en `periodo_desde` / `periodo_hasta` para que la pantalla lo muestre.
+      - Cartera y segmento salen del padrón; se excluyen V1/V2/V5/V20 por el vendedor del
+        padrón, no por el de la factura (si no, un cliente facturado por V20 Depósito
+        desaparecía de la cobertura de la empresa).
+      - NO se filtra por Empresa: P&P Logística es nuestra segunda razón social (_LEEME_EMPRESA).
+    Fuente ventas   : ventas_acumulada.csv
+    Fuente objetivo : objetivo 11T.xlsx"""
+    desde, hasta = motor_11t.periodo_trimestre_en_curso(datetime.now(_ARG_TZ))
+    det, exc = _cobertura_11t(INPUTS / "ventas_acumulada.csv", desde=desde, hasta=hasta)
+    if det.empty:
+        return jsonify({"error": "Sin fuente de cobertura 11T disponible", "marcas": [],
+                        "fuente": "N/A"}), 200
 
-    ccc_map = {}
-    ccc_dep_map = {}   # CCC del Depósito (V20), bloque aparte sin objetivo
-    fuente = ""
+    obj_map = _objetivos_11t()
+    resumen = motor_11t.resumen_por_titular(det, obj_map)
 
-    # ── Fuente primaria: ventas_acumulada.csv ──
-    vac_path = INPUTS / "ventas_acumulada.csv"
-    if vac_path.exists():
-        try:
-            vac = pd.read_csv(vac_path, sep=";", encoding="latin1", low_memory=False)
-            vac["ImporteNetoItem"] = pd.to_numeric(
-                vac["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
-            # Ruta: excluye V1/V2/V5, neto>0. No se filtra por Empresa (ver docstring).
-            # V20 (Depósito) se CONSERVA para su CCC aparte.
-            vac = vac[~vac["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS - {20})]
-            vac = vac[vac["ImporteNetoItem"] > 0]
-            vac = vac[_mask_superficie_11t(vac)]   # 11T mide solo AS + Almacén + Kiosco
-            # Período = trimestre calendario en curso (en julio arranca de cero)
-            _f = pd.to_datetime(vac.get("FechaComprobante"), dayfirst=True, errors="coerce")
-            if _f.notna().any():
-                _hoy = datetime.now(_ARG_TZ)
-                _ini_trim = pd.Timestamp(_hoy.year, ((_hoy.month - 1) // 3) * 3 + 1, 1)
-                vac = vac[_f >= _ini_trim]
-            vac["marca_upper"] = vac["Marca"].astype(str).str.upper().str.strip()
-            # 1) match por Código Art. exacto (matriz oficial) — fuente primaria
-            vac["marca_objetivo"] = _marca_11t_por_codigo(vac)
-            # 2) fallback: texto de Marca (para variedades fuera de la matriz)
-            _falta = vac["marca_objetivo"].isna()
-            vac.loc[_falta, "marca_objetivo"] = vac.loc[_falta, "marca_upper"].map(_MARCA_LOOKUP)
-            unresolved = vac["marca_objetivo"].isna()
-            if unresolved.any():
-                for kw, mo in _ART_KW:
-                    still = vac["marca_objetivo"].isna() & unresolved
-                    if not still.any():
-                        break
-                    hits = vac.loc[still, "Articulo"].astype(str).str.upper().str.contains(kw, regex=False, na=False)
-                    vac.loc[still & hits, "marca_objetivo"] = mo
-            _es_dep = vac["CodVendedor"] == 20
-            ccc_map = (vac[~_es_dep & vac["marca_objetivo"].notna()]
-                       .groupby("marca_objetivo")["Cliente"]
-                       .nunique().to_dict())
-            ccc_dep_map = (vac[_es_dep & vac["marca_objetivo"].notna()]
-                           .groupby("marca_objetivo")["Cliente"]
-                           .nunique().to_dict())
-            fuente = "ventas_acumulada.csv"
-        except Exception:
-            ccc_map = {}
-
-    # ── Fuente fallback: mod_11_titulares.csv (si la primaria no está disponible) ──
-    if not ccc_map:
-        t11_path = DATASETS / "mod_11_titulares.csv"
-        if t11_path.exists():
-            try:
-                t11 = pd.read_csv(t11_path, sep=",", encoding="utf-8-sig", low_memory=False)
-                t11["vendedor_codigo"] = pd.to_numeric(t11["vendedor_codigo"], errors="coerce")
-                t11 = t11[~t11["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
-                t11_ok = t11[t11["tiene_flag"].astype(str) == "1"]
-                ccc_map = t11_ok.groupby("marca_objetivo")["cliente_id"].nunique().to_dict()
-                fuente = "mod_11_titulares.csv (parcial)"
-            except Exception:
-                ccc_map = {}
-
-    if not ccc_map:
-        return jsonify({"error": "Sin fuente de CCC disponible", "marcas": [], "fuente": "N/A"}), 200
-
-    # ── Objetivos: objetivo 11T.xlsx ──
-    _OBJ_ALIAS = {
-        "ALMA MORA": "ALMA MORA", "TRAPICHE RESERVA": "TRAPICHE RESERVA",
-        "FINCA LAS MORAS": "FINCA LAS MORAS",
-        "ALARIS": "ALARIS", "DON DAVID": "DON DAVID", "DADA": "DADA",
-        "SIMRNOFF FLAVORS": "SMIRNOFF FLAVOURS", "SMIRNOFF FLAVORS": "SMIRNOFF FLAVOURS",
-        "SMIRNOFF FLAVOURS": "SMIRNOFF FLAVOURS",
-        "LOS ARBOLES": "LOS ARBOLES", "ANTARES": "ANTARES",
-        "SMIRNOFF ICE": "SMIRNOFF ICE", "SMF ICE": "SMIRNOFF ICE",
-        "GORDONS FLAVOURS": "GORDON'S FLAVOURS", "GORDONS FLAVORS": "GORDON'S FLAVOURS",
-        "GORDON'S FLAVOURS": "GORDON'S FLAVOURS",
-    }
-    obj_map = {}
-    try:
-        obj_df = pd.read_excel(INPUTS / "objetivo 11T.xlsx", header=1)
-        obj_df = obj_df.dropna(subset=obj_df.columns[1:2])
-        for _, row in obj_df.iterrows():
-            raw = str(row.iloc[1]).upper().strip()
-            marca_key = _OBJ_ALIAS.get(raw, raw)
-            try:
-                obj_map[marca_key] = int(float(row.iloc[2]))
-            except (ValueError, TypeError):
-                pass
-    except Exception:
-        pass
-
-    # ── Resultado: por marca, ordenado por CCC desc ──
     marcas = []
-    for marca_obj in sorted(obj_map.keys(), key=lambda x: ccc_map.get(x, 0), reverse=True):
-        ccc = int(ccc_map.get(marca_obj, 0))
-        obj = obj_map[marca_obj]
-        pct = round(ccc / obj * 100, 1) if obj else None
-        # Depósito (V20): CCC logrado aparte; no suma al objetivo ni al avance de ruta.
-        ccc_dep = int(ccc_dep_map.get(marca_obj, 0))
-        marcas.append({"marca": marca_obj, "ccc": ccc, "objetivo_ccc": obj,
-                       "pct_objetivo": pct, "ccc_deposito": ccc_dep})
+    for _, r in resumen.iterrows():
+        marcas.append({
+            "marca":         r["titular"],
+            # `ccc` se mantiene por compatibilidad del contrato JSON con el portal, pero
+            # ahora trae COBERTURA (clientes que llegan al mínimo), no clientes con compra.
+            "ccc":           int(r["cubiertos"]),
+            "cubiertos":     int(r["cubiertos"]),
+            "cubiertos_tradicional":  int(r["cubiertos_tradicional"]),
+            "cubiertos_autoservicio": int(r["cubiertos_autoservicio"]),
+            "clientes_medidos": int(r["medidos"]),
+            "objetivo_ccc":  int(r["objetivo"]) if pd.notna(r["objetivo"]) else 0,
+            "pct_objetivo":  r["pct_objetivo"],
+            "ccc_deposito":  0,   # V20 no tiene cartera: no se le atribuye cobertura
+        })
 
     return jsonify({
-        "generado_en": _now_ar(),
-        "fuente": fuente,
-        "total_marcas": len(marcas),
-        "marcas": marcas,
-        "ccc_deposito_total": int(sum(ccc_dep_map.values())),
+        "generado_en":    _now_ar(),
+        "fuente":         "ventas_acumulada.csv · motor_11t (cobertura 3/6)",
+        "metrica":        "cobertura",
+        "umbrales":       motor_11t.UMBRALES_11T,
+        "periodo_desde":  str(desde),
+        "periodo_hasta":  str(hasta),
+        "total_marcas":   len(marcas),
+        "marcas":          marcas,
+        # Solo el RESUMEN de excepciones: el detalle completo (123 filas de SKU sin match)
+        # vive en 04_DATASETS_ORBIT/mod_11t_excepciones.csv. Este endpoint entra en el login
+        # de gerencia y en Render la CPU es 0,5 vCPU: no se le cuelga el detalle al payload.
+        "excepciones":     _resumen_excepciones_11t(exc),
+        "ccc_deposito_total": 0,
     })
 
 
-# ====== GERENCIA: 11 TITULARES CCC ZONA DEL DÍA ======
+# ====== GERENCIA: 11 TITULARES COBERTURA ZONA DEL DÍA ======
 @app.route("/api/gerencia/once_titulares_zona")
 def gerencia_once_titulares_zona():
-    """11 Titulares: CCC por marca para los clientes de la zona del día.
-    Sin objetivos — muestra penetración dentro de la zona.
-    Fuente ventas : ventas_acumulada.csv
-    Fuente zona   : clientes.xlsx (DiasVisita == dia)"""
+    """11 Titulares: cobertura por titular para los clientes de la zona del día.
+    Misma regla y mismo motor que /api/gerencia/once_titulares, acotado a la zona.
+    Fuente ventas : ventas_acumulada.csv · Fuente zona : clientes.xlsx (DiasVisita == dia)"""
     dia_raw = request.args.get("dia", "").strip()
-    dia_key = dia_raw.lower()[:2] if dia_raw else ""   # "LU"→"lu", "Ma"→"ma"
+    dia_key = dia_raw.lower()[:2] if dia_raw else ""
 
-    _MARCA_LOOKUP = {
-        "ALMA MORA":"ALMA MORA","ALARIS":"ALARIS","TRAPICHE ALARIS":"ALARIS",
-        "DON DAVID":"DON DAVID","DADA":"DADA","LOS ARBOLES":"LOS ARBOLES",
-        "FINCA LAS MORAS":"FINCA LAS MORAS","F LAS MORAS":"FINCA LAS MORAS",
-        "TRAPICHE RESERVA":"TRAPICHE RESERVA",
-        "FOND DE CAVE":"FOND DE CAVE","FOND CAVE":"FOND DE CAVE",
-        "CAZADOR":"CAZADOR","ANTARES":"ANTARES",
-        "GORDON'S FLAVOURS":"GORDON'S FLAVOURS","GORDONS FLAVOURS":"GORDON'S FLAVOURS",
-        "GORDON'S":"GORDON'S FLAVOURS","GORDONS":"GORDON'S FLAVOURS","GORDON S":"GORDON'S FLAVOURS",
-        "SMIRNOFF":"SMIRNOFF FLAVOURS","SMIRNOFF FLAVOURS":"SMIRNOFF FLAVOURS",
-        "SMIRNOFF ICE FLAVOURS":"SMIRNOFF ICE","SMIRNOFF ICE":"SMIRNOFF ICE",
-        "JW":"JW BLACK","JW BLACK":"JW BLACK","JW RED":"JW RED",
-        "MASCOTA":"MASCOTA","LA MASCOTA":"MASCOTA",
-        "NC ESPUMANTES":"NC ESPUMANTES","NAVARRO CORREAS":"NC ESPUMANTES",
-        "TRAPICHE MEDALLA":"TRAPICHE MEDALLA","GRAN MEDALLA":"TRAPICHE MEDALLA",
-    }
-    _ART_KW = [
-        ("SMIRNOFF ICE","SMIRNOFF ICE"),("SMF ICE","SMIRNOFF ICE"),
-        ("SMIRNOFF","SMIRNOFF FLAVOURS"),("GORDON","GORDON'S FLAVOURS"),
-        ("ANTARES","ANTARES"),("CAZADOR","CAZADOR"),
-        ("FOND DE CAVE","FOND DE CAVE"),("ALMA MORA","ALMA MORA"),
-        ("LOS ARBOLES","LOS ARBOLES"),("DADA","DADA"),
-        ("FINCA LAS MORAS","FINCA LAS MORAS"),("F.LAS MORAS","FINCA LAS MORAS"),
-        ("DON DAVID","DON DAVID"),("ALARIS","ALARIS"),
-        ("TRAPICHE RESERVA","TRAPICHE RESERVA"),
-        ("JW BLACK","JW BLACK"),("JW RED","JW RED"),
-    ]
-    _OBJ_ALIAS = {
-        "ALMA MORA":"ALMA MORA","TRAPICHE RESERVA":"TRAPICHE RESERVA",
-        "FINCA LAS MORAS":"FINCA LAS MORAS","ALARIS":"ALARIS",
-        "DON DAVID":"DON DAVID","DADA":"DADA",
-        "SIMRNOFF FLAVORS":"SMIRNOFF FLAVOURS","SMIRNOFF FLAVORS":"SMIRNOFF FLAVOURS",
-        "SMIRNOFF FLAVOURS":"SMIRNOFF FLAVOURS","LOS ARBOLES":"LOS ARBOLES",
-        "ANTARES":"ANTARES","SMIRNOFF ICE":"SMIRNOFF ICE","SMF ICE":"SMIRNOFF ICE",
-        "GORDONS FLAVOURS":"GORDON'S FLAVOURS","GORDONS FLAVORS":"GORDON'S FLAVOURS",
-        "GORDON'S FLAVOURS":"GORDON'S FLAVOURS",
-    }
-
-    # ── Ventas acumuladas ──
-    vac_path = INPUTS / "ventas_acumulada.csv"
-    if not vac_path.exists():
-        return jsonify({"error": "ventas_acumulada.csv no encontrado", "marcas": [], "dia": dia_raw}), 200
-    try:
-        vac = pd.read_csv(vac_path, sep=";", encoding="latin1", low_memory=False)
-        vac["ImporteNetoItem"] = pd.to_numeric(
-            vac["ImporteNetoItem"].astype(str).str.replace(",",".",regex=False), errors="coerce")
-        # No se filtra por Empresa — igual criterio que /api/gerencia/once_titulares
-        vac = vac[~vac["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS)]
-        vac = vac[vac["ImporteNetoItem"] > 0]
-        vac = vac[_mask_superficie_11t(vac)]   # 11T mide solo AS + Almacén + Kiosco
-        # Período = trimestre calendario en curso (en julio arranca de cero)
-        _f = pd.to_datetime(vac.get("FechaComprobante"), dayfirst=True, errors="coerce")
-        if _f.notna().any():
-            _hoy = datetime.now(_ARG_TZ)
-            _ini_trim = pd.Timestamp(_hoy.year, ((_hoy.month - 1) // 3) * 3 + 1, 1)
-            vac = vac[_f >= _ini_trim]
-    except Exception as e:
-        return jsonify({"error": str(e), "marcas": [], "dia": dia_raw}), 200
+    desde, hasta = motor_11t.periodo_trimestre_en_curso(datetime.now(_ARG_TZ))
+    det, _exc = _cobertura_11t(INPUTS / "ventas_acumulada.csv", desde=desde, hasta=hasta)
+    if det.empty:
+        return jsonify({"error": "Sin datos de cobertura 11T", "marcas": [], "dia": dia_raw}), 200
 
     # ── Clientes de la zona del día ──
-    zona_ids = set()
-    cli_total = 0
+    zona_ids, cli_total = set(), 0
     try:
-        cli_path = INPUTS / "clientes.xlsx"
-        if cli_path.exists():
-            cli_df = pd.read_excel(cli_path)
-            dias_col = next((c for c in cli_df.columns if "diasvisita" in c.lower().replace(" ","")), None)
-            cod_col  = next((c for c in cli_df.columns if c.lower() in ("codigo","cod","id")), None)
-            vend_col = next((c for c in cli_df.columns if c.lower() == "codven"), None)
-            if dias_col and cod_col:
-                if vend_col:
-                    cli_df = cli_df[~pd.to_numeric(cli_df[vend_col], errors="coerce").isin(_VENDEDORES_EXCLUIDOS)]
-                if dia_key:
-                    cli_df = cli_df[cli_df[dias_col].astype(str).str.strip().str.lower() == dia_key]
-                zona_ids = set(pd.to_numeric(cli_df[cod_col], errors="coerce").dropna().astype(int))
-                cli_total = len(zona_ids)
+        padron = motor_11t.cargar_padron_clientes()
+        cli_df = pd.read_excel(INPUTS / "clientes.xlsx")
+        cli_df, _inc = motor_padron.resolver_padron(cli_df, col_codigo="Codigo",
+                                                    col_vendedor="codven", origen="11t_zona")
+        dias_col = next((c for c in cli_df.columns if "diasvisita" in str(c).lower().replace(" ", "")), None)
+        cod_col  = next((c for c in cli_df.columns if str(c).lower() in ("codigo", "cod", "id")), None)
+        if dias_col and cod_col:
+            if dia_key:
+                cli_df = cli_df[cli_df[dias_col].astype(str).str.strip().str.lower() == dia_key]
+            ids = set(cli_df[cod_col].map(motor_11t.normalizar_codigo_cliente).dropna().astype(int))
+            validos = set(padron[~padron["vendedor_codigo"].isin(motor_11t.VENDEDORES_EXCLUIDOS_11T)]["cliente_id"])
+            zona_ids = ids & validos
+            cli_total = len(zona_ids)
     except Exception:
         pass
 
-    # ── Filtrar ventas a zona ──
     if zona_ids:
-        vac = vac[vac["Cliente"].isin(zona_ids)]
+        det = det[det["cliente_id"].isin(zona_ids)]
 
-    # ── Normalizar marcas ──
-    vac["marca_upper"] = vac["Marca"].astype(str).str.upper().str.strip()
-    # 1) match por Código Art. exacto (matriz oficial) — fuente primaria
-    vac["marca_objetivo"] = _marca_11t_por_codigo(vac)
-    # 2) fallback: texto de Marca (para variedades fuera de la matriz)
-    _falta = vac["marca_objetivo"].isna()
-    vac.loc[_falta, "marca_objetivo"] = vac.loc[_falta, "marca_upper"].map(_MARCA_LOOKUP)
-    unresolved = vac["marca_objetivo"].isna()
-    if unresolved.any():
-        for kw, mo in _ART_KW:
-            still = vac["marca_objetivo"].isna() & unresolved
-            if not still.any():
-                break
-            hits = vac.loc[still, "Articulo"].astype(str).str.upper().str.contains(kw, regex=False, na=False)
-            vac.loc[still & hits, "marca_objetivo"] = mo
-
-    # CCC por marca en la zona
-    ccc_map = (vac[vac["marca_objetivo"].notna()]
-               .groupby("marca_objetivo")["Cliente"]
-               .nunique().to_dict())
-
-    # Orden oficial desde objetivo 11T.xlsx
-    marcas_orden = []
-    try:
-        obj_df = pd.read_excel(INPUTS / "objetivo 11T.xlsx", header=1)
-        obj_df = obj_df.dropna(subset=obj_df.columns[1:2])
-        for _, row in obj_df.iterrows():
-            raw = str(row.iloc[1]).upper().strip()
-            mk = _OBJ_ALIAS.get(raw, raw)
-            if mk and mk not in marcas_orden:
-                marcas_orden.append(mk)
-    except Exception:
-        pass
-    if not marcas_orden:
-        marcas_orden = sorted(ccc_map.keys(), key=lambda x: ccc_map.get(x, 0), reverse=True)
-
-    marcas = [{"marca": m, "ccc": ccc_map.get(m, 0)} for m in marcas_orden]
+    resumen = motor_11t.resumen_por_titular(det)
+    cub = dict(zip(resumen["titular"], resumen["cubiertos"]))
+    orden = list(_objetivos_11t().keys()) or motor_11t.titulares_oficiales()
+    for t in motor_11t.titulares_oficiales():
+        if t not in orden:
+            orden.append(t)
 
     return jsonify({
-        "generado_en": _now_ar(),
-        "dia": dia_raw.upper() if dia_raw else "TODOS",
+        "generado_en":   _now_ar(),
+        "dia":           dia_raw.upper() if dia_raw else "TODOS",
         "total_clientes_zona": cli_total,
-        "fuente": "ventas_acumulada.csv",
-        "marcas": marcas,
+        "fuente":        "ventas_acumulada.csv · motor_11t (cobertura 3/6)",
+        "metrica":       "cobertura",
+        "periodo_desde": str(desde),
+        "periodo_hasta": str(hasta),
+        # `ccc` se conserva como nombre de campo por compatibilidad con el portal.
+        "marcas":        [{"marca": m, "ccc": int(cub.get(m, 0)), "cubiertos": int(cub.get(m, 0))}
+                          for m in orden],
     })
 
 
@@ -3781,10 +3656,17 @@ def gerencia_ranking_rechazos():
 @app.route("/api/gerencia/11t_empresa")
 def gerencia_11t_empresa():
     """11T distribuidora: por marca, clientes con/sin cada titular (todos los vendedores).
-    Fuente: mod_11_titulares.csv  — columnas tiene_flag / falta_flag."""
-    df = read_csv(DATASETS / "mod_11_titulares.csv")
+
+    Fuente: mod_11t_acum.csv (grilla cartera x titular que genera motor_11t) — columnas
+    tiene_flag / falta_flag. `tiene_flag` = el cliente llegó al mínimo de su segmento
+    (3 tradicional / 6 autoservicio), no "compró algo".
+
+    MIGRADO 2026-08-05 desde mod_11_titulares.csv: ese dataset legacy venía con tiene_flag
+    en 0 en las 4.489 filas y con 28 "marcas" que no son los 11 Titulares, así que este
+    endpoint devolvía ceros. Ver retiro documentado en 08_ARQUITECTURA."""
+    df = read_csv(DATASETS / "mod_11t_acum.csv")
     if df.empty:
-        return jsonify({"marcas": [], "error": "Sin datos en mod_11_titulares.csv"}), 200
+        return jsonify({"marcas": [], "error": "Sin datos en mod_11t_acum.csv"}), 200
 
     df.columns = [c.lstrip("﻿").strip() for c in df.columns]
     df["vendedor_codigo"] = pd.to_numeric(df["vendedor_codigo"], errors="coerce")
@@ -3826,7 +3708,9 @@ def gerencia_11t_empresa():
     result.sort(key=lambda x: x["pct"], reverse=True)
     return jsonify({
         "generado_en": _now_ar(),
-        "fuente":         "mod_11_titulares.csv",
+        "fuente":         "mod_11t_acum.csv · motor_11t (cobertura 3/6)",
+        "metrica":        "cobertura",
+        "umbrales":       motor_11t.UMBRALES_11T,
         "total_marcas":   len(result),
         "vendedores":     [f"V{int(v)}" for v in vendedores_activos],
         "marcas":         result,
@@ -3836,8 +3720,9 @@ def gerencia_11t_empresa():
 # ====== GERENCIA: 11T POR VENDEDOR ======
 @app.route("/api/gerencia/11t_vendedor")
 def gerencia_11t_vendedor():
-    """11T detalle de un vendedor específico.
-    Parámetro: vendedor=V3 (o 3). Fuente: mod_11_titulares.csv."""
+    """11T detalle de un vendedor específico (cobertura 3/6, no CCC).
+    Parámetro: vendedor=V3 (o 3). Fuente: mod_11t_acum.csv (motor_11t).
+    MIGRADO 2026-08-05 desde mod_11_titulares.csv (legacy, tiene_flag siempre 0)."""
     import re as _re
     vend_raw = request.args.get("vendedor", "").strip().upper()
     m = _re.search(r"\d+", vend_raw)
@@ -3845,7 +3730,7 @@ def gerencia_11t_vendedor():
         return jsonify({"marcas": [], "error": "Parámetro vendedor inválido"}), 200
     cod = int(m.group())
 
-    df = read_csv(DATASETS / "mod_11_titulares.csv")
+    df = read_csv(DATASETS / "mod_11t_acum.csv")
     if df.empty:
         return jsonify({"marcas": [], "error": "Sin datos"}), 200
 
@@ -3875,7 +3760,8 @@ def gerencia_11t_vendedor():
     result.sort(key=lambda x: x["pct"], reverse=True)
     return jsonify({
         "generado_en": _now_ar(),
-        "fuente":           "mod_11_titulares.csv",
+        "fuente":           "mod_11t_acum.csv · motor_11t (cobertura 3/6)",
+        "metrica":          "cobertura",
         "vendedor":         f"V{cod}",
         "vendedor_nombre":  nombre,
         "total_marcas":     len(result),
@@ -7253,8 +7139,16 @@ def vendedor_ruta(vid):
     cli.columns = [str(c).strip() for c in cli.columns]
     if not {"DiasVisita", "Codigo", "codven"}.issubset(cli.columns):
         return jsonify(out), 200
+    # Duplicados del padrón ANTES del filtro de día y de vendedor: si no, un cliente
+    # cargado en dos rutas aparece en las dos (y con el DiasVisita de la fila equivocada).
+    cli, _inc = motor_padron.resolver_padron(cli, col_codigo="Codigo", col_vendedor="codven",
+                                             origen="ruta_dia")
     cli = cli[cli["DiasVisita"].astype(str).str.strip().str.upper() == dia_req.upper()]
-    cli = cli[cli["codven"].astype(str).apply(clean_code) == cn]
+    # `codven` viene float del Excel (3.0). `clean_code("3.0")` devuelve "30" —se come el
+    # punto y pega los dígitos—, así que la comparación NUNCA daba verdadera y la ruta del
+    # día salía vacía para todos los vendedores. Bug pre-existente, detectado al verificar
+    # la reasignación V3/V8 (2026-08-05). Se normaliza con la función del motor de padrón.
+    cli = cli[cli["codven"].map(motor_padron.normalizar_codigo_vendedor) == int(cn or 0)]
     if cli.empty:
         return jsonify(out), 200
 
@@ -9228,118 +9122,54 @@ def gerencia_cierre_mes():
         empresa["acumulado"] / empresa["objetivo"] * 100, 2
     ) if empresa["objetivo"] else 0
 
-    # ── 11 Titulares (totales empresa, sin apertura por vendedor) ──
-    # ── 11 Titulares: CCC por marca vs objetivo CCC (mismo cálculo que /api/gerencia/once_titulares) ──
-    # Fuente CCC: ventas_acumulada filtrado al mes cerrado
-    # Fuente objetivo: objetivo 11T.xlsx
+    # ── 11 Titulares: COBERTURA por titular vs objetivo ──
+    # Misma regla y mismo motor que el cierre versionado y el dashboard vivo
+    # (motor_11t): cubierto = el cliente llega al mínimo 3/6 de su segmento después de
+    # consolidar sus botellas netas. Antes contaba clientes con neto>0 y resolvía la marca
+    # con `contains` de descripción — en Gordon's julio-2026 daba 51 en vez de 32.
+    # El período se acota al mes cerrado: nunca arrastra el mes siguiente.
     once_titulares = {"marcas": [], "empresa": {}}
     try:
-        _MARCA_LKP = {
-            "ALMA MORA": "ALMA MORA", "ALARIS": "ALARIS", "TRAPICHE ALARIS": "ALARIS",
-            "DON DAVID": "DON DAVID", "DADA": "DADA", "LOS ARBOLES": "LOS ARBOLES",
-            "FINCA LAS MORAS": "FINCA LAS MORAS", "F LAS MORAS": "FINCA LAS MORAS",
-            "TRAPICHE RESERVA": "TRAPICHE RESERVA",
-            "FOND DE CAVE": "FOND DE CAVE", "FOND CAVE": "FOND DE CAVE",
-            "CAZADOR": "CAZADOR", "ANTARES": "ANTARES",
-            "GORDON'S FLAVOURS": "GORDON'S FLAVOURS", "GORDONS FLAVOURS": "GORDON'S FLAVOURS",
-            "GORDONS": "GORDON'S FLAVOURS", "GORDON'S": "GORDON'S FLAVOURS",
-            "SMIRNOFF": "SMIRNOFF FLAVOURS", "SMIRNOFF FLAVOURS": "SMIRNOFF FLAVOURS",
-            "SMIRNOFF ICE": "SMIRNOFF ICE",
-            "JW BLACK": "JW BLACK", "JW RED": "JW RED",
-            "MASCOTA": "MASCOTA", "NC ESPUMANTES": "NC ESPUMANTES",
-            "TRAPICHE MEDALLA": "TRAPICHE MEDALLA",
-        }
-        _ART_KW_11T = [
-            ("SMIRNOFF ICE", "SMIRNOFF ICE"), ("SMF ICE", "SMIRNOFF ICE"),
-            ("SMIRNOFF", "SMIRNOFF FLAVOURS"), ("GORDON", "GORDON'S FLAVOURS"),
-            ("ANTARES", "ANTARES"), ("CAZADOR", "CAZADOR"),
-            ("FOND DE CAVE", "FOND DE CAVE"), ("ALMA MORA", "ALMA MORA"),
-            ("LOS ARBOLES", "LOS ARBOLES"), ("DADA", "DADA"),
-            ("FINCA LAS MORAS", "FINCA LAS MORAS"), ("DON DAVID", "DON DAVID"),
-            ("ALARIS", "ALARIS"), ("TRAPICHE RESERVA", "TRAPICHE RESERVA"),
-            ("JW BLACK", "JW BLACK"), ("JW RED", "JW RED"),
-        ]
-        _OBJ_ALIAS_11T = {
-            "ALMA MORA": "ALMA MORA", "TRAPICHE RESERVA": "TRAPICHE RESERVA",
-            "FINCA LAS MORAS": "FINCA LAS MORAS", "FINCA LAS MORAS": "FINCA LAS MORAS",
-            "ALARIS": "ALARIS", "DON DAVID": "DON DAVID", "DADA": "DADA",
-            "SIMRNOFF FLAVORS": "SMIRNOFF FLAVOURS", "SMIRNOFF FLAVORS": "SMIRNOFF FLAVOURS",
-            "SMIRNOFF FLAVOURS": "SMIRNOFF FLAVOURS",
-            "LOS ARBOLES": "LOS ARBOLES", "ANTARES": "ANTARES",
-            "SMIRNOFF ICE": "SMIRNOFF ICE", "SMF ICE": "SMIRNOFF ICE",
-            "GORDONS FLAVOURS": "GORDON'S FLAVOURS", "GORDONS FLAVORS": "GORDON'S FLAVOURS",
-            "GORDON'S FLAVOURS": "GORDON'S FLAVOURS",
-        }
+        _desde11, _hasta11 = motor_11t.periodo_mes(año, mes)
+        _hasta11 = min(_hasta11, fecha_cierre.date())
+        _det11, _exc11 = _cobertura_11t(INPUTS / "ventas_acumulada.csv",
+                                        desde=_desde11, hasta=_hasta11)
+        _obj11 = _objetivos_11t()
+        _res11 = motor_11t.resumen_por_titular(_det11, _obj11)
+        _cub11 = dict(zip(_res11["titular"], _res11["cubiertos"]))
+        _ctr11 = dict(zip(_res11["titular"], _res11["cubiertos_tradicional"]))
+        _cas11 = dict(zip(_res11["titular"], _res11["cubiertos_autoservicio"]))
 
-        # Objetivos desde objetivo 11T.xlsx
-        obj_map_11t = {}
-        try:
-            obj_df = pd.read_excel(INPUTS / "objetivo 11T.xlsx", header=1)
-            obj_df = obj_df.dropna(subset=obj_df.columns[1:2])
-            for _, row in obj_df.iterrows():
-                raw = str(row.iloc[1]).upper().strip()
-                mk = _OBJ_ALIAS_11T.get(raw, raw)
-                try:
-                    obj_map_11t[mk] = int(float(row.iloc[2]))
-                except (ValueError, TypeError):
-                    pass
-        except Exception:
-            pass
-
-        # CCC por marca desde ventas_acumulada COMPLETO (sin filtro de fecha)
-        # — mismo criterio que el dashboard /api/gerencia/once_titulares
-        ccc_map_11t = {}
-        vac_path_11t = INPUTS / "ventas_acumulada.csv"
-        if vac_path_11t.exists():
-            try:
-                vac11 = pd.read_csv(vac_path_11t, sep=";", encoding="latin1", low_memory=False)
-                vac11["importe"] = pd.to_numeric(
-                    vac11["ImporteNetoItem"].astype(str).str.replace(",", ".", regex=False), errors="coerce")
-                vac11 = vac11[
-                    (~vac11["CodVendedor"].isin(_VENDEDORES_EXCLUIDOS)) &
-                    (vac11["importe"] > 0)
-                ]
-                vac11 = vac11[_mask_superficie_11t(vac11)]   # 11T mide solo AS + Almacén + Kiosco
-                # 1) match por Código Art. exacto (matriz oficial); 2) fallback texto de Marca
-                vac11["marca_objetivo"] = _marca_11t_por_codigo(vac11)
-                _falta11 = vac11["marca_objetivo"].isna()
-                vac11.loc[_falta11, "marca_objetivo"] = (
-                    vac11.loc[_falta11, "Marca"].astype(str).str.upper().str.strip().map(_MARCA_LKP))
-                unresolved = vac11["marca_objetivo"].isna()
-                if unresolved.any():
-                    for kw, mo in _ART_KW_11T:
-                        still = vac11["marca_objetivo"].isna()
-                        if not still.any():
-                            break
-                        hits = vac11.loc[still, "Articulo"].astype(str).str.upper().str.contains(kw, regex=False, na=False)
-                        vac11.loc[still & hits, "marca_objetivo"] = mo
-                ccc_map_11t = (vac11[vac11["marca_objetivo"].notna()]
-                               .groupby("marca_objetivo")["Cliente"].nunique().to_dict())
-            except Exception:
-                pass
-
-        # Construir resultado — solo marcas con objetivo definido
-        marcas_11t = []
-        total_ccc = 0
-        total_obj = 0
-        for mk in sorted(obj_map_11t.keys(), key=lambda x: ccc_map_11t.get(x, 0), reverse=True):
-            ccc_v = ccc_map_11t.get(mk, 0)
-            obj_v = obj_map_11t[mk]
-            pct   = round(ccc_v / obj_v * 100, 1) if obj_v else None
-            marcas_11t.append({"marca": mk, "ccc": ccc_v, "objetivo": obj_v, "pct": pct})
-            total_ccc += ccc_v
+        marcas_11t, total_ccc, total_obj = [], 0, 0
+        for mk in sorted(_obj11, key=lambda x: _cub11.get(x, 0), reverse=True):
+            cub_v = int(_cub11.get(mk, 0))
+            obj_v = _obj11[mk]
+            marcas_11t.append({
+                "marca": mk,
+                "ccc": cub_v, "cubiertos": cub_v,          # `ccc`: nombre histórico del campo
+                "cubiertos_tradicional":  int(_ctr11.get(mk, 0)),
+                "cubiertos_autoservicio": int(_cas11.get(mk, 0)),
+                "objetivo": obj_v,
+                "pct": round(cub_v / obj_v * 100, 1) if obj_v else None,
+            })
+            total_ccc += cub_v
             total_obj += obj_v
 
+        once_titulares["metrica"] = "cobertura"
+        once_titulares["umbrales"] = motor_11t.UMBRALES_11T
+        once_titulares["periodo_desde"] = str(_desde11)
+        once_titulares["periodo_hasta"] = str(_hasta11)
         once_titulares["marcas"] = marcas_11t
         once_titulares["empresa"] = {
             "ccc_total": total_ccc,
+            "cubiertos_total": total_ccc,
             "objetivo_total": total_obj,
             "pct": round(total_ccc / total_obj * 100, 1) if total_obj else 0,
             "marcas_sobre_objetivo": sum(1 for m in marcas_11t if (m["pct"] or 0) >= 100),
             "total_marcas": len(marcas_11t),
         }
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[AVISO] cierre_mes 11T: {e}")
 
     # ── Innovaciones (denominador = CCC Mes: clientes con compra en el mes) ──
     innovaciones = {"resumen": {}, "por_producto": []}
@@ -9479,43 +9309,10 @@ def gerencia_cierre_mes():
 # Catálogos compartidos (maestro 04D, escala, acciones, innovaciones) NO van acá.
 CIERRES_MES_DIR = INPUTS / "cierres mes"
 
-_MARCA_LKP_CIERRE = {
-    "ALMA MORA": "ALMA MORA", "ALARIS": "ALARIS", "TRAPICHE ALARIS": "ALARIS",
-    "DON DAVID": "DON DAVID", "DADA": "DADA", "LOS ARBOLES": "LOS ARBOLES",
-    "FINCA LAS MORAS": "FINCA LAS MORAS", "F LAS MORAS": "FINCA LAS MORAS",
-    "TRAPICHE RESERVA": "TRAPICHE RESERVA",
-    "FOND DE CAVE": "FOND DE CAVE", "FOND CAVE": "FOND DE CAVE",
-    "CAZADOR": "CAZADOR", "ANTARES": "ANTARES",
-    "GORDON'S FLAVOURS": "GORDON'S FLAVOURS", "GORDONS FLAVOURS": "GORDON'S FLAVOURS",
-    "GORDONS": "GORDON'S FLAVOURS", "GORDON'S": "GORDON'S FLAVOURS",
-    "SMIRNOFF": "SMIRNOFF FLAVOURS", "SMIRNOFF FLAVOURS": "SMIRNOFF FLAVOURS",
-    "SMIRNOFF ICE": "SMIRNOFF ICE",
-    "JW BLACK": "JW BLACK", "JW RED": "JW RED",
-    "MASCOTA": "MASCOTA", "NC ESPUMANTES": "NC ESPUMANTES",
-    "TRAPICHE MEDALLA": "TRAPICHE MEDALLA",
-}
-_ART_KW_11T_CIERRE = [
-    ("SMIRNOFF ICE", "SMIRNOFF ICE"), ("SMF ICE", "SMIRNOFF ICE"),
-    ("SMIRNOFF", "SMIRNOFF FLAVOURS"), ("GORDON", "GORDON'S FLAVOURS"),
-    ("ANTARES", "ANTARES"), ("CAZADOR", "CAZADOR"),
-    ("FOND DE CAVE", "FOND DE CAVE"), ("ALMA MORA", "ALMA MORA"),
-    ("LOS ARBOLES", "LOS ARBOLES"), ("DADA", "DADA"),
-    ("FINCA LAS MORAS", "FINCA LAS MORAS"), ("DON DAVID", "DON DAVID"),
-    ("ALARIS", "ALARIS"), ("TRAPICHE RESERVA", "TRAPICHE RESERVA"),
-    ("JW BLACK", "JW BLACK"), ("JW RED", "JW RED"),
-]
-_OBJ_ALIAS_11T_CIERRE = {
-    "ALMA MORA": "ALMA MORA", "TRAPICHE RESERVA": "TRAPICHE RESERVA",
-    "FINCA LAS MORAS": "FINCA LAS MORAS",
-    "ALARIS": "ALARIS", "DON DAVID": "DON DAVID", "DADA": "DADA",
-    "SIMRNOFF FLAVORS": "SMIRNOFF FLAVOURS", "SMIRNOFF FLAVORS": "SMIRNOFF FLAVOURS",
-    "SMIRNOFF FLAVOURS": "SMIRNOFF FLAVOURS",
-    "LOS ARBOLES": "LOS ARBOLES", "ANTARES": "ANTARES",
-    "SMIRNOFF ICE": "SMIRNOFF ICE", "SMF ICE": "SMIRNOFF ICE",
-    "GORDONS FLAVOURS": "GORDON'S FLAVOURS", "GORDONS FLAVORS": "GORDON'S FLAVOURS",
-    "GORDON'S FLAVOURS": "GORDON'S FLAVOURS",
-}
-
+# ELIMINADAS 2026-08-05: _MARCA_LKP_CIERRE / _ART_KW_11T_CIERRE / _OBJ_ALIAS_11T_CIERRE.
+# El cierre resuelve el titular con motor_11t (código de artículo contra la matriz
+# oficial) y los objetivos con _objetivos_11t(). Mantener tablas de alias paralelas
+# acá era lo que hacía que el cierre midiera distinto que el dashboard.
 
 _VENTAS_MES_CACHE = {}
 def _leer_ventas_mes_cacheado(path, incluir_deposito=False):
@@ -9681,59 +9478,63 @@ def _leer_ventas_acum_cierre(path):
 
 
 def _cierre_once_titulares(files):
-    """11T CCC vs Objetivo del cierre. CCC = clientes únicos (neto>0) por marca titular,
-    MISMO criterio que /api/gerencia/once_titulares. Fuente: ventas_acumulada_<MMAAAA>.csv
-    (bimestral — el 11T se mide en 2 meses); fallback a ventas_mes si no existe la acumulada.
+    """11T del cierre: COBERTURA por titular vs objetivo, con el mismo motor que el
+    dashboard vivo (motor_11t.cobertura_11t) — no puede haber dos verdades.
+
+    Cubierto = el cliente llega al mínimo de su segmento (3 tradicional / 6 autoservicio)
+    después de consolidar sus botellas netas del MES del cierre. Hasta 2026-08-05 esto
+    contaba clientes con neto>0 sin mínimo y con match por `contains` de descripción: en
+    Gordon's julio-2026 daba 51 en vez de 32.
+
+    El período se acota EXPLÍCITAMENTE al mes del cierre: un cierre de julio no puede
+    incorporar ventas de agosto aunque el CSV traiga cola del mes siguiente.
+    Fuente: ventas_acumulada_<MMAAAA>.csv (o ventas_mes_<MMAAAA>.csv si no está).
     Objetivo: objetivo 11T_<MMAAAA>.xlsx."""
-    obj_map = {}
-    try:
-        odf = pd.read_excel(files["objetivo_11t"], header=1)
-        odf = odf.dropna(subset=odf.columns[1:2])
-        for _, r in odf.iterrows():
-            raw = str(r.iloc[1]).upper().strip()
-            mk = _OBJ_ALIAS_11T_CIERRE.get(raw, raw)
-            try:
-                obj_map[mk] = int(float(r.iloc[2]))
-            except (ValueError, TypeError):
-                pass
-    except Exception:
-        pass
+    obj_map = _objetivos_11t(files.get("objetivo_11t"))
 
-    ccc_map = {}
-    # Fuente bimestral (ventas_acumulada) si está; si no, ventas_mes (1 mes). Ambos lectores
-    # ya filtran neto>0 y excluyen V2/V5/V20. No se filtra por Empresa (P&P Logística es
-    # nuestra segunda razón social) — igual criterio que /api/gerencia/once_titulares.
+    mmaaaa = str(files.get("mmaaaa", ""))
+    desde = hasta = None
+    if len(mmaaaa) == 6 and mmaaaa.isdigit():
+        desde, hasta = motor_11t.periodo_mes(int(mmaaaa[2:]), int(mmaaaa[:2]))
+
     src_acum = files.get("ventas_acumulada")
-    df = _leer_ventas_acum_cierre(src_acum) if src_acum is not None else _leer_ventas_mes_cacheado(files["ventas_mes"])
-    if not df.empty:
-        df = df.copy()
-        df = df[_mask_superficie_11t(df)]   # 11T mide solo AS + Almacén + Kiosco
-        # 1) match por Código Art. exacto (matriz oficial); 2) fallback texto de Marca
-        df["mo"] = _marca_11t_por_codigo(df)
-        _falta_mo = df["mo"].isna()
-        df.loc[_falta_mo, "mo"] = df.loc[_falta_mo, "Marca"].astype(str).str.upper().str.strip().map(_MARCA_LKP_CIERRE)
-        for kw, mo in _ART_KW_11T_CIERRE:
-            still = df["mo"].isna()
-            if not still.any():
-                break
-            hits = df.loc[still, "Articulo"].astype(str).str.upper().str.contains(kw, regex=False, na=False)
-            df.loc[still & hits, "mo"] = mo
-        df["_cli"] = pd.to_numeric(df["Cliente"], errors="coerce")
-        ccc_map = df[df["mo"].notna()].groupby("mo")["_cli"].nunique().to_dict()
+    if src_acum is not None:
+        det, exc = _cobertura_11t(src_acum, desde=desde, hasta=hasta)
+    else:
+        # ventas_mes_<MMAAAA>.csv viene separado por coma y en UTF-8 con BOM.
+        det, exc = _cobertura_11t(files["ventas_mes"], desde=desde, hasta=hasta,
+                                  sep=",", encoding="utf-8-sig")
 
-    marcas, tot_ccc, tot_obj = [], 0, 0
-    for mk in sorted(obj_map, key=lambda x: ccc_map.get(x, 0), reverse=True):
-        ccc_v = int(ccc_map.get(mk, 0))
+    resumen = motor_11t.resumen_por_titular(det, obj_map)
+    cub = dict(zip(resumen["titular"], resumen["cubiertos"]))
+    cub_tr = dict(zip(resumen["titular"], resumen["cubiertos_tradicional"]))
+    cub_as = dict(zip(resumen["titular"], resumen["cubiertos_autoservicio"]))
+
+    marcas, tot_cub, tot_obj = [], 0, 0
+    for mk in sorted(obj_map, key=lambda x: cub.get(x, 0), reverse=True):
+        cub_v = int(cub.get(mk, 0))
         obj_v = obj_map[mk]
-        pct   = round(ccc_v / obj_v * 100, 1) if obj_v else None
-        marcas.append({"marca": mk, "ccc": ccc_v, "objetivo": obj_v, "pct": pct})
-        tot_ccc += ccc_v
+        pct   = round(cub_v / obj_v * 100, 1) if obj_v else None
+        marcas.append({
+            "marca": mk,
+            # `ccc` se mantiene por compatibilidad del JSON del cierre; trae cobertura.
+            "ccc": cub_v, "cubiertos": cub_v,
+            "cubiertos_tradicional":  int(cub_tr.get(mk, 0)),
+            "cubiertos_autoservicio": int(cub_as.get(mk, 0)),
+            "objetivo": obj_v, "pct": pct,
+        })
+        tot_cub += cub_v
         tot_obj += obj_v
     return {
+        "metrica": "cobertura",
+        "umbrales": motor_11t.UMBRALES_11T,
+        "periodo_desde": str(desde) if desde else "",
+        "periodo_hasta": str(hasta) if hasta else "",
         "marcas": marcas,
+        "excepciones": _resumen_excepciones_11t(exc),
         "empresa": {
-            "ccc_total": tot_ccc, "objetivo_total": tot_obj,
-            "pct": round(tot_ccc / tot_obj * 100, 1) if tot_obj else 0,
+            "ccc_total": tot_cub, "cubiertos_total": tot_cub, "objetivo_total": tot_obj,
+            "pct": round(tot_cub / tot_obj * 100, 1) if tot_obj else 0,
             "marcas_sobre_objetivo": sum(1 for m in marcas if (m["pct"] or 0) >= 100),
             "total_marcas": len(marcas),
         },

@@ -13,6 +13,9 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 
+import motor_11t          # motor autoritativo de cobertura 11T (única fuente de la regla)
+import motor_padron       # regla única de pertenencia de cartera (duplicados del padrón)
+
 BASE = Path(__file__).parent
 OUT  = BASE / "04_DATASETS_ORBIT"
 OUT.mkdir(exist_ok=True)
@@ -103,46 +106,15 @@ UMBRAL = {
     "PROXIMITY":    6,   # estaciones de servicio (decisión del negocio 2026-07-30)
 }
 
-# Los 11 Titulares son los MISMOS para Autoservicio y Tradicional (validado por usuario 2026-06-04).
-_ONCE_TITULARES = [
-    "ALMA MORA", "TRAPICHE RESERVA", "FINCA LAS MORAS", "ALARIS", "DON DAVID",
-    "DADA", "SMIRNOFF FLAVOURS", "LOS ARBOLES", "ANTARES", "SMIRNOFF ICE",
-    "GORDON'S FLAVOURS",
-]
-MAP_11T = {
-    "AUTOSERVICIO": list(_ONCE_TITULARES),
-    "TRADICIONAL":  list(_ONCE_TITULARES),
-}
-
-MARCA_ALIASES = {
-    "ALMA MORA":         ["ALMA MORA", "AM"],
-    "DON DAVID":         ["DON DAVID"],
-    "CAZADOR":           ["CAZADOR"],
-    "JW BLACK":          ["JW BLACK", "JOHNNIE WALKER BLACK"],
-    "JW RED":            ["JW RED", "JOHNNIE WALKER RED"],
-    "MASCOTA":           ["MASCOTA", "LA MASCOTA"],
-    "NC ESPUMANTES":     ["NC ESPUMANTES", "NAVARRO CORREAS", "NC SPARK", "NC BRUT", "NC NATURE", "NC ROSE"],
-    "TRAPICHE MEDALLA":  ["TRAPICHE MEDALLA", "GRAN MEDALLA", "MEDALLA"],
-    "TRAPICHE RESERVA":  ["TRAPICHE RESERVA"],
-    "ALARIS":            ["ALARIS", "TRAPICHE ALARIS"],
-    "FOND DE CAVE":      ["FOND DE CAVE", "FOND CAVE"],
-    "DADA":              ["DADA"],
-    "LOS ARBOLES":       ["LOS ARBOLES"],
-    "FINCA LAS MORAS":   ["FINCA LAS MORAS", "F LAS MORAS", "FLM"],
-    "GORDON'S FLAVOURS": ["GORDON'S FLAVOURS", "GORDONS FLAVOURS", "GORDON'S PINK",
-                          "GORDONS PINK", "GORDONS TROPICAL", "GORDON'S TROPICAL"],
-    "SMIRNOFF FLAVOURS": ["SMIRNOFF FLAVOURS", "SMIRNOFF SANDIA", "SMIRNOFF MANZANA",
-                          "SMIRNOFF RASPBERRY", "SMIRNOFF GREENAPPLE", "SMIRNOFF TROPICAL",
-                          "SMIRNOFF RASPBERRY DO"],
-    "SMIRNOFF ICE":      ["SMIRNOFF ICE", "SMF ICE", "SMIR ICE"],
-    "ANTARES":           ["ANTARES"],
-}
-
-# alias_lookup: texto_marca_upper -> marca_objetivo
-ALIAS_LOOKUP = {}
-for _mo, _aliases in MARCA_ALIASES.items():
-    for _a in _aliases:
-        ALIAS_LOOKUP[_a.upper().strip()] = _mo
+# Los 11 Titulares y su universo de SKU salen de la MATRIZ OFICIAL, vía motor_11t.
+# Acá NO se repite la lista: tener una copia local fue lo que dejó a Gordon's, Antares y
+# Smirnoff Flavours en 0 durante meses (el ERP escribe `GORDON'S FLAVORS`, `SMIRNOFF` y
+# `ANTARES ESPECIALES`, que ninguna tabla de alias local contemplaba).
+# Ver motor_11t.titulares_oficiales() y motor_11t.cargar_matriz_11t().
+#
+# ELIMINADOS 2026-08-05: _ONCE_TITULARES, MAP_11T, MARCA_ALIASES y ALIAS_LOOKUP.
+# El match del 11T es por código de artículo contra la matriz; el texto de `Marca` solo
+# vale como respaldo exacto y lo resuelve el motor.
 
 # Innovaciones: codigo_articulo → nombre_comercial.
 # Lista por defecto (fallback). La fuente OFICIAL es 01_INPUTS/INNOVACIONES/Innovaciones.xlsx
@@ -242,6 +214,21 @@ def cargar_ventas_acumulada():
     return _parsear_ventas_csv(p)
 
 
+def cargar_ventas_acumulada_11t():
+    """ventas_acumulada.csv SIN filtrar vendedores — para el motor de cobertura 11T.
+
+    El 11T mide CLIENTES, y el cliente pertenece a la cartera del padrón, no al vendedor
+    que emitió la factura. Si acá se descartaran las filas de V20 (como hace
+    `_parsear_ventas_csv`), una compra del Depósito borraría al cliente de la cobertura de
+    la empresa: en julio-2026 el cliente 15 (Autoservicio de V8, 60 botellas de Gordon's
+    facturadas por V20) hacía que Gordon's AS diera 6 en vez de 7.
+    La exclusión de V1/V2/V5/V20 la aplica el motor sobre el vendedor del PADRÓN."""
+    p = BASE / "01_INPUTS" / "ventas_acumulada.csv"
+    if not p.exists():
+        p = BASE / "01_INPUTS" / "ventas.csv"
+    return pd.read_csv(p, encoding="latin1", sep=";", engine="python")
+
+
 def snapshot_acumulado_resultado(ventas):
     """Snapshot diario del Acumulado por vendedor desde resultado.xlsx → para el real del día
     (= acumulado hoy − ayer) en Plan vs Real. Append a 02_HISTORY/acumulado_resultado_historico.csv,
@@ -286,26 +273,20 @@ def snapshot_acumulado_resultado(ventas):
 
 
 def _dedup_clientes(df, origen=""):
-    """Un cliente = una fila. El ERP exportó 10 clientes DOS veces (una en la ruta de V3
-    y otra en la de V8) y, al estar en las dos carteras, inflaban el denominador de
-    cobertura, CCC y planes sin que nada lo avisara — el error más caro de encontrar
-    porque no rompe nada, sólo empeora los porcentajes.
+    """Un cliente = una fila. El ERP exporta algunos clientes DOS veces (una por cada ruta
+    en la que quedaron cargados) y, al estar en las dos carteras, inflaban el denominador de
+    cobertura, CCC y planes sin que nada lo avisara — el error más caro de encontrar porque
+    no rompe nada, sólo empeora los porcentajes.
 
-    Acá NO se puede resolver a quién pertenece el cliente (no hay ventas a mano), así
-    que se corta por lo sano: se deja la primera fila y se AVISA con nombre y apellido.
-    La asignación correcta se arregla en el ERP, no acá."""
-    if "Codigo" not in df.columns:
-        return df
-    dup = df[df.duplicated(subset=["Codigo"], keep=False) & df["Codigo"].notna()]
-    if not dup.empty:
-        det = []
-        for cod, g in dup.groupby("Codigo"):
-            vend = "/".join(str(v) for v in g["codven"].tolist()) if "codven" in g.columns else "?"
-            det.append(f"#{int(cod)} (codven {vend})")
-        print(f"  [AVISO] clientes.xlsx: {dup['Codigo'].nunique()} cliente(s) DUPLICADO(S)"
-              f"{' en ' + origen if origen else ''} — se deja la primera fila de cada uno."
-              f" Corregir la cartera en el ERP: {', '.join(det)}")
-        df = df.drop_duplicates(subset=["Codigo"], keep="first").copy()
+    La resolución la hace `motor_padron.resolver_padron`, que es la regla única del sistema:
+    V3 + V8 → prevalece V8 (decisión comercial 2026-08-05); cualquier otra colisión queda
+    reportada para revisión manual, no se resuelve sola.
+
+    Hasta 2026-08-05 acá se dejaba "la primera fila", que en la práctica mandaba los 10
+    clientes duplicados a V3 según el orden de exportación del Excel."""
+    df, inc = motor_padron.resolver_padron(df, col_codigo="Codigo", col_vendedor="codven",
+                                           origen=origen or "generar_datasets_acum")
+    motor_padron.avisar_incidencias(inc, origen or "generar_datasets_acum")
     return df
 
 
@@ -849,52 +830,54 @@ def generar_cobertura_acum(ventas, clientes):
 # MOD 11T ACUM
 # ─────────────────────────────────────────────
 
-def generar_11t_acum(ventas, clientes):
-    # Recibe ventas_acumulada.csv (período completo). 11T = CCC acumulado, no mes vivo.
-    cart = clientes[["Codigo", "codven", "Vendedor", "_seg"]].rename(
-        columns={"Codigo": "cliente_id", "codven": "vendedor_codigo",
-                 "Vendedor": "vendedor_nombre", "_seg": "segmento_11t"}
-    ).copy()
-    cart = cart[cart["segmento_11t"].isin(["AUTOSERVICIO", "TRADICIONAL"])]
-    # V3 no tiene autoservicio en 11T
+def generar_11t_acum(ventas, clientes, desde=None, hasta=None):
+    """mod_11t_acum.csv — grilla cartera x titular con la cobertura del motor autoritativo.
+
+    LA REGLA VIVE EN motor_11t.py, no acá. Esta función solo arma la grilla que consume el
+    portal (`/api/gerencia/11t_acum`, KPI "11T ✓", "Marcas 11T") y le pega el resultado.
+
+    Hasta 2026-08-05 resolvía el titular por TEXTO de `Marca` contra ALIAS_LOOKUP, y los
+    valores reales del ERP no estaban en esa tabla: `SMIRNOFF`, `SMIRNOFF ICE FLAVOURS`,
+    `CHAMPAÑA DADA`, `ANTARES ESPECIALES`, `GORDON'S FLAVORS` (grafía US). Resultado:
+    Gordon's, Antares y Smirnoff Flavours quedaban en 0 y Smirnoff Ice al 13%. Ahora el
+    match es por CÓDIGO DE ARTÍCULO contra la matriz oficial.
+
+    Además consolida la venta del cliente sin importar qué vendedor la facturó (el cliente
+    pertenece a la cartera del padrón), así una compra facturada por V20 Depósito ya no
+    borra al cliente de la cobertura de la empresa.
+
+    Devuelve (grilla, detalle, excepciones)."""
+    det, exc = motor_11t.cobertura_11t(ventas, desde=desde, hasta=hasta)
+
+    padron = motor_11t.cargar_padron_clientes()
+    cart = padron[padron["segmento_11t"].isin(["AUTOSERVICIO", "TRADICIONAL"])].copy()
+    cart = cart[~cart["vendedor_codigo"].isin(motor_11t.VENDEDORES_EXCLUIDOS_11T)]
+    # V3 no trabaja autoservicio (regla de negocio): no se le mide cartera AS en el 11T.
     cart = cart[~((cart["vendedor_codigo"] == 3) & (cart["segmento_11t"] == "AUTOSERVICIO"))]
 
-    v = ventas[ventas["ImporteNetoItem"] > 0].copy()
-    # NO se filtra por Empresa: P&P Logística es nuestra segunda razón social, no otro
-    # distribuidor (Proveedor = GRUPO PEÑAFLOR SA en el 100% de las filas). Filtrar por
-    # Empresa=='Empresa' borraba los clientes facturados vía P&P — en julio 2026, 135 de
-    # 229 clientes con compra, rutas enteras (V6 y V10 perdían el 88% de su cartera).
-    v["marca_upper"] = v["Marca"].astype(str).str.upper().str.strip()
-    v["marca_objetivo"] = v["marca_upper"].map(ALIAS_LOOKUP)
-    v_valid = v[v["marca_objetivo"].notna()].copy()
-
-    v_agg = (v_valid.groupby(["Cliente", "CodVendedor", "marca_objetivo"])["CantBase"]
-             .sum().reset_index()
-             .rename(columns={"Cliente": "cliente_id", "CodVendedor": "vendedor_codigo",
-                              "CantBase": "cant_base_acum"}))
-
+    titulares = motor_11t.titulares_oficiales()
     fecha = datetime.now().strftime("%Y-%m-%d")
-    bloques = []
+    if cart.empty or not titulares:
+        vacio = pd.DataFrame(columns=["fecha_calculo", "vendedor_codigo", "vendedor_nombre",
+                                      "cliente_id", "segmento_11t", "marca_objetivo",
+                                      "cant_base_acum", "tiene_flag", "falta_flag"])
+        return vacio, det, exc
 
-    for seg, marcas in MAP_11T.items():
-        cart_seg = cart[cart["segmento_11t"] == seg].copy()
-        umbral = UMBRAL.get(seg, 3)
+    # Grilla cartera x titular: mantiene el significado de `cartera` en el endpoint.
+    grilla = cart[["cliente_id", "vendedor_codigo", "vendedor_nombre", "segmento_11t"]].merge(
+        pd.DataFrame({"marca_objetivo": titulares}), how="cross")
 
-        for marca in marcas:
-            comp = (v_agg[v_agg["marca_objetivo"] == marca]
-                    [["cliente_id", "vendedor_codigo", "cant_base_acum"]].copy())
-            merged = cart_seg.merge(comp, on=["cliente_id", "vendedor_codigo"], how="left")
-            merged["cant_base_acum"] = merged["cant_base_acum"].fillna(0)
-            merged["tiene_flag"] = (merged["cant_base_acum"] >= umbral).astype(int)
-            merged["falta_flag"] = 1 - merged["tiene_flag"]
-            merged["marca_objetivo"] = marca
-            merged["segmento_11t"] = seg
-            merged["fecha_calculo"] = fecha
-            bloques.append(merged[["fecha_calculo", "vendedor_codigo", "vendedor_nombre",
-                                   "cliente_id", "segmento_11t", "marca_objetivo",
-                                   "cant_base_acum", "tiene_flag", "falta_flag"]])
-
-    return pd.concat(bloques, ignore_index=True)
+    logrado = det[["cliente_id", "titular", "botellas_netas", "cumple"]].rename(
+        columns={"titular": "marca_objetivo"})
+    grilla = grilla.merge(logrado, on=["cliente_id", "marca_objetivo"], how="left")
+    grilla["cant_base_acum"] = pd.to_numeric(grilla["botellas_netas"], errors="coerce").fillna(0)
+    grilla["tiene_flag"] = (grilla["cumple"] == True).astype(int)   # noqa: E712 — NaN -> 0
+    grilla["falta_flag"] = 1 - grilla["tiene_flag"]
+    grilla["fecha_calculo"] = fecha
+    grilla = grilla[["fecha_calculo", "vendedor_codigo", "vendedor_nombre", "cliente_id",
+                     "segmento_11t", "marca_objetivo", "cant_base_acum",
+                     "tiene_flag", "falta_flag"]]
+    return grilla, det, exc
 
 
 # ─────────────────────────────────────────────
@@ -1644,14 +1627,26 @@ def main():
     print(cob[["vendedor_codigo", "segmento", "cartera", "cubiertos", "pct_cobertura"]].to_string(index=False))
 
     # ── 11 Titulares ──
-    # REGLA 11T: se mide con ventas_acumulada.csv (período comercial completo, sin filtro de fecha).
-    # NO usar ventas.csv (mes vivo): el 11T es CCC acumulado, no del mes en curso.
+    # REGLA 11T: se mide con ventas_acumulada.csv (período comercial completo).
+    # NO usar ventas.csv (mes vivo): el 11T es cobertura acumulada, no del mes en curso.
+    # El período se acota al TRIMESTRE en curso (el 11T resetea en ene/abr/jul/oct) para que
+    # el dataset y el dashboard midan exactamente lo mismo y quede explícito desde/hasta.
     print("\n[2/3] Generando mod_11t_acum.csv ...")
-    t11 = generar_11t_acum(ventas_acum_full, clientes)
+    _desde, _hasta = motor_11t.periodo_trimestre_en_curso()
+    # Fuente SIN filtrar vendedores: el motor excluye por el vendedor del padrón, no por el
+    # de la factura (ver cargar_ventas_acumulada_11t).
+    t11, t11_det, t11_exc = generar_11t_acum(cargar_ventas_acumulada_11t(), clientes,
+                                             desde=_desde, hasta=_hasta)
     t11.to_csv(OUT / "mod_11t_acum.csv", index=False, encoding="utf-8-sig")
+    # Salida auditable: una fila por cliente x titular con botellas netas y motivo.
+    t11_det.to_csv(OUT / "mod_11t_detalle.csv", index=False, encoding="utf-8-sig")
+    t11_exc.to_csv(OUT / "mod_11t_excepciones.csv", index=False, encoding="utf-8-sig")
     tiene = int(t11["tiene_flag"].sum())
     total = len(t11)
-    print(f"  OK: {total} filas / {tiene} tienen ({round(100*tiene/total,1)}%) / {total - tiene} faltan")
+    print(f"  periodo medido: {_desde} -> {_hasta}")
+    print(f"  OK: {total} filas / {tiene} tienen ({round(100*tiene/total,1) if total else 0}%) / {total - tiene} faltan")
+    print(f"  + mod_11t_detalle.csv ({len(t11_det)} filas cliente x titular)"
+          f" + mod_11t_excepciones.csv ({len(t11_exc)} filas)")
     resumen_11t = (t11.groupby("marca_objetivo")
                    .agg(cartera=("cliente_id","count"), tienen=("tiene_flag","sum"))
                    .reset_index())

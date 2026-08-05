@@ -20,6 +20,8 @@ import sys
 from pathlib import Path
 import pandas as pd
 
+import motor_padron       # regla unica de pertenencia de cartera
+
 ROOT    = Path(__file__).parent
 INPUTS  = ROOT / "01_INPUTS"
 OUTPUTS = ROOT / "03_OUTPUTS"
@@ -158,6 +160,11 @@ def main():
     # ── 2. Clientes ─────────────────────────────────────────
     print("[2/4] Leyendo clientes.xlsx ...")
     cli = pd.read_excel(INPUTS / "clientes.xlsx")
+    # Duplicados de cartera: regla única del sistema (V3/V8 -> V8). Sin esto un cliente
+    # cargado en dos rutas salía dos veces en el Excel de preventa.
+    cli, _inc = motor_padron.resolver_padron(cli, col_codigo="Codigo", col_vendedor="codven",
+                                             origen="generar_11titulares_excel")
+    motor_padron.avisar_incidencias(_inc, "generar_11titulares_excel")
 
     cod_col  = next((c for c in cli.columns if c.lower() in ("codigo","cod","id")), cli.columns[0])
     nom_col  = next((c for c in cli.columns if "razon" in c.lower() or "nombre" in c.lower()), cli.columns[1])

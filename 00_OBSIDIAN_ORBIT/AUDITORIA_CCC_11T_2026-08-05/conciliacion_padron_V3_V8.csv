@@ -1,0 +1,11 @@
+﻿cliente_codigo,cliente_nombre,segmento_subsegmento,registro_V3,registro_V8,apariciones,resolucion_aplicada,tipo
+272,URQUIA OMAR MARCELO,Almacen/Despensa,codven=3 · DiasVisita=Mi · Orden=280.0,codven=8 · DiasVisita=Mi · Orden=10.0,2,V8,DUPLICADO_RESUELTO_POR_PRECEDENCIA
+320,RABINO JOSE JUAN,Vinoteca,codven=3 · DiasVisita=Lu · Orden=500.0,codven=8 · DiasVisita=Lu · Orden=500.0,2,V8,DUPLICADO_RESUELTO_POR_PRECEDENCIA
+1065,PIACENZA MARIA FERNANDA,Almacen/Despensa,codven=3 · DiasVisita=Mi · Orden=60.0,codven=8 · DiasVisita=Mi · Orden=10.0,2,V8,DUPLICADO_RESUELTO_POR_PRECEDENCIA
+1257,GAMBINO EMILIANO DANIEL,Kiosco/Maxikiosco,codven=3 · DiasVisita=Mi · Orden=130.0,codven=8 · DiasVisita=Mi · Orden=10.0,2,V8,DUPLICADO_RESUELTO_POR_PRECEDENCIA
+1336,ROSTAGNO RAFAEL ERNESTO,Almacen/Despensa,codven=3 · DiasVisita=Ju · Orden=130.0,codven=8 · DiasVisita=Ju · Orden=130.0,2,V8,DUPLICADO_RESUELTO_POR_PRECEDENCIA
+1366,REVELINO MIGUEL ANGEL,Almacen/Despensa,codven=3 · DiasVisita=Lu · Orden=340.0,codven=8 · DiasVisita=Lu · Orden=10.0,2,V8,DUPLICADO_RESUELTO_POR_PRECEDENCIA
+1392,PASERO GABRIELA FERNANDA,Almacen/Despensa,codven=3 · DiasVisita=Sa · Orden=0.0,codven=8 · DiasVisita=Vi · Orden=10.0,2,V8,DUPLICADO_RESUELTO_POR_PRECEDENCIA
+1414,VELAZQUEZ ANDREA SOLEDAD,Almacen/Despensa,codven=3 · DiasVisita=Mi · Orden=0.0,codven=8 · DiasVisita=Mi · Orden=10.0,2,V8,DUPLICADO_RESUELTO_POR_PRECEDENCIA
+1424,IBAÑEZ MARCOS FACUNDO,Almacen/Despensa,codven=3 · DiasVisita=Sa · Orden=0.0,codven=8 · DiasVisita=Ju · Orden=10.0,2,V8,DUPLICADO_RESUELTO_POR_PRECEDENCIA
+4758,CEBALLOS LUCIA DERMIRIA,Almacen/Despensa,codven=3 · DiasVisita=Lu · Orden=420.0,codven=8 · DiasVisita=Lu · Orden=10.0,2,V8,DUPLICADO_RESUELTO_POR_PRECEDENCIA
