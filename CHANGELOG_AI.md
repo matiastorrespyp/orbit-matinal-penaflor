@@ -1,5 +1,15 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-05 - fix(cierre): publicar las salidas auditables del motor 11T
+
+Preflight del cierre diario sobre los datasets nuevos del motor 11T.
+
+- **El guard NO necesitó cambios.** `check_git_cierre.py` clasifica **por prefijo de ruta**, no con un allowlist por archivo: todo lo que cuelga de `04_DATASETS_ORBIT/` ya es operativo permitido, así que `mod_11t_sin_cartera.csv`, `mod_11t_detalle.csv` y `mod_11t_excepciones.csv` pasaron desde el primer día. `python check_git_cierre.py` → **exit 0**, "solo hay cambios operativos permitidos". Sus pruebas de clasificación (`--test`): **todas OK**, y sigue bloqueando `.py`, `.bat`, `portal.html`, config y rutas desconocidas (verificado: con el `.bat` modificado devuelve exit 1).
+- **Lo que sí faltaba era el allowlist de publicación.** `CIERRE_DIA_ORBIT.bat` no hace `git add .`: stagea una lista explícita, y los **tres** datasets nuevos del 11T no estaban en ella. Son dos listas distintas y sólo la primera los reconocía. Es el patrón ERR-014 (dadatinto, Plan Frizze): el archivo se regenera local, nunca viaja a Render y **el cierre igual cierra en verde**.
+- **Agregadas tres líneas** a `CIERRE_DIA_ORBIT.bat`, respetando CRLF (`.gitattributes`: `*.bat text eol=crlf`; con LF el `if/else` de cmd se rompe): `mod_11t_detalle.csv`, `mod_11t_excepciones.csv` y `mod_11t_sin_cartera.csv`. Ninguno lo lee el portal, pero `/api/gerencia/once_titulares` publica la ruta de `mod_11t_excepciones.csv` **como puntero** en el payload: sin esto apuntaba a un archivo inexistente en Render.
+- **`mod_11t_sin_cartera.csv` verificado** como dataset derivado y determinístico: tres corridas sobre el mismo detalle dan bytes idénticos, y **sin clientes SIN_CARTERA escribe sólo el encabezado** (`cliente_id,cliente_nombre,segmento_11t,titulares_cubiertos,titulares,botellas_netas`), no un archivo vacío. Se regenera en cada corrida del motor, así que nunca entra en un commit funcional.
+- **Sin tocar** `cargar_clientes()` ni datasets ajenos al 11T: sigue como tarea independiente en `NEXT_TASK.md`. No se commiteó ningún CSV operativo.
+
 ## 2026-08-05 - fix(11T): corrección semántica — DEPOSITO y SIN_CARTERA no son lo mismo
 
 Corrección sobre **`c32d91a`**, sin tocar ese commit. Aquel resolvió que el Depósito sume al total de empresa, pero metió en la misma bolsa dos cosas distintas: los clientes del Depósito (V1/V20) y los clientes **sin `codven`**. Todo lo que no fuera vendedor se etiquetaba `DEPOSITO`.

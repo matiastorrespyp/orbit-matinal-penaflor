@@ -180,6 +180,13 @@ git add "04_DATASETS_ORBIT/hist_cliente_producto.csv"
 git add "04_DATASETS_ORBIT/hist_cliente_resumen.csv"
 git add "04_DATASETS_ORBIT/mod_11_titulares.csv"
 git add "04_DATASETS_ORBIT/mod_11t_acum.csv"
+REM Salidas auditables del motor 11T (motor_11t): detalle cliente x titular,
+REM excepciones de medicion y clientes SIN_CARTERA. El portal no las lee, pero
+REM /api/gerencia/once_titulares publica la ruta de mod_11t_excepciones.csv como
+REM puntero: sin estas lineas apunta a un archivo que no existe en Render.
+git add "04_DATASETS_ORBIT/mod_11t_detalle.csv"
+git add "04_DATASETS_ORBIT/mod_11t_excepciones.csv"
+git add "04_DATASETS_ORBIT/mod_11t_sin_cartera.csv"
 git add "04_DATASETS_ORBIT/mod_acciones_analisis.csv"
 git add "04_DATASETS_ORBIT/mod_acciones_ranking.csv"
 git add "04_DATASETS_ORBIT/mod_alertas_descuentos.csv"
