@@ -25,22 +25,34 @@ sobre el motor autoritativo **`motor_11t.py`**. Mismo esquema de columnas
 `tiene_flag = 1` ahora significa **el cliente llegó al mínimo de botellas de su segmento**
 (3 tradicional / 6 autoservicio) tras consolidar el período — no "compró algo".
 
-### Columna agregada 2026-08-05: `cuenta_vendedor`
+### Columnas agregadas 2026-08-05: `universo` y `cuenta_vendedor`
 
-`mod_11t_acum.csv` distingue los **dos universos** del 11T (ver `CLAUDE.md`, regla V20):
+`mod_11t_acum.csv` distingue los **universos** del 11T (ver `CLAUDE.md`, regla V20):
 
-| `cuenta_vendedor` | Qué es | Cuenta en |
-|---|---|---|
-| `1` | Cliente de la cartera de un vendedor de ruta | EMPRESA y VENDEDORES |
-| `0` | Depósito / venta directa (V1, V20) o cliente sin `codven` | **sólo EMPRESA** |
+| `universo` | `cuenta_vendedor` | Qué es | Cuenta en |
+|---|---|---|---|
+| `VENDEDORES` | `1` | Cliente de la cartera de un vendedor de ruta | EMPRESA y VENDEDORES |
+| `DEPOSITO` | `0` | Depósito / venta directa (`codven` V1 o V20) | **sólo EMPRESA** |
+| `SIN_CARTERA` | `0` | Cliente **sin `codven`** en el padrón | **sólo EMPRESA** |
 
-Las filas con `0` traen `vendedor_codigo` vacío y `vendedor_nombre = DEPOSITO`, y **no**
-forman parte de la grilla de cartera (el Depósito no tiene cartera: sería un denominador
-inventado). Sólo se agregan las combinaciones cliente × titular realmente medidas.
+`DEPOSITO` y `SIN_CARTERA` **no son lo mismo**, aunque los dos queden fuera de los
+rankings: el Depósito es una decisión comercial y no hay nada que corregir; un cliente sin
+`codven` es un hueco del ERP al que hay que asignarle cartera. Se separan para que el
+segundo se vea, en vez de pasar por venta directa legítima.
+
+Ninguno de los dos forma parte de la grilla de cartera (no tienen cartera: sería un
+denominador inventado). Sólo se agregan las combinaciones cliente × titular realmente
+medidas. Las filas `SIN_CARTERA` traen `vendedor_codigo` vacío.
 
 Todo corte por vendedor tiene que filtrar con `server_orbit._universo_vendedores_11t()`.
-Los totales de empresa **no** filtran: ahí el Depósito suma. Vale
-`con_empresa = con_vendedores + con_deposito` (testeado en `test_motor_11t.SinDobleConteo`).
+Los totales de empresa **no** filtran: ahí suman los tres. Vale
+`con_empresa = con_vendedores + con_deposito + con_sin_cartera`
+(testeado en `test_motor_11t.SinDobleConteo`).
+
+Salida auditable de los `SIN_CARTERA`: **`04_DATASETS_ORBIT/mod_11t_sin_cartera.csv`**
+(cliente, nombre, segmento, titulares cubiertos y botellas netas), la excepción
+`CLIENTE_SIN_CARTERA` con los códigos, y `sin_cartera_clientes` en
+`/api/gerencia/once_titulares`.
 
 ## Consumidores migrados
 

@@ -28,11 +28,26 @@ Primero precisión de datos, después diseño.
   Sus ventas válidas se incluyen únicamente en los totales empresariales de 11 Titulares
   y se excluyen de rankings e indicadores individuales.
 
-  - Hay DOS UNIVERSOS y no son el mismo filtro:
-    - **EMPRESA**: todo el total comercial de la distribuidora, INCLUIDO el Depósito.
-      Es el número que se compara contra el objetivo de empresa y contra el proveedor.
-    - **VENDEDORES**: sólo vendedores de ruta. Alimenta rankings, cartera, selectores,
-      cumplimiento individual y cualquier promedio entre vendedores.
+  - Hay TRES UNIVERSOS que suman al total de EMPRESA, y una categoría que no suma.
+    Cada cliente cae en **exactamente uno** (son mutuamente excluyentes):
+    - **VENDEDORES**: cliente de la cartera de un vendedor de ruta. El único que va a
+      rankings, cartera, selectores, cumplimiento individual y promedios entre vendedores.
+    - **DEPOSITO**: cliente del Depósito / venta directa (`codven` = V1 o V20). Vende de
+      verdad, pero no es un vendedor: sin cartera, sin ranking, sin objetivo propio.
+    - **SIN_CARTERA**: cliente **sin `codven`** o sin asignación válida en el padrón.
+      **NO es Depósito.** Suma al total de empresa, queda fuera de rankings y objetivos
+      individuales, y sale listado en una salida auditable.
+    - **BAJA** (V2/V5) no es un universo: queda fuera de todo.
+  - **EMPRESA** = VENDEDORES + DEPOSITO + SIN_CARTERA. Es el número que se compara contra
+    el objetivo de empresa y contra el proveedor.
+  - **Por qué DEPOSITO y SIN_CARTERA no son lo mismo** (los dos quedan fuera de los
+    rankings, así que es tentador mezclarlos): **DEPOSITO es una decisión comercial**, no
+    hay nada que corregir; **SIN_CARTERA es un dato faltante del ERP**, alguien tiene que
+    asignarle cartera. Etiquetar un cliente sin `codven` como "Depósito" lo hace pasar por
+    venta directa legítima y el hueco no se arregla nunca.
+  - Trazabilidad de SIN_CARTERA: `04_DATASETS_ORBIT/mod_11t_sin_cartera.csv`, la excepción
+    `CLIENTE_SIN_CARTERA` (con los códigos de cliente) y `sin_cartera_clientes` en
+    `/api/gerencia/once_titulares`. Caso testigo: **#786 ANSELMI Y CIA**.
   - V20 sigue EXCLUIDO de todas las métricas con objetivo: avance vs objetivo,
     Incentivo Club FARO, Planes AS, dashboard de vendedores. No tiene cartera asignada
     en el maestro de clientes ni login propio.
@@ -44,13 +59,16 @@ Primero precisión de datos, después diseño.
     Innovaciones y Cobertura se mantiene la línea informativa "V20 Depósito"
     (solo logrado, sin objetivo).
   - Códigos del padrón que son Depósito / venta directa: **V1** (bucket `deposito`) y
-    **V20** (código con el que factura). Un cliente sin `codven` en el padrón recibe el
-    mismo trato: cuenta para EMPRESA, no es de nadie.
+    **V20** (código con el que factura). **Un cliente sin `codven` NO va acá**: es
+    `SIN_CARTERA`.
   - Implementación única: `motor_11t.VENDEDORES_BAJA` (V2/V5, fuera de todo) y
-    `motor_11t.VENDEDORES_SIN_CARTERA` (V1/V20). Cada fila del detalle trae
-    `cuenta_vendedor`. No duplicar estas listas en otros módulos.
+    `motor_11t.VENDEDORES_DEPOSITO` (V1/V20). Cada fila del detalle trae `universo`
+    (`VENDEDORES` / `DEPOSITO` / `SIN_CARTERA`) y `cuenta_vendedor` como atajo. Filtrar
+    con `motor_11t.solo_vendedores()` o `server_orbit._universo_vendedores_11t()`.
+    No duplicar estas listas en otros módulos.
   - No hay doble conteo posible: el padrón deja una sola fila por cliente, así que vale
-    `cubiertos_empresa = cubiertos_vendedores + cubiertos_deposito` (testeado).
+    `cubiertos_empresa = cubiertos_vendedores + cubiertos_deposito + cubiertos_sin_cartera`
+    (testeado en sintético, en datos reales y en los endpoints).
   - Para los bloques depósito NO se filtra por Empresa: el depósito factura parte de su
     venta directa vía P&P Logística pero es la misma entidad física V20.
 - V3 es Nadia Gambino.

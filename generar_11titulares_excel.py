@@ -186,7 +186,12 @@ def main():
     print(f"  {len(cli):,} clientes | cols: {cod_col}, {nom_col}, {vend_col}, {vnom_col}, {dias_col}, seg={seg_col}")
 
     if vend_col:
-        cli = cli[~pd.to_numeric(cli[vend_col], errors="coerce").isin(EXCLUIDOS)]
+        _cv = pd.to_numeric(cli[vend_col], errors="coerce")
+        # Universo VENDEDORES: fuera bajas y Depósito (EXCLUIDOS) y también los
+        # SIN_CARTERA (codven vacío). Una hoja de preventa es la ruta de alguien: un
+        # cliente sin cartera no le toca a nadie, saldría con la columna Vendedor en
+        # blanco. Suma al total de empresa del 11T, que es otra pantalla.
+        cli = cli[~_cv.isin(EXCLUIDOS) & _cv.notna()]
 
     # ── 3. Marcas 11T + códigos de producto ─────────────────
     print("[3/4] Cargando marcas objetivo y códigos de producto ...")

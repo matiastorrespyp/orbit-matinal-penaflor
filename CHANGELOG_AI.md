@@ -1,5 +1,39 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-05 - fix(11T): corrección semántica — DEPOSITO y SIN_CARTERA no son lo mismo
+
+Corrección sobre **`c32d91a`**, sin tocar ese commit. Aquel resolvió que el Depósito sume al total de empresa, pero metió en la misma bolsa dos cosas distintas: los clientes del Depósito (V1/V20) y los clientes **sin `codven`**. Todo lo que no fuera vendedor se etiquetaba `DEPOSITO`.
+
+**Por qué importa:** los dos quedan fuera de los rankings, así que es tentador tratarlos igual. No lo son.
+
+| | Qué es | Qué hay que hacer |
+|---|---|---|
+| `DEPOSITO` | Decisión comercial: el Depósito existe y vende | Nada, está bien |
+| `SIN_CARTERA` | Dato faltante del ERP | Asignarle cartera |
+
+Etiquetar un cliente sin `codven` como "Depósito" lo hace pasar por venta directa legítima y **el hueco no se arregla nunca**. Era exactamente lo que pasaba con **`#786 ANSELMI Y CIA`** (Autoservicio grande, 1.560 botellas de Smirnoff Flavours en julio): figuraba como Depósito cuando en realidad es un cliente al que le falta asignación en el ERP.
+
+- **Cuatro categorías explícitas, mutuamente excluyentes** (`motor_11t`). Cada fila del detalle trae `universo` y cae en exactamente una:
+  - `VENDEDORES` — cliente de la cartera de un vendedor de ruta. El único que va a rankings.
+  - `DEPOSITO` — `codven` en V1/V20. Suma a empresa, sin cartera ni cumplimiento individual.
+  - `SIN_CARTERA` — sin `codven` o sin asignación válida. Suma a empresa, fuera de rankings.
+  - `BAJA` (V2/V5) no es un universo: queda fuera de todo.
+  - `cuenta_vendedor` se mantiene como atajo de `universo == VENDEDORES`.
+  - La asignación es un `where` encadenado sobre la misma columna, así que **una fila no puede caer en dos categorías**.
+- **Renombrado `VENDEDORES_SIN_CARTERA` → `VENDEDORES_DEPOSITO`**: el nombre viejo decía "sin cartera" para referirse a los códigos del Depósito, que es justamente la confusión que este commit corrige.
+- **`vendedor_id`** ya no dice `DEPOSITO` para todo lo que no es vendedor: dice `DEPOSITO` o `SIN_CARTERA` según corresponda.
+- **Trazabilidad explícita de SIN_CARTERA** (antes no existía):
+  - `motor_11t.clientes_sin_cartera(detalle)` — una fila por cliente con nombre, segmento, titulares que cubre y botellas netas.
+  - **`04_DATASETS_ORBIT/mod_11t_sin_cartera.csv`** — salida auditable nueva, escrita junto al resto del trío 11T. La regeneración avisa por consola con los códigos: `[REVISAR] N cliente(s) SIN_CARTERA suman al total de empresa y no son Deposito`.
+  - Excepción **`CLIENTE_SIN_CARTERA`** con los **códigos de cliente** en `clave`, no un total anónimo. La de `DEPOSITO` queda aparte.
+  - `sin_cartera_total` y `sin_cartera_clientes` en `/api/gerencia/once_titulares`.
+- **Invariante de tres vías** en todos lados: `cubiertos_empresa = cubiertos_vendedores + cubiertos_deposito + cubiertos_sin_cartera`. Propagado a `resumen_por_titular`, `11t_empresa` (`con_sin_cartera`), `once_titulares`, el 11T vivo de `cierre_mes` y `_cierre_once_titulares`. `mod_11t_acum.csv` suma la columna `universo`.
+- **`generar_11titulares_excel.py`**: el Excel de preventa ahora también descarta los `SIN_CARTERA` (antes sólo bajas y Depósito). Una hoja de preventa es la ruta de alguien; un cliente sin cartera saldría con la columna Vendedor en blanco.
+- **Lo que reveló la corrección**: en julio-2026 el aporte que `c32d91a` mostraba como "Depósito" era **100% `SIN_CARTERA`** (ANSELMI + SENN ENZO). El Depósito real (V1/V20) aportó **0**, porque sus 27 clientes no tuvieron compras 11T ese mes. Los totales de empresa **no se movieron** y Gordon's sigue en 32.
+- **Intacto**: precedencia V3/V8, padrón único, arreglo de Ruta del Día, retiro de `mod_11_titulares` como fuente, exclusión V2/V5 y el tratamiento empresarial de V1/V20.
+- **Objetivos sin tocar**: `objetivo 11T.xlsx` no se modificó. Su recalibración sigue **pendiente de confirmación de Peñaflor** (los objetivos se fijaron contra la regla vieja de CCC sin mínimo).
+- **Validación**: pruebas funcionales del motor + integración → **96 tests OK**, sin skips (`test_motor_11t` + `test_motor_padron`), incluidas la regresión de Gordon's julio-2026 sobre el archivo real y las clases nuevas `SinCarteraNoEsDeposito`, `SinDobleConteo` y `UniversosEnDatosReales`. Suite completa: **108 tests, 102 OK y los 6 errores heredados** de descubrimiento (`test_alertas_reales`, `test_copiloto_*`, `test_kernel_proactivo`: scripts viejos que no son tests unittest y revientan al importarse; ajenos a este cambio).
+
 ## 2026-08-05 - fix(11T): regla definitiva de V20/Depósito — dos universos, empresa vs vendedores
 
 Continuación de **`5a2f826`** (motor único de 11T + regla única de padrón). Ese commit dejó una contradicción abierta: al excluir el Depósito del universo de vendedores —que es correcto— también lo sacaba del **total de empresa**, y la venta directa desaparecía del 11T de la distribuidora. `CLAUDE.md` decía una cosa y el código hacía otra.

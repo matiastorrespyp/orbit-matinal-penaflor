@@ -297,14 +297,6 @@ class DosUniversosDeposito(unittest.TestCase):
         self.assertEqual(fila["vendedor_id"], "DEPOSITO")
         self.assertFalse(bool(fila["cuenta_vendedor"]))
 
-    def test_cliente_sin_vendedor_en_el_padron_cuenta_para_empresa(self):
-        """Caso real 786 ANSELMI: sin codven, pero la venta es de la distribuidora."""
-        det, _ = _run([(786, 30134, 6, 2400, "05/07/2026", "FAC-1", G, "PINK GIN")])
-        r = m.resumen_por_titular(det)
-        self.assertEqual(int(r["cubiertos"].iloc[0]), 1)
-        self.assertEqual(int(r["cubiertos_deposito"].iloc[0]), 1)
-        self.assertTrue(m.resumen_por_vendedor(det).empty)
-
     def test_el_deposito_no_altera_el_promedio_entre_vendedores(self):
         det, _ = self._dep()
         rv = m.resumen_por_vendedor(det)
@@ -315,41 +307,130 @@ class DosUniversosDeposito(unittest.TestCase):
         self.assertEqual(set(m.solo_vendedores(det)["cliente_id"]), {1})
 
 
-class SinDobleConteo(unittest.TestCase):
-    """La identidad empresa = vendedores + deposito tiene que cerrar SIEMPRE.
+class SinCarteraNoEsDeposito(unittest.TestCase):
+    """Un cliente sin `codven` NO es Depósito (corrección semántica 2026-08-05).
 
-    Es la garantía de que combinar los dos universos no duplica ninguna venta: el padrón
-    deja una sola fila por cliente, así que cada cliente cae en exactamente un universo.
+    Los dos son "no vendedores", así que es tentador meterlos en la misma bolsa. No lo son:
+      DEPOSITO    es una decisión comercial. No hay nada que corregir.
+      SIN_CARTERA es un dato faltante del ERP. Alguien tiene que asignarle cartera.
+    Etiquetar un cliente sin codven como "Depósito" lo hace pasar por venta directa
+    legítima y el hueco no se arregla nunca.
+    """
+
+    def _anselmi(self):
+        """Caso real #786 ANSELMI: sin codven, Autoservicio, mueve volumen de verdad."""
+        return _run([(786, 30134, 6, 2400, "05/07/2026", "FAC-1", G, "PINK GIN")])
+
+    def test_cliente_sin_codven_es_sin_cartera_no_deposito(self):
+        det, _ = self._anselmi()
+        fila = det.iloc[0]
+        self.assertEqual(fila["universo"], m.UNIVERSO_SIN_CARTERA)
+        self.assertNotEqual(fila["universo"], m.UNIVERSO_DEPOSITO)
+        self.assertEqual(fila["vendedor_id"], "SIN_CARTERA")
+
+    def test_anselmi_suma_al_total_de_empresa(self):
+        det, _ = self._anselmi()
+        r = m.resumen_por_titular(det)
+        self.assertEqual(int(r["cubiertos"].iloc[0]), 1)
+        self.assertEqual(int(r["cubiertos_sin_cartera"].iloc[0]), 1)
+        self.assertEqual(int(r["cubiertos_deposito"].iloc[0]), 0,
+                         "no puede contarse como deposito")
+
+    def test_anselmi_queda_fuera_de_resumen_por_vendedor(self):
+        det, _ = self._anselmi()
+        self.assertTrue(m.resumen_por_vendedor(det).empty)
+        self.assertEqual(m.marcas_cubiertas_por_vendedor(det), {})
+
+    def test_el_deposito_real_no_se_mezcla_con_sin_cartera(self):
+        """V1/V20 son DEPOSITO; el que no tiene codven es SIN_CARTERA. Nunca se cruzan."""
+        det, _ = _run([
+            (9,   30134, 6, 2400, "05/07/2026", "FAC-1", G, "PINK GIN"),   # V20
+            (7,   30134, 3, 1200, "05/07/2026", "FAC-2", G, "PINK GIN"),   # V1
+            (786, 30134, 6, 2400, "05/07/2026", "FAC-3", G, "PINK GIN"),   # sin codven
+        ])
+        uni = dict(zip(det["cliente_id"], det["universo"]))
+        self.assertEqual(uni[9], m.UNIVERSO_DEPOSITO)
+        self.assertEqual(uni[7], m.UNIVERSO_DEPOSITO)
+        self.assertEqual(uni[786], m.UNIVERSO_SIN_CARTERA)
+        r = m.resumen_por_titular(det)
+        self.assertEqual(int(r["cubiertos_deposito"].iloc[0]), 2)
+        self.assertEqual(int(r["cubiertos_sin_cartera"].iloc[0]), 1)
+
+    def test_salida_auditable_lista_los_sin_cartera(self):
+        """Trazabilidad explícita: quién es, cuánto movió y en qué titulares."""
+        det, _ = self._anselmi()
+        aud = m.clientes_sin_cartera(det)
+        self.assertEqual(len(aud), 1)
+        self.assertEqual(int(aud["cliente_id"].iloc[0]), 786)
+        self.assertIn("ANSELMI", aud["cliente_nombre"].iloc[0])
+        self.assertEqual(float(aud["botellas_netas"].iloc[0]), 6.0)
+
+    def test_la_salida_auditable_no_incluye_al_deposito(self):
+        det, _ = _run([(9, 30134, 6, 2400, "05/07/2026", "FAC-1", G, "PINK GIN")])
+        self.assertTrue(m.clientes_sin_cartera(det).empty,
+                        "el deposito no es un hueco del ERP: no va al listado de revision")
+
+    def test_las_excepciones_separan_los_dos_tipos(self):
+        _, exc = _run([
+            (9,   30134, 6, 2400, "05/07/2026", "FAC-1", G, "PINK GIN"),
+            (786, 30134, 6, 2400, "05/07/2026", "FAC-2", G, "PINK GIN"),
+        ])
+        tipos = set(exc["tipo"])
+        self.assertIn("DEPOSITO", tipos)
+        self.assertIn("CLIENTE_SIN_CARTERA", tipos)
+        # La excepción de SIN_CARTERA trae los códigos de cliente, no un total anónimo.
+        self.assertIn("786", str(exc[exc["tipo"] == "CLIENTE_SIN_CARTERA"]["clave"].iloc[0]))
+
+
+class SinDobleConteo(unittest.TestCase):
+    """empresa = vendedores + deposito + sin_cartera tiene que cerrar SIEMPRE.
+
+    Es la garantía de que combinar los universos no duplica ninguna venta: el padrón deja
+    una sola fila por cliente, así que cada cliente cae en exactamente un universo.
     """
 
     def _det(self):
         return _run([
             (9,   30134, 6, 2400, "05/07/2026", "FAC-1", G, "PINK GIN"),   # deposito V20
             (7,   30134, 3, 1200, "05/07/2026", "FAC-2", G, "PINK GIN"),   # deposito V1
-            (786, 30134, 6, 2400, "05/07/2026", "FAC-3", G, "PINK GIN"),   # sin vendedor
+            (786, 30134, 6, 2400, "05/07/2026", "FAC-3", G, "PINK GIN"),   # sin cartera
             (1,   30134, 3, 1200, "05/07/2026", "FAC-4", G, "PINK GIN"),   # V8
             (3,   30134, 3, 1200, "05/07/2026", "FAC-5", G, "PINK GIN"),   # V9
         ])[0]
 
-    def test_empresa_es_exactamente_vendedores_mas_deposito(self):
+    def test_empresa_es_la_suma_de_los_tres_universos(self):
         r = m.resumen_por_titular(self._det())
         self.assertTrue(
-            (r["cubiertos"] == r["cubiertos_vendedores"] + r["cubiertos_deposito"]).all(),
+            (r["cubiertos"] == r["cubiertos_vendedores"] + r["cubiertos_deposito"]
+             + r["cubiertos_sin_cartera"]).all(),
             f"la identidad no cierra:\n{r.to_string()}")
 
-    def test_los_universos_no_comparten_ningun_cliente(self):
+    def test_los_universos_son_mutuamente_excluyentes(self):
         det = self._det()
-        vend = set(m.solo_vendedores(det)["cliente_id"])
-        dep  = set(det[~det["cuenta_vendedor"]]["cliente_id"])
-        self.assertEqual(vend & dep, set(), "un cliente no puede estar en los dos universos")
-        self.assertEqual(vend | dep, set(det["cliente_id"]))
+        grupos = {u: set(g["cliente_id"]) for u, g in det.groupby("universo")}
+        self.assertEqual(set(grupos), set(m.UNIVERSOS_EMPRESA))
+        vistos = set()
+        for u, ids in grupos.items():
+            self.assertEqual(vistos & ids, set(), f"{u} comparte clientes con otro universo")
+            vistos |= ids
+        self.assertEqual(vistos, set(det["cliente_id"]))
+
+    def test_cada_fila_tiene_exactamente_un_universo(self):
+        det = self._det()
+        self.assertTrue(det["universo"].isin(m.UNIVERSOS_EMPRESA).all())
+        self.assertEqual(len(det), len(det.drop_duplicates(["cliente_id", "titular"])))
+
+    def test_cuenta_vendedor_es_coherente_con_universo(self):
+        det = self._det()
+        self.assertTrue(
+            (det["cuenta_vendedor"] == (det["universo"] == m.UNIVERSO_VENDEDORES)).all())
 
     def test_un_cliente_se_cuenta_una_sola_vez_en_el_total(self):
         det = self._det()
         r = m.resumen_por_titular(det)
         self.assertEqual(int(r["cubiertos"].iloc[0]), det[det["cumple"]]["cliente_id"].nunique())
 
-    def test_la_baja_no_entra_en_ninguno_de_los_dos(self):
+    def test_la_baja_no_entra_en_ningun_universo(self):
         det, _ = _run([
             (11, 30134, 6, 2400, "05/07/2026", "FAC-1", G, "PINK GIN"),   # V2 baja
             (1,  30134, 3, 1200, "05/07/2026", "FAC-2", G, "PINK GIN"),   # V8
@@ -357,9 +438,11 @@ class SinDobleConteo(unittest.TestCase):
         r = m.resumen_por_titular(det)
         self.assertEqual(int(r["cubiertos"].iloc[0]), 1)
         self.assertEqual(int(r["cubiertos_deposito"].iloc[0]), 0)
+        self.assertEqual(int(r["cubiertos_sin_cartera"].iloc[0]), 0)
+        self.assertNotIn(11, set(det["cliente_id"]))
 
 
-class DosUniversosEnDatosReales(unittest.TestCase):
+class UniversosEnDatosReales(unittest.TestCase):
     """La identidad tiene que cerrar también sobre el padrón y las ventas reales."""
 
     @classmethod
@@ -373,26 +456,42 @@ class DosUniversosEnDatosReales(unittest.TestCase):
 
     def test_identidad_cierra_en_datos_reales(self):
         self.assertTrue(
-            (self.r["cubiertos"] == self.r["cubiertos_vendedores"] + self.r["cubiertos_deposito"]).all())
+            (self.r["cubiertos"] == self.r["cubiertos_vendedores"]
+             + self.r["cubiertos_deposito"] + self.r["cubiertos_sin_cartera"]).all())
 
     def test_gordons_sigue_dando_32(self):
-        """El cambio de universos no puede mover la regresión validada."""
+        """La separación de universos no puede mover la regresión validada."""
         fila = self.r[self.r["titular"] == "GORDON'S FLAVOURS"].iloc[0]
         self.assertEqual(int(fila["cubiertos"]), 32)
 
-    def test_ningun_vendedor_del_ranking_es_deposito(self):
+    def test_ningun_vendedor_del_ranking_es_deposito_ni_sin_cartera(self):
         rv = m.resumen_por_vendedor(self.det)
         cods = set(rv["vendedor_codigo"].dropna().astype(int))
-        self.assertEqual(cods & set(m.VENDEDORES_SIN_CARTERA), set())
+        self.assertEqual(cods & set(m.VENDEDORES_DEPOSITO), set())
         self.assertEqual(cods & set(m.VENDEDORES_BAJA), set())
+        self.assertFalse(rv["vendedor_codigo"].isna().any(),
+                         "un cliente sin codven no puede generar fila de vendedor")
 
     def test_el_ranking_solo_tiene_vendedores_activos(self):
         rv = m.resumen_por_vendedor(self.det)
         self.assertTrue(set(rv["vendedor_codigo"].dropna().astype(int)) <= {3, 4, 6, 7, 8, 9, 10})
 
-    def test_el_deposito_aporta_de_verdad(self):
+    def test_hay_senal_real_de_sin_cartera(self):
         """Si esto da 0 el test de identidad no prueba nada: no habría señal."""
-        self.assertGreater(int(self.r["cubiertos_deposito"].sum()), 0)
+        self.assertGreater(int(self.r["cubiertos_sin_cartera"].sum()), 0)
+
+    def test_anselmi_es_sin_cartera_en_datos_reales(self):
+        """#786 conserva sus botellas en el total y no se lo mete en Depósito."""
+        f = self.det[self.det["cliente_id"] == 786]
+        self.assertFalse(f.empty, "ANSELMI tiene que estar medido")
+        self.assertEqual(set(f["universo"]), {m.UNIVERSO_SIN_CARTERA})
+        smf = f[f["titular"] == "SMIRNOFF FLAVOURS"]
+        self.assertEqual(float(smf["botellas_netas"].iloc[0]), 1560.0)
+        self.assertTrue(bool(smf["cumple"].iloc[0]))
+
+    def test_anselmi_esta_en_la_salida_auditable(self):
+        aud = m.clientes_sin_cartera(self.det)
+        self.assertIn(786, set(aud["cliente_id"]))
 
 
 class RegresionGordonsJulio2026(unittest.TestCase):
@@ -537,15 +636,16 @@ class TodosLosModulosDanLoMismo(unittest.TestCase):
 
     # ── Dos universos en los endpoints (regla V20 2026-08-05) ────────────────
     def test_11t_empresa_no_duplica_al_sumar_los_universos(self):
-        """con = con_vendedores + con_deposito en TODAS las marcas."""
+        """con = con_vendedores + con_deposito + con_sin_cartera en TODAS las marcas."""
         j = self.client.get("/api/gerencia/11t_empresa").get_json()
         for mm in j["marcas"]:
-            self.assertEqual(mm["con"], mm["con_vendedores"] + mm["con_deposito"],
-                             f"doble conteo o perdida en {mm['marca']}")
+            self.assertEqual(
+                mm["con"], mm["con_vendedores"] + mm["con_deposito"] + mm["con_sin_cartera"],
+                f"doble conteo o perdida en {mm['marca']}")
 
     def test_11t_empresa_no_lista_al_deposito_como_vendedor(self):
         j = self.client.get("/api/gerencia/11t_empresa").get_json()
-        prohibidos = {f"V{c}" for c in m.VENDEDORES_SIN_CARTERA + m.VENDEDORES_BAJA}
+        prohibidos = {f"V{c}" for c in m.VENDEDORES_DEPOSITO + m.VENDEDORES_BAJA}
         self.assertEqual(set(j["vendedores"]) & prohibidos, set())
         for mm in j["marcas"]:
             self.assertEqual(set(mm["por_vendedor"]) & prohibidos, set())
@@ -559,7 +659,7 @@ class TodosLosModulosDanLoMismo(unittest.TestCase):
             self.assertEqual(suma, mm["con_vendedores"])
 
     def test_11t_vendedor_rechaza_al_deposito(self):
-        for cod in m.VENDEDORES_SIN_CARTERA:
+        for cod in m.VENDEDORES_DEPOSITO:
             j = self.client.get(f"/api/gerencia/11t_vendedor?vendedor=V{cod}").get_json()
             self.assertEqual(j["marcas"], [], f"V{cod} no puede tener cumplimiento individual")
             self.assertIn("error", j)
@@ -567,8 +667,31 @@ class TodosLosModulosDanLoMismo(unittest.TestCase):
     def test_once_titulares_declara_la_apertura_por_universo(self):
         j = self.client.get("/api/gerencia/once_titulares").get_json()
         for mm in j["marcas"]:
-            self.assertEqual(mm["cubiertos"], mm["cubiertos_vendedores"] + mm["ccc_deposito"],
-                             f"doble conteo en {mm['marca']}")
+            self.assertEqual(
+                mm["cubiertos"],
+                mm["cubiertos_vendedores"] + mm["ccc_deposito"] + mm["cubiertos_sin_cartera"],
+                f"doble conteo en {mm['marca']}")
+
+    def test_once_titulares_publica_la_trazabilidad_de_sin_cartera(self):
+        """Los SIN_CARTERA que suman al total tienen que salir identificados."""
+        j = self.client.get("/api/gerencia/once_titulares").get_json()
+        if not j.get("sin_cartera_total"):
+            self.skipTest("no hay clientes SIN_CARTERA con cobertura en el periodo vivo")
+        self.assertTrue(j["sin_cartera_clientes"], "suman al total pero no se listan")
+        for c in j["sin_cartera_clientes"]:
+            self.assertIn("cliente_id", c)
+            self.assertIn("cliente_nombre", c)
+
+    def test_el_deposito_y_sin_cartera_no_se_mezclan_en_el_dataset(self):
+        t11 = pd.read_csv(m.BASE / "04_DATASETS_ORBIT" / "mod_11t_acum.csv", encoding="utf-8-sig")
+        if "universo" not in t11.columns:
+            self.skipTest("mod_11t_acum.csv sin columna universo (regenerar)")
+        self.assertTrue(set(t11["universo"].unique()) <= set(m.UNIVERSOS_EMPRESA))
+        dep = t11[t11["universo"] == m.UNIVERSO_DEPOSITO]
+        sc  = t11[t11["universo"] == m.UNIVERSO_SIN_CARTERA]
+        self.assertEqual(set(dep["cliente_id"]) & set(sc["cliente_id"]), set())
+        # Un SIN_CARTERA no puede traer codigo de vendedor; un DEPOSITO sí (V1/V20).
+        self.assertTrue(pd.to_numeric(sc["vendedor_codigo"], errors="coerce").isna().all())
 
     def test_dashboard_vivo_y_11t_empresa_coinciden_en_el_total(self):
         """Las dos pantallas de gerencia tienen que dar el MISMO total de empresa."""

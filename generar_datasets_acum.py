@@ -862,7 +862,7 @@ def generar_11t_acum(ventas, clientes, desde=None, hasta=None):
     fecha = datetime.now().strftime("%Y-%m-%d")
     COLS = ["fecha_calculo", "vendedor_codigo", "vendedor_nombre", "cliente_id",
             "segmento_11t", "marca_objetivo", "cant_base_acum", "tiene_flag",
-            "falta_flag", "cuenta_vendedor"]
+            "falta_flag", "universo", "cuenta_vendedor"]
     if cart.empty or not titulares:
         return pd.DataFrame(columns=COLS), det, exc
 
@@ -877,31 +877,36 @@ def generar_11t_acum(ventas, clientes, desde=None, hasta=None):
     grilla["tiene_flag"] = (grilla["cumple"] == True).astype(int)   # noqa: E712 — NaN -> 0
     grilla["falta_flag"] = 1 - grilla["tiene_flag"]
     grilla["fecha_calculo"] = fecha
+    grilla["universo"] = motor_11t.UNIVERSO_VENDEDORES
     grilla["cuenta_vendedor"] = 1
     grilla = grilla[COLS]
 
-    # ── Universo EMPRESA: el Depósito / venta directa ────────────────────────
-    # Sus clientes NO tienen cartera, así que no van a la grilla de arriba (seria un
-    # denominador inventado). Se agregan SOLO las filas realmente medidas, marcadas con
-    # cuenta_vendedor=0: suman al total de empresa y ningun corte por vendedor las toma.
-    # Sin esto, la venta directa desaparecia del 11T de la distribuidora.
-    dep = det[~det["cuenta_vendedor"]]
-    if not dep.empty:
-        dep_g = pd.DataFrame({
+    # ── Universo EMPRESA: DEPOSITO y SIN_CARTERA ─────────────────────────────
+    # Ninguno de los dos tiene cartera, así que no van a la grilla de arriba (sería un
+    # denominador inventado). Se agregan SOLO las filas realmente medidas, con su universo:
+    #   DEPOSITO    = venta directa (V1/V20). Decisión comercial, no hay nada que corregir.
+    #   SIN_CARTERA = cliente sin codven en el padrón. Hueco del ERP, hay que asignarlo.
+    # Se distinguen a propósito: etiquetar un cliente sin codven como "Depósito" lo hace
+    # pasar por venta directa legítima y el hueco no se arregla nunca.
+    extra = det[det["universo"] != motor_11t.UNIVERSO_VENDEDORES]
+    if not extra.empty:
+        extra_g = pd.DataFrame({
             "fecha_calculo":   fecha,
             # dtype explícito: con pd.NA pelado, la columna queda all-NA y el concat
             # avisa (FutureWarning) porque el dtype del resultado cambiaría.
-            "vendedor_codigo": pd.Series([float("nan")] * len(dep), dtype="float64"),
-            "vendedor_nombre": "DEPOSITO",
-            "cliente_id":      dep["cliente_id"].values,
-            "segmento_11t":    dep["segmento_11t"].values,
-            "marca_objetivo":  dep["titular"].values,
-            "cant_base_acum":  pd.to_numeric(dep["botellas_netas"], errors="coerce").fillna(0).values,
-            "tiene_flag":      dep["cumple"].astype(int).values,
+            "vendedor_codigo": pd.to_numeric(extra["vendedor_codigo"], errors="coerce")
+                                 .astype("float64").values,
+            "vendedor_nombre": extra["universo"].values,
+            "cliente_id":      extra["cliente_id"].values,
+            "segmento_11t":    extra["segmento_11t"].values,
+            "marca_objetivo":  extra["titular"].values,
+            "cant_base_acum":  pd.to_numeric(extra["botellas_netas"], errors="coerce").fillna(0).values,
+            "tiene_flag":      extra["cumple"].astype(int).values,
+            "universo":        extra["universo"].values,
             "cuenta_vendedor": 0,
         })
-        dep_g["falta_flag"] = 1 - dep_g["tiene_flag"]
-        grilla = pd.concat([grilla, dep_g[COLS]], ignore_index=True)
+        extra_g["falta_flag"] = 1 - extra_g["tiene_flag"]
+        grilla = pd.concat([grilla, extra_g[COLS]], ignore_index=True)
     return grilla, det, exc
 
 
@@ -1666,12 +1671,20 @@ def main():
     # Salida auditable: una fila por cliente x titular con botellas netas y motivo.
     t11_det.to_csv(OUT / "mod_11t_detalle.csv", index=False, encoding="utf-8-sig")
     t11_exc.to_csv(OUT / "mod_11t_excepciones.csv", index=False, encoding="utf-8-sig")
+    # Trazabilidad de SIN_CARTERA: clientes sin codven que SUMAN al total de empresa y no
+    # son Depósito. Es el hueco que hay que cerrar en el ERP, listado cliente por cliente.
+    t11_sc = motor_11t.clientes_sin_cartera(t11_det)
+    t11_sc.to_csv(OUT / "mod_11t_sin_cartera.csv", index=False, encoding="utf-8-sig")
     tiene = int(t11["tiene_flag"].sum())
     total = len(t11)
     print(f"  periodo medido: {_desde} -> {_hasta}")
     print(f"  OK: {total} filas / {tiene} tienen ({round(100*tiene/total,1) if total else 0}%) / {total - tiene} faltan")
     print(f"  + mod_11t_detalle.csv ({len(t11_det)} filas cliente x titular)"
           f" + mod_11t_excepciones.csv ({len(t11_exc)} filas)")
+    if not t11_sc.empty:
+        print(f"  [REVISAR] {len(t11_sc)} cliente(s) SIN_CARTERA suman al total de empresa "
+              f"y no son Deposito: {sorted(t11_sc['cliente_id'].tolist())}. "
+              f"Asignar cartera en el ERP — detalle en mod_11t_sin_cartera.csv")
     resumen_11t = (t11.groupby("marca_objetivo")
                    .agg(cartera=("cliente_id","count"), tienen=("tiene_flag","sum"))
                    .reset_index())
