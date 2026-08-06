@@ -23,12 +23,34 @@ Primero precisión de datos, después diseño.
 - Vendedores activos Peñaflor: V3, V4, V6, V7, V8, V9, V10.
 - Excluir siempre V2 y V5 de todos los reportes Peñaflor.
 - V20 = DEPOSITO / venta directa / no es vendedor de ruta Peñaflor.
+
+  **REGLA DEFINITIVA (2026-08-05):** V20/Depósito no es vendedor activo ni posee cartera.
+  Sus ventas válidas se incluyen únicamente en los totales empresariales de 11 Titulares
+  y se excluyen de rankings e indicadores individuales.
+
+  - Hay DOS UNIVERSOS y no son el mismo filtro:
+    - **EMPRESA**: todo el total comercial de la distribuidora, INCLUIDO el Depósito.
+      Es el número que se compara contra el objetivo de empresa y contra el proveedor.
+    - **VENDEDORES**: sólo vendedores de ruta. Alimenta rankings, cartera, selectores,
+      cumplimiento individual y cualquier promedio entre vendedores.
   - V20 sigue EXCLUIDO de todas las métricas con objetivo: avance vs objetivo,
     Incentivo Club FARO, Planes AS, dashboard de vendedores. No tiene cartera asignada
     en el maestro de clientes ni login propio.
-  - V20 SÍ se muestra en gerencia como línea aparte "V20 Depósito" (solo logrado, sin
-    objetivo) en Sell Out (total ruta + depósito concilia con el proveedor), 11T (CCC
-    aparte por titular), Innovaciones y Cobertura (clientes/botellas informativo).
+  - V20 NO debe: aparecer en rankings o selectores, recibir cartera, generar cumplimiento
+    individual, figurar como vendedor activo, alterar promedios entre vendedores, ni
+    generar filas individuales en reportes comerciales.
+  - En 11 Titulares el Depósito **suma al total de empresa** y se informa aparte
+    (`cubiertos_deposito` / `con_deposito`), nunca como línea de vendedor. En Sell Out,
+    Innovaciones y Cobertura se mantiene la línea informativa "V20 Depósito"
+    (solo logrado, sin objetivo).
+  - Códigos del padrón que son Depósito / venta directa: **V1** (bucket `deposito`) y
+    **V20** (código con el que factura). Un cliente sin `codven` en el padrón recibe el
+    mismo trato: cuenta para EMPRESA, no es de nadie.
+  - Implementación única: `motor_11t.VENDEDORES_BAJA` (V2/V5, fuera de todo) y
+    `motor_11t.VENDEDORES_SIN_CARTERA` (V1/V20). Cada fila del detalle trae
+    `cuenta_vendedor`. No duplicar estas listas en otros módulos.
+  - No hay doble conteo posible: el padrón deja una sola fila por cliente, así que vale
+    `cubiertos_empresa = cubiertos_vendedores + cubiertos_deposito` (testeado).
   - Para los bloques depósito NO se filtra por Empresa: el depósito factura parte de su
     venta directa vía P&P Logística pero es la misma entidad física V20.
 - V3 es Nadia Gambino.

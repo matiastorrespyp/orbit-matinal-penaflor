@@ -25,6 +25,23 @@ sobre el motor autoritativo **`motor_11t.py`**. Mismo esquema de columnas
 `tiene_flag = 1` ahora significa **el cliente llegó al mínimo de botellas de su segmento**
 (3 tradicional / 6 autoservicio) tras consolidar el período — no "compró algo".
 
+### Columna agregada 2026-08-05: `cuenta_vendedor`
+
+`mod_11t_acum.csv` distingue los **dos universos** del 11T (ver `CLAUDE.md`, regla V20):
+
+| `cuenta_vendedor` | Qué es | Cuenta en |
+|---|---|---|
+| `1` | Cliente de la cartera de un vendedor de ruta | EMPRESA y VENDEDORES |
+| `0` | Depósito / venta directa (V1, V20) o cliente sin `codven` | **sólo EMPRESA** |
+
+Las filas con `0` traen `vendedor_codigo` vacío y `vendedor_nombre = DEPOSITO`, y **no**
+forman parte de la grilla de cartera (el Depósito no tiene cartera: sería un denominador
+inventado). Sólo se agregan las combinaciones cliente × titular realmente medidas.
+
+Todo corte por vendedor tiene que filtrar con `server_orbit._universo_vendedores_11t()`.
+Los totales de empresa **no** filtran: ahí el Depósito suma. Vale
+`con_empresa = con_vendedores + con_deposito` (testeado en `test_motor_11t.SinDobleConteo`).
+
 ## Consumidores migrados
 
 | Consumidor | Archivo | Estado |

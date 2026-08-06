@@ -1,5 +1,28 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-05 - fix(11T): regla definitiva de V20/Depósito — dos universos, empresa vs vendedores
+
+Continuación de **`5a2f826`** (motor único de 11T + regla única de padrón). Ese commit dejó una contradicción abierta: al excluir el Depósito del universo de vendedores —que es correcto— también lo sacaba del **total de empresa**, y la venta directa desaparecía del 11T de la distribuidora. `CLAUDE.md` decía una cosa y el código hacía otra.
+
+**Regla que queda (ahora escrita en `CLAUDE.md`):** *V20/Depósito no es vendedor activo ni posee cartera. Sus ventas válidas se incluyen únicamente en los totales empresariales de 11 Titulares y se excluyen de rankings e indicadores individuales.*
+
+- **Dos universos explícitos en `motor_11t.py`**, en vez de un solo filtro que servía para las dos cosas:
+  - `VENDEDORES_BAJA = (2, 5)` — fuera de **todo**, de los dos universos.
+  - `VENDEDORES_SIN_CARTERA = (1, 20)` — Depósito / venta directa: **suma al universo EMPRESA**, nunca es vendedor. V1 es el bucket `deposito` del padrón (27 clientes: CLIENTES VARIOS, DELFIN S.A., mostradores) y V20 el código con el que factura; son la misma entidad física, igual que P&P Logística en `_LEEME_EMPRESA`.
+  - Cada fila del detalle trae **`cuenta_vendedor`**. Un cliente **sin `codven`** en el padrón recibe el mismo trato: cuenta para EMPRESA, no es de nadie.
+  - `cobertura_11t()` ya no descarta esas filas: las conserva marcadas. `resumen_por_titular()` devuelve `cubiertos` (empresa) abierto en `cubiertos_vendedores` + `cubiertos_deposito`. `resumen_por_vendedor()` y `marcas_cubiertas_por_vendedor()` pasan por `solo_vendedores()`, el filtro único del universo VENDEDORES.
+  - El Depósito se etiqueta **`DEPOSITO`**, no `V1`/`V20`: si sale a pantalla o a un CSV no puede leerse como un vendedor más.
+- **`generar_datasets_acum.generar_11t_acum()`**: la grilla de **cartera** sigue siendo sólo de vendedores de ruta (el Depósito no recibe cartera — sería un denominador inventado). Se le **agregan aparte** las filas realmente medidas del Depósito con `cuenta_vendedor=0`, así el numerador de empresa las toma y ningún corte por vendedor las ve. `mod_11t_acum.csv` suma la columna `cuenta_vendedor`.
+- **`server_orbit.py`** — helper único `_universo_vendedores_11t()` que aplica el filtro (con fallback si el CSV viene de una generación anterior a la columna). Aplicado en: `11t_empresa` (totales de empresa **con** Depósito, `por_vendedor` y la lista `vendedores` **sin**, más `con_vendedores`/`con_deposito`), `11t_vendedor` (**rechaza** consultar V1/V20: no tienen cumplimiento individual), el KPI **"11T ✓"** del dashboard, `once_titulares` (`ccc_deposito` vuelve a traer un número real en vez del `0` cableado), el 11T vivo de `cierre_mes` y `_cierre_once_titulares` (cierre versionado).
+- **`generar_11titulares_excel.py`**: el Excel de preventa es por día de visita = universo VENDEDORES. Su `EXCLUIDOS` local pasa a salir de `motor_11t.VENDEDORES_EXCLUIDOS_11T` para no tener una cuarta definición de "quién es vendedor".
+- **Sin doble conteo, por construcción**: el padrón deja una sola fila por cliente (`motor_padron`, `5a2f826`), así que cada cliente cae en **exactamente un** universo y vale `cubiertos_empresa = cubiertos_vendedores + cubiertos_deposito`. Está testeado en sintético y sobre datos reales, y también en los endpoints.
+- **Impacto medido (julio 2026)**: los totales de empresa **no se movieron** — Gordon's sigue en 32 y la regresión validada queda intacta. Lo que cambió es que el aporte del Depósito ahora es **visible y correcto**: 1 cliente en 9 de los 11 titulares, que es **`#786 ANSELMI Y CIA`** (Autoservicio grande, sin `codven` en el padrón, 1.560 botellas de Smirnoff Flavours). Antes ese cliente sumaba al total **y además** ensuciaba `resumen_por_vendedor` con un grupo de vendedor `NaN`; ahora suma al total y queda como `DEPOSITO`. Los 27 clientes `codven=1` no tuvieron compras 11T en julio, así que hoy aportan 0: el arreglo es **estructural**, evita que la venta del mostrador se pierda el mes que la haya.
+- **Validación**: `python -m unittest test_motor_11t test_motor_padron` → **84 tests OK**, sin skips (incluye la regresión de Gordon's julio-2026 calculada sobre el archivo real: 25 trad + 7 AS = 32). Suite completa: **96 tests, 90 OK y 6 errores heredados** de descubrimiento (`test_alertas_reales`, `test_copiloto_*`, `test_kernel_proactivo`: no son tests unittest sino scripts viejos que llaman `input()` o imprimen emojis en consola cp1252 y revientan **al importarse**; ajenos a este cambio, ya estaban).
+
+### Documentación pendiente saldada en este commit
+
+`5a2f826` no actualizó los registros que exige el contrato del repo. Se completan acá, cubriendo también lo de ese commit: motor único de padrón, precedencia de cartera **V3/V8 → V8**, retiro de `mod_11_titulares.csv` como fuente de lectura del portal, y la corrección de **Ruta del Día** (`/api/vendedor/<vid>/ruta` devolvía **0 clientes para todos los vendedores, siempre**: `clean_code("3.0")` da `"30"` porque se come el punto, así que la comparación nunca era verdadera; corregido con `motor_padron.normalizar_codigo_vendedor`). Ambas cosas siguen intactas y con sus tests en verde.
+
 ## 2026-08-05 - feat(plan cobertura): altas fuera del listado + objetivo de 60 altas a diciembre
 
 El negocio actualizó `01_INPUTS/Plan cobertura/on premise.xlsx`: completó códigos de cliente en el padrón y **agregó una hoja nueva, "altas fuera del listado"**, con clientes que se dieron de alta durante el plan y que el relevamiento original no tenía. La pantalla ahora los mide y muestra el avance contra el objetivo del plan.

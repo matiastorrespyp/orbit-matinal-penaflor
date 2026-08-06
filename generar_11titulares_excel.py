@@ -20,6 +20,7 @@ import sys
 from pathlib import Path
 import pandas as pd
 
+import motor_11t          # universos EMPRESA / VENDEDORES del 11T
 import motor_padron       # regla unica de pertenencia de cartera
 
 ROOT    = Path(__file__).parent
@@ -27,7 +28,11 @@ INPUTS  = ROOT / "01_INPUTS"
 OUTPUTS = ROOT / "03_OUTPUTS"
 OUTPUTS.mkdir(exist_ok=True)
 
-EXCLUIDOS = {2, 5, 20}
+# Este Excel es la hoja de PREVENTA por día de visita: universo VENDEDORES.
+# El Depósito / venta directa (V1, V20) no tiene ruta ni cartera, así que no genera
+# filas acá — sus ventas se ven en el total de empresa del 11T, no en una hoja de ruta.
+# La lista sale del motor para no tener una cuarta definición de "quién es vendedor".
+EXCLUIDOS = set(motor_11t.VENDEDORES_EXCLUIDOS_11T)
 
 DAY_ORDER  = ["Lu","Ma","Mi","Ju","Vi","Sa"]
 DAY_LABELS = {

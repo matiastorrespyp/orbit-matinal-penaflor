@@ -851,17 +851,20 @@ def generar_11t_acum(ventas, clientes, desde=None, hasta=None):
 
     padron = motor_11t.cargar_padron_clientes()
     cart = padron[padron["segmento_11t"].isin(["AUTOSERVICIO", "TRADICIONAL"])].copy()
-    cart = cart[~cart["vendedor_codigo"].isin(motor_11t.VENDEDORES_EXCLUIDOS_11T)]
+    # Universo VENDEDORES para la GRILLA DE CARTERA: sólo vendedores de ruta. El Depósito
+    # no recibe cartera (no es de nadie), así que no puede generar denominador acá.
+    cart = cart[~cart["vendedor_codigo"].isin(motor_11t.VENDEDORES_EXCLUIDOS_11T)
+                & cart["vendedor_codigo"].notna()]
     # V3 no trabaja autoservicio (regla de negocio): no se le mide cartera AS en el 11T.
     cart = cart[~((cart["vendedor_codigo"] == 3) & (cart["segmento_11t"] == "AUTOSERVICIO"))]
 
     titulares = motor_11t.titulares_oficiales()
     fecha = datetime.now().strftime("%Y-%m-%d")
+    COLS = ["fecha_calculo", "vendedor_codigo", "vendedor_nombre", "cliente_id",
+            "segmento_11t", "marca_objetivo", "cant_base_acum", "tiene_flag",
+            "falta_flag", "cuenta_vendedor"]
     if cart.empty or not titulares:
-        vacio = pd.DataFrame(columns=["fecha_calculo", "vendedor_codigo", "vendedor_nombre",
-                                      "cliente_id", "segmento_11t", "marca_objetivo",
-                                      "cant_base_acum", "tiene_flag", "falta_flag"])
-        return vacio, det, exc
+        return pd.DataFrame(columns=COLS), det, exc
 
     # Grilla cartera x titular: mantiene el significado de `cartera` en el endpoint.
     grilla = cart[["cliente_id", "vendedor_codigo", "vendedor_nombre", "segmento_11t"]].merge(
@@ -874,9 +877,31 @@ def generar_11t_acum(ventas, clientes, desde=None, hasta=None):
     grilla["tiene_flag"] = (grilla["cumple"] == True).astype(int)   # noqa: E712 — NaN -> 0
     grilla["falta_flag"] = 1 - grilla["tiene_flag"]
     grilla["fecha_calculo"] = fecha
-    grilla = grilla[["fecha_calculo", "vendedor_codigo", "vendedor_nombre", "cliente_id",
-                     "segmento_11t", "marca_objetivo", "cant_base_acum",
-                     "tiene_flag", "falta_flag"]]
+    grilla["cuenta_vendedor"] = 1
+    grilla = grilla[COLS]
+
+    # ── Universo EMPRESA: el Depósito / venta directa ────────────────────────
+    # Sus clientes NO tienen cartera, así que no van a la grilla de arriba (seria un
+    # denominador inventado). Se agregan SOLO las filas realmente medidas, marcadas con
+    # cuenta_vendedor=0: suman al total de empresa y ningun corte por vendedor las toma.
+    # Sin esto, la venta directa desaparecia del 11T de la distribuidora.
+    dep = det[~det["cuenta_vendedor"]]
+    if not dep.empty:
+        dep_g = pd.DataFrame({
+            "fecha_calculo":   fecha,
+            # dtype explícito: con pd.NA pelado, la columna queda all-NA y el concat
+            # avisa (FutureWarning) porque el dtype del resultado cambiaría.
+            "vendedor_codigo": pd.Series([float("nan")] * len(dep), dtype="float64"),
+            "vendedor_nombre": "DEPOSITO",
+            "cliente_id":      dep["cliente_id"].values,
+            "segmento_11t":    dep["segmento_11t"].values,
+            "marca_objetivo":  dep["titular"].values,
+            "cant_base_acum":  pd.to_numeric(dep["botellas_netas"], errors="coerce").fillna(0).values,
+            "tiene_flag":      dep["cumple"].astype(int).values,
+            "cuenta_vendedor": 0,
+        })
+        dep_g["falta_flag"] = 1 - dep_g["tiene_flag"]
+        grilla = pd.concat([grilla, dep_g[COLS]], ignore_index=True)
     return grilla, det, exc
 
 

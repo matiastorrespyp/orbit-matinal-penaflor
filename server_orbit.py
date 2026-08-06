@@ -1090,9 +1090,10 @@ def dashboard():
     # Hasta 2026-08-05 sumaba `tiene_flag`, o sea PARES cliente×marca, bajo una etiqueta que
     # se lee como "marcas cubiertas" — daba números de tres cifras contra un total de 11 y no
     # coincidía con el "Marcas 11T" de la pantalla del vendedor, que sí cuenta marcas.
+    # Universo VENDEDORES: es un KPI individual, el Depósito no tiene fila en el ranking.
     t11_acum_map = {}
     try:
-        _t11a = read_csv(DATASETS / "mod_11t_acum.csv")
+        _t11a = _universo_vendedores_11t(read_csv(DATASETS / "mod_11t_acum.csv"))
         if not _t11a.empty and {"vendedor_codigo", "tiene_flag", "marca_objetivo"}.issubset(_t11a.columns):
             _t11a["_tf"] = pd.to_numeric(_t11a["tiene_flag"], errors="coerce").fillna(0)
             _t11a["_cn"] = _t11a["vendedor_codigo"].astype(str).apply(clean_code)
@@ -3443,6 +3444,24 @@ def _objetivos_11t(path=None):
     return out
 
 
+def _universo_vendedores_11t(df):
+    """Filtra mod_11t_acum.csv al universo VENDEDORES (saca el Depósito / venta directa).
+
+    Lo usa todo corte por vendedor: ranking, cartera, selectores, cumplimiento individual.
+    Los totales de EMPRESA NO pasan por acá — ahí el Depósito sí suma (regla 2026-08-05).
+
+    Compatibilidad: si el CSV viene de una generación anterior a la columna
+    `cuenta_vendedor`, se cae al criterio viejo (vendedor de ruta = codigo no excluido),
+    que da el mismo resultado para esas filas. Nunca se asume "todo es vendedor": eso
+    volvería a meter al Depósito en los rankings sin que nadie lo note."""
+    if df is None or df.empty:
+        return df
+    if "cuenta_vendedor" in df.columns:
+        return df[pd.to_numeric(df["cuenta_vendedor"], errors="coerce").fillna(1) == 1]
+    cod = pd.to_numeric(df.get("vendedor_codigo"), errors="coerce")
+    return df[cod.notna() & ~cod.isin(motor_11t.VENDEDORES_EXCLUIDOS_11T)]
+
+
 def _resumen_excepciones_11t(exc):
     """Excepciones agregadas por tipo: qué quedó fuera de la medición y cuánto pesa.
     El detalle fila por fila se publica en 04_DATASETS_ORBIT/mod_11t_excepciones.csv."""
@@ -3517,7 +3536,11 @@ def gerencia_once_titulares():
             "clientes_medidos": int(r["medidos"]),
             "objetivo_ccc":  int(r["objetivo"]) if pd.notna(r["objetivo"]) else 0,
             "pct_objetivo":  r["pct_objetivo"],
-            "ccc_deposito":  0,   # V20 no tiene cartera: no se le atribuye cobertura
+            # Apertura del total de empresa por universo. El Depósito no tiene cartera ni
+            # objetivo propio, pero su venta SÍ suma arriba: se informa aparte para que se
+            # vea de dónde sale. cubiertos = cubiertos_vendedores + ccc_deposito.
+            "cubiertos_vendedores": int(r["cubiertos_vendedores"]),
+            "ccc_deposito":  int(r["cubiertos_deposito"]),
         })
 
     return jsonify({
@@ -3533,7 +3556,7 @@ def gerencia_once_titulares():
         # vive en 04_DATASETS_ORBIT/mod_11t_excepciones.csv. Este endpoint entra en el login
         # de gerencia y en Render la CPU es 0,5 vCPU: no se le cuelga el detalle al payload.
         "excepciones":     _resumen_excepciones_11t(exc),
-        "ccc_deposito_total": 0,
+        "ccc_deposito_total": int(resumen["cubiertos_deposito"].sum()),
     })
 
 
@@ -3655,7 +3678,14 @@ def gerencia_ranking_rechazos():
 # ====== GERENCIA: 11T RESUMEN DISTRIBUIDORA ======
 @app.route("/api/gerencia/11t_empresa")
 def gerencia_11t_empresa():
-    """11T distribuidora: por marca, clientes con/sin cada titular (todos los vendedores).
+    """11T distribuidora: por marca, clientes con/sin cada titular.
+
+    DOS UNIVERSOS (regla 2026-08-05):
+      - `con` / `sin` / `total` / `pct` son de EMPRESA e INCLUYEN el Depósito / venta
+        directa. Es el número comparable contra el objetivo de la distribuidora.
+      - `por_vendedor` y la lista `vendedores` son del universo VENDEDORES: sin Depósito,
+        que no tiene cartera ni cumplimiento individual y no puede figurar como vendedor.
+      - `con_vendedores` + `con_deposito` = `con`, sin doble conteo.
 
     Fuente: mod_11t_acum.csv (grilla cartera x titular que genera motor_11t) — columnas
     tiene_flag / falta_flag. `tiene_flag` = el cliente llegó al mínimo de su segmento
@@ -3670,24 +3700,33 @@ def gerencia_11t_empresa():
 
     df.columns = [c.lstrip("﻿").strip() for c in df.columns]
     df["vendedor_codigo"] = pd.to_numeric(df["vendedor_codigo"], errors="coerce")
-    df = df[~df["vendedor_codigo"].isin(_VENDEDORES_EXCLUIDOS)]
+    # Bajas (V2/V5) fuera de los dos universos. El Depósito NO se filtra acá: suma al
+    # total de empresa y lo saca `_universo_vendedores_11t` solo para los cortes por vendedor.
+    df = df[~df["vendedor_codigo"].isin(motor_11t.VENDEDORES_BAJA)]
 
     for col in ("tiene_flag", "falta_flag"):
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
 
-    vendedores_activos = sorted(df["vendedor_codigo"].dropna().unique())
+    df_vend = _universo_vendedores_11t(df)
+    vendedores_activos = sorted(df_vend["vendedor_codigo"].dropna().unique())
 
     result = []
     for marca, grp in df.groupby("marca_objetivo"):
+        # EMPRESA: incluye el Depósito / venta directa.
         con   = int(grp["tiene_flag"].sum())
         sin   = int(grp["falta_flag"].sum())
         total = con + sin
         pct   = round(con / total * 100, 1) if total else 0.0
 
+        # VENDEDORES: sin Depósito. `con_empresa - con_vendedores` = aporte del Depósito,
+        # sin doble conteo (cada cliente pertenece a un solo universo).
+        grp_v = _universo_vendedores_11t(grp)
+        con_v = int(grp_v["tiene_flag"].sum())
+
         por_vendedor = {}
         for v in vendedores_activos:
-            vg  = grp[grp["vendedor_codigo"] == v]
+            vg  = grp_v[grp_v["vendedor_codigo"] == v]
             vc  = int(vg["tiene_flag"].sum())
             vs  = int(vg["falta_flag"].sum())
             vt  = vc + vs
@@ -3698,10 +3737,12 @@ def gerencia_11t_empresa():
 
         result.append({
             "marca":        str(marca),
-            "con":          con,
+            "con":          con,           # EMPRESA (incluye Depósito)
             "sin":          sin,
             "total":        total,
             "pct":          pct,
+            "con_vendedores": con_v,
+            "con_deposito":   con - con_v,
             "por_vendedor": por_vendedor,
         })
 
@@ -3711,6 +3752,8 @@ def gerencia_11t_empresa():
         "fuente":         "mod_11t_acum.csv · motor_11t (cobertura 3/6)",
         "metrica":        "cobertura",
         "umbrales":       motor_11t.UMBRALES_11T,
+        "universo_totales": "EMPRESA (incluye Deposito/venta directa)",
+        "universo_por_vendedor": "VENDEDORES (sin Deposito)",
         "total_marcas":   len(result),
         "vendedores":     [f"V{int(v)}" for v in vendedores_activos],
         "marcas":         result,
@@ -3722,19 +3765,28 @@ def gerencia_11t_empresa():
 def gerencia_11t_vendedor():
     """11T detalle de un vendedor específico (cobertura 3/6, no CCC).
     Parámetro: vendedor=V3 (o 3). Fuente: mod_11t_acum.csv (motor_11t).
-    MIGRADO 2026-08-05 desde mod_11_titulares.csv (legacy, tiene_flag siempre 0)."""
+    MIGRADO 2026-08-05 desde mod_11_titulares.csv (legacy, tiene_flag siempre 0).
+
+    Universo VENDEDORES: es un indicador INDIVIDUAL, así que el Depósito no entra ni
+    puede consultarse como si fuera un vendedor."""
     import re as _re
     vend_raw = request.args.get("vendedor", "").strip().upper()
     m = _re.search(r"\d+", vend_raw)
     if not m:
         return jsonify({"marcas": [], "error": "Parámetro vendedor inválido"}), 200
     cod = int(m.group())
+    if cod in motor_11t.VENDEDORES_SIN_CARTERA:
+        return jsonify({"marcas": [], "vendedor": f"V{cod}",
+                        "error": "El Deposito no es un vendedor: no tiene cartera ni "
+                                 "cumplimiento individual. Sus ventas estan en el total "
+                                 "de empresa de /api/gerencia/11t_empresa."}), 200
 
     df = read_csv(DATASETS / "mod_11t_acum.csv")
     if df.empty:
         return jsonify({"marcas": [], "error": "Sin datos"}), 200
 
     df.columns = [c.lstrip("﻿").strip() for c in df.columns]
+    df = _universo_vendedores_11t(df)
     df["vendedor_codigo"] = pd.to_numeric(df["vendedor_codigo"], errors="coerce")
     df = df[df["vendedor_codigo"] == cod]
 
@@ -9139,6 +9191,8 @@ def gerencia_cierre_mes():
         _cub11 = dict(zip(_res11["titular"], _res11["cubiertos"]))
         _ctr11 = dict(zip(_res11["titular"], _res11["cubiertos_tradicional"]))
         _cas11 = dict(zip(_res11["titular"], _res11["cubiertos_autoservicio"]))
+        _cvd11 = dict(zip(_res11["titular"], _res11["cubiertos_vendedores"]))
+        _cdp11 = dict(zip(_res11["titular"], _res11["cubiertos_deposito"]))
 
         marcas_11t, total_ccc, total_obj = [], 0, 0
         for mk in sorted(_obj11, key=lambda x: _cub11.get(x, 0), reverse=True):
@@ -9149,6 +9203,8 @@ def gerencia_cierre_mes():
                 "ccc": cub_v, "cubiertos": cub_v,          # `ccc`: nombre histórico del campo
                 "cubiertos_tradicional":  int(_ctr11.get(mk, 0)),
                 "cubiertos_autoservicio": int(_cas11.get(mk, 0)),
+                "cubiertos_vendedores":   int(_cvd11.get(mk, 0)),
+                "cubiertos_deposito":     int(_cdp11.get(mk, 0)),
                 "objetivo": obj_v,
                 "pct": round(cub_v / obj_v * 100, 1) if obj_v else None,
             })
@@ -9157,6 +9213,7 @@ def gerencia_cierre_mes():
 
         once_titulares["metrica"] = "cobertura"
         once_titulares["umbrales"] = motor_11t.UMBRALES_11T
+        once_titulares["universo_totales"] = "EMPRESA (incluye Deposito/venta directa)"
         once_titulares["periodo_desde"] = str(_desde11)
         once_titulares["periodo_hasta"] = str(_hasta11)
         once_titulares["marcas"] = marcas_11t
@@ -9509,6 +9566,8 @@ def _cierre_once_titulares(files):
     cub = dict(zip(resumen["titular"], resumen["cubiertos"]))
     cub_tr = dict(zip(resumen["titular"], resumen["cubiertos_tradicional"]))
     cub_as = dict(zip(resumen["titular"], resumen["cubiertos_autoservicio"]))
+    cub_vd = dict(zip(resumen["titular"], resumen["cubiertos_vendedores"]))
+    cub_dp = dict(zip(resumen["titular"], resumen["cubiertos_deposito"]))
 
     marcas, tot_cub, tot_obj = [], 0, 0
     for mk in sorted(obj_map, key=lambda x: cub.get(x, 0), reverse=True):
@@ -9518,9 +9577,12 @@ def _cierre_once_titulares(files):
         marcas.append({
             "marca": mk,
             # `ccc` se mantiene por compatibilidad del JSON del cierre; trae cobertura.
+            # Universo EMPRESA: incluye el Depósito (se informa aparte en cubiertos_deposito).
             "ccc": cub_v, "cubiertos": cub_v,
             "cubiertos_tradicional":  int(cub_tr.get(mk, 0)),
             "cubiertos_autoservicio": int(cub_as.get(mk, 0)),
+            "cubiertos_vendedores":   int(cub_vd.get(mk, 0)),
+            "cubiertos_deposito":     int(cub_dp.get(mk, 0)),
             "objetivo": obj_v, "pct": pct,
         })
         tot_cub += cub_v
@@ -9532,8 +9594,10 @@ def _cierre_once_titulares(files):
         "periodo_hasta": str(hasta) if hasta else "",
         "marcas": marcas,
         "excepciones": _resumen_excepciones_11t(exc),
+        "universo_totales": "EMPRESA (incluye Deposito/venta directa)",
         "empresa": {
             "ccc_total": tot_cub, "cubiertos_total": tot_cub, "objetivo_total": tot_obj,
+            "cubiertos_deposito": int(sum(cub_dp.get(m["marca"], 0) for m in marcas)),
             "pct": round(tot_cub / tot_obj * 100, 1) if tot_obj else 0,
             "marcas_sobre_objetivo": sum(1 for m in marcas if (m["pct"] or 0) >= 100),
             "total_marcas": len(marcas),

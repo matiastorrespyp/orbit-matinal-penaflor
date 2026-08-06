@@ -1,5 +1,26 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-05 - 11 Titulares: motor unico, padron unico y regla definitiva de V20
+
+Dos commits encadenados: **`5a2f826`** (motor 11T + padron) y el siguiente, que cierra la regla de V20 y salda la documentacion que `5a2f826` no habia actualizado.
+
+### HECHO
+- [x] **Motor unico de 11T** (`motor_11t.py`): cobertura real (minimo 3 trad / 6 AS aplicado **despues** de consolidar botellas netas), titular por **codigo de articulo** contra la matriz oficial (sin `contains` de descripcion), periodo explicito y excepciones reportadas. Gordon's julio-2026 pasa de **51 a 32**, que es el numero del proveedor.
+- [x] **Motor unico de padron** (`motor_padron.py`): una sola definicion de "que cliente pertenece a que cartera". La usan los 4 cargadores (datasets, server, motor 11T, preventa).
+- [x] **Precedencia de cartera V3/V8 → V8** (decision comercial 2026-08-05), con la **fila entera** del ganador. La regla es por **par de vendedores**, no lista de codigos, asi que sobrevive a cada re-exportacion del ERP. Otras colisiones se reportan y **no** se resuelven solas.
+- [x] **Retiro de `mod_11_titulares.csv` como fuente de lectura del portal** (venia con `tiene_flag=0` en las 4.489 filas y 28 "marcas" que no son los 11 Titulares). Reemplazado por `mod_11t_acum.csv`, mismo esquema. Documentado en `00_OBSIDIAN_ORBIT/08_ARQUITECTURA/RETIRO_mod_11_titulares.md`.
+- [x] **Ruta del Dia corregida**: `/api/vendedor/<vid>/ruta` devolvia **0 clientes para todos los vendedores, siempre** (`clean_code("3.0")` → `"30"`). Bug pre-existente, detectado al verificar la reasignacion V3/V8.
+- [x] **Regla definitiva de V20/Deposito**: dos universos separados. **EMPRESA** incluye la venta directa; **VENDEDORES** son solo los de ruta. V20 no es vendedor activo, no tiene cartera, no va a rankings ni selectores y no genera cumplimiento individual, pero **sus ventas validas suman al total de 11T de la distribuidora**. Escrito en `CLAUDE.md`.
+- [x] **Tests especificos de doble conteo**: `cubiertos_empresa = cubiertos_vendedores + cubiertos_deposito` en sintetico, en datos reales y en los endpoints; los dos universos no comparten ningun cliente. **84 tests OK** en los dos modulos del motor.
+
+### PENDIENTE
+- [ ] **Recalibrar los objetivos de `objetivo 11T.xlsx` con Peñaflor.** Se fijaron contra la regla vieja (CCC sin minimo de botellas). Con cobertura real Gordon's queda en **61,5%** del objetivo 52. Numerador y denominador ya miden lo mismo; falta que el negocio confirme si los objetivos se mantienen o se ajustan. **Es la decision que mas mueve la lectura de la pantalla.**
+- [ ] **Los 9 clientes sin `codven` en el padron.** Hoy caen en el universo EMPRESA como `DEPOSITO`, que es lo correcto por defecto. Pero **`#786 ANSELMI Y CIA`** mueve volumen de verdad (1.560 botellas de Smirnoff Flavours en julio) y conviene confirmar con el negocio si es venta directa o si le falta cartera asignada en el ERP. Si es lo segundo, se corrige en el ERP y pasa solo al universo VENDEDORES.
+- [ ] **Los 27 clientes `codven=1` (`deposito`) no tuvieron compras 11T en julio**, asi que hoy aportan 0. Vale mirar un mes con movimiento de mostrador para ver el aporte real del Deposito antes de dar la regla por cerrada con datos.
+- [ ] **`04_DATASETS_ORBIT/mod_11t_acum.csv` tiene columna nueva (`cuenta_vendedor`)**: hay que **regenerarlo con el cierre** para que Render lo tome. Los consumidores tienen fallback si falta la columna, pero mientras tanto el aporte del Deposito no se ve en el portal publicado.
+- [ ] **Los 4 consumidores legacy de `mod_11_titulares.csv`** (`app_matinal_penaflor.py`, `app_publish.py`, `audit_pav_matinal_data.py`, `diagnostico_app_orbit.py`) mas los de `src/orbit/copilot/*`, `src/orbit/intelligence/*` y `src/orbit/engine/*` siguen leyendo el dataset viejo. No alimentan el portal ni el cierre. Cuando se apague `LEGACY/orbit_matinal_v42.py`, renombrar el archivo a `_NO_USAR_` y migrarlos.
+- [ ] **6 errores heredados de descubrimiento de pruebas.** `test_alertas_reales`, `test_copiloto_cliente`, `test_copiloto_gerencia`, `test_copiloto_proactivo`, `test_copiloto_vendedor` y `test_kernel_proactivo` **no son tests unittest**: son scripts viejos que llaman `input()` o imprimen emojis en consola cp1252 y revientan al importarse. Ensucian toda corrida de `unittest discover`. Convertirlos en tests de verdad o sacarlos del patron `test_*.py`.
+
 ## Sesion 2026-08-05 - Plan Cobertura: altas fuera del listado + objetivo de diciembre
 
 ### HECHO

@@ -51,10 +51,23 @@ UNIDAD DE CANTIDAD
 CantBase x litros-por-botella. NO se vuelve a multiplicar por unidades por caja.
 Las notas de crédito traen CantBase negativa, así que la suma da botellas NETAS.
 
-VENDEDOR Y EXCLUSIONES
-----------------------
+VENDEDOR Y EXCLUSIONES — DOS UNIVERSOS
+--------------------------------------
 El cliente pertenece a la cartera del PADRÓN (`clientes.xlsx.codven`), no al vendedor que
-emitió la factura. La exclusión de V1/V2/V5/V20 se aplica sobre el vendedor del padrón.
+emitió la factura. Las exclusiones se aplican sobre el vendedor del padrón, y son DOS
+listas distintas porque hay DOS universos (ver `VENDEDORES_BAJA` / `VENDEDORES_SIN_CARTERA`):
+
+    EMPRESA    = todo el total comercial, INCLUIDO el Depósito / venta directa.
+    VENDEDORES = sólo vendedores de ruta (rankings, cartera, cumplimiento individual).
+
+Cada fila del detalle trae `cuenta_vendedor`: True si el cliente pertenece a la cartera de
+un vendedor de ruta. Las filas con `cuenta_vendedor=False` (Depósito, o cliente sin
+vendedor en el padrón) suman al total de EMPRESA y NUNCA generan fila de vendedor.
+
+No hay doble conteo posible: el padrón deja UNA fila por cliente (ver `motor_padron`), así
+que cada cliente cae en exactamente un universo. Vale la identidad, testeada:
+
+    cubiertos_empresa = cubiertos_vendedores + cubiertos_deposito
 
   Por qué importa: en julio-2026 el cliente 15 (BELTRAMO, DUTTO Y DUTTO — Autoservicio de
   la cartera de V8) compró 60 botellas de Gordon's facturadas por V20 Depósito. Filtrando
@@ -63,6 +76,12 @@ emitió la factura. La exclusión de V1/V2/V5/V20 se aplica sobre el vendedor de
   facturación de la misma entidad física, igual que P&P Logística en `_LEEME_EMPRESA`.
   V20 sigue excluido de las métricas CON OBJETIVO por vendedor; acá no se le atribuye nada,
   solo se consolida la venta en el cliente que corresponde.
+
+  El caso simétrico: el cliente 2508 (CLIENTES VARIOS, mostrador del depósito) pertenece al
+  bucket `codven=1 deposito`. No es de nadie, así que no puede ir a un ranking — pero si
+  compra 6 botellas de un titular, ESO ES VENTA DE LA DISTRIBUIDORA y tiene que estar en el
+  total de empresa. Hasta 2026-08-05 se descartaba por el mismo filtro que sacaba a V20 de
+  los rankings. Hoy entra al universo EMPRESA con `cuenta_vendedor=False`.
 
 CASO DE REGRESIÓN OBLIGATORIO
 -----------------------------
@@ -96,9 +115,33 @@ UMBRALES_11T = {
     "TRADICIONAL": 3,
 }
 
-#: Vendedores fuera de los indicadores comerciales (código del padrón).
-#: V1 = sin asignar/depósito, V2 y V5 = bajas, V20 = Depósito/venta directa.
-VENDEDORES_EXCLUIDOS_11T = (1, 2, 5, 20)
+# ── DOS UNIVERSOS (regla definitiva 2026-08-05) ──────────────────────────────
+# El 11T se lee en dos universos distintos y NO son el mismo filtro:
+#
+#   EMPRESA    : todo lo que integra el total comercial de la distribuidora,
+#                INCLUIDO el Depósito / venta directa. Es el número que se compara
+#                contra el objetivo de la empresa y contra el reporte del proveedor.
+#   VENDEDORES : sólo los vendedores de ruta. Alimenta rankings, cartera, selectores,
+#                cumplimiento individual y cualquier promedio entre vendedores.
+#
+# Tener un solo filtro para las dos cosas era el bug: al excluir el Depósito del
+# universo VENDEDORES (correcto) se lo excluía también del total de EMPRESA (incorrecto),
+# y la venta directa desaparecía del 11T de la distribuidora.
+
+#: Bajas: fuera de TODO, de los dos universos. V2 y V5 no operan (regla Peñaflor).
+VENDEDORES_BAJA = (2, 5)
+
+#: Depósito / venta directa. NO son vendedores de ruta: no tienen cartera asignada,
+#: no van a rankings ni a selectores y no generan cumplimiento individual. Sus ventas
+#: válidas SÍ suman al universo EMPRESA. V1 es el bucket "deposito" del padrón (27
+#: clientes: CLIENTES VARIOS, DELFIN S.A., mostradores) y V20 es el código con el que
+#: el Depósito factura. Son la misma entidad física, igual que P&P Logística en
+#: `_LEEME_EMPRESA`: distinto canal de facturación, misma distribuidora.
+VENDEDORES_SIN_CARTERA = (1, 20)
+
+#: Quiénes NO son vendedores de ruta = universo VENDEDORES por complemento.
+#: Se conserva el nombre histórico porque varios módulos ya lo importan.
+VENDEDORES_EXCLUIDOS_11T = VENDEDORES_BAJA + VENDEDORES_SIN_CARTERA
 
 #: Segmento asignado a lo que queda fuera de la superficie del 11T.
 FUERA_DE_SUPERFICIE = "FUERA_DE_SUPERFICIE"
@@ -273,7 +316,7 @@ def incidencias_padron() -> pd.DataFrame:
 
 _COLS_DETALLE = [
     "periodo_desde", "periodo_hasta", "cliente_id", "cliente_nombre", "vendedor_codigo",
-    "vendedor_id", "vendedor_nombre", "segmento_11t", "titular", "skus",
+    "vendedor_id", "vendedor_nombre", "cuenta_vendedor", "segmento_11t", "titular", "skus",
     "botellas_positivas", "botellas_devueltas", "botellas_netas", "umbral",
     "cumple", "motivo",
 ]
@@ -285,7 +328,8 @@ def cobertura_11t(ventas,
                   matriz=None,
                   desde=None,
                   hasta=None,
-                  vendedores_excluidos=VENDEDORES_EXCLUIDOS_11T,
+                  vendedores_excluidos=VENDEDORES_BAJA,
+                  vendedores_sin_cartera=VENDEDORES_SIN_CARTERA,
                   umbrales=None,
                   col_fecha="FechaComprobante",
                   dayfirst=True):
@@ -300,15 +344,22 @@ def cobertura_11t(ventas,
     matriz : matriz SKU->titular. None = matriz oficial del proyecto.
     desde / hasta : período medido (inclusive). None = sin acotar por ese lado.
              El período se devuelve en cada fila para que la pantalla lo pueda mostrar.
-    vendedores_excluidos : códigos de vendedor DEL PADRÓN a excluir.
+    vendedores_excluidos : códigos DEL PADRÓN dados de baja. Se descartan de los DOS
+             universos (empresa y vendedores). Default: `VENDEDORES_BAJA` = V2/V5.
+    vendedores_sin_cartera : códigos del Depósito / venta directa. NO se descartan:
+             suman al universo EMPRESA con `cuenta_vendedor=False`, así que nunca
+             aparecen en un ranking ni en un cumplimiento individual.
+             Default: `VENDEDORES_SIN_CARTERA` = V1/V20.
     umbrales : {segmento: mínimo de botellas}. None = UMBRALES_11T (3 trad / 6 AS).
 
     Devuelve
     --------
     (detalle, excepciones) — dos DataFrames.
     `detalle` trae `_COLS_DETALLE`; `cumple` es booleano y ya tiene el mínimo aplicado
-    DESPUÉS de consolidar. `excepciones` lista lo que no se pudo medir (SKU fuera de la
-    matriz, cliente sin padrón, segmento fuera de superficie, vendedor excluido).
+    DESPUÉS de consolidar, y `cuenta_vendedor` dice si la fila pertenece al universo
+    VENDEDORES. `excepciones` lista lo que no se pudo medir o se midió aparte (SKU fuera
+    de la matriz, cliente sin padrón, segmento fuera de superficie, vendedor de baja,
+    depósito sin cartera).
     """
     umbrales = dict(umbrales or UMBRALES_11T)
     padron = cargar_padron_clientes() if clientes is None else clientes.copy()
@@ -412,14 +463,28 @@ def cobertura_11t(ventas,
                                         "motor_padron (V3/V8 -> V8). Corregir la cartera en el ERP"),
                             "filas": len(dup), "botellas": 0.0})
 
-    excl = {normalizar_codigo_vendedor(x) for x in (vendedores_excluidos or ())}
-    es_excl = v["vendedor_codigo"].isin(excl)
-    if es_excl.any():
-        excepciones.append({"tipo": "VENDEDOR_EXCLUIDO", "clave": ",".join(map(str, sorted(excl))),
-                            "detalle": "cliente de cartera excluida (padron)",
-                            "filas": int(es_excl.sum()),
-                            "botellas": float(v.loc[es_excl, "_cant"].sum())})
-    v = v[~es_excl & (v["segmento_11t"] != SIN_PADRON)].copy()
+    # Bajas: fuera de los dos universos, se descartan.
+    baja = {normalizar_codigo_vendedor(x) for x in (vendedores_excluidos or ())}
+    es_baja = v["vendedor_codigo"].isin(baja)
+    if es_baja.any():
+        excepciones.append({"tipo": "VENDEDOR_DE_BAJA", "clave": ",".join(map(str, sorted(baja))),
+                            "detalle": "cliente de cartera dada de baja (padron): fuera de empresa y de vendedores",
+                            "filas": int(es_baja.sum()),
+                            "botellas": float(v.loc[es_baja, "_cant"].sum())})
+    v = v[~es_baja & (v["segmento_11t"] != SIN_PADRON)].copy()
+
+    # Depósito / venta directa: NO se descarta. Suma al universo EMPRESA y queda marcado
+    # para que ningún resumen por vendedor lo tome. Un cliente sin vendedor en el padrón
+    # (codven vacío) recibe el mismo trato: cuenta para la empresa, no es de nadie.
+    sin_cart = {normalizar_codigo_vendedor(x) for x in (vendedores_sin_cartera or ())}
+    v["cuenta_vendedor"] = ~(v["vendedor_codigo"].isin(sin_cart) | v["vendedor_codigo"].isna())
+    _dep = ~v["cuenta_vendedor"]
+    if _dep.any():
+        excepciones.append({"tipo": "DEPOSITO_SIN_CARTERA", "clave": ",".join(map(str, sorted(sin_cart))),
+                            "detalle": ("deposito/venta directa: SUMA al total de empresa, sin cartera "
+                                        "ni ranking ni cumplimiento individual"),
+                            "filas": int(_dep.sum()),
+                            "botellas": float(v.loc[_dep, "_cant"].sum())})
 
     fuera_sup = v[v["segmento_11t"] == FUERA_DE_SUPERFICIE]
     if len(fuera_sup):
@@ -436,7 +501,7 @@ def cobertura_11t(ventas,
     v["_pos"] = v["_cant"].clip(lower=0)
     v["_neg"] = v["_cant"].clip(upper=0)
     det = (v.groupby(["_cli", "cliente_nombre", "vendedor_codigo", "vendedor_nombre",
-                      "segmento_11t", "titular"], dropna=False)
+                      "segmento_11t", "titular", "cuenta_vendedor"], dropna=False)
              .agg(botellas_positivas=("_pos", "sum"),
                   botellas_devueltas=("_neg", "sum"),
                   botellas_netas=("_cant", "sum"),
@@ -448,7 +513,13 @@ def cobertura_11t(ventas,
     det["umbral"] = det["segmento_11t"].map(umbrales)
     det["cumple"] = det["botellas_netas"] >= det["umbral"]
     det["vendedor_codigo"] = det["vendedor_codigo"].astype("Int64")
-    det["vendedor_id"] = det["vendedor_codigo"].map(lambda x: f"V{int(x)}" if pd.notna(x) else "")
+    det["cuenta_vendedor"] = det["cuenta_vendedor"].astype(bool)
+    # El Depósito se etiqueta DEPOSITO, no "V1"/"V20": si sale a pantalla o a un CSV, no
+    # puede leerse como un vendedor más. No tiene cartera ni cumplimiento propio.
+    det["vendedor_id"] = [
+        (f"V{int(c)}" if pd.notna(c) else "") if cv else "DEPOSITO"
+        for c, cv in zip(det["vendedor_codigo"], det["cuenta_vendedor"])
+    ]
     det["periodo_desde"] = per_desde
     det["periodo_hasta"] = per_hasta
     det["motivo"] = [
@@ -465,8 +536,17 @@ def cobertura_11t(ventas,
 # ─────────────────────────────────────────────────────────────────────────────
 
 def resumen_por_titular(detalle, objetivos=None) -> pd.DataFrame:
-    """Cobertura por titular: clientes cubiertos, medidos y apertura trad/AS."""
-    cols = ["titular", "cubiertos", "cubiertos_tradicional", "cubiertos_autoservicio",
+    """Cobertura por titular en el universo EMPRESA: clientes cubiertos, medidos y
+    apertura trad/AS.
+
+    `cubiertos` es el total de la distribuidora e INCLUYE el Depósito / venta directa:
+    es el número que se compara contra el objetivo de empresa. Se devuelve además abierto
+    en `cubiertos_vendedores` + `cubiertos_deposito`, que suman exactamente `cubiertos`
+    (un cliente pertenece a un solo universo — ver `test_motor_11t.SinDobleConteo`).
+    Para rankings y cumplimiento individual usar `resumen_por_vendedor`, que sólo mira el
+    universo VENDEDORES."""
+    cols = ["titular", "cubiertos", "cubiertos_vendedores", "cubiertos_deposito",
+            "cubiertos_tradicional", "cubiertos_autoservicio",
             "medidos", "objetivo", "pct_objetivo"]
     if detalle is None or detalle.empty:
         return pd.DataFrame(columns=cols)
@@ -475,6 +555,11 @@ def resumen_por_titular(detalle, objetivos=None) -> pd.DataFrame:
     r = (d.groupby("titular")
            .agg(medidos=("cliente_id", "nunique")).reset_index())
     r["cubiertos"] = r["titular"].map(ok.groupby("titular")["cliente_id"].nunique()).fillna(0).astype(int)
+    # Apertura por universo. `cuenta_vendedor` puede no estar si llega un detalle viejo.
+    _cv = ok["cuenta_vendedor"] if "cuenta_vendedor" in ok.columns else pd.Series(True, index=ok.index)
+    for mask, col in ((_cv, "cubiertos_vendedores"), (~_cv, "cubiertos_deposito")):
+        s = ok[mask].groupby("titular")["cliente_id"].nunique()
+        r[col] = r["titular"].map(s).fillna(0).astype(int)
     for seg, col in (("TRADICIONAL", "cubiertos_tradicional"), ("AUTOSERVICIO", "cubiertos_autoservicio")):
         s = ok[ok["segmento_11t"] == seg].groupby("titular")["cliente_id"].nunique()
         r[col] = r["titular"].map(s).fillna(0).astype(int)
@@ -485,11 +570,26 @@ def resumen_por_titular(detalle, objetivos=None) -> pd.DataFrame:
     return r[cols].sort_values("cubiertos", ascending=False).reset_index(drop=True)
 
 
+def solo_vendedores(detalle) -> pd.DataFrame:
+    """Universo VENDEDORES: descarta el Depósito y los clientes sin vendedor de ruta.
+
+    Es el filtro que tiene que aplicar TODO lo que sea ranking, cartera, selector de
+    vendedores, cumplimiento individual o promedio entre vendedores."""
+    if detalle is None or detalle.empty or "cuenta_vendedor" not in detalle.columns:
+        return detalle
+    return detalle[detalle["cuenta_vendedor"]]
+
+
 def resumen_por_vendedor(detalle) -> pd.DataFrame:
-    """Cobertura por vendedor de cartera x titular."""
+    """Cobertura por vendedor de cartera x titular — universo VENDEDORES.
+
+    El Depósito NO genera fila acá: no tiene cartera ni cumplimiento individual."""
     cols = ["vendedor_codigo", "vendedor_id", "vendedor_nombre", "titular",
             "cartera_medida", "cubiertos"]
     if detalle is None or detalle.empty:
+        return pd.DataFrame(columns=cols)
+    detalle = solo_vendedores(detalle)
+    if detalle.empty:
         return pd.DataFrame(columns=cols)
     r = (detalle.groupby(["vendedor_codigo", "vendedor_id", "vendedor_nombre", "titular"],
                          dropna=False)
@@ -503,8 +603,13 @@ def marcas_cubiertas_por_vendedor(detalle) -> dict:
     """{vendedor_codigo: cantidad de titulares con al menos un cliente cubierto}.
 
     Alimenta el KPI "Marcas 11T" / "11T ✓". Cuenta TITULARES, no pares cliente-marca:
-    antes sumaba `tiene_flag` (pares) bajo una etiqueta que se lee como marcas."""
+    antes sumaba `tiene_flag` (pares) bajo una etiqueta que se lee como marcas.
+
+    Universo VENDEDORES: el Depósito no tiene KPI propio."""
     if detalle is None or detalle.empty:
+        return {}
+    detalle = solo_vendedores(detalle)
+    if detalle.empty:
         return {}
     ok = detalle[detalle["cumple"]]
     if ok.empty:
