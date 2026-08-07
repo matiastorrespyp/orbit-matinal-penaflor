@@ -112,6 +112,18 @@ def init_db():
         periodo TEXT NOT NULL, kpi TEXT NOT NULL, semana INTEGER NOT NULL,
         pct REAL, editado_por TEXT, updated_at TEXT,
         PRIMARY KEY(periodo, kpi, semana))""")
+    # Plan de acción de la reunión mensual (pantalla Cierre de Mes): por cada indicador
+    # que NO llegó a su objetivo en ese cierre, la acción que se acordó tomar el mes
+    # siguiente. `periodo` es el mes del cierre en cuya reunión se escribió.
+    # Se guarda la foto del indicador (objetivo/logrado/pct) tal como estaba cuando se
+    # escribió la acción: el seguimiento del mes siguiente compara contra ESE número, no
+    # contra lo que hoy devuelva un cierre regenerado.
+    c.execute("""CREATE TABLE IF NOT EXISTS cierre_plan_accion(
+        periodo TEXT NOT NULL, indicador_id TEXT NOT NULL,
+        familia TEXT, etiqueta TEXT,
+        objetivo REAL, logrado REAL, pct REAL,
+        accion TEXT, autor TEXT, updated_at TEXT,
+        PRIMARY KEY(periodo, indicador_id))""")
     conn.commit()
     conn.close()
 
@@ -10314,7 +10326,14 @@ def _cierre_manifest_versionado(files):
 # ====== CIERRES HISTORICOS ======
 @app.route("/api/gerencia/cierres_historicos")
 def gerencia_cierres_historicos():
-    """Lista de cierres mensuales historicos generados en 07_CIERRES_MENSUALES/.
+    """Ruta HTTP. El armado vive en `_cierres_historicos()` para que el plan de acción
+    pueda leer los mismos cierres sin repetir el recorrido de 07_CIERRES_MENSUALES/."""
+    payload, code = _cierres_historicos()
+    return jsonify(payload), code
+
+
+def _cierres_historicos():
+    """(payload, status) con los cierres mensuales historicos de 07_CIERRES_MENSUALES/.
     Solo lectura. No genera cierres nuevos. No toca ventas_mes.csv ni ningun input.
     """
     cierres_dir = BASE / "07_CIERRES_MENSUALES"
@@ -10326,8 +10345,8 @@ def gerencia_cierres_historicos():
             with open(idx_path, encoding="utf-8") as f:
                 indice = json.load(f)
         except Exception as e:
-            return jsonify({"cierres": [], "estado": "ERROR",
-                            "error": "No se pudo leer el indice: " + str(e)}), 500
+            return {"cierres": [], "estado": "ERROR",
+                    "error": "No se pudo leer el indice: " + str(e)}, 500
 
     # Descubrir cierres versionados por carpeta (01_INPUTS/cierres mes/) que NO esten en el
     # indice 07. Asi cada cierre que genera CIERRE_MES_ORBIT.bat aparece solo y el selector de
@@ -10348,8 +10367,8 @@ def gerencia_cierres_historicos():
                        "timestamp_argentina": ts, "estado": "PASS", "_versionado_only": True})
 
     if not indice:
-        return jsonify({"cierres": [], "estado": "SIN_CIERRES",
-                        "nota": "No hay cierres en 07_CIERRES_MENSUALES/ ni en 01_INPUTS/cierres mes/"})
+        return {"cierres": [], "estado": "SIN_CIERRES",
+                "nota": "No hay cierres en 07_CIERRES_MENSUALES/ ni en 01_INPUTS/cierres mes/"}, 200
 
     cierres = []
     for entrada in indice:
@@ -10603,12 +10622,295 @@ def gerencia_cierres_historicos():
 
     cierres.sort(key=lambda c: (c.get("periodo",""), c.get("version","")), reverse=True)
 
-    return jsonify({
+    return {
         "cierres":       cierres,
         "total_cierres": len(cierres),
         "estado":        "OK",
         "nota":          "Solo lectura. No recalcula ni modifica datos.",
-    })
+    }, 200
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# PLAN DE ACCIÓN DE LA REUNIÓN MENSUAL (pantalla Cierre de Mes)
+# ══════════════════════════════════════════════════════════════════════════════
+# En la reunión de cada mes se anota, para cada indicador que NO llegó a su objetivo,
+# qué se va a hacer el mes siguiente. Al mes siguiente la pantalla abre con el
+# seguimiento de esas acciones: el mismo indicador, medido en el cierre nuevo.
+#
+# "Logrado" se mide, no se declara: el indicador llegó a su objetivo en el mes
+# siguiente (pct >= 100). Se muestra además el pct de origen y el delta, porque un
+# indicador puede mejorar mucho y seguir sin alcanzar el objetivo — las dos cosas
+# importan y una sola no cuenta la historia.
+#
+# Universo de indicadores = los del cierre que TIENEN objetivo, en 4 familias:
+#   empresa (facturación) · vendedor (facturación) · once_titulares (por marca) ·
+#   sellout (por categoría).
+# CCC, Innovaciones, Planes AS y Acciones no traen objetivo en el cierre: no se
+# inventa uno para poder listarlos.
+_PLAN_ACCION_FAMILIAS = {
+    "empresa":         "Facturación empresa",
+    "vendedor":        "Facturación por vendedor",
+    "once_titulares":  "11 Titulares",
+    "sellout":         "Sell Out",
+}
+
+
+def _plan_accion_slug(txt):
+    """Id estable y ASCII para un indicador. El nombre visible puede venir con acentos
+    (o mal codificado desde el ERP): el id no puede depender de eso, porque es la clave
+    que une el plan de un mes con la medición del siguiente."""
+    import unicodedata
+    t = unicodedata.normalize("NFKD", str(txt or "")).encode("ascii", "ignore").decode()
+    t = _re.sub(r"[^A-Za-z0-9]+", "_", t).strip("_").lower()
+    return t or "sin_nombre"
+
+
+def _plan_accion_indicadores(cierre):
+    """Todos los indicadores CON objetivo de un cierre: [{id, familia, etiqueta,
+    objetivo, logrado, pct}]. Es la misma función para listar los no logrados del mes
+    y para buscar cómo le fue después a un indicador del mes anterior — si fueran dos,
+    se desincronizarían."""
+    out = []
+    if not cierre:
+        return out
+    oa = cierre.get("objetivos_avance") or {}
+    emp = oa.get("empresa") or {}
+    if emp.get("objetivo"):
+        out.append({"id": "empresa:facturacion", "familia": "empresa",
+                    "etiqueta": "Facturación empresa", "objetivo": float(emp["objetivo"]),
+                    "logrado": float(emp.get("acumulado") or 0),
+                    "pct": float(emp.get("avance_pct") or 0), "unidad": "$"})
+    for v in (oa.get("vendedores") or []):
+        if not v.get("objetivo"):
+            continue
+        cod = str(v.get("codigo", ""))
+        out.append({"id": f"vendedor:{cod}", "familia": "vendedor",
+                    "etiqueta": f"V{cod} · {v.get('nombre', '')}".strip(" ·"),
+                    "objetivo": float(v["objetivo"]), "logrado": float(v.get("acumulado") or 0),
+                    "pct": float(v.get("avance_pct") or 0), "unidad": "$"})
+    for m in ((cierre.get("once_titulares") or {}).get("marcas") or []):
+        if not m.get("objetivo"):
+            continue
+        out.append({"id": f"11t:{_plan_accion_slug(m.get('marca'))}", "familia": "once_titulares",
+                    "etiqueta": f"11T · {m.get('marca', '')}",
+                    "objetivo": float(m["objetivo"]),
+                    "logrado": float(m.get("cubiertos") or m.get("ccc") or 0),
+                    "pct": float(m.get("pct") or 0), "unidad": "clientes"})
+    for k in ((cierre.get("sellout") or {}).get("categorias") or []):
+        if not k.get("objetivo"):
+            continue
+        out.append({"id": f"sellout:{_plan_accion_slug(k.get('categoria'))}", "familia": "sellout",
+                    "etiqueta": f"Sell Out · {k.get('categoria', '')}",
+                    "objetivo": float(k["objetivo"]), "logrado": float(k.get("litros") or 0),
+                    "pct": float(k.get("alcance_pct") or 0), "unidad": "L"})
+    return out
+
+
+def _plan_accion_leer(periodo):
+    """{indicador_id: fila} de lo guardado para ese periodo + metadata de la edición."""
+    filas, meta = {}, {"updated_at": None, "autor": None}
+    try:
+        conn = sqlite3.connect(str(DB_PATH))
+        conn.row_factory = sqlite3.Row
+        for r in conn.execute("SELECT * FROM cierre_plan_accion WHERE periodo=?", (periodo,)):
+            filas[r["indicador_id"]] = dict(r)
+            if not meta["updated_at"] or (r["updated_at"] or "") > meta["updated_at"]:
+                meta = {"updated_at": r["updated_at"], "autor": r["autor"]}
+        conn.close()
+    except Exception as e:
+        print(f"[AVISO] cierre_plan_accion leer: {e}")
+    return filas, meta
+
+
+def _plan_accion_periodo_anterior(periodo, cierres):
+    """Periodo del cierre inmediatamente anterior QUE TENGA un plan guardado.
+
+    No se usa "mes - 1" a secas: si un mes no tuvo reunión (o no se cargó nada), el
+    seguimiento tiene que mostrar el último plan que sí existe, no un hueco."""
+    previos = sorted({str(c.get("periodo")) for c in cierres if str(c.get("periodo", "")) < periodo},
+                     reverse=True)
+    for p in previos:
+        filas, _ = _plan_accion_leer(p)
+        if any((f.get("accion") or "").strip() for f in filas.values()):
+            return p
+    return None
+
+
+def _plan_accion_export_csv():
+    """Respaldo a CSV, igual criterio que la planificación semanal: la tabla vive en el
+    disco persistente de Render, pero el CSV permite recuperarla a mano."""
+    try:
+        PLAN_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(DB_PATH))
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            "SELECT * FROM cierre_plan_accion ORDER BY periodo, indicador_id").fetchall()
+        conn.close()
+        if not rows:
+            return
+        with open(str(PLAN_BACKUP_DIR / "cierre_plan_accion_latest.csv"), "w",
+                  newline="", encoding="utf-8") as f:
+            w = _csv.DictWriter(f, fieldnames=rows[0].keys())
+            w.writeheader()
+            w.writerows([dict(r) for r in rows])
+    except Exception as e:
+        print(f"[WARN] _plan_accion_export_csv: {e}")
+
+
+@app.route("/api/gerencia/cierre_plan_accion")
+def gerencia_cierre_plan_accion():
+    """Plan de acción de la reunión de un cierre.  ?periodo=YYYY-MM (default: el más reciente)
+
+    Devuelve:
+      · `pendientes`  — indicadores del mes que NO llegaron al objetivo, con la acción
+        ya escrita si la hay. Es la tarjeta del pie.
+      · `seguimiento` — el plan de la reunión anterior con el resultado medido en ESTE
+        cierre. Es la tarjeta del encabezado.
+    """
+    payload, code = _cierres_historicos()
+    if code != 200:
+        return jsonify(payload), code
+    cierres = payload.get("cierres") or []
+    if not cierres:
+        return jsonify({"error": "No hay cierres mensuales generados.", "pendientes": [],
+                        "seguimiento": None}), 404
+
+    periodo = (request.args.get("periodo") or "").strip() or str(cierres[0].get("periodo"))
+    cierre = next((c for c in cierres if str(c.get("periodo")) == periodo), None)
+    if cierre is None:
+        return jsonify({"error": f"No hay cierre para el periodo {periodo}",
+                        "periodos": [c.get("periodo") for c in cierres]}), 404
+
+    indicadores = _plan_accion_indicadores(cierre)
+    guardado, meta = _plan_accion_leer(periodo)
+    pendientes = []
+    for ind in indicadores:
+        if ind["pct"] >= 100:
+            continue                      # llegó al objetivo: no va al plan de acción
+        g = guardado.get(ind["id"]) or {}
+        pendientes.append({**ind, "accion": (g.get("accion") or "")})
+    # El orden es el de la conversación de la reunión: primero lo más lejos del objetivo.
+    pendientes.sort(key=lambda x: x["pct"])
+
+    # ── Seguimiento del plan anterior, medido en ESTE cierre ──
+    seguimiento = None
+    p_ant = _plan_accion_periodo_anterior(periodo, cierres)
+    if p_ant:
+        ant_filas, ant_meta = _plan_accion_leer(p_ant)
+        actual = {i["id"]: i for i in indicadores}
+        items = []
+        for iid, f in ant_filas.items():
+            accion = (f.get("accion") or "").strip()
+            if not accion:
+                continue
+            hoy = actual.get(iid)
+            if hoy is None:
+                # El indicador ya no existe en este cierre (categoría que se dejó de
+                # medir, vendedor que salió). No es "no logrado": es que no se puede medir.
+                estado, pct_actual, delta = "sin_dato", None, None
+            else:
+                pct_actual = hoy["pct"]
+                estado = "logrado" if pct_actual >= 100 else "no_logrado"
+                delta = round(pct_actual - float(f.get("pct") or 0), 1)
+            items.append({
+                "id": iid, "familia": f.get("familia"),
+                "etiqueta": f.get("etiqueta") or (hoy or {}).get("etiqueta") or iid,
+                "accion": accion, "estado": estado,
+                "pct_origen": round(float(f.get("pct") or 0), 1),
+                "pct_actual": None if pct_actual is None else round(pct_actual, 1),
+                "delta": delta,
+                "objetivo": (hoy or {}).get("objetivo"),
+                "logrado": (hoy or {}).get("logrado"),
+                "unidad": (hoy or {}).get("unidad", ""),
+            })
+        # Primero los que no se lograron: es lo que hay que discutir.
+        orden = {"no_logrado": 0, "sin_dato": 1, "logrado": 2}
+        items.sort(key=lambda x: (orden.get(x["estado"], 9), x["pct_actual"] if x["pct_actual"] is not None else 999))
+        seguimiento = {
+            "periodo": p_ant,
+            "items": items,
+            "total": len(items),
+            "logrados": sum(1 for i in items if i["estado"] == "logrado"),
+            "no_logrados": sum(1 for i in items if i["estado"] == "no_logrado"),
+            "sin_dato": sum(1 for i in items if i["estado"] == "sin_dato"),
+            "meta": ant_meta,
+        }
+
+    return jsonify(_to_native({
+        "periodo": periodo,
+        "generado_en": _now_ar(),
+        "pendientes": pendientes,
+        "total_indicadores": len(indicadores),
+        "logrados_del_mes": sum(1 for i in indicadores if i["pct"] >= 100),
+        "seguimiento": seguimiento,
+        "meta": meta,
+        "familias": _PLAN_ACCION_FAMILIAS,
+    }))
+
+
+@app.route("/api/gerencia/cierre_plan_accion", methods=["POST"])
+def gerencia_cierre_plan_accion_guardar():
+    """Guarda las acciones de la reunión.
+    Body: {periodo:'YYYY-MM', autor:'...', acciones:{indicador_id: 'texto'}}
+    Un texto vacío BORRA esa fila (queda sin acción, no con una acción en blanco)."""
+    body = request.get_json(silent=True) or {}
+    periodo = str(body.get("periodo", "")).strip()
+    _p = periodo.split("-")
+    if len(_p) != 2 or not (_p[0].isdigit() and len(_p[0]) == 4
+                            and _p[1].isdigit() and len(_p[1]) == 2 and 1 <= int(_p[1]) <= 12):
+        return jsonify({"ok": False, "error": "periodo inválido (YYYY-MM)"}), 400
+    acciones = body.get("acciones")
+    if not isinstance(acciones, dict):
+        return jsonify({"ok": False, "error": "acciones inválidas"}), 400
+
+    payload, code = _cierres_historicos()
+    if code != 200:
+        return jsonify({"ok": False, "error": "No se pudieron leer los cierres"}), 500
+    cierre = next((c for c in (payload.get("cierres") or [])
+                   if str(c.get("periodo")) == periodo), None)
+    if cierre is None:
+        return jsonify({"ok": False, "error": f"No hay cierre para el periodo {periodo}"}), 404
+    # La foto del indicador se toma del cierre, NUNCA de lo que mande el navegador:
+    # el cliente sólo aporta el texto de la acción.
+    ind_map = {i["id"]: i for i in _plan_accion_indicadores(cierre)}
+
+    autor = str(body.get("autor", "gerencia")).strip()[:40]
+    ts = _now_ar()
+    filas, borrar = [], []
+    for iid, texto in acciones.items():
+        if iid not in ind_map:
+            continue                       # id que no existe en este cierre: se ignora
+        txt = str(texto or "").strip()[:2000]
+        if not txt:
+            borrar.append((periodo, iid))
+            continue
+        i = ind_map[iid]
+        filas.append((periodo, iid, i["familia"], i["etiqueta"],
+                      i["objetivo"], i["logrado"], i["pct"], txt, autor, ts))
+    try:
+        conn = sqlite3.connect(str(DB_PATH))
+        c = conn.cursor()
+        if borrar:
+            c.executemany("DELETE FROM cierre_plan_accion WHERE periodo=? AND indicador_id=?", borrar)
+        if filas:
+            c.executemany("""INSERT INTO cierre_plan_accion(
+                    periodo, indicador_id, familia, etiqueta, objetivo, logrado, pct,
+                    accion, autor, updated_at)
+                VALUES(?,?,?,?,?,?,?,?,?,?)
+                ON CONFLICT(periodo, indicador_id) DO UPDATE SET
+                    familia=excluded.familia, etiqueta=excluded.etiqueta,
+                    objetivo=excluded.objetivo, logrado=excluded.logrado, pct=excluded.pct,
+                    accion=excluded.accion, autor=excluded.autor,
+                    updated_at=excluded.updated_at""", filas)
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[ERROR] cierre_plan_accion guardar: {e}")
+        return jsonify({"ok": False, "error": "No se pudo guardar en la base"}), 500
+    _plan_accion_export_csv()
+    guardado, meta = _plan_accion_leer(periodo)
+    return jsonify({"ok": True, "guardadas": len(filas), "borradas": len(borrar),
+                    "meta": meta})
 
 
 # ====== STARTUP (gunicorn + __main__) ======

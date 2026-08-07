@@ -512,6 +512,31 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 .dd-note { font-size:11.5px; color:var(--text3); line-height:1.4; margin-top:-4px; }
 .dd-sub { font-family:var(--f-dis); font-weight:700; font-size:13px; color:var(--text2);
   border-top:1px solid var(--b); padding-top:14px; }
+/* ── Plan de acción de la reunión mensual (pantalla Cierre de Mes) ── */
+.pa-tbl { width:100%; border-collapse:collapse; font-size:12px; }
+.pa-tbl th { text-align:left; padding:8px 10px; font-size:9px; font-weight:700; text-transform:uppercase;
+  letter-spacing:1.1px; color:var(--text3); background:var(--surf2); border-bottom:1px solid var(--b); }
+.pa-tbl td { padding:9px 10px; border-bottom:1px solid var(--b); vertical-align:top; }
+.pa-tbl tr:last-child td { border-bottom:0; }
+.pa-ind { font-weight:600; font-size:12px; }
+.pa-fam { font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:.6px; }
+.pa-cifra { font-variant-numeric:tabular-nums; font-size:11px; color:var(--text2); white-space:nowrap; }
+.pa-pct { font-family:var(--f-dis); font-weight:700; font-size:13px; font-variant-numeric:tabular-nums; }
+.pa-in { width:100%; min-height:52px; resize:vertical; padding:7px 9px; font-size:12px; line-height:1.45;
+  font-family:inherit; background:rgba(0,0,0,.35); border:1px solid var(--bs);
+  border-radius:var(--r-sm); color:var(--text); }
+.pa-in:focus { outline:none; border-color:var(--mg); box-shadow:0 0 0 2px var(--mg-s); }
+.pa-in::placeholder { color:var(--text3); font-style:italic; }
+.pa-est { font-size:10px; font-weight:700; letter-spacing:.4px; padding:3px 9px; border-radius:999px;
+  white-space:nowrap; display:inline-block; }
+.pa-est.ok { background:var(--ok-s); color:var(--ok); border:1px solid var(--ok); }
+.pa-est.bd { background:var(--bd-s); color:var(--bd); border:1px solid var(--bd); }
+.pa-est.nd { background:var(--surf2); color:var(--text3); border:1px solid var(--bs); }
+.pa-delta { font-size:10.5px; font-weight:700; font-variant-numeric:tabular-nums; }
+.pa-accion { font-size:11.5px; color:var(--text2); line-height:1.5; white-space:pre-wrap; }
+.pa-note { font-size:10.5px; color:var(--text3); line-height:1.5; margin-top:10px; }
+.pa-acts { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+@media(max-width:900px){ .pa-tbl th,.pa-tbl td{ padding:7px 5px; } }
 /* Encabezado de lista con su boton de descarga a la derecha (Plan Cobertura). */
 .pc-subhd { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
 .pc-xls { font-size:10.5px; font-weight:700; letter-spacing:.3px; padding:5px 10px;
@@ -6108,7 +6133,10 @@ function gCierreMes(p){
         const fuente=m.fuente_ventas||'01_INPUTS/ventas_mes.csv';
         const selHtml = cs.length>1 ? `<select onchange="window._cierreHistSel(this.value)" style="background:var(--surf2);color:var(--text);border:1px solid var(--b);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;">${cs.map((x,i)=>`<option value="${i}" ${i===sel?'selected':''}>${x.periodo} · ${x.version}</option>`).join('')}</select>` : '';
         // ── Metadatos del cierre ──
-        let h=`<div class="card" style="border:1px solid var(--mg);">
+        // El seguimiento del plan de acción de la reunión anterior va PRIMERO: es con lo
+        // que arranca la reunión. El plan nuevo va al pie (ver #cierre-plan-acc).
+        let h=`<div id="cierre-plan-seg"></div>
+        <div class="card" style="border:1px solid var(--mg);">
           <div class="card-hd">
             <span class="card-title">🗄️ Cierre ${c.periodo||'–'} / ${c.version||'–'}</span>
             <span style="display:flex;gap:6px;align-items:center;">${selHtml}<span class="chip ${estOk?'ok':'bd'}">${c.estado||'–'}</span></span>
@@ -6299,8 +6327,10 @@ function gCierreMes(p){
           </div>`;
         }
         h+=`</div></div>`;
+        h+=`<div id="cierre-plan-acc"></div>`;   // plan de acción del mes: abajo de todo
         cont.innerHTML=h;
         _renderCierreSellout();   // pinta la tarjeta de Sell Out con drill-down en #cierre-sellout
+        paCargar(c.periodo);      // llena #cierre-plan-seg y #cierre-plan-acc
       }
       window._cierreHistSel=function(i){ sel=parseInt(i,10)||0; _render(); };
       _render();
@@ -6310,6 +6340,173 @@ function gCierreMes(p){
   }
   _renderCierreHistorico();
 
+}
+
+/* ════ PLAN DE ACCIÓN DE LA REUNIÓN MENSUAL (pantalla Cierre de Mes) ════
+   Dos tarjetas alimentadas por /api/gerencia/cierre_plan_accion:
+     · #cierre-plan-seg (arriba de todo) — el plan de la reunión ANTERIOR con el
+       resultado medido en este cierre. Con eso arranca la reunión.
+     · #cierre-plan-acc (abajo de todo)  — los indicadores que NO llegaron al objetivo
+       este mes, cada uno con su campo para escribir la acción del mes que viene.
+   Los textarea NO se re-renderizan al tipear (se perdería el foco, igual que en el
+   buscador de Plan Cobertura): se pintan una vez y se leen recién al guardar. */
+let PA=null, PA_PERIODO=null, PA_SAVING=false;
+
+const paEsc = s => String(s??'').replace(/[&<>"']/g, m =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const paMes = p => {
+  const M=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const [a,m]=String(p||'').split('-'); return m?`${M[parseInt(m,10)]} ${a}`:(p||'');
+};
+/* El indicador se muestra en su propia unidad: $ abreviado, litros o clientes. */
+const paVal = (v,u) => u==='$' ? fmtM(v)
+  : u==='L' ? Number(v||0).toLocaleString('es-AR',{maximumFractionDigits:0})+' L'
+  : Number(v||0).toLocaleString('es-AR',{maximumFractionDigits:0})+(u?' '+u:'');
+
+async function paCargar(periodo){
+  PA_PERIODO=periodo;
+  const seg=document.getElementById('cierre-plan-seg'), acc=document.getElementById('cierre-plan-acc');
+  if(acc) acc.innerHTML=`<div class="card"><div class="card-body"><div class="empty">
+    <div class="eico" style="font-size:24px">⏳</div><p>Cargando plan de acción…</p></div></div></div>`;
+  const j=await safe('/api/gerencia/cierre_plan_accion?periodo='+encodeURIComponent(periodo));
+  if(PA_PERIODO!==periodo) return;                 // el usuario cambió de mes mientras cargaba
+  if(!j || j.error){
+    if(seg) seg.innerHTML='';
+    if(acc) acc.innerHTML=`<div class="card"><div class="card-body"><div class="empty">
+      <div class="eico" style="font-size:24px">⚠️</div>
+      <p>${paEsc((j&&j.error)||'No se pudo cargar el plan de acción.')}</p></div></div></div>`;
+    return;
+  }
+  PA=j;
+  if(seg) seg.innerHTML=paSeguimientoHtml(j.seguimiento);
+  if(acc) acc.innerHTML=paPlanHtml(j);
+}
+
+/* ── Tarjeta de arriba: cómo le fue al plan del mes anterior ── */
+function paSeguimientoHtml(s){
+  if(!s || !s.items || !s.items.length) return '';
+  const filas=s.items.map(i=>{
+    const cls=i.estado==='logrado'?'ok':(i.estado==='no_logrado'?'bd':'nd');
+    const txt=i.estado==='logrado'?'✓ LOGRADO':(i.estado==='no_logrado'?'✗ NO LOGRADO':'SIN DATO');
+    // Un indicador puede mejorar mucho y seguir sin llegar al objetivo: por eso el
+    // delta se muestra siempre, no sólo cuando el estado es "logrado".
+    const d=i.delta==null?'' :
+      `<div class="pa-delta" style="color:var(--${i.delta>0?'ok':(i.delta<0?'bd':'text3')})">
+         ${i.delta>0?'+':''}${i.delta.toFixed(1)} pts vs ${paMes(s.periodo).split(' ')[0]}</div>`;
+    return `<tr>
+      <td><div class="pa-ind">${paEsc(i.etiqueta)}</div><div class="pa-fam">${paEsc(i.familia||'')}</div></td>
+      <td><span class="pa-est ${cls}">${txt}</span></td>
+      <td class="pa-cifra">
+        <div class="pa-pct" style="color:var(--${cls==='nd'?'text3':cls})">${i.pct_actual==null?'–':i.pct_actual.toFixed(1)+'%'}</div>
+        <div>venía de ${i.pct_origen.toFixed(1)}%</div>${d}</td>
+      <td class="pa-accion">${paEsc(i.accion)}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="card" style="border:1px solid var(--bs);">
+    <div class="card-hd">
+      <span class="card-title">🎯 Seguimiento del plan de acción · ${paMes(s.periodo)}</span>
+      <span style="display:flex;gap:6px;align-items:center;">
+        <span class="chip ok">${s.logrados} logrados</span>
+        <span class="chip ${s.no_logrados?'bd':''}">${s.no_logrados} no logrados</span>
+        ${s.sin_dato?`<span class="chip">${s.sin_dato} sin dato</span>`:''}
+      </span>
+    </div>
+    <div class="card-body nop">
+      <table class="pa-tbl">
+        <thead><tr><th>Indicador</th><th>Resultado</th><th>Avance</th>
+          <th>Acción que se había acordado</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+    </div>
+    <div class="card-body" style="border-top:1px solid var(--b);padding-top:11px;">
+      <div class="pa-note">Acciones acordadas en la reunión de <b>${paMes(s.periodo)}</b>${
+        s.meta&&s.meta.updated_at?` (${s.meta.updated_at}${s.meta.autor?' · '+s.meta.autor:''})`:''}.
+        <b>Logrado</b> = el indicador llegó a su objetivo en este cierre; se mide, no se declara.
+        El <b>delta</b> va aparte porque un indicador puede mejorar mucho y seguir sin alcanzar
+        el objetivo. <b>Sin dato</b> = el indicador ya no se mide en este cierre.</div>
+    </div>
+  </div>`;
+}
+
+/* ── Tarjeta del pie: los no logrados del mes + el campo para escribir la acción ── */
+function paPlanHtml(j){
+  const p=j.pendientes||[];
+  const meta=j.meta||{};
+  if(!p.length){
+    return `<div class="card"><div class="card-hd">
+        <span class="card-title">📝 Plan de acción · ${paMes(j.periodo)}</span>
+        <span class="chip ok">sin indicadores por debajo del objetivo</span>
+      </div><div class="card-body"><div class="pa-note">
+        Los ${j.total_indicadores} indicadores con objetivo del mes llegaron al 100%. No hay
+        plan de acción que cargar.</div></div></div>`;
+  }
+  const filas=p.map(i=>`<tr>
+      <td><div class="pa-ind">${paEsc(i.etiqueta)}</div><div class="pa-fam">${paEsc(i.familia)}</div></td>
+      <td class="pa-cifra">
+        <div class="pa-pct" style="color:var(--${i.pct>=60?'wn':'bd'})">${i.pct.toFixed(1)}%</div>
+        <div>${paVal(i.logrado,i.unidad)} de ${paVal(i.objetivo,i.unidad)}</div></td>
+      <td style="width:52%">
+        <textarea class="pa-in" id="pa-in-${paEsc(i.id)}"
+          placeholder="¿Qué vamos a hacer el mes que viene para mejorar este indicador?"
+        >${paEsc(i.accion)}</textarea></td>
+    </tr>`).join('');
+  return `<div class="card" style="border:1px solid var(--mg);">
+    <div class="card-hd">
+      <span class="card-title">📝 Plan de acción · ${paMes(j.periodo)}</span>
+      <div class="pa-acts">
+        <span class="chip bd">${p.length} sin alcanzar</span>
+        <span class="chip ok">${j.logrados_del_mes} logrados</span>
+        <button class="g-prim" id="pa-save" onclick="paGuardar()">Guardar plan de acción</button>
+      </div>
+    </div>
+    <div class="card-body nop">
+      <table class="pa-tbl">
+        <thead><tr><th>Indicador que no llegó al objetivo</th><th>Cómo cerró</th>
+          <th>Acción a tomar el mes que viene</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+    </div>
+    <div class="card-body" style="border-top:1px solid var(--b);padding-top:11px;">
+      <div class="pa-note">Se listan los indicadores <b>con objetivo</b> que cerraron por debajo
+        del 100%, del más lejano al más cercano. En la reunión del mes que viene esta tarjeta
+        aparece arriba de todo con el resultado de cada acción. Dejar el campo vacío borra la
+        acción de ese indicador.${meta.updated_at?`<br>Último guardado: ${meta.updated_at}${
+        meta.autor?' · '+meta.autor:''}.`:''}</div>
+      <div class="pf-ok" id="paOk">✓ Plan de acción guardado</div>
+      <div class="pf-ok" id="paErr" style="background:rgba(220,50,50,.18);color:#ff6b6b;display:none;"></div>
+    </div>
+  </div>`;
+}
+
+async function paGuardar(){
+  if(PA_SAVING || !PA) return;
+  const acciones={};
+  (PA.pendientes||[]).forEach(i=>{
+    const el=document.getElementById('pa-in-'+i.id);
+    acciones[i.id]= el ? el.value : '';
+  });
+  PA_SAVING=true;
+  const btn=document.getElementById('pa-save'); if(btn) btn.textContent='Guardando…';
+  const err=document.getElementById('paErr');
+  try{
+    const r=await fetch('/api/gerencia/cierre_plan_accion',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({periodo:PA.periodo, autor:userData?.nombre||'gerencia', acciones})});
+    const d=await r.json();
+    if(d.ok){
+      PA.meta=d.meta;
+      (PA.pendientes||[]).forEach(i=>{ i.accion=acciones[i.id]||''; });
+      const ok=document.getElementById('paOk');
+      if(ok){ ok.style.display='block'; setTimeout(()=>ok.style.display='none',3000); }
+    } else if(err){
+      err.textContent='✗ '+(d.error||'No se pudo guardar.'); err.style.display='block';
+    }
+  }catch(e){
+    if(err){ err.textContent='✗ Sin conexión con el servidor.'; err.style.display='block'; }
+  }finally{
+    PA_SAVING=false;
+    const b=document.getElementById('pa-save'); if(b) b.textContent='Guardar plan de acción';
+  }
 }
 
 /* ── mensajes ── */

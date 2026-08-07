@@ -1,5 +1,19 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-06 - Cierre de Mes: plan de accion de la reunion mensual
+
+### HECHO
+- [x] **Tarjeta de plan de accion abajo de todo**: los indicadores con objetivo que cerraron por debajo del 100%, cada uno con su campo para escribir la accion del mes siguiente. 11 pendientes en julio-2026 de 26 indicadores.
+- [x] **Tarjeta de seguimiento arriba de todo**: el plan de la reunion anterior con **LOGRADO / NO LOGRADO medido** (el indicador llego a su objetivo en el cierre nuevo), el % de origen y el delta.
+- [x] **`sin_dato` cuando el indicador ya no existe** en el cierre nuevo. No se puede medir != se fallo.
+- [x] **Tabla `cierre_plan_accion`** en orbit.db (disco persistente de Render) + respaldo CSV, mismo criterio que `plan_semanal`.
+- [x] **Validado end-to-end por la UI real** (junio → julio): 3 logrados / 2 no logrados, orden del DOM verificado. Filas de prueba borradas.
+
+### PENDIENTE
+- [ ] **Decidir si el plan de accion entra al PDF / la minuta de la reunion.** Hoy vive solo en la pantalla. Si la reunion se comparte por PDF, hay que sumarlo al generador.
+- [ ] **Solo hay objetivo para 4 familias** (facturacion empresa, facturacion por vendedor, 11T por marca, Sell Out por categoria). **CCC, Innovaciones, Planes AS y Acciones no traen objetivo en el cierre**, asi que no pueden entrar al plan de accion. Si el negocio quiere planificar sobre CCC, hay que meter `objccc.xlsx` en el payload del cierre versionado.
+- [ ] **Nadie puede cerrar una accion a mano.** Si una accion se cumplio pero el indicador igual no llego (o al reves), no hay lugar para dejar constancia. El modelo ya guarda `autor` y `updated_at`; agregar un comentario de cierre seria un campo mas.
+
 ## Sesion 2026-08-06 - Plan Cobertura: descarga Excel por tarjeta
 
 ### HECHO

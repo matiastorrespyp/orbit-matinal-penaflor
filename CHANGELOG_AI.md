@@ -1,5 +1,25 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-06 - feat(cierre de mes): plan de acción de la reunión mensual, con seguimiento del mes anterior
+
+Pedido de gerencia: en la reunión mensual, anotar para cada objetivo no alcanzado qué se va a hacer el mes siguiente; y que la reunión del mes siguiente arranque mostrando si esas acciones funcionaron.
+
+- **Dos tarjetas nuevas en Cierre de Mes**, verificado el orden en el DOM:
+  - **Arriba de todo** (`#cierre-plan-seg`) — *Seguimiento del plan de acción · \<mes anterior\>*: cada acción acordada con su **✓ LOGRADO / ✗ NO LOGRADO**, el % actual, de cuánto venía y el delta.
+  - **Abajo de todo** (`#cierre-plan-acc`) — *Plan de acción · \<mes\>*: los indicadores que cerraron por debajo del objetivo, cada uno con su textarea para la acción, y botón de guardar.
+- **"Logrado" se mide, no se declara**: el indicador llegó a su objetivo en el cierre siguiente (`pct >= 100`). Nadie tilda una casilla.
+  - **El delta se muestra siempre, aparte del estado.** Caso real de la prueba: `Sell Out · VERMOUTH` pasó de **0% a 51,7%** — sigue `NO LOGRADO`, pero decir sólo eso escondería que se movió 51,7 puntos. El estado responde "¿llegamos?" y el delta "¿mejoramos?"; son dos preguntas distintas y la reunión necesita las dos.
+  - Si el indicador **ya no existe** en el cierre nuevo (categoría que se dejó de medir, vendedor que salió) el estado es **`sin_dato`**, nunca "no logrado": no se puede medir no es lo mismo que se falló.
+- **Universo de indicadores = los que TIENEN objetivo en el cierre**, en 4 familias: facturación empresa, facturación por vendedor, 11 Titulares por marca y Sell Out por categoría (26 indicadores en julio-2026). CCC, Innovaciones, Planes AS y Acciones **no traen objetivo** en el cierre: no se les inventa uno para poder listarlos.
+- **`_plan_accion_indicadores()` es una sola función** para listar los no logrados del mes y para buscar cómo le fue después a un indicador del mes anterior. Si fueran dos, se desincronizarían y el seguimiento mediría distinto que el plan.
+- **El id del indicador es un slug ASCII** (`_plan_accion_slug`): es la clave que une el plan de un mes con la medición del siguiente, así que no puede depender de acentos ni de cómo venga codificado el nombre desde el ERP (`VINOS DEL AÑO` → `sellout:vinos_del_ano`).
+- **La foto del indicador se guarda con la acción** (objetivo/logrado/pct del mes en que se escribió) y **se toma del cierre, nunca de lo que mande el navegador**: el cliente sólo aporta el texto. El seguimiento compara contra ese número, no contra lo que hoy devuelva un cierre regenerado.
+- **El periodo anterior no es "mes − 1" a secas**: es el cierre anterior más reciente **que tenga un plan guardado**. Si un mes no tuvo reunión, el seguimiento muestra el último plan que sí existe en vez de un hueco.
+- **Persistencia**: tabla `cierre_plan_accion` en `orbit.db` (disco persistente de Render, `/var/data`) + respaldo CSV, mismo criterio que `plan_semanal`. Texto vacío **borra** la fila, no guarda una acción en blanco.
+- **`gerencia_cierres_historicos` refactorizado**: el armado pasó a `_cierres_historicos()` y la ruta sólo hace `jsonify`. El plan de acción lee los mismos cierres sin repetir el recorrido de `07_CIERRES_MENSUALES/`.
+- **Los textarea no se re-renderizan al tipear** (se perdería el foco, igual que el buscador de Plan Cobertura): se pintan una vez y se leen recién al guardar.
+- **Validación end-to-end por la UI real**, no sólo por API: se cargaron 5 acciones en la reunión de **junio**, se guardó, se cambió el selector a **julio** y la tarjeta de seguimiento apareció arriba de todo con **3 logrados / 2 no logrados**, cada uno con su delta (`11T TRAPICHE RESERVA` 52,6% → 103,8% logrado; `V3` 68,5% → 20,8% no logrado). Orden del DOM verificado: seguimiento **primero de 11**, plan de acción **último**. Filas de prueba borradas después (la tabla quedó en 0).
+
 ## 2026-08-06 - feat(plan cobertura): descarga Excel por tarjeta, con la facturación abierta por comprobante
 
 Pedido de gerencia: un botón de descarga en cada tarjeta de Plan Cobertura con el detalle de la facturación de cada cliente, abierta por los comprobantes de venta.
