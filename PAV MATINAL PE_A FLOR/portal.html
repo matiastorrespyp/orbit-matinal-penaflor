@@ -6263,25 +6263,52 @@ function gCierreMes(p){
             </div></div>`;
         }
         // ── Acciones Comerciales (congelado) ──
+        // ── Acciones Comerciales: se lee por USO, no por plata ──
+        // Cada fila dice QUÉ acción es (nombre del catálogo + línea de producto + los
+        // productos cuando se pueden nombrar) y cuánto se usó: ventas hechas con la
+        // acción, litros movidos y clientes. Ordenadas de mayor a menor uso.
         if(accR.total_acciones){
+          const accMax=Math.max(...accDet.map(a=>a.ventas||0),1);
           h+=`<div class="card" style="margin-top:14px;">
-            <div class="card-hd"><span class="card-title">💰 Acciones Comerciales</span><span class="chip">${accR.total_acciones} acciones</span></div>
+            <div class="card-hd"><span class="card-title">💰 Acciones Comerciales · uso del mes</span>
+              <span class="chip">${accR.total_acciones} acciones usadas</span></div>
             <div class="card-body nop">
-              <div style="display:flex;gap:16px;flex-wrap:wrap;padding:10px 14px 8px;border-bottom:1px solid var(--b);">
-                <div><div style="font-size:10px;color:var(--text3)">Inversión</div><b>${fmtM(accR.inversion_total)}</b></div>
-                <div><div style="font-size:10px;color:var(--text3)">Importe neto</div><b>${fmtM(accR.importe_neto)}</b></div>
-                <div><div style="font-size:10px;color:var(--text3)">Clientes afectados</div><b>${fmtNum(accR.clientes_afectados)}</b></div>
+              <div style="display:flex;gap:18px;flex-wrap:wrap;padding:10px 14px 8px;border-bottom:1px solid var(--b);">
+                <div><div style="font-size:10px;color:var(--text3)">Ventas con acción</div><b>${accR.ventas_totales!=null?fmtNum(accR.ventas_totales):'–'}</b></div>
+                <div><div style="font-size:10px;color:var(--text3)">Litros con acción</div><b>${accR.litros_totales!=null?fmtNum(accR.litros_totales)+' L':'–'}</b></div>
+                <div><div style="font-size:10px;color:var(--text3)">Clientes que las usaron</div><b>${fmtNum(accR.clientes_afectados)}</b></div>
               </div>
               <table class="tbl" style="font-size:11px;">
-                <thead><tr><th>Acción</th><th>Canal</th><th style="text-align:right">Inversión</th><th style="text-align:right">Importe neto</th><th style="text-align:right">Clientes</th></tr></thead>
-                <tbody>${accDet.map(a=>`<tr>
-                  <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${a.nombre||''}">${a.nombre||a.tipo||'–'}</td>
+                <thead><tr>
+                  <th>Acción</th><th>Canal</th><th style="text-align:center">Desc.</th>
+                  <th style="text-align:right">Ventas</th><th style="text-align:right">Litros</th>
+                  <th style="text-align:right">Clientes</th></tr></thead>
+                <tbody>${accDet.map(a=>{
+                  const barW=Math.round((a.ventas||0)/accMax*100);
+                  const sub=[a.linea,a.productos].filter(Boolean).join(' · ');
+                  return `<tr>
+                  <td style="max-width:290px;">
+                    <div style="font-weight:600;">${a.nombre||a.tipo||'–'}</div>
+                    ${sub?`<div style="font-size:9.5px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${sub}">${sub}</div>`:''}
+                  </td>
                   <td><span class="chip" style="font-size:9px;">${a.canal||'–'}</span></td>
-                  <td style="text-align:right">${fmtM(a.inversion)}</td>
-                  <td style="text-align:right;color:var(--text3)">${fmtM(a.importe_neto)}</td>
-                  <td style="text-align:right">${fmtNum(a.clientes)}</td>
-                </tr>`).join('')}</tbody>
+                  <td style="text-align:center;color:var(--text2);font-variant-numeric:tabular-nums;">${a.descuento||'–'}</td>
+                  <td style="text-align:right;font-variant-numeric:tabular-nums;">
+                    <b>${a.ventas!=null?fmtNum(a.ventas):'–'}</b>
+                    <div class="bar" style="height:3px;width:52px;margin-left:auto;margin-top:3px;"><div class="bar-f" style="width:${barW}%"></div></div>
+                  </td>
+                  <td style="text-align:right;font-variant-numeric:tabular-nums;">${fmtNum(a.litros)} L</td>
+                  <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--text3)">${fmtNum(a.clientes)}</td>
+                </tr>`;}).join('')}</tbody>
               </table>
+              <div style="padding:10px 14px;border-top:1px solid var(--b);font-size:10px;color:var(--text3);line-height:1.5;">
+                Ordenadas de <b>mayor a menor uso</b>. ${accR.medicion?`<b>Venta</b> = comprobante
+                distinto en el que se aplicó la acción (una factura con varios artículos de la acción
+                es una sola venta). Se cuenta el <b>uso</b>, no el alcance: la línea suma sólo si el %
+                aplicado coincide con un tramo de la acción.`:`Este cierre usa el catálogo viejo
+                (esquema mayo): no trae ventas por comprobante y mide <b>alcance</b>, no uso.`}
+                Inversión del mes con acciones: ${fmtM(accR.inversion_total)}.
+              </div>
             </div></div>`;
         }
         // ── Ranking completo por vendedor ──

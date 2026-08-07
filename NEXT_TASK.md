@@ -1,5 +1,19 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-07 - Cierre de Mes: tarjeta de Acciones Comerciales
+
+### HECHO
+- [x] **Titulo legible por accion**: sale de `categoria_tarjeta` (poblado en las 29 filas) y no de `observaciones`, que repetia "Accion nueva de julio". Debajo, linea de producto y marcas cuando el catalogo las nombra.
+- [x] **Columnas Ventas y Litros; se fue la plata por accion.** Venta = comprobante distinto, no lineas (`_nro` agregado a `_acc_preparar_from_df`).
+- [x] **Ordenadas de mayor a menor uso**, con barra de proporcion, y se muestran TODAS (antes se cortaba en 10).
+- [x] **El cierre mide USO y no ALCANCE**: reusa `_acc_mask_usa_accion`, el mismo filtro de la pantalla viva. Julio: clientes 861 -> 301, inversion $41,1M -> $9,1M.
+- [x] **Mayo (esquema viejo) degrada honesto**: "–" en vez de ceros inventados y nota al pie que aclara que ese cierre mide alcance.
+
+### PENDIENTE
+- [ ] **REVISAR CON EL NEGOCIO: el catalogo de julio no explica el 60% del descuento.** De los **$43,6M** de descuento del mes, **$26,2M se dieron al 17%** y **ningun tramo del catalogo de julio es 17%** (los tramos son 5/6/7/8/10/12/15/18/20/50). Puede ser una accion puntual fuera del catalogo, un acuerdo especial o una carga incompleta del catalogo. **No se toco nada para cuadrarlo**: la tarjeta mide lo que el catalogo define. Si esos $26,2M corresponden a una accion, hay que agregarla al catalogo del mes.
+- [ ] **Mayo sigue con el esquema viejo** (`reglas_acciones_mayo_2026_orbit.csv`): sin comprobante y midiendo alcance. Si hace falta comparar mayo contra junio/julio con el mismo criterio, hay que portar ese mes al esquema nuevo.
+- [ ] **Si un mes no tiene catalogo** en `01_INPUTS/ACCIONES COMERCIALES/<AAAA-MM>/`, `cerrar_mes.py` no lo versiona (es opcional) y la tarjeta queda con el artefacto congelado en formato viejo. Verificar la carpeta del mes antes de correr el cierre.
+
 ## Sesion 2026-08-06 - Cierre de Mes: plan de accion de la reunion mensual
 
 ### HECHO

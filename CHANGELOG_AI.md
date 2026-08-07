@@ -1,5 +1,21 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-07 - feat(cierre de mes): tarjeta de Acciones Comerciales legible y medida por uso
+
+Pedido de gerencia: la tarjeta no se entendía (en julio varias filas decían **"Accion nueva de julio"**, sin decir qué acción era ni qué línea de producto), no hace falta la plata por acción, y sí hacen falta ventas y litros hechos con cada acción, ordenadas de mayor a menor uso.
+
+- **El título sale de `categoria_tarjeta`, no de `observaciones`.** El catálogo ya trae el nombre pensado para mostrar ("Smirnoff Botella - 15% por volumen", "Caja mixta VDA - Los Árboles", "RTD (Latas)") y está poblado en **las 29 filas**, incluidas las altas nuevas del mes — que eran justamente las que salían sin nombre útil. `observaciones` es texto libre y repite "Accion nueva de julio" en varias filas.
+  - `lineas_comerciales` **no** puede ser el título: viene vacío en esas mismas altas nuevas (filas 022-029). Se usa como línea de producto cuando está.
+  - `productos_marcas` se muestra sólo si **nombra productos**. Ese campo mezcla tres cosas: marcas de verdad ("Dadá Tinto Verano"), listas de códigos ("30019; 30020; …") y cláusulas de la regla ("Todos menos importados premium…"). `_acc_producto_legible` descarta las dos últimas.
+- **Columnas nuevas: `Ventas` y `Litros`; se fue la plata por acción.** Venta = **comprobante distinto** en el que se aplicó la acción, no líneas: una factura con 6 artículos de la acción es **una** venta. Para eso se agregó `_nro` (NroComprobante) a `_acc_preparar_from_df`. Si la fuente no trae comprobante se informa `None` (la tarjeta muestra "–") en vez de un conteo de líneas disfrazado de ventas.
+- **Ordenadas de mayor a menor uso** (ventas, y a igualdad de ventas los litros), con barra de proporción. Se devuelven **todas** las acciones usadas, no las 10 primeras: el negocio también necesita ver la cola.
+- **El cierre pasó a medir USO, no ALCANCE — y esto mueve los números.** `_cierre_acciones_junio_schema` no aplicaba `_acc_mask_usa_accion`, el filtro que la pantalla viva de Acciones Comerciales sí usa: contaba como "usó la acción" a todo el que compró el producto del alcance, con descuento ajeno o sin descuento. Ahora reusa esa misma función — una sola definición de "usó la acción", no dos conviviendo.
+  - Julio-2026: **clientes 861 → 301** e **inversión $41,1M → $9,1M**. No es una pérdida de datos: es dejar de atribuirle a las acciones del catálogo descuentos que no son suyos.
+  - **Hallazgo que esto destapa**: de los **$43,6M** de descuento de julio, **$26,2M (60%) se dieron al 17%**, y **ningún tramo del catálogo de julio es 17%**. Es plata real, pero no la explican las acciones del mes. Queda anotado en `NEXT_TASK.md` para revisar con el negocio; **no se tocó nada** para "cuadrarlo".
+- **Mayo degrada honesto.** Usa el esquema viejo (`reglas_acciones_mayo_2026_orbit.csv`), que no trae comprobante ni mide uso: la tarjeta muestra **"–"** en ventas y litros totales en vez de ceros inventados, y la nota al pie dice explícitamente que ese cierre mide alcance y no uso.
+- **El `.bat` no necesitó cambios**: `tools/cerrar_mes.py` ya copia el catálogo del mes (`01_INPUTS/ACCIONES COMERCIALES/<AAAA-MM>/*.csv` → `acciones_<MMAAAA>.csv`) al cierre versionado, y la tarjeta se reconstruye de ahí en cada lectura. Si un mes no tiene catálogo en esa carpeta, queda el artefacto congelado y la tarjeta vuelve al formato viejo.
+- **Validación en el portal renderizado**: julio muestra **20 acciones** ordenadas por uso, encabezado con **582 ventas · 11.272 L · 301 clientes**, y cada fila con nombre real, línea, canal, tramos y sus métricas. Verificado también mayo (esquema viejo): ventas "–" y la nota correcta, sin ceros falsos.
+
 ## 2026-08-06 - feat(cierre de mes): plan de acción de la reunión mensual, con seguimiento del mes anterior
 
 Pedido de gerencia: en la reunión mensual, anotar para cada objetivo no alcanzado qué se va a hacer el mes siguiente; y que la reunión del mes siguiente arranque mostrando si esas acciones funcionaron.

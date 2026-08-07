@@ -5735,6 +5735,10 @@ def _acc_preparar_from_df(df):
     out["_linea"] = out["_cod"].map(cod2linea).astype(str).str.upper().str.strip()
     out["_art"]  = df.get("Articulo", "").astype(str).str.upper()
     out["_marca"] = df.get("Marca", "").astype(str).str.upper()
+    # Número de comprobante: permite contar VENTAS (facturas) y no líneas. Una venta con
+    # 6 artículos de la acción es UNA venta, no 6.
+    out["_nro"] = (df["NroComprobante"].fillna("").astype(str).str.strip()
+                   if "NroComprobante" in df.columns else pd.Series([""] * len(df), index=df.index))
     out["_clinom"] = (df["RazonSocial"].astype(str) if "RazonSocial" in df.columns
                       else df.get("Cliente", pd.Series([""] * len(df))).astype(str))
     out["_dir"] = df.get("Direccion", pd.Series([""] * len(df))).astype(str)
@@ -10116,6 +10120,74 @@ def _cierre_extras_versionado(files):
 _ACC_REGLAS_POR_MMAAAA = {"052026": "reglas_acciones_mayo_2026_orbit.csv"}
 
 
+_ACC_CANAL_LABEL = {
+    "AS": "Autoservicio",
+    "TRAD_KIOSCO_ON_PREMISE": "Trad · Kiosco · On Premise",
+    "TRAD": "Tradicional",
+    "TODOS": "Todos los canales",
+    "TODOS_ACTIVOS": "Todos los canales",
+    "ON_PREMISE": "On Premise",
+    "KIOSCO": "Kiosco",
+}
+def _acc_producto_legible(txt):
+    """`productos_marcas` sirve como detalle SÓLO si nombra productos.
+
+    En el catálogo ese campo trae tres cosas distintas: marcas de verdad
+    ('Dadá Tinto Verano'), listas de códigos ('30019; 30020; 30022; …') y cláusulas de
+    la regla ('Todos menos importados premium…', 'Según maestro productos activos').
+    Las dos últimas no le dicen nada a nadie en una tarjeta."""
+    s = str(txt or "").strip()
+    if not s or s.lower() in ("nan", "none"):
+        return ""
+    u = _acc_norm(s)
+    if u.startswith(("SEGUN MAESTRO", "TODOS MENOS", "RESTO DE SKU", "TODOS", "TODAS", "N/A")):
+        return ""
+    # Lista de códigos: sacando dígitos y separadores no queda casi nada.
+    if len(_re.sub(r"[\d;,\s\.\-]", "", s)) < max(3, len(s) * 0.2):
+        return ""
+    return s
+
+
+def _acc_titulo_accion(r):
+    """(titulo, linea, productos) legibles de una acción del catálogo.
+
+    `observaciones` NO sirve como título: en el drop de julio dice "Accion nueva de julio"
+    en varias filas y no identifica ni el producto ni la línea. El catálogo ya trae el
+    nombre pensado para mostrar en **`categoria_tarjeta`** ("Smirnoff Botella - 15% por
+    volumen", "Caja mixta VDA - Los Árboles", "RTD (Latas)") y está poblado en todas las
+    filas, incluidas las altas nuevas del mes — que son justamente las que salían sin
+    nombre útil. `lineas_comerciales` viene vacío en esas altas, así que no puede ser el
+    título, pero sirve de línea de producto cuando está."""
+    def _v(k):
+        s = str(r.get(k, "") or "").strip()
+        return "" if s.lower() in ("nan", "none") else s
+    titulo = _v("categoria_tarjeta") or _v("subcategoria") or _v("categoria") or _v("id_accion")
+    linea = _v("lineas_comerciales") or _v("categoria")
+    # `categoria` a veces es un bucket del catálogo, no una línea de producto.
+    if _acc_norm(linea) in ("ACCION_ESPECIAL", "ACCION ESPECIAL", "OTROS", "GENERAL"):
+        linea = ""
+    productos = _acc_producto_legible(r.get("productos_marcas"))
+    # No repetir lo mismo dos veces en la misma fila de la tarjeta.
+    if linea and _acc_norm(linea) == _acc_norm(titulo):
+        linea = ""
+    if productos and _acc_norm(productos) in (_acc_norm(titulo), _acc_norm(linea)):
+        productos = ""
+    return titulo[:70], linea[:60], productos[:70]
+
+
+def _acc_canal_label(r):
+    raw = str(r.get("canal_aplica", "") or "").strip().upper()
+    return _ACC_CANAL_LABEL.get(raw, raw.replace("_", " ").title() or "–")
+
+
+def _acc_desc_label(r):
+    """'6|7|8' -> '6/7/8%'. Sin tramos (bonificación / sin cargo) -> '–'."""
+    s = str(r.get("descuento_pct", "") or "").strip()
+    if not s or s.lower() in ("nan", "none"):
+        return "–"
+    return "/".join(x.strip() for x in s.split("|") if x.strip()) + "%"
+
+
 def _cierre_acciones_junio_schema(files, reglas):
     """Acciones del cierre con el catálogo en esquema NUEVO (ACCIONES COMERCIALES/<mes>/,
     p.ej. junio 2026: canal_aplica/segmento_cliente_aplica/tipo_regla/productos_marcas).
@@ -10165,38 +10237,64 @@ def _cierre_acciones_junio_schema(files, reglas):
         cur = _match(r)
         if cur.empty:
             continue
-        matched_idx |= set(cur.index)
-        cli_ids = set(cur["_cli"].dropna().astype(int))
+        # ── Regla "acción = uso, no alcance" ──
+        # `_match` da las líneas ALCANZADAS (el cliente y el producto entran en la regla).
+        # Usar la acción es otra cosa: que el % aplicado sea uno de los tramos de la acción.
+        # Se reusa `_acc_mask_usa_accion`, el mismo filtro de la pantalla viva de Acciones
+        # Comerciales, para no tener dos definiciones de "usó la acción" conviviendo.
+        # Antes el cierre medía litros y clientes sobre el ALCANCE: contaba producto
+        # comprado sin el descuento de la acción como si fuera acción usada.
+        usa = cur[_acc_mask_usa_accion(cur, _acc_tramos_pct(r))]
+        if usa.empty:
+            continue
+        matched_idx |= set(usa.index)
+        cli_ids = set(usa["_cli"].dropna().astype(int))
         cli_union |= cli_ids
-        cur_desc = cur[cur["_desc"] > 0]
         tipo_raw = str(r.get("tipo_regla", "")).upper()
         tipo = "Sin cargo" if ("SIN_CARGO" in tipo_raw or "BONIFIC" in tipo_raw) else "Descuento"
-        nombre = (str(r.get("observaciones", "")).strip().split(".")[0]
-                  or str(r.get("id_accion", "")).strip()
-                  or f"{r.get('canal_aplica', '')}|{r.get('categoria', '')}")
+        titulo, linea, productos = _acc_titulo_accion(r)
+        # Ventas = comprobantes distintos, no líneas: una factura con 6 artículos de la
+        # acción es UNA venta. Si la fuente no trae número de comprobante se informa None
+        # en vez de un conteo de líneas disfrazado de ventas.
+        nros = usa["_nro"].astype(str).str.strip() if "_nro" in usa.columns else pd.Series([], dtype=str)
+        nros = nros[nros != ""]
+        ventas = int(nros.nunique()) if len(nros) else None
         detalle.append({
-            "nombre":       nombre[:80],
+            "id":           str(r.get("id_accion", "")).strip(),
+            "nombre":       titulo,
+            "linea":        linea,
+            "productos":    productos,
             "tipo":         tipo,
-            "canal":        str(r.get("canal_aplica", "")).strip(),
+            "canal":        _acc_canal_label(r),
             "categoria":    str(r.get("categoria", "")).strip().upper(),
-            "descuento":    (str(r.get("descuento_pct", "")).strip() + "%") if str(r.get("descuento_pct", "")).strip() else "–",
-            "litros":       round(float(cur["_litros"].sum()), 1),
-            "inversion":    round(float(cur_desc["_desc"].sum()), 0),
-            "importe_neto": round(float(cur["_imp_neto"].sum()), 0),
+            "descuento":    _acc_desc_label(r),
+            "ventas":       ventas,
+            "litros":       round(float(usa["_litros"].sum()), 1),
             "clientes":     int(len(cli_ids)),
+            "inversion":    round(float(usa["_desc"].sum()), 0),
+            "importe_neto": round(float(usa["_imp_neto"].sum()), 0),
         })
     if not detalle:
         return None
-    detalle.sort(key=lambda a: -a["inversion"])
+    # De mayor uso a menor: primero las ventas hechas con la acción, y a igualdad de
+    # ventas, los litros movidos.
+    detalle.sort(key=lambda a: (-(a["ventas"] or 0), -a["litros"]))
     uni = v.loc[v.index.isin(matched_idx)]
     uni_desc = uni[uni["_desc"] > 0]
+    _nro_uni = uni["_nro"].astype(str).str.strip() if "_nro" in uni.columns else pd.Series([], dtype=str)
+    _nro_uni = _nro_uni[_nro_uni != ""]
     resumen = {
         "total_acciones":     len(detalle),
         "inversion_total":    round(float(uni_desc["_desc"].sum()), 0),
         "importe_neto":       round(float(uni["_imp_neto"].sum()), 0),
         "clientes_afectados": int(len(cli_union)),
+        "ventas_totales":     int(_nro_uni.nunique()) if len(_nro_uni) else None,
+        "litros_totales":     round(float(uni["_litros"].sum()), 1),
+        "medicion":           "uso: el % aplicado coincide con un tramo de la acción",
     }
-    return _to_native({"resumen": resumen, "detalle": detalle[:10],
+    # Se devuelven TODAS las acciones usadas, no las 10 primeras: la tarjeta ordena por
+    # uso y el negocio necesita ver también la cola (lo que casi no se usó).
+    return _to_native({"resumen": resumen, "detalle": detalle,
                        "fuente": files["ventas_mes"].name, "catalogo": f"acciones_{files.get('mmaaaa', '')}.csv"})
 
 
