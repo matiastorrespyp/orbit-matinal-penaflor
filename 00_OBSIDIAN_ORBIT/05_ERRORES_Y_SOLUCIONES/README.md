@@ -151,3 +151,18 @@ Registro de errores ya diagnosticados, con causa raíz y solución aplicada o pe
 **Estado:** ✅ Resuelto. El código `20305` se dio de alta el 2026-07-14 en `09_CONFIG/maestro_04D_productos.csv` (Vinos del año / Medio / Etiqueta Marron Suter). Pendiente: subir el export de productos **todos los meses** a `RAW_PRODUCTOS/`.
 
 > **Ojo — altas a mano:** el alta se hace en `09_CONFIG/maestro_04D_productos.csv` (es el que lee `server_orbit.py`). Hasta el 2026-07-14 `generar_datasets_acum.py` leía el **xlsx**, así que un alta en el CSV **no llegaba a los datasets**. Ya se unificó: ambos leen el CSV.
+
+---
+
+## ERR-015 — Todo lo que se carga desde el portal se borra en el próximo deploy (SQLite en filesystem efímero)
+
+**Detectado:** 2026-08-07
+**Síntoma:** Gerencia cargó el **plan de acción** de la reunión mensual y al volver a entrar **no estaba**. Sin error, sin aviso: la pantalla simplemente aparecía en blanco como si nunca se hubiera guardado.
+**Qué se descartó primero:**
+  1. **Guardar funciona.** Probado contra Render: `POST` guarda, `GET` relee el texto, texto vacío borra. El endpoint está bien.
+  2. **No era la feature nueva.** Estaban vacías **las tres** tablas de `orbit.db`: `cierre_plan_accion`, `plan_cob_nota` (mensajes de Plan Cobertura, en uso desde el 03/08) y `plan_semanal`. Que faltaran también las de Plan Cobertura descartó que fuera algo del plan de acción.
+**Causa raíz (verificada en el dashboard de Render):** el servicio **no tiene disco persistente** (*Disks* sólo ofrece "Add Disk") y en *Environment* hay **sólo 3 variables**, las tres de Google Sheets — **`ORBIT_DB_PATH` no está**, ni `ORBIT_PLAN_BACKUP_DIR`, ni `FLASK_DEBUG`, ni `PYTHON_VERSION`. **Las variables y el disco del `render.yaml` nunca se aplicaron**: el servicio se creó a mano, no desde el blueprint. Sin `ORBIT_DB_PATH`, `DB_PATH` cae al default `BASE/orbit.db`, que en Render es **filesystem efímero**; y como `orbit.db` está **gitignoreado**, el deploy no trae ninguna base → la app crea una **vacía** en cada arranque. Ese día hubo **4 deploys**.
+**Alcance:** se pierde **todo lo que se escribe desde el portal**: plan de acción, planificación semanal y mensajes por PDV de Plan Cobertura. **Las planificaciones de vendedores NO**, porque su fuente de verdad es **Google Sheets** y SQLite quedó como caché — ese workaround se hizo, justamente, por este mismo problema, en vez de arreglar la raíz.
+**Solución NO aplicada — decisión del usuario (2026-08-07):** el arreglo en Render serían dos cosas juntas (con la variable sola no alcanza, `/var/data` no existiría): (1) *Disks → Add Disk* `orbit-data` en `/var/data`, 1 GB, **$0.25/mes**; (2) *Environment* → `ORBIT_DB_PATH=/var/data/orbit.db` y `ORBIT_PLAN_BACKUP_DIR=/var/data/planificacion`. **No se hizo**: este mes se migra el guardado a un **VPS con Postgres** y después se conecta la **API de GescomWeb**, así que no se paga el disco por unas semanas.
+**Estado:** ⏳ **Abierto y asumido.** Hasta la migración, **no cargar datos importantes en el portal**.
+**Lección / diagnóstico rápido:** ante "guardé y no aparece", **no mirar primero el endpoint**: chequear si **otras** tablas de la misma base también están vacías. Si se vació todo, es la base, no la feature. Y en Render **no asumir que `render.yaml` está aplicado**: si el servicio no es Blueprint, ni `envVars`, ni `disk`, ni `startCommand` se aplican — es el mismo patrón de **ERR-009** (Start Command vacío). Regla para lo que viene: **una feature que sólo persiste en SQLite no es persistente en este deploy**; si el dato importa, necesita disco, Postgres o una fuente de verdad externa.

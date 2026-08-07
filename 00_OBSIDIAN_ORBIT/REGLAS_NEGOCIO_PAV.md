@@ -348,6 +348,29 @@ Cómo se detectó y cómo verificarlo: bajo el criterio Ramo la cartera **comple
 
 ---
 
+## Acciones Comerciales en el Cierre de Mes — se lee por USO (2026-08-07)
+
+La tarjeta del cierre mide **uso**, no alcance, igual que la pantalla viva: una línea cuenta sólo si el **% aplicado coincide con un tramo de la acción** (`_acc_mask_usa_accion`). Antes el cierre contaba a todo el que compraba el producto alcanzado, con descuento ajeno o sin descuento. Julio-2026 al corregirlo: **clientes 861 → 301**, **inversión $41,1M → $9,1M**.
+
+**Venta = comprobante distinto**, no líneas: una factura con 6 artículos de la acción es **una** venta. Sin `NroComprobante` en la fuente se informa "–", nunca un conteo de líneas disfrazado.
+
+**El título de una acción sale de `categoria_tarjeta`**, no de `observaciones`:
+
+| Campo | ¿Título? | Por qué |
+|---|---|---|
+| `categoria_tarjeta` | **Sí** | Poblado en las 29 filas, es el nombre de display del catálogo |
+| `lineas_comerciales` | No | Vacío justo en las altas nuevas del mes; sirve de línea de producto |
+| `productos_marcas` | Sólo si nombra productos | Mezcla marcas, listas de códigos y cláusulas de la regla |
+| `observaciones` | **No** | Texto libre; repetía "Accion nueva de julio" en varias filas |
+
+Ordenadas de **mayor a menor uso** (ventas, y a igualdad de ventas los litros). Se muestran todas, no las 10 primeras: la cola —lo que casi no se usó— también es información.
+
+> **Pendiente con el negocio:** en julio, **$26,2M de $43,6M de descuento (60%) se dieron al 17%** y **ningún tramo del catálogo de julio es 17%**. La tarjeta mide lo que el catálogo define; esa plata no la explica ninguna acción del mes.
+
+> Detalle en [[BITACORA_2026-08-07]].
+
+---
+
 ## Plan de acción de la reunión mensual (2026-08-06)
 
 En la reunión de cada mes se anota, para cada indicador que **no llegó a su objetivo**, qué se va a hacer el mes siguiente. La reunión del mes siguiente **arranca** con el resultado de esas acciones. Pantalla Cierre de Mes: tarjeta de seguimiento arriba de todo, tarjeta del plan nuevo abajo de todo.
