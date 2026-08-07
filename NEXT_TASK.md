@@ -1,5 +1,17 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-06 - Plan Cobertura: descarga Excel por tarjeta
+
+### HECHO
+- [x] **Boton `⬇ Excel` en las 5 listas** de Plan Cobertura, contra un endpoint unico `/api/gerencia/plan_cobertura/export?bloque=<id>`.
+- [x] **Facturacion abierta por comprobante** en los dos bloques de clientes dados de alta: hoja `Comprobantes` (una fila por factura) + hoja `Detalle` (una fila por linea, con su comprobante). Los otros tres bloques no tienen `cliente_id`, asi que bajan solo el listado.
+- [x] **`NroComprobante` incorporado a `_plan_cob_ventas`**, con recuperacion del numero desde el duplicado cuando la linea quedo de la fuente normalizada. Solo se toca la columna `_nro`: el payload de la pantalla se comparo contra produccion con **0 diferencias**.
+- [x] **Excel cuadrado con la pantalla**: 0 descuadres de importe y botellas en los 25 clientes con compras.
+
+### PENDIENTE
+- [ ] **`02_HISTORY/historial_ventas_cliente.csv` no guarda el numero de comprobante.** Por eso 2026-05 y 2026-06 salen como `(sin comprobante en la fuente)` — 54 de 329 lineas. Todo lo anterior (historial ERP) y todo lo del trimestre vivo si lo tienen. Si el negocio necesita esos dos meses abiertos por factura, hay que **agregar la columna al generador de ese CSV** y regenerarlo; el export lo toma solo, sin tocar codigo.
+- [ ] **El Excel baja la lista completa, no la filtrada por el buscador.** Nadie lo pidio, pero si al usarlo aparece la necesidad, el filtro ya vive en `pcFiltrar()` y habria que pasarle el texto al endpoint.
+
 ## Sesion 2026-08-06 - Semanal: KPI Litros
 
 ### HECHO

@@ -512,6 +512,12 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 .dd-note { font-size:11.5px; color:var(--text3); line-height:1.4; margin-top:-4px; }
 .dd-sub { font-family:var(--f-dis); font-weight:700; font-size:13px; color:var(--text2);
   border-top:1px solid var(--b); padding-top:14px; }
+/* Encabezado de lista con su boton de descarga a la derecha (Plan Cobertura). */
+.pc-subhd { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.pc-xls { font-size:10.5px; font-weight:700; letter-spacing:.3px; padding:5px 10px;
+  border-radius:999px; border:1px solid var(--bs); color:var(--text3);
+  white-space:nowrap; transition:all .14s; }
+.pc-xls:hover { border-color:var(--ok); color:var(--ok); background:var(--ok-s); }
 .dd-vlist { display:flex; flex-direction:column; gap:7px; margin-top:-6px; }
 .dd-vrow { display:flex; justify-content:space-between; align-items:center; gap:10px;
   background:var(--surf2); border:1px solid var(--b); border-radius:9px; padding:9px 12px; }
@@ -4783,6 +4789,20 @@ function pcFilaZona(c,extra){
   </tr>`;
 }
 
+/* Descarga del Excel de una lista. Las dos listas de clientes dados de alta traen
+   además la facturación abierta por comprobante; las otras tres no tienen código de
+   cliente, así que bajan sólo el listado (no hay factura que abrir). */
+const PC_XLS_CONFACT = ['capturados','altas_fuera'];
+function pcBtnXls(bloque){
+  const con = PC_XLS_CONFACT.includes(bloque);
+  const tip = con ? 'Excel: listado + comprobantes + detalle de cada venta'
+                  : 'Excel del listado (estos PDV no tienen código de cliente, no hay facturación que abrir)';
+  return `<button class="pc-xls" onclick="pcDescargarXls('${bloque}')" title="${tip}">⬇ Excel</button>`;
+}
+function pcDescargarXls(bloque){
+  window.location.href='/api/gerencia/plan_cobertura/export?bloque='+encodeURIComponent(bloque);
+}
+
 function pcRender(){
   const b=document.getElementById('pc-body'); if(!b||!PCOB) return;
   const d=PCOB, r=d.resumen||{}, pl=d.plan||{};
@@ -4832,7 +4852,9 @@ function pcRender(){
   </div></div>
 
   <div class="card"><div class="card-body">
-    <div class="dd-sub" style="border-top:none;padding-top:0;">Capturados · dados de alta y comprando (<span id="pccCap">${cap.length}</span>)</div>
+    <div class="dd-sub pc-subhd" style="border-top:none;padding-top:0;">
+      <span>Capturados · dados de alta y comprando (<span id="pccCap">${cap.length}</span>)</span>
+      ${pcBtnXls('capturados')}</div>
     <div class="dd-note">Tocá un cliente para ver los artículos que compró, sus recompras mes a mes y las ofertas que recibió. La activación es la fecha de su <b>primera compra</b>. El mensaje de la derecha se guarda por punto de venta.</div>
     <div class="dd-tblwrap"><table class="dd-tbl">
       <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vend.</th><th>Activación</th>
@@ -4840,7 +4862,9 @@ function pcRender(){
       <tbody id="pcbCap"></tbody>
     </table></div>
     ${sinCod.length?`
-      <div class="dd-sub">Atendidos sin código de cliente cargado (<span id="pccSin">${sinCod.length}</span>)</div>
+      <div class="dd-sub pc-subhd">
+        <span>Atendidos sin código de cliente cargado (<span id="pccSin">${sinCod.length}</span>)</span>
+        ${pcBtnXls('atendidos_sin_codigo')}</div>
       <div class="dd-note">El relevamiento dice que los atendemos, pero el padrón no tiene el código: hasta que se cargue no se les puede medir activación ni recompra.</div>
       <div class="dd-tblwrap"><table class="dd-tbl">
         <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vendedor de la zona</th><th>Observaciones</th><th>Mensaje</th></tr></thead>
@@ -4849,7 +4873,9 @@ function pcRender(){
   </div></div>
 
   <div class="card"><div class="card-body">
-    <div class="dd-sub" style="border-top:none;padding-top:0;">Altas fuera del listado (<span id="pccAfu">${afu.length}</span>)</div>
+    <div class="dd-sub pc-subhd" style="border-top:none;padding-top:0;">
+      <span>Altas fuera del listado (<span id="pccAfu">${afu.length}</span>)</span>
+      ${pcBtnXls('altas_fuera')}</div>
     <div class="dd-note">Clientes dados de alta por el plan que <b>no estaban</b> en el padrón relevado: los carga el negocio en la hoja <b>“altas fuera del listado”</b> del mismo Excel. Se miden igual que los capturados —tocá el cliente para ver su ficha— y suman al objetivo de ${obj} altas.</div>
     <div class="dd-tblwrap"><table class="dd-tbl">
       <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vend.</th><th>Activación</th>
@@ -4859,7 +4885,9 @@ function pcRender(){
   </div></div>
 
   <div class="card"><div class="card-body">
-    <div class="dd-sub" style="border-top:none;padding-top:0;">Clientes potenciales (<span id="pccPot">${pot.length}</span>)</div>
+    <div class="dd-sub pc-subhd" style="border-top:none;padding-top:0;">
+      <span>Clientes potenciales (<span id="pccPot">${pot.length}</span>)</span>
+      ${pcBtnXls('potenciales')}</div>
     <div class="dd-note">Relevados como potenciales: todavía no están dados de alta. El vendedor sale de quién atiende esa localidad según el maestro.</div>
     <div class="dd-tblwrap"><table class="dd-tbl">
       <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vendedor que correspondería</th><th>Observaciones</th><th>Mensaje</th></tr></thead>
@@ -4868,7 +4896,9 @@ function pcRender(){
   </div></div>
 
   <div class="card"><div class="card-body">
-    <div class="dd-sub" style="border-top:none;padding-top:0;">No los estamos atendiendo (<span id="pccNoat">${noat.length}</span>)</div>
+    <div class="dd-sub pc-subhd" style="border-top:none;padding-top:0;">
+      <span>No los estamos atendiendo (<span id="pccNoat">${noat.length}</span>)</span>
+      ${pcBtnXls('no_atendidos')}</div>
     <div class="dd-note">Relevados como no atendidos${r.sin_relevar?` (incluye ${r.sin_relevar} sin dato de relevamiento)`:''}, con el vendedor al que le correspondería la zona.</div>
     <div class="dd-tblwrap"><table class="dd-tbl">
       <thead><tr><th>Punto de venta</th><th>Localidad</th><th>Vendedor que correspondería</th><th>Relevamiento</th><th>Observaciones</th><th>Mensaje</th></tr></thead>

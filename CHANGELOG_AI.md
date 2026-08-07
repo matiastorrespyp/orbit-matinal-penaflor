@@ -1,5 +1,23 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-06 - feat(plan cobertura): descarga Excel por tarjeta, con la facturación abierta por comprobante
+
+Pedido de gerencia: un botón de descarga en cada tarjeta de Plan Cobertura con el detalle de la facturación de cada cliente, abierta por los comprobantes de venta.
+
+- **Un botón `⬇ Excel` por lista** (5 en total: Capturados, Atendidos sin código, Altas fuera del listado, Potenciales, No atendidos), en el encabezado de cada una. Endpoint único `GET /api/gerencia/plan_cobertura/export?bloque=<id>`, con `_PLAN_COB_BLOQUES` como mapa de bloques válidos (un bloque desconocido devuelve **400** con la lista de válidos, no un archivo vacío).
+- **Tres hojas donde hay facturación** (Capturados y Altas fuera):
+  - `Clientes` — la tarjeta tal cual se ve, más las medidas de la ficha (activación, meses, recompras, botellas, importe).
+  - `Comprobantes` — **una fila por factura**: fecha, número, líneas, botellas compradas, botellas sin cargo e importe neto. Es la vista que pidió el negocio.
+  - `Detalle` — una fila por línea de venta con su comprobante, código, artículo, marca, botellas, importe y % de descuento.
+  - Los otros tres bloques **no tienen `cliente_id`** (son PDV potenciales / no atendidos / sin código cargado): bajan sólo la hoja `Clientes`. No se les arma una hoja de facturación vacía que se leería como "no compraron".
+- **`NroComprobante` incorporado a `_plan_cob_ventas`.** Lo traen las 3 fuentes con formato ERP; `historial_ventas_cliente.csv` (el normalizado) **no lo tiene**.
+  - **El problema que había que resolver**: el trimestre vivo está en las dos fuentes, y como el normalizado va primero en `paths` gana el dedup — todas las facturas recientes, que son las que importan, se habrían perdido. Se recupera el número desde el duplicado que sí lo trae, **tocando únicamente la columna `_nro`**: no cambia qué fila queda, así que importes, descuentos y marcas de la pantalla quedan intactos.
+  - Resultado: **275 de 329 líneas (83%) con comprobante**. Las 54 sin número son **exactamente 2026-05 y 2026-06**, el tramo que sólo existe en el archivo normalizado; salen etiquetadas `(sin comprobante en la fuente)` en vez de en blanco, para que se lea como una limitación de la fuente y no como un dato faltante.
+- **Las líneas de importe 0 (sin cargo de los combos del plan) van al Excel marcadas** en la columna `Tipo`, y `Comprobantes` separa "Botellas compradas" de "Botellas sin cargo". Si se mezclaran, las botellas del Excel no cerrarían contra las de la tarjeta.
+- **La facturación se emite una vez por `cliente_id`**: el padrón repite algún PDV con el mismo código y, emitida por fila de la tarjeta, la misma factura se contaría dos veces.
+- **Validación**: los 5 Excel se generan (200 + MIME + `Content-Disposition` correctos, verificado por HTTP real, no sólo con el test client). **Cero descuadres** entre el Excel y las fichas de la pantalla: para los 25 clientes con compras, la suma de `Importe neto` / `Botellas` de las líneas `Compra` da exactamente el `importe` y las `botellas` de la tarjeta. `Detalle` y `Comprobantes` concilian entre sí (21.744.381,56 y 259 líneas en Capturados; 3.313.635,50 y 74 en Altas fuera).
+- **Regresión del payload**: `/api/gerencia/plan_cobertura` se comparó **contra producción** (Render, que corría el código anterior) — `resumen` idéntico y **0 diferencias** en activación, última compra, meses, recompras, botellas, importe y estado de todas las fichas.
+
 ## 2026-08-06 - feat(semanal): KPI Litros en el histórico y en la planificación
 
 Pedido de gerencia: un botón **Litros** al lado de Facturación en la pantalla Semanal, con la apertura de litros por semana y su % sobre el total del mes, más la fila de planificación de litros junto al resto de los indicadores.

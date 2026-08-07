@@ -8622,8 +8622,12 @@ def _plan_cob_ventas(ids):
         encs = ("utf-8-sig", "latin1", "utf-8") if norm_cols else ("latin1", "utf-8-sig", "utf-8")
         # Sólo las columnas que se usan: historial_ventas.csv son 129k filas x 59 columnas
         # y leerlo entero se llevaba casi todo el tiempo de la pantalla.
+        # NroComprobante lo traen las 3 fuentes con formato ERP; historial_ventas_cliente.csv
+        # (el normalizado) NO lo tiene. Se lee igual y las líneas que sólo existen ahí quedan
+        # sin comprobante — ver la recuperación por duplicado más abajo.
         cols_erp = ["Cliente", "FechaComprobante", "Codigo", "Articulo", "Marca",
-                    "CantBase", "ImporteNetoItem", "CodVendedor", "Descuento", "valorDescuento"]
+                    "CantBase", "ImporteNetoItem", "CodVendedor", "Descuento", "valorDescuento",
+                    "NroComprobante"]
         df = None
         for enc in encs:
             try:
@@ -8645,6 +8649,7 @@ def _plan_cob_ventas(ids):
                 continue
             d = df.rename(columns=ren)[list(ren.values())].copy()
             d["_cod"] = ""
+            d["_nro"] = ""          # esta fuente no trae el número de comprobante
             d["_f"] = pd.to_datetime(d["_f"], errors="coerce")
             for c in ("_cant", "_imp", "_pct"):
                 d[c] = pd.to_numeric(d[c], errors="coerce").fillna(0)
@@ -8662,6 +8667,9 @@ def _plan_cob_ventas(ids):
                 "_cant": df["CantBase"].apply(_parse_num_ar),
                 "_imp":  df["ImporteNetoItem"].apply(_parse_num_ar),
                 "_vend": df["CodVendedor"] if "CodVendedor" in df.columns else None,
+                "_nro":  (df["NroComprobante"].fillna("").astype(str)
+                          .str.replace(r"\.0$", "", regex=True).str.strip()
+                          if "NroComprobante" in df.columns else ""),
                 # "Descuento" viene como texto tipo "20,00%"
                 "_pct":  (df["Descuento"].astype(str).str.replace("%", "", regex=False).apply(_parse_num_ar)
                           if "Descuento" in df.columns else 0.0),
@@ -8684,7 +8692,22 @@ def _plan_cob_ventas(ids):
         out["_cli"] = out["_cli"].astype(int)
         out["_artn"] = out["_art"].map(_plan_cob_norm)
         out["_fd"] = out["_f"].dt.strftime("%Y-%m-%d")
-        out = out.drop_duplicates(subset=["_fd", "_cli", "_artn", "_cant", "_imp"])
+        if "_nro" not in out.columns:
+            out["_nro"] = ""
+        out["_nro"] = out["_nro"].fillna("").astype(str).str.strip()
+        # El trimestre vivo está en historial_ventas_cliente.csv (sin comprobante) Y en
+        # ventas_acumulada.csv (con comprobante). Como el normalizado va primero en `paths`,
+        # gana el dedup y esas líneas perderían el número. Se recupera del duplicado que sí
+        # lo trae, SIN cambiar qué fila queda: se toca únicamente la columna `_nro`, así el
+        # resto de la pantalla (importes, descuentos, marcas) queda exactamente igual.
+        _k = ["_fd", "_cli", "_artn", "_cant", "_imp"]
+        _con_nro = out[out["_nro"] != ""].drop_duplicates(subset=_k)[_k + ["_nro"]]
+        out = out.drop_duplicates(subset=_k)
+        _falta = out["_nro"] == ""
+        if _falta.any() and not _con_nro.empty:
+            _rec = out.loc[_falta, _k].merge(_con_nro.rename(columns={"_nro": "_nro_rec"}),
+                                             on=_k, how="left")
+            out.loc[_falta, "_nro"] = _rec["_nro_rec"].fillna("").values
         out["_mes"] = out["_f"].dt.strftime("%Y-%m")
     _PLAN_COB_VENTAS_CACHE.clear()
     _PLAN_COB_VENTAS_CACHE[key] = out
@@ -9006,6 +9029,168 @@ def gerencia_plan_cobertura():
     if data is None:
         return jsonify({"error": "Plan Cobertura no disponible: falta el padrón en 01_INPUTS/Plan cobertura/*.xlsx."}), 404
     return jsonify(_to_native({"generado_en": _now_ar(), **data}))
+
+
+# ── Export a Excel de cada tarjeta de Plan Cobertura ──────────────────────────
+# Una tarjeta = una clave de acá. `factura` dice si ese bloque tiene clientes con
+# código: sólo esos pueden abrirse por comprobante. Potenciales, no atendidos y
+# atendidos-sin-código NO tienen `cliente_id`, así que su Excel es la lista sola —
+# no se les inventa una hoja de facturación vacía.
+_PLAN_COB_BLOQUES = {
+    "capturados":           {"label": "Capturados",                 "factura": True},
+    "altas_fuera":          {"label": "Altas fuera del listado",    "factura": True},
+    "atendidos_sin_codigo": {"label": "Atendidos sin codigo",       "factura": False},
+    "potenciales":          {"label": "Clientes potenciales",       "factura": False},
+    "no_atendidos":         {"label": "No los estamos atendiendo",  "factura": False},
+}
+
+
+def _plan_cob_hoja_clientes(bloque, filas):
+    """DataFrame de la hoja 'Clientes': las columnas que se ven en la tarjeta."""
+    if bloque in ("capturados", "altas_fuera"):
+        cols = [
+            ("nombre", "Punto de venta"), ("cliente_id", "Cliente ID"),
+            ("razon_social", "Razon social"), ("localidad", "Localidad"),
+            ("partido", "Partido"), ("vendedor_id", "Vend."),
+            ("vendedor_nombre", "Vendedor"), ("subcanal", "Subcanal"),
+            ("segmento_plan", "Segmento plan"), ("activacion", "Activacion"),
+            ("meses_con_compra", "Meses con compra"), ("recompras", "Recompras"),
+            ("ultima_compra", "Ultima compra"), ("botellas", "Botellas"),
+            ("importe", "Importe neto"), ("estado_compra", "Estado"),
+            ("asignacion_detalle", "Asignacion"), ("observaciones", "Observaciones"),
+        ]
+    else:
+        cols = [
+            ("nombre", "Punto de venta"), ("pdv_id", "PDV ID"),
+            ("localidad", "Localidad"), ("partido", "Partido"),
+            ("vendedor_id", "Vend."), ("vendedor_nombre", "Vendedor que corresponderia"),
+            ("asignacion_detalle", "Como se asigno"), ("segmento_plan", "Segmento plan"),
+            ("observaciones", "Observaciones"),
+        ]
+        if bloque == "no_atendidos":
+            cols.insert(-1, ("relevado", "Relevado"))
+        if bloque == "atendidos_sin_codigo":
+            cols.insert(-1, ("atiende", "Atiende"))
+    df = pd.DataFrame([{et: f.get(k, "") for k, et in cols} for f in filas],
+                      columns=[et for _, et in cols])
+    if "Relevado" in df.columns:
+        df["Relevado"] = df["Relevado"].map(lambda v: "Relevado" if v else "Sin relevar")
+    if "Estado" in df.columns:
+        df["Estado"] = df["Estado"].map({"con_recompra": "Con recompra",
+                                         "solo_activacion": "Solo activacion",
+                                         "sin_compras": "Sin compras"}).fillna(df["Estado"])
+    return df
+
+
+def _plan_cob_hojas_factura(filas):
+    """(detalle, comprobantes) con la facturación de los clientes del bloque.
+
+    `detalle` = una fila por línea de venta, con su número de comprobante.
+    `comprobantes` = la misma venta agrupada por comprobante, que es como la lee el
+    negocio (una factura, sus artículos y su total).
+
+    Un mismo cliente puede aparecer en dos filas de la tarjeta (el padrón repite algún
+    PDV con el mismo código): la facturación se emite UNA vez por `cliente_id`, si no
+    la factura se contaría dos veces."""
+    vistos, nombre_de = [], {}
+    for f in filas:
+        cid = f.get("cliente_id")
+        if cid is None or cid in nombre_de:
+            continue
+        nombre_de[cid] = f.get("nombre") or f.get("razon_social") or ""
+        vistos.append(int(cid))
+    if not vistos:
+        return pd.DataFrame(), pd.DataFrame()
+    v = _plan_cob_ventas(vistos)
+    if v is None or v.empty:
+        return pd.DataFrame(), pd.DataFrame()
+    v = v[v["_cli"].isin(vistos)].copy()
+    # Las líneas de importe 0 son los sin cargo de los combos del plan: van al Excel
+    # marcadas, no se esconden ni se mezclan con lo facturado.
+    v["_tipo"] = v["_imp"].gt(0).map({True: "Compra", False: "Sin cargo"})
+    v["_nrox"] = v["_nro"].replace("", "(sin comprobante en la fuente)")
+    det = pd.DataFrame({
+        "Cliente ID":   v["_cli"].astype(int),
+        "Punto de venta": v["_cli"].map(nombre_de).fillna(""),
+        "Fecha":        v["_fd"],
+        "Comprobante":  v["_nrox"],
+        "Codigo":       v["_cod"],
+        "Articulo":     v["_art"],
+        "Marca":        v["_marca"],
+        "Tipo":         v["_tipo"],
+        "Botellas":     v["_cant"].astype(float),
+        "Importe neto": v["_imp"].astype(float).round(2),
+        "Descuento %":  v["_pct"].astype(float).round(1),
+    }).sort_values(["Cliente ID", "Fecha", "Comprobante"], ascending=[True, False, True])
+
+    g = v.groupby(["_cli", "_fd", "_nrox"], as_index=False).agg(
+        lineas=("_art", "size"),
+        botellas_compra=("_cant", lambda s: float(s[v.loc[s.index, "_imp"] > 0].sum())),
+        botellas_sc=("_cant", lambda s: float(s[v.loc[s.index, "_imp"] <= 0].sum())),
+        importe=("_imp", "sum"))
+    comp = pd.DataFrame({
+        "Cliente ID":       g["_cli"].astype(int),
+        "Punto de venta":   g["_cli"].map(nombre_de).fillna(""),
+        "Fecha":            g["_fd"],
+        "Comprobante":      g["_nrox"],
+        "Lineas":           g["lineas"].astype(int),
+        "Botellas compradas": g["botellas_compra"].round(2),
+        "Botellas sin cargo": g["botellas_sc"].round(2),
+        "Importe neto":     g["importe"].astype(float).round(2),
+    }).sort_values(["Cliente ID", "Fecha", "Comprobante"], ascending=[True, False, True])
+    return det, comp
+
+
+def _plan_cob_escribir_xlsx(hojas):
+    """Escribe {nombre_hoja: DataFrame} a un xlsx en memoria, con el ancho de columna
+    ajustado al contenido (mismo criterio que el export de Stock sin Venta)."""
+    from openpyxl.utils import get_column_letter
+    buf = BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as xl:
+        for nombre, df in hojas.items():
+            df.to_excel(xl, index=False, sheet_name=nombre[:31])
+            ws = xl.sheets[nombre[:31]]
+            ws.freeze_panes = "A2"
+            for i, col in enumerate(df.columns, start=1):
+                ancho = len(str(col))
+                if len(df):
+                    ancho = max(ancho, int(df.iloc[:, i - 1].astype(str).map(len).max()))
+                ws.column_dimensions[get_column_letter(i)].width = min(max(ancho + 2, 10), 52)
+    buf.seek(0)
+    return buf
+
+
+@app.route("/api/gerencia/plan_cobertura/export")
+def gerencia_plan_cobertura_export():
+    """Descarga Excel de UNA tarjeta de Plan Cobertura (?bloque=capturados|altas_fuera|
+    potenciales|no_atendidos|atendidos_sin_codigo).
+
+    Hoja 'Clientes' = la tarjeta tal cual se ve. Para los bloques con clientes dados de
+    alta se agregan 'Comprobantes' (la venta agrupada por factura) y 'Detalle' (una fila
+    por línea de venta, con su comprobante)."""
+    bloque = (request.args.get("bloque") or "capturados").strip()
+    meta = _PLAN_COB_BLOQUES.get(bloque)
+    if meta is None:
+        return jsonify({"error": f"bloque desconocido: {bloque}",
+                        "validos": list(_PLAN_COB_BLOQUES)}), 400
+    data = _plan_cobertura()
+    if data is None:
+        return jsonify({"error": "Plan Cobertura no disponible: falta el padrón en 01_INPUTS/Plan cobertura/*.xlsx."}), 404
+
+    filas = data.get(bloque) or []
+    hojas = {"Clientes": _plan_cob_hoja_clientes(bloque, filas)}
+    if meta["factura"]:
+        det, comp = _plan_cob_hojas_factura(filas)
+        if not comp.empty:
+            hojas["Comprobantes"] = comp
+        if not det.empty:
+            hojas["Detalle"] = det
+    buf = _plan_cob_escribir_xlsx(hojas)
+    slug = meta["label"].lower().replace(" ", "_")
+    fecha = datetime.now(_ARG_TZ).strftime("%Y-%m-%d")
+    return send_file(buf, as_attachment=True,
+                     download_name=f"plan_cobertura_{slug}_{fecha}.xlsx",
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 def _plan_cob_notas_map():
