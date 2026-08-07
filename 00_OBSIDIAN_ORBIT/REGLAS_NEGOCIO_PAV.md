@@ -348,6 +348,43 @@ Cómo se detectó y cómo verificarlo: bajo el criterio Ramo la cartera **comple
 
 ---
 
+## Plan de acción de la reunión mensual (2026-08-06)
+
+En la reunión de cada mes se anota, para cada indicador que **no llegó a su objetivo**, qué se va a hacer el mes siguiente. La reunión del mes siguiente **arranca** con el resultado de esas acciones. Pantalla Cierre de Mes: tarjeta de seguimiento arriba de todo, tarjeta del plan nuevo abajo de todo.
+
+### Reglas
+
+**1. "Logrado" se MIDE, no se declara.** El estado sale de volver a medir el mismo indicador en el cierre siguiente (`pct >= 100`). Nadie tilda una casilla: la acción se escribe en la reunión, el resultado lo pone el dato.
+
+**2. El delta va SIEMPRE, y aparte del estado.** `Sell Out · VERMOUTH` pasó de 0% a 51,7%: sigue **no logrado**, pero mostrar sólo eso escondería que se movió 51,7 puntos.
+
+> El estado responde **"¿llegamos?"** y el delta **"¿mejoramos?"**. Son dos preguntas distintas y la reunión necesita las dos. Con una sola cifra, esa conversación no se puede tener.
+
+**3. `sin_dato` ≠ `no_logrado`.** Si el indicador ya no existe en el cierre nuevo (categoría que se dejó de medir, vendedor que salió), el estado es `sin_dato`. **No poder medir no es lo mismo que fallar.**
+
+**4. El periodo anterior es el último cierre CON plan guardado**, no "mes − 1" a secas: si un mes no tuvo reunión, el seguimiento muestra el último plan que sí existe en vez de un hueco.
+
+### Qué indicadores entran
+
+Sólo los que **tienen objetivo** en el cierre — 4 familias, 26 indicadores en julio-2026:
+
+| Familia | Objetivo desde | Id |
+|---|---|---|
+| Facturación empresa | `objetivos_avance.empresa` | `empresa:facturacion` |
+| Facturación por vendedor | `objetivos_avance.vendedores[]` | `vendedor:<código>` |
+| 11 Titulares por marca | `once_titulares.marcas[]` | `11t:<slug>` |
+| Sell Out por categoría | `sellout.categorias[]` | `sellout:<slug>` |
+
+**CCC, Innovaciones, Planes AS y Acciones NO traen objetivo en el cierre y por eso quedan afuera.** No se les inventa uno: un plan de acción contra un objetivo inventado no se puede evaluar después. Para sumar CCC hay que meter `objccc.xlsx` en el payload del cierre versionado.
+
+No logrados por mes: **julio 11 · junio 15 · mayo 18** (de 26).
+
+> El **id es un slug ASCII** porque es la clave que une el plan de un mes con la medición del siguiente: no puede depender de acentos ni del encoding del ERP (`VINOS DEL AÑO` → `sellout:vinos_del_ano`). Y la **foto del indicador se guarda con la acción y se toma del cierre, nunca del navegador**.
+
+> Detalle e implementación en [[BITACORA_2026-08-06b]].
+
+---
+
 ## Semanal — apertura del mes en 4 semanas
 
 Semana = bloque de días del mes: **S1 1-7 · S2 8-14 · S3 15-21 · S4 22-fin**. Siempre 4, así los meses se comparan entre sí sin ajustes.
