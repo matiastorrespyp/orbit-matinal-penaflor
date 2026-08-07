@@ -2660,6 +2660,13 @@ def gerencia_ccc_empresa():
 #     Siempre 4 semanas → los meses se comparan entre sí sin ajustes.
 #   · Facturación = suma de ImporteNetoItem de la semana (medida FACTURADO, por
 #     FechaComprobante). El % de cada semana suma 100% del mes.
+#   · Litros = suma de litros de la semana con la cascada única `_litros_por_linea`
+#     (maestro 04D → PesoKg → nombre del artículo). Mismo criterio que facturación:
+#     el % de cada semana es sobre el total de litros de ESE mes y suma 100%.
+#     Se mide sobre la venta TOTAL DE LA EMPRESA (ruta + V1/V20 Depósito), no sólo ruta
+#     (decisión del usuario 2026-08-06: la planificación semanal es sobre toda la venta
+#     de la semana). Coincide con el universo de su objetivo, que es el TOTAL de la
+#     tarjeta de Sell Out. Ver `_SEMANAL_KPIS["universo"]`.
 #   · CCC = aporte INCREMENTAL: cada cliente cuenta en la semana en que compró por
 #     PRIMERA VEZ en el mes. Las 4 semanas suman 100% del CCC del mes (si se contara
 #     el CCC bruto semanal, un cliente que compra 2 semanas contaría 2 veces y el
@@ -2679,19 +2686,37 @@ def gerencia_ccc_empresa():
 _SEMANAL_DESDE = "2025-07"
 _SEMANAL_MESES_ES = {1:"Ene",2:"Feb",3:"Mar",4:"Abr",5:"May",6:"Jun",
                      7:"Jul",8:"Ago",9:"Sep",10:"Oct",11:"Nov",12:"Dic"}
+# `universo` = contra qué se mide cada KPI, y tiene que ser el mismo universo que su
+# objetivo (si no, el avance es falso):
+#   · "ruta"    → los 7 vendedores de ruta, sin V1/V20 Depósito. Facturación se mide así
+#     porque su objetivo es la suma de ValorObjetivo de la ruta (resultado.xlsx), y los
+#     CCC porque objccc.xlsx se mide sin Depósito en todo el portal (`ccc_empresa`).
+#   · "empresa" → TODA la venta de la distribuidora: ruta + V1/V20 Depósito, sin las bajas
+#     V2/V5. Litros va acá (decisión del usuario 2026-08-06: la planificación semanal es
+#     sobre toda la venta), y es además el universo de su objetivo, que es el TOTAL de la
+#     tarjeta de Sell Out — que agrupa ruta + Depósito.
 _SEMANAL_KPIS = [
-    {"id":"facturacion",      "label":"Facturación",       "tipo":"moneda"},
-    {"id":"ccc_tradicional",  "label":"CCC Tradicionales",  "tipo":"clientes"},
-    {"id":"ccc_autoservicio", "label":"CCC Autoservicios",  "tipo":"clientes"},
-    {"id":"ccc_onpremise",    "label":"CCC On Premise",     "tipo":"clientes"},
+    {"id":"facturacion",      "label":"Facturación",       "tipo":"moneda",   "universo":"ruta"},
+    {"id":"litros",           "label":"Litros",            "tipo":"litros",   "universo":"empresa"},
+    {"id":"ccc_tradicional",  "label":"CCC Tradicionales",  "tipo":"clientes", "universo":"ruta"},
+    {"id":"ccc_autoservicio", "label":"CCC Autoservicios",  "tipo":"clientes", "universo":"ruta"},
+    {"id":"ccc_onpremise",    "label":"CCC On Premise",     "tipo":"clientes", "universo":"ruta"},
 ]
 _SEMANAL_KPI_IDS = [k["id"] for k in _SEMANAL_KPIS]
+_SEMANAL_UNIVERSO = {k["id"]: k["universo"] for k in _SEMANAL_KPIS}
+# KPIs que son una suma sobre una columna numérica de la línea de venta (no CCC).
+_SEMANAL_SUMAS = {"facturacion": "imp", "litros": "litros"}
 _SEMANAL_CANALES = {
     "ccc_tradicional":  ("Tradicionales",),
     "ccc_autoservicio": ("Autoservicios",),
     "ccc_onpremise":    ("On Premise", "Vinotecas", "On Premise Noche"),
 }
-_SEMANAL_COLS = ["Cliente", "FechaComprobante", "CodVendedor", "ImporteNetoItem", "Ramo", "Subramo"]
+# Codigo/CantBase/PesoKg/Articulo son las 4 entradas de la cascada de litros
+# (`_litros_por_linea`). Están en las 3 fuentes (ventas.csv, cierre versionado,
+# historial); si alguna dejara de traerlas, `_semanal_leer` cae a 0 L sin romper
+# el resto de la pantalla.
+_SEMANAL_COLS = ["Cliente", "FechaComprobante", "CodVendedor", "ImporteNetoItem", "Ramo", "Subramo",
+                 "Codigo", "CantBase", "PesoKg", "Articulo"]
 
 
 def _semanal_num(serie):
@@ -2733,11 +2758,18 @@ def _leer_ventas_min(path, cols):
     except OSError:
         return pd.DataFrame()
     sep = ";" if cab.count(";") >= cab.count(",") else ","
+    # `usecols` con una columna que no existe aborta la lectura ENTERA. Se intersecta
+    # contra el encabezado real para que una columna que falte sólo se pierda a sí misma
+    # (el que llama decide si es requerida u opcional).
+    presentes = {c.strip().strip('"').lstrip("﻿") for c in cab.strip().split(sep)}
+    pedidas = [c for c in cols if c in presentes]
+    if not pedidas:
+        return pd.DataFrame()
     df = None
     for enc in ("utf-8-sig", "latin-1", "windows-1252"):
         try:
             df = pd.read_csv(path, sep=sep, encoding=enc, dtype=str, quotechar='"',
-                             usecols=cols, low_memory=False)
+                             usecols=pedidas, low_memory=False)
             break
         except (UnicodeDecodeError, ValueError):
             continue
@@ -2749,37 +2781,63 @@ def _leer_ventas_min(path, cols):
 
 def _semanal_leer(path):
     """Lee una fuente de ventas (cualquiera de las 3) y devuelve el DataFrame mínimo
-    normalizado: cliente, fecha, imp, canal, sem, periodo. Ya filtrado a neto>0 y sin
-    vendedores excluidos."""
+    normalizado: cliente, fecha, imp, litros, canal, sem, periodo, es_ruta. Ya filtrado a
+    neto>0 y sin las bajas V2/V5.
+
+    Se conservan las filas del Depósito (V1/V20) marcadas con `es_ruta=False` en vez de
+    descartarlas: los KPI de universo "ruta" las filtran en `_semanal_agg` y los de
+    universo "empresa" las suman. Así los dos universos salen de una sola lectura, sin
+    parsear el historial dos veces ni duplicar el criterio de exclusión."""
     df = _leer_ventas_min(path, _SEMANAL_COLS)
-    if df.empty:
+    req = ["Cliente", "FechaComprobante", "CodVendedor", "ImporteNetoItem", "Ramo", "Subramo"]
+    if df.empty or any(c not in df.columns for c in req):
         return pd.DataFrame()
     df["imp"] = _semanal_num(df["ImporteNetoItem"])
     df["cv"]  = pd.to_numeric(df["CodVendedor"], errors="coerce")
     df["fec"] = _semanal_fechas(df["FechaComprobante"])
-    df = df[(~df["cv"].isin(_VENDEDORES_EXCLUIDOS)) & (df["imp"] > 0)]
+    # Las bajas quedan fuera de los dos universos; el Depósito sólo fuera de "ruta".
+    # Listas tomadas de motor_11t, que es la implementación única de la regla (CLAUDE.md).
+    df = df[(~df["cv"].isin(motor_11t.VENDEDORES_BAJA)) & (df["imp"] > 0)]
     df = df.dropna(subset=["fec", "Cliente"])
     if df.empty:
         return pd.DataFrame()
     df = df.copy()
+    # Litros con la cascada única del proyecto (04D → PesoKg → nombre del artículo).
+    # Se calcula DESPUÉS de filtrar para no pagar el mapeo sobre las líneas descartadas.
+    if {"Codigo", "CantBase"} <= set(df.columns):
+        df["litros"] = pd.to_numeric(_litros_por_linea(df), errors="coerce").fillna(0.0)
+    else:
+        df["litros"] = 0.0
+    df["es_ruta"] = ~df["cv"].isin(motor_11t.VENDEDORES_DEPOSITO)
     df["canal"]   = _canal_ccc_empresa(df)
     df["sem"]     = (((df["fec"].dt.day - 1) // 7) + 1).clip(upper=4)
     df["periodo"] = df["fec"].dt.strftime("%Y-%m")
-    return df[["Cliente", "fec", "imp", "canal", "sem", "periodo"]]
+    return df[["Cliente", "fec", "imp", "litros", "canal", "sem", "periodo", "es_ruta"]]
 
 
 def _semanal_agg(df):
-    """{kpi: {total, valores[4], pcts[4]}} para un mes ya filtrado."""
+    """{kpi: {total, valores[4], pcts[4]}} para un mes ya filtrado.
+
+    Cada KPI se calcula sobre el universo que le corresponde (`_SEMANAL_UNIVERSO`):
+    "empresa" usa el DataFrame entero (ruta + Depósito) y "ruta" descarta el Depósito."""
+    empresa = df
+    ruta = df[df["es_ruta"]] if "es_ruta" in df.columns else df
+    base = lambda kpi: empresa if _SEMANAL_UNIVERSO.get(kpi) == "empresa" else ruta
     out = {}
-    tot_f = float(df["imp"].sum())
-    val_f = [float(df.loc[df["sem"] == s, "imp"].sum()) for s in (1, 2, 3, 4)]
-    out["facturacion"] = {
-        "total":   round(tot_f, 2),
-        "valores": [round(v, 2) for v in val_f],
-        "pcts":    [round(v / tot_f * 100, 1) if tot_f else 0.0 for v in val_f],
-    }
+    # Facturación y litros: misma mecánica (suma de la columna por semana, % sobre el
+    # total del mes). Cambian la columna que se suma y el universo.
+    for kpi, col in _SEMANAL_SUMAS.items():
+        d = base(kpi)
+        tot = float(d[col].sum())
+        val = [float(d.loc[d["sem"] == s, col].sum()) for s in (1, 2, 3, 4)]
+        out[kpi] = {
+            "total":   round(tot, 2),
+            "valores": [round(v, 2) for v in val],
+            "pcts":    [round(v / tot * 100, 1) if tot else 0.0 for v in val],
+        }
     for kpi, canales in _SEMANAL_CANALES.items():
-        g = df[df["canal"].isin(canales)]
+        d = base(kpi)
+        g = d[d["canal"].isin(canales)]
         if g.empty:
             out[kpi] = {"total": 0, "valores": [0, 0, 0, 0], "pcts": [0.0] * 4}
             continue
@@ -2918,7 +2976,17 @@ def _semanal_actual():
 def _semanal_objetivos():
     """Objetivo del mes por KPI: CCC de objccc.xlsx (mismos canales que CCC empresa)
     y facturación de resultado.xlsx hoja Avance (suma de ValorObjetivo de la ruta).
-    Sin fuente devuelve None — nunca 0, que se leería como 'objetivo cero'."""
+    Sin fuente devuelve None — nunca 0, que se leería como 'objetivo cero'.
+
+    Litros = el MISMO objetivo que la fila TOTAL de la tarjeta de Sell Out del dashboard
+    (decisión del usuario 2026-08-06: un solo objetivo de litros para todo el portal).
+    Se reusa `_cargar_objetivos_sellout()`, que es la fuente de esa tarjeta, y se suma por
+    categoría igual que el TOTAL del front (`sellData.reduce((a,c)=>a+(c.objetivo||0),0)`),
+    así los dos números se mueven juntos cuando se actualiza OBJSELLOUT.xlsx.
+
+    Ese objetivo es de EMPRESA (el sell out agrupa ruta + Depósito) y por eso el KPI de
+    litros se mide con universo "empresa": numerador y denominador cuentan lo mismo.
+    Facturación y CCC siguen siendo de RUTA porque sus objetivos también lo son."""
     obj = {k: None for k in _SEMANAL_KPI_IDS}
     ccc = _objetivos_ccc_empresa()
     if ccc:
@@ -2939,6 +3007,14 @@ def _semanal_objetivos():
             obj["facturacion"] = round(tot, 2) or None
         except Exception as e:
             print(f"[AVISO] semanal objetivos resultado.xlsx: {e}")
+    try:
+        # Suma por categoría, idéntica al TOTAL de la tarjeta de Sell Out. `total` puede
+        # venir en None (categoría sin objetivo cargado): se saltea, no se cuenta como 0.
+        so = _cargar_objetivos_sellout()
+        tot_l = sum(v.get("total") or 0 for v in so.values())
+        obj["litros"] = float(tot_l) or None
+    except Exception as e:
+        print(f"[AVISO] semanal objetivo litros (OBJSELLOUT.xlsx): {e}")
     return obj
 
 
@@ -2996,7 +3072,9 @@ def gerencia_semanal():
                    "(meses cerrados) · 01_INPUTS/ventas.csv (mes en curso)"),
         "definicion_semana": "S1 1-7 · S2 8-14 · S3 15-21 · S4 22-fin",
         "definicion_ccc": "aporte incremental: el cliente cuenta en la semana de su primera compra del mes",
-        "excluidos": "V1 · V2 · V5 · V20 Depósito",
+        "excluidos": "V2 · V5 (bajas)",
+        "definicion_universo": ("Litros mide la venta total de la empresa (ruta + V1/V20 Depósito); "
+                                "facturación y CCC miden sólo ruta, igual que sus objetivos"),
         "kpis": _SEMANAL_KPIS,
         "historico": hist["meses"],
         "promedio": hist["promedio"],

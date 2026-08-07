@@ -1,5 +1,21 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-06 - Semanal: KPI Litros
+
+### HECHO
+- [x] **Boton "Litros"** al lado de Facturacion en la pantalla Semanal de gerencia: litros por semana y **% sobre el total de litros de ese mes** (misma mecanica que facturacion; los 4 % suman 100).
+- [x] **Fila de planificacion de litros** en la tarjeta de planificacion semanal, igual que el resto. El % se guarda y se relee (`plan_semanal`), y "Usar promedio historico" y "Borrar semana" ya lo toman porque iteran `SEM.kpis`.
+- [x] **Litros con la cascada unica** `_litros_por_linea` (04D → PesoKg → nombre del articulo). Junio-2026: **45.418,94 L**, validado con un recalculo independiente contra el CSV crudo.
+- [x] **`_leer_ventas_min` tolerante a columnas faltantes**: antes una sola columna ausente en `usecols` dejaba la pantalla Semanal entera en blanco, facturacion incluida.
+- [x] **Objetivo de litros = el mismo que el TOTAL de la tarjeta de Sell Out** (`OBJSELLOUT.xlsx`, hoy **60.597 L**). Se reusa `_cargar_objetivos_sellout()`, la misma fuente de esa tarjeta: **un solo objetivo de litros en todo el portal**, sin copia que se pueda desfasar.
+- [x] **Litros mide la venta TOTAL DE LA EMPRESA** (ruta + V1/V20 Deposito), no solo ruta: la planificacion semanal es sobre toda la venta. Queda alineado con su objetivo, que tambien es de empresa. Julio: **50.047 L vs 60.597 L = 82,6%**, el mismo numero que la tarjeta de Sell Out. **Facturacion y CCC siguen midiendo ruta** (verificado que no se movieron) porque sus objetivos son de ruta.
+- [x] **`universo` como campo por KPI** (`_SEMANAL_UNIVERSO` + `es_ruta` en el detalle), no un filtro global. Listas de exclusion tomadas de `motor_11t.VENDEDORES_BAJA` / `VENDEDORES_DEPOSITO`, sin duplicar la regla.
+
+### PENDIENTE
+- [ ] **Actualizar `OBJSELLOUT.xlsx` con el objetivo del mes.** El usuario avisó (2026-08-06) que **agosto todavia no esta cargado**: la pantalla Semanal esta mostrando el objetivo del mes anterior, igual que la tarjeta de Sell Out. Al actualizar el xlsx **las dos pantallas se mueven solas**, no hay nada que tocar en el codigo.
+- [ ] **Validar la pantalla en Render** despues del deploy: el historico en frio tarda **~4,9 s** (13 meses, `historial_ventas.csv` de 63 MB con 4 columnas mas que antes). Es una sola vez por proceso y la carga es lazy, pero conviene medirlo con el CPU de Render, no solo en local.
+- [ ] **Los 8 SKU sin litros** de junio (de 5.707 lineas) no dan litros por ninguna de las tres vias. Es ruido despreciable, pero si crece hay que completarlos en el maestro 04D (ver "Maestro 04D completado").
+
 ## Sesion 2026-08-05 - 11 Titulares: motor unico, padron unico y regla definitiva de V20
 
 Dos commits encadenados: **`5a2f826`** (motor 11T + padron) y el siguiente, que cierra la regla de V20 y salda la documentacion que `5a2f826` no habia actualizado.

@@ -3828,11 +3828,15 @@ function verSincargo(cid, producto){
    cada tecla sólo actualiza la meta de esa celda y la suma de la fila. */
 let SEM=null, semKpi='facturacion', semEdit={}, semSaving=false;
 
-const semNum = (v,tipo) => tipo==='moneda'
-  ? fmtM(v)
+/* Formato por tipo de KPI: moneda ($X.XM), litros (12.345 L) o clientes (12.345).
+   El title del número muestra siempre el valor exacto (nunca abreviado). */
+const semNum = (v,tipo) => tipo==='moneda' ? fmtM(v)
+  : tipo==='litros' ? Number(v||0).toLocaleString('es-AR',{maximumFractionDigits:0})+' L'
   : Number(Math.round(v||0)).toLocaleString('es-AR');
-const semExacto = (v,tipo) => tipo==='moneda' ? fmtP(v) : Math.round(v||0)+' clientes';
-const semKpiDef = id => (SEM?.kpis||[]).find(k=>k.id===id) || {id,label:id,tipo:'clientes'};
+const semExacto = (v,tipo) => tipo==='moneda' ? fmtP(v)
+  : tipo==='litros' ? Number(v||0).toLocaleString('es-AR',{maximumFractionDigits:0})+' litros'
+  : Math.round(v||0)+' clientes';
+const semKpiDef = id => (SEM?.kpis||[]).find(k=>k.id===id) || {id,label:id,tipo:'clientes',universo:'ruta'};
 
 function gSemanal(p){
   p.innerHTML=`<div class="gph">
@@ -3924,7 +3928,12 @@ function semRenderHist(){
     </div>
     <div class="card-body" style="border-top:1px solid var(--b);padding-top:11px;">
       <div class="sem-note">Fuente: ${SEM.fuente}. Facturación medida por FechaComprobante.
-      ${def.tipo==='clientes'?`CCC: ${SEM.definicion_ccc}.`:''}</div>
+      ${def.tipo==='clientes'?`CCC: ${SEM.definicion_ccc}.`:''}
+      ${def.tipo==='litros'?`Litros: cascada maestro 04D → PesoKg → nombre del artículo.
+        El % es sobre el total de litros de ese mes.`:''}
+      Universo de ${def.label}: <b>${def.universo==='empresa'
+        ?'toda la venta de la empresa (ruta + V1/V20 Depósito)'
+        :'ruta (sin V1/V20 Depósito)'}</b>.</div>
     </div>
   </div>`;
 }
@@ -3996,6 +4005,10 @@ function semRenderPlan(){
         La variación queda firme cuando la semana cierra (la semana en curso va en gris, es parcial).
         Objetivos: facturación de resultado.xlsx · CCC de objccc.xlsx. El real de facturación es lo
         <b>facturado</b> (FechaComprobante), no el acumulado de pedidos de Plan vs Real.
+        El objetivo de <b>litros</b> es el mismo que el TOTAL de la tarjeta de Sell Out del dashboard
+        (OBJSELLOUT.xlsx): si se actualiza ahí, esta fila se mueve sola. Litros se mide sobre la venta
+        <b>total de la empresa</b> (ruta + V1/V20 Depósito), igual que ese objetivo; facturación y los
+        CCC miden sólo <b>ruta</b>, que es el universo de los suyos.
         ${A.ultima_fecha_venta?`Última venta cargada: ${A.ultima_fecha_venta}.`:''}
         ${meta.updated_at?`<br>Último guardado: ${meta.updated_at}${meta.editado_por?' · '+meta.editado_por:''}.`:''}
       </div>
