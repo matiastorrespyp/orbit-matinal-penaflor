@@ -264,7 +264,13 @@ Plan de Grupo Peñaflor para subir cobertura en **restaurantes y bares con carta
 
 **Vendedor de un PDV**: si el cliente está en el maestro, manda **la cartera real**; el número de la planilla es fallback. Para los PDV que no son clientes, el vendedor se sugiere por zona: el que más clientes tiene en esa localidad, y si no tenemos ninguno, el dominante del partido. **V3 queda fuera de ese cálculo** (no trabaja On Premise) y el plan entero le devuelve `no_aplica`.
 
-> Detalle de implementación y validación en [[BITACORA_2026-08-05]] (altas fuera del listado y objetivo), [[BITACORA_2026-08-03]] (buscador y mensajes por PDV) y [[MAPA_DATOS_PAV]].
+**Descarga Excel por tarjeta** (2026-08-06): cada una de las 5 listas tiene su `⬇ Excel`. Los dos bloques de clientes dados de alta traen además la facturación **abierta por comprobante** (hoja `Comprobantes`, una fila por factura) y el **detalle línea por línea** (hoja `Detalle`). Los otros tres bloques no tienen `cliente_id` → bajan sólo el listado; una hoja de facturación vacía se leería como "no compraron", que es distinto de "no se puede medir".
+
+> **El número de comprobante no está en todas las fuentes.** Lo traen las 3 con formato ERP; `historial_ventas_cliente.csv` no. Por eso **2026-05 y 2026-06 salen como `(sin comprobante en la fuente)`** (54 de 329 líneas): es el tramo que sólo existe en ese archivo. El resto se recupera del duplicado que sí lo trae. Etiquetado explícito, nunca en blanco.
+
+**Los sin cargo de los combos del plan (importe 0) van al Excel marcados** en la columna `Tipo`, y `Comprobantes` separa botellas compradas de botellas sin cargo: mezclados, las botellas del Excel no cierran contra las de la tarjeta. Y **la facturación se emite una vez por `cliente_id`** — misma trampa que obligó a contar las altas por cliente y no por fila.
+
+> Detalle de implementación y validación en [[BITACORA_2026-08-06]] (export Excel), [[BITACORA_2026-08-05]] (altas fuera del listado y objetivo), [[BITACORA_2026-08-03]] (buscador y mensajes por PDV) y [[MAPA_DATOS_PAV]].
 
 ---
 
@@ -339,6 +345,44 @@ Cómo se detectó y cómo verificarlo: bajo el criterio Ramo la cartera **comple
 **Mayorista / Cash&Carry nunca es Autoservicio** — es canal propio y `objccc.xlsx` no lo abre, así que queda **fuera** de los canales con objetivo, nunca sumado a AS ni a Tradicional.
 
 **Chequeo antes de dar por buena una métrica nueva:** comparar el objetivo del canal contra la **cartera** de ese canal. Si el objetivo es mayor, la clasificación está mal.
+
+---
+
+## Semanal — apertura del mes en 4 semanas
+
+Semana = bloque de días del mes: **S1 1-7 · S2 8-14 · S3 15-21 · S4 22-fin**. Siempre 4, así los meses se comparan entre sí sin ajustes.
+
+| KPI | Qué mide | % de la semana |
+|-----|----------|----------------|
+| Facturación | Suma de `ImporteNetoItem` por `FechaComprobante` | sobre el total facturado del mes |
+| Litros | Suma de `_litros_por_linea` (04D → PesoKg → nombre) | sobre el total de litros del mes |
+| CCC (Trad / AS / OP) | **Aporte incremental**: el cliente cuenta en la semana de su **primera** compra del mes | sobre el CCC del mes |
+
+El CCC es incremental a propósito: contando el CCC bruto semanal, un cliente que compra dos semanas contaría dos veces y las 4 semanas pasarían el 100%, que no es lo que se planifica.
+
+### Cada KPI se mide en el universo de SU objetivo (regla 2026-08-06)
+
+**`universo` es un campo de cada KPI (`_SEMANAL_KPIS` → `_SEMANAL_UNIVERSO`), no un filtro global de la pantalla.** Si el real y el objetivo no cuentan el mismo universo, el avance es falso.
+
+| KPI | Universo | Por qué |
+|-----|----------|---------|
+| **Litros** | **`empresa`** — ruta + V1/V20 Depósito, sin las bajas V2/V5 | *"La planificación semanal es sobre toda la venta semanal"*. Además es el universo de su objetivo (el TOTAL del Sell Out, que agrupa ruta + Depósito) |
+| Facturación | `ruta` — sin V1/V20 | Su objetivo es la suma de `ValorObjetivo` **de la ruta** en `resultado.xlsx` |
+| CCC | `ruta` — sin V1/V20 | `objccc.xlsx` se mide sin Depósito en todo el portal (ver `ccc_empresa`) |
+
+**No es un detalle chico:** el Depósito pesa **16% en julio, 24% en junio y 30% en mayo** de los litros. Medir litros de ruta contra un objetivo de empresa hundía el avance de forma sistemática. Sobre un mes parcial la brecha parece ~1,4% y engaña — verificar siempre contra meses cerrados.
+
+Implementación: `_semanal_leer` conserva las filas del Depósito marcadas con **`es_ruta=False`** en vez de descartarlas, y `_semanal_agg` manda cada KPI a su universo. Una sola lectura sirve a los dos (el historial de 63 MB no se parsea dos veces). Exclusiones desde `motor_11t.VENDEDORES_BAJA` / `VENDEDORES_DEPOSITO`, sin duplicar la regla.
+
+### Objetivo de litros = el TOTAL de la tarjeta de Sell Out (2026-08-06)
+
+**Un solo objetivo de litros en todo el portal.** `_semanal_objetivos` reusa `_cargar_objetivos_sellout()` —la fuente de esa tarjeta— y suma por categoría igual que el front. Verificado que los dos caminos dan el mismo número (**60.597 L**): no hay una segunda copia que se pueda desfasar, y al actualizar `OBJSELLOUT.xlsx` las dos pantallas se mueven solas.
+
+> **Ojo:** `OBJSELLOUT.xlsx` se carga a mano cada mes. Si no lo actualizaron, la pantalla Semanal **y** la tarjeta de Sell Out muestran el objetivo del mes anterior — las dos, no una sola.
+
+Control julio-2026: **50.047 L logrados vs 60.597 L = 82,6%**, y esos 50.047,0 L son exactamente el mismo número que da el universo de la tarjeta de Sell Out.
+
+> Detalle e implementación en [[BITACORA_2026-08-06]].
 
 ---
 

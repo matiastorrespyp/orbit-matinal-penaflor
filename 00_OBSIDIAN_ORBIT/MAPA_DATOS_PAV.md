@@ -177,6 +177,21 @@ Tarjeta **"📊 Cobertura acumulada del mes"**. Mide cobertura sobre el período
 | botellas_dia | mod_ccc_segmento.botellas_vendidas — OK (ayer) |
 | botellas_mes | NULL — eliminado. Antes venía de clientes_dia Vi solamente (absurdo: 15628 < 16674 botellas_dia) |
 
+### Semanal — Litros por semana (2026-08-06)
+
+| Campo | Origen |
+|-------|--------|
+| Real por semana | `_semanal_leer` → `_litros_por_linea` (maestro 04D → PesoKg → nombre del artículo) sobre la fuente del mes |
+| Fuente por mes | `cierres mes/ventas_mes_MMAAAA.csv` (cerrados) → `02_HISTORY/historial_ventas.csv` (fallback viejo) → `01_INPUTS/ventas.csv` (mes en curso) |
+| Universo | **`empresa`**: ruta + V1/V20 Depósito, sin bajas V2/V5 (`es_ruta=False` conserva las filas del Depósito) |
+| Objetivo | `01_INPUTS/OBJSELLOUT.xlsx` vía `_cargar_objetivos_sellout()` — **el mismo TOTAL de la tarjeta de Sell Out**, no una copia |
+| Plan por semana | `orbit.db` → `plan_semanal` (% cargado a mano por gerencia) |
+
+Control julio-2026: **50.047 L** (= el universo de la tarjeta de Sell Out) vs objetivo **60.597 L**.
+Facturación y CCC de la misma pantalla miden **ruta**, no empresa: ver [[REGLAS_NEGOCIO_PAV]].
+
+⚠️ `_leer_ventas_min` **intersecta `usecols` contra el encabezado real**. Antes, una sola columna faltante abortaba la lectura entera y dejaba la pantalla Semanal en blanco, facturación incluida.
+
 ---
 
 ## Archivos de entrada — estado
@@ -215,6 +230,8 @@ Tarjeta **"📊 Cobertura acumulada del mes"**. Mide cobertura sobre el período
 | /api/alertas | Pendiente auditar | mod_alertas_descuentos | — |
 | /api/planificacion | OK — SQLite | orbit.db | — |
 | /api/gerencia/plan_cobertura | OK | padrón `Plan cobertura/*.xlsx` (2 hojas) + maestro + historial encadenado | Caché por mtime; cada PDV trae `clave` estable. `altas_fuera` = hoja "altas fuera del listado"; altas contadas por cliente vs objetivo 60 a dic-2026. Ver [[BITACORA_2026-08-05]] |
+| /api/gerencia/plan_cobertura/export | OK | mismo payload cacheado + `_plan_cob_ventas` | `?bloque=capturados\|altas_fuera\|potenciales\|no_atendidos\|atendidos_sin_codigo` → xlsx. Bloque desconocido = **400** con la lista de válidos. Hojas `Clientes` + (si el bloque tiene `cliente_id`) `Comprobantes` y `Detalle`. **`NroComprobante` no está en `historial_ventas_cliente.csv`** → 2026-05/06 salen `(sin comprobante en la fuente)`. Ver [[BITACORA_2026-08-06]] |
+| /api/gerencia/semanal | OK | cierres mes + historial + ventas.csv, `OBJSELLOUT.xlsx`, `orbit.db` | 5 KPI, cada uno con su `universo` (litros = empresa; facturación y CCC = ruta). Caché por mtime: ~5 s en frío, 0,27 s después. Ver [[BITACORA_2026-08-06]] |
 | /api/gerencia/plan_cobertura/notas | OK — SQLite | orbit.db (`plan_cob_nota`) | Mensaje por PDV, clave = `PDV:<ID PUNTO DE VENTA>`, o `CLI:<código>` en las altas fuera del listado; vacío = borra. Ver [[BITACORA_2026-08-03]] |
 | /api/vendedor/&lt;vid&gt;/plan_cobertura | OK | mismo payload cacheado de gerencia | Filtra las 5 listas por `vendedor_id` (capturados y altas fuera = su cartera; el resto, sus localidades). V3 → `no_aplica` |
 
