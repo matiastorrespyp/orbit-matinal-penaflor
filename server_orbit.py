@@ -10332,10 +10332,43 @@ def gerencia_cierres_historicos():
     return jsonify(payload), code
 
 
+_CIERRES_HIST_CACHE = {"key": None, "data": None}
+
+
+def _cierres_hist_key():
+    """Huella de las fuentes del cierre. Cambia si se agrega/regenera un cierre o si se
+    toca el trío versionado o el maestro 04D (del que depende el sell out del cierre)."""
+    partes = []
+    try:
+        idx = BASE / "07_CIERRES_MENSUALES" / "index_cierres_mensuales.json"
+        partes.append(("idx", idx.stat().st_mtime if idx.exists() else 0))
+        d7 = BASE / "07_CIERRES_MENSUALES"
+        partes.append(("dir7", d7.stat().st_mtime if d7.exists() else 0))
+        for p in sorted(CIERRES_MES_DIR.glob("*")):
+            try:
+                partes.append((p.name, p.stat().st_mtime))
+            except OSError:
+                pass
+        m04 = CONFIG / "maestro_04D_productos.csv"
+        partes.append(("04D", m04.stat().st_mtime if m04.exists() else 0))
+    except Exception:
+        return None                      # sin huella confiable: no se cachea
+    return tuple(partes)
+
+
 def _cierres_historicos():
     """(payload, status) con los cierres mensuales historicos de 07_CIERRES_MENSUALES/.
     Solo lectura. No genera cierres nuevos. No toca ventas_mes.csv ni ningun input.
+
+    Cacheado por mtime de las fuentes: rearmar todos los cierres lee el trío versionado
+    de cada mes y tarda ~18 s en Render. La pantalla Cierre de Mes lo pide dos veces (los
+    cierres y el plan de acción), así que sin caché se pagaba dos veces la misma espera.
+    Los cierres son datos CONGELADOS: mientras los archivos no cambien, el resultado es
+    idéntico por definición.
     """
+    _key = _cierres_hist_key()
+    if _key is not None and _CIERRES_HIST_CACHE["key"] == _key and _CIERRES_HIST_CACHE["data"] is not None:
+        return _CIERRES_HIST_CACHE["data"], 200
     cierres_dir = BASE / "07_CIERRES_MENSUALES"
     idx_path    = cierres_dir / "index_cierres_mensuales.json"
 
@@ -10622,12 +10655,15 @@ def _cierres_historicos():
 
     cierres.sort(key=lambda c: (c.get("periodo",""), c.get("version","")), reverse=True)
 
-    return {
+    _out = {
         "cierres":       cierres,
         "total_cierres": len(cierres),
         "estado":        "OK",
         "nota":          "Solo lectura. No recalcula ni modifica datos.",
-    }, 200
+    }
+    if _key is not None:
+        _CIERRES_HIST_CACHE.update({"key": _key, "data": _out})
+    return _out, 200
 
 
 # ══════════════════════════════════════════════════════════════════════════════
