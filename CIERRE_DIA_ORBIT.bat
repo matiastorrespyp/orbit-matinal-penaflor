@@ -189,6 +189,10 @@ git add "04_DATASETS_ORBIT/mod_11t_excepciones.csv"
 git add "04_DATASETS_ORBIT/mod_11t_sin_cartera.csv"
 git add "04_DATASETS_ORBIT/mod_acciones_analisis.csv"
 git add "04_DATASETS_ORBIT/mod_acciones_ranking.csv"
+REM Catalogo de reglas del Explorador de Acciones Comerciales. Se genera desde el
+REM libro .xlsx del mes, que NO viaja a Render (abajo solo se publican los .csv de
+REM esa carpeta): sin esta linea el explorador queda vacio en produccion (ERR-014).
+git add "04_DATASETS_ORBIT/mod_acciones_explorador.json"
 git add "04_DATASETS_ORBIT/mod_alertas_descuentos.csv"
 git add "04_DATASETS_ORBIT/mod_ccc_segmento.csv"
 git add "04_DATASETS_ORBIT/mod_cobertura_acum.csv"

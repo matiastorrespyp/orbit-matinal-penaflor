@@ -1,5 +1,15 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-08 - feat(acciones): explorador comercial de agosto 2026
+
+Pedido: las reglas del mes se leían como un mosaico de tarjetas (una por acción, por segmento y por escala) imposible de recorrer en un celular. Ahora hay **un solo panel** con tres selectores: **Categoría → Línea → Segmento**.
+
+- **El Excel del mes es la fuente**, no el HTML. `01_INPUTS/ACCIONES COMERCIALES/2026-08/ORBIT_Acciones_Comerciales_Agosto_2026.xlsx` → `generar_datasets_acum.generar_acciones_explorador()` → `04_DATASETS_ORBIT/mod_acciones_explorador.json`. Se procesan las 8 hojas (LEEME, ACCIONES, ESCALAS, PRODUCTOS_Y_LINEAS, EXCLUSIONES, VALIDACIONES, UX_CONFIG, FUENTES). **Ninguna regla comercial quedó cableada en el portal**: el mes que viene se cambia el Excel y la pantalla se actualiza sola. El encabezado real de cada hoja se busca por su columna clave, no por número de fila.
+- **Por qué un dataset y no leer el .xlsx en el endpoint**: el `.bat` del cierre publica de esa carpeta únicamente `*/acciones_comerciales_*.csv`. El libro `.xlsx` **no entra en ese allowlist**, así que un endpoint que lo leyera andaría en local y mostraría la pantalla vacía en Render — exactamente ERR-014. El JSON vive en `04_DATASETS_ORBIT/`, que sí se publica (se agregó su línea al `.bat`, con los CRLF intactos).
+- **La medición de uso quedó intacta.** `mod_acciones_ranking.csv` sigue midiendo plata, litros y clientes sobre ventas.csv, y sigue alimentando el Cierre de Mes. Son dos cosas distintas: el explorador dice **qué ofrece** cada acción; el ranking dice **cuánto se usó**. En agosto todavía no hay uso medido (no hay CSV de catálogo del mes), así que la pantalla muestra el explorador y un estado claro en lugar del mosaico.
+- **Ambigüedades: se muestran, no se resuelven.** El solapamiento "10 a 20 cajas" / "20 cajas o más" se detecta solo, comparando tramos por canal y unidad: se marcan **las dos** escalas con ⚠️ y el conflicto se enuncia textual. No se elige ganadora ni se recorta ninguna escala. Los 6 puntos de la hoja VALIDACIONES (incluido si "+5 bultos" arranca en 5 o en 6) viajan al portal tal cual, plegados bajo "pendientes de confirmación comercial".
+- **Verificado**: 26 tests nuevos (`test_acciones_explorador.py`) sobre libros sintéticos en tmpdir — lectura de hojas, escalas, drops, topes, productos, exclusiones, hoja faltante, Excel ausente, filas vacías, mes futuro que no se adelanta, determinismo y los 4 caminos del loader. En el navegador: un único panel tras 4 cambios de selector, selector 2 y 3 ocultos cuando hay una sola opción, productos plegados que abren y cierran, los 4 estados vacíos, y selectores apilados sin scroll horizontal a 360/390 px. 25 endpoints en 200, V20 sigue 403.
+
 ## 2026-08-08 - fix(plan vs real): avisar cuando el Real $0 es resultado.xlsx viejo, no un cero real
 
 **Síntoma reportado**: en gerencia, Plan vs Real (el cierre del día) no mostraba la venta de ayer — Real **$0** en los 7 vendedores el 2026-08-07.

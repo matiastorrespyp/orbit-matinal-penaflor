@@ -3216,6 +3216,9 @@ function vAlertas(){
   const _accMes=_accP.mes?((_MNa[String(_accP.mes).slice(5,7)]||_accP.mes)+' '+String(_accP.mes).slice(0,4)):'';
   const _fmtARSa=n=>Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});
 
+  // Explorador de reglas: fuera del gate de `accs.length`. El vendedor tiene que poder
+  // consultar qué descuento le corresponde desde el día 1, aunque todavía no haya uso medido.
+  h+=accxHTML('v');
   if(accs.length){
     h+=accFiltroHTML('v',_accP);
     h+=`<div class="card" style="margin-bottom:14px;">
@@ -3275,6 +3278,7 @@ function vAlertas(){
       </div>`;}).join('');
   }
   document.getElementById('vT-alertas').innerHTML=h;
+  accxInit('v');
 }
 
 /* ── Buscador de producto/marca sobre las acciones del mes (gerencia + vendedor) ──
@@ -3304,6 +3308,214 @@ function accIdx(dat){
   const sug=marcas.concat([...new Set(prods.map(p=>p.producto).filter(Boolean))].sort());
   dat._idx={prods,on,marcas,sug};
   return dat._idx;
+}
+
+/* ════════ EXPLORADOR DE ACCIONES COMERCIALES ════════
+   Un único panel reutilizable: Categoría → Subcategoría → Segmento. Reemplaza el mosaico de
+   tarjetas de reglas (una por acción/segmento/escala) por tres selectores y un solo detalle.
+
+   Todo sale de payload.explorador (04_DATASETS_ORBIT/mod_acciones_explorador.json, armado
+   desde el Excel del mes). Acá NO se cablea ninguna regla comercial: si el Excel cambia el
+   mes que viene, esta pantalla lo refleja sola.
+
+   Al cambiar un selector se repinta SOLO lo que depende de él (los selects de abajo y el
+   panel), nunca el contenedor entero: repintar el padre le saca el foco al <select> y en
+   celular cierra el desplegable en la cara del vendedor. */
+
+const ACCX={};   // estado por scope: {cat, sub, seg}
+
+function accxEsc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function accxDat(scope){return ((scope==='v'?(D.acc_mes_v||{}):(D.acc_mes||{})).explorador)||{};}
+function accxPct(d){return d==null?null:(Math.round(d*1000)/10)+'%';}
+
+function accxCats(scope){return accxDat(scope).categorias||[];}
+function accxCat(scope){const st=ACCX[scope]||{};return accxCats(scope).find(c=>c.categoria===st.cat)||null;}
+function accxSub(scope){
+  const c=accxCat(scope); if(!c) return null;
+  const st=ACCX[scope]||{};
+  // Con una sola subcategoría el selector 2 no se muestra: se toma la única que hay.
+  if(c.subcategorias.length===1) return c.subcategorias[0];
+  return c.subcategorias.find(s=>s.subcategoria===st.sub)||null;
+}
+function accxSeg(scope){
+  const s=accxSub(scope); if(!s) return null;
+  const st=ACCX[scope]||{};
+  if((s.segmentos||[]).length===1) return s.segmentos[0];
+  return (s.segmentos||[]).find(g=>g.canal===st.seg)||null;
+}
+
+/* Shell del explorador: cabecera + 3 selectores + panel vacío. Se pinta una sola vez. */
+function accxHTML(scope){
+  const dat=accxDat(scope);
+  const cats=dat.categorias||[];
+  const _MN={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
+  const mesNom=dat.mes?((_MN[String(dat.mes).slice(5,7)]||dat.mes)+' '+String(dat.mes).slice(0,4)):'—';
+  if(!cats.length){
+    return `<div class="card" style="margin-bottom:14px;"><div class="card-hd">
+        <span class="card-title">🧭 Explorador de Acciones Comerciales</span></div>
+      <div class="card-body"><div class="empty"><div class="eico">📭</div>
+        <p>${accxEsc(dat.nota||'No se cargaron las Acciones Comerciales del mes.')}</p>
+      </div></div></div>`;
+  }
+  if(!ACCX[scope]) ACCX[scope]={cat:'',sub:'',seg:''};
+  const selSty='width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--b);background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit;';
+  const labSty='display:block;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:4px;';
+  const opts=cats.map(c=>`<option value="${accxEsc(c.categoria)}">${accxEsc(c.categoria)}</option>`).join('');
+  const avisos=(dat.avisos||[]).filter(a=>String(a.severidad||'').toUpperCase()==='ALTA');
+  return `<div class="card" style="margin-bottom:14px;">
+    <div class="card-hd">
+      <span class="card-title">🧭 Explorador de Acciones Comerciales</span>
+      <span class="chip mg" style="font-size:10px;">${accxEsc(mesNom)}</span>
+    </div>
+    <div class="card-body">
+      ${dat.vigencia?`<div style="font-size:11px;color:var(--text3);margin-bottom:10px;">📅 Vigencia: ${accxEsc(dat.vigencia)}</div>`:''}
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        <div style="flex:1 1 190px;min-width:150px;">
+          <label style="${labSty}" for="accx-cat-${scope}">Categoría</label>
+          <select id="accx-cat-${scope}" style="${selSty}" onchange="accxSet('${scope}','cat',this.value)">
+            <option value="">Seleccioná una categoría…</option>${opts}
+          </select>
+        </div>
+        <div style="flex:1 1 190px;min-width:150px;" id="accx-subwrap-${scope}" hidden>
+          <label style="${labSty}" for="accx-sub-${scope}">Línea / subcategoría</label>
+          <select id="accx-sub-${scope}" style="${selSty}" onchange="accxSet('${scope}','sub',this.value)"></select>
+        </div>
+        <div style="flex:1 1 190px;min-width:150px;" id="accx-segwrap-${scope}" hidden>
+          <label style="${labSty}" for="accx-seg-${scope}">Segmento / canal</label>
+          <select id="accx-seg-${scope}" style="${selSty}" onchange="accxSet('${scope}','seg',this.value)"></select>
+        </div>
+      </div>
+      <div id="accx-panel-${scope}"></div>
+      ${avisos.length?`<details style="margin-top:12px;">
+        <summary style="cursor:pointer;font-size:11px;color:var(--wn);">⚠️ ${avisos.length} punto${avisos.length>1?'s':''} pendiente${avisos.length>1?'s':''} de confirmación comercial</summary>
+        <div style="margin-top:8px;font-size:11px;color:var(--text2);line-height:1.6;">
+          ${avisos.map(a=>`<div style="margin-bottom:6px;">• <b>${accxEsc(a.tema)}</b>: ${accxEsc(a.hallazgo)}${a.accion?` <i style="color:var(--text3);">${accxEsc(a.accion)}</i>`:''}</div>`).join('')}
+        </div></details>`:''}
+    </div>
+  </div>`;
+}
+
+/* Cambio de selector: sólo se reconstruyen los selects que dependen del que se tocó. */
+function accxSet(scope,nivel,val){
+  const st=ACCX[scope]||(ACCX[scope]={cat:'',sub:'',seg:''});
+  if(nivel==='cat'){st.cat=val;st.sub='';st.seg='';}
+  else if(nivel==='sub'){st.sub=val;st.seg='';}
+  else st.seg=val;
+  if(nivel!=='seg') accxSyncSelects(scope);
+  accxPanel(scope);
+}
+
+function accxSyncSelects(scope){
+  const st=ACCX[scope]||{}, c=accxCat(scope);
+  const subW=document.getElementById('accx-subwrap-'+scope), subS=document.getElementById('accx-sub-'+scope);
+  const segW=document.getElementById('accx-segwrap-'+scope), segS=document.getElementById('accx-seg-'+scope);
+  if(!subW||!segW) return;
+  // Selector 2: se oculta si la categoría no tiene más de una línea (UX_CONFIG del Excel).
+  const subs=c?(c.subcategorias||[]):[];
+  if(!c||subs.length<=1){ subW.hidden=true; }
+  else{
+    subW.hidden=false;
+    subS.innerHTML=`<option value="">Elegí una línea…</option>`+
+      subs.map(s=>`<option value="${accxEsc(s.subcategoria)}"${s.subcategoria===st.sub?' selected':''}>${accxEsc(s.subcategoria)}</option>`).join('');
+  }
+  // Selector 3: sólo los segmentos que participan de la acción elegida.
+  const sub=accxSub(scope), segs=sub?(sub.segmentos||[]):[];
+  if(!sub||segs.length<=1){ segW.hidden=true; }
+  else{
+    segW.hidden=false;
+    segS.innerHTML=`<option value="">Elegí un segmento…</option>`+
+      segs.map(g=>`<option value="${accxEsc(g.canal)}"${g.canal===st.seg?' selected':''}>${accxEsc(g.canal)}${(g.segmentos_cliente||[]).length>1?' ('+accxEsc(g.segmentos_cliente.join(', '))+')':''}</option>`).join('');
+  }
+}
+
+/* El ÚNICO panel de resultado. Se reescribe entero en cada cambio; nunca se agrega otro. */
+function accxPanel(scope){
+  const box=document.getElementById('accx-panel-'+scope); if(!box) return;
+  const st=ACCX[scope]||{};
+  const vacio=(txt,ico)=>`<div class="empty" style="padding:18px 10px;"><div class="eico">${ico||'🧭'}</div><p>${txt}</p></div>`;
+  if(!st.cat){ box.innerHTML=vacio('Seleccioná una categoría para consultar la acción.'); return; }
+  const c=accxCat(scope), sub=accxSub(scope);
+  if(!sub){ box.innerHTML=vacio('Elegí una línea para ver la acción.','📂'); return; }
+  const seg=accxSeg(scope);
+  if(!seg){
+    // Sin ningún segmento cargado no hay nada que elegir: es una acción que el libro declara
+    // pero no llegó a definir. Pedir "elegí un segmento" mandaría al vendedor a un menú vacío.
+    box.innerHTML=(sub.segmentos||[]).length
+      ? vacio('Elegí un segmento para ver la escala aplicable.','🎯')
+      : vacio('No hay una acción disponible para esta combinación.','🚫');
+    return;
+  }
+  const escalas=seg.escalas||[];
+  if(!escalas.length){ box.innerHTML=vacio('No hay una acción disponible para esta combinación.','🚫'); return; }
+
+  // Compra mínima = el umbral más bajo declarado en las escalas de este segmento. Es una
+  // lectura del dato, no una regla nueva: si la fuente dice "sin mínimo", se dice eso.
+  const uni=escalas[0].unidad||'';
+  const mins=escalas.map(e=>e.min).filter(v=>v!=null);
+  const minTxt=(uni.toLowerCase()==='sin mínimo'||uni.toLowerCase()==='sin minimo')?'Sin mínimo'
+    :(mins.length?((Math.min(...mins)<=0)?'Sin mínimo':`Desde ${Math.min(...mins)} ${uni}${Math.min(...mins)>1?'s':''}`):'—');
+  const topes=[...new Set(escalas.map(e=>e.tope).filter(Boolean))];
+  const obs=[...new Set(escalas.map(e=>e.observacion).filter(Boolean))];
+  const prods=sub.productos||[], excl=sub.exclusiones||[];
+  // Sólo los solapamientos del segmento que se está mirando: el conflicto de "10 a 20 / 20 o
+  // más" es de Autoservicios y no tiene por qué ensuciar el panel de VTK/TDB, que no se pisa.
+  const confl=[...new Set(escalas.filter(e=>e.solapa).map(e=>e.solapa_detalle).filter(Boolean))];
+  const chip=(t,cl)=>`<span class="chip ${cl||''}" style="font-size:10px;">${accxEsc(t)}</span>`;
+
+  let h=`<div style="border:1px solid var(--b);border-radius:10px;overflow:hidden;">
+    <div style="padding:12px 14px;background:rgba(226,20,122,.07);border-bottom:1px solid var(--b);">
+      <div style="font-size:14px;font-weight:700;line-height:1.35;">${accxEsc(c.categoria)} · ${accxEsc(sub.subcategoria)}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;">
+        ${chip(seg.canal,'mg')}${sub.mecanica?chip(sub.mecanica):''}${sub.estado?chip(sub.estado,'ok'):''}${sub.grupo?chip(sub.grupo):''}
+      </div>
+      ${sub.resumen?`<div style="font-size:11px;color:var(--text2);margin-top:7px;line-height:1.5;">${accxEsc(sub.resumen)}</div>`:''}
+    </div>
+    <div style="padding:12px 14px;">
+      <div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:12px;">
+        <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;">Compra mínima</div>
+          <div style="font-size:14px;font-weight:700;">${accxEsc(minTxt)}</div></div>
+        <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;">Aplica a</div>
+          <div style="font-size:13px;">${accxEsc((seg.segmentos_cliente||[seg.canal]).join(' · '))}</div></div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Escalas</div>
+      <table class="tbl" style="font-size:12px;"><tbody>`;
+  escalas.forEach(e=>{
+    const ben=e.tipo==='descuento'?(accxPct(e.descuento)||'—'):accxEsc(e.tipo||'');
+    h+=`<tr>
+      <td style="line-height:1.4;">${accxEsc(e.texto||'')}${e.solapa?` <span title="${accxEsc(e.solapa_detalle||'')}" style="color:var(--wn);cursor:help;">⚠️</span>`:''}</td>
+      <td style="text-align:right;white-space:nowrap;"><span class="chip ok" style="font-size:11px;font-weight:800;">${accxEsc(ben)}</span></td>
+    </tr>`;
+  });
+  h+=`</tbody></table>`;
+  if(topes.length) h+=`<div style="margin-top:10px;font-size:11px;color:var(--text2);">🎚 <b>Tope:</b> ${topes.map(accxEsc).join(' · ')}</div>`;
+  if(obs.length)   h+=`<div style="margin-top:6px;font-size:11px;color:var(--text3);line-height:1.5;">📝 ${obs.map(accxEsc).join('<br>')}</div>`;
+  if(confl.length) h+=`<div style="margin-top:10px;background:rgba(255,200,0,.08);border:1px solid rgba(255,200,0,.3);border-radius:8px;padding:9px 12px;font-size:11px;color:var(--wn);line-height:1.5;">
+      ⚠️ <b>Escalas superpuestas — pendiente de confirmación comercial.</b><br>${confl.map(accxEsc).join('<br>')}</div>`;
+  if(excl.length) h+=`<div style="margin-top:10px;font-size:11px;color:var(--text2);">
+      🚫 <b>Exclusiones:</b> ${excl.map(x=>accxEsc(x.categoria)+(x.tratamiento?` <i style="color:var(--text3);">(${accxEsc(x.tratamiento)})</i>`:'')).join(' · ')}</div>`;
+  // Productos plegados: el vendedor abre sólo si necesita el detalle. <details> nativo =
+  // accesible por teclado y sin JS extra.
+  h+=`<details style="margin-top:12px;border-top:1px solid var(--b);padding-top:10px;">
+      <summary style="cursor:pointer;font-size:12px;font-weight:600;">📦 Ver productos incluidos${prods.length?` (${prods.length})`:''}</summary>
+      <div style="margin-top:8px;">`;
+  if(!prods.length){
+    h+=`<div style="font-size:11px;color:var(--text3);">No se encontraron productos incluidos.</div>`;
+  }else{
+    h+=prods.map(pr=>`<div style="padding:6px 0;border-bottom:1px solid var(--bs);font-size:12px;">
+        <b>${accxEsc(pr.nombre||'')}</b>${pr.tipo?` <span class="chip" style="font-size:9px;">${accxEsc(pr.tipo)}</span>`:''}
+        ${pr.regla?`<div style="font-size:11px;color:var(--text2);">${accxEsc(pr.regla)}</div>`:''}
+        ${pr.observacion?`<div style="font-size:10px;color:var(--text3);">${accxEsc(pr.observacion)}</div>`:''}
+      </div>`).join('');
+  }
+  h+=`</div></details></div></div>`;
+  box.innerHTML=h;
+}
+
+/* Se llama después de inyectar el shell en el DOM (innerHTML no ejecuta scripts). */
+function accxInit(scope){
+  if(!document.getElementById('accx-panel-'+scope)) return;
+  accxSyncSelects(scope);
+  accxPanel(scope);
 }
 
 function accFiltroHTML(scope,dat){
@@ -5585,9 +5797,16 @@ function gAccionesComerciales(p){
     <div><div class="gph-title">💰 Acciones Comerciales de ${mesNom}</div>
     <div class="gph-sub">Fuente: ${dat.fuente||'–'} · <span id="accCnt-g">${acc.length+(dat.acciones_on||[]).length} acciones</span></div></div>
   </div>`;
+  // Explorador de reglas del mes: va PRIMERO y fuera del bloque de medición. Es lo que el
+  // vendedor viene a consultar ("¿qué descuento tengo acá?"), y tiene que verse aunque
+  // todavía no haya uso medido — que es justo el caso al arrancar el mes.
+  html+=accxHTML('g');
   if(!acc.length){
-    html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">💰</div><p>Sin acciones para ${mesNom}.</p></div></div></div>`;
-    p.innerHTML=html; return;
+    html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">💰</div>
+      <p>Todavía no hay uso medido de acciones en ${mesNom}.<br>
+      <span style="font-size:11px;color:var(--text3);">Las reglas del mes se consultan arriba, en el explorador.</span></p>
+      </div></div></div>`;
+    p.innerHTML=html; accxInit('g'); return;
   }
   // Totales deduplicados (union de líneas) desde el backend: una misma venta matchea
   // varias acciones y NO debe contarse más de una vez. Fallback al reduce sólo si
@@ -5636,6 +5855,7 @@ function gAccionesComerciales(p){
   html+=accNuevasSectionHTML('g',dat);
   html+=accOnSectionHTML('g',dat);
   p.innerHTML=html;
+  accxInit('g');
   return;
   /* ===== versión anterior (mayo) deshabilitada — reemplazada por acciones del mes =====
     html+=`<div class="card"><div class="card-body"><div class="empty"><div class="eico">💰</div><p>Sin datos de Acciones Comerciales.</p></div></div></div>`;

@@ -5450,6 +5450,38 @@ def _acc_catalogo_mes():
     return mdir.name, fuente.name, reglas
 
 
+def _acc_explorador():
+    """Catálogo de REGLAS del mes para el explorador Categoría → Subcategoría → Segmento.
+
+    Lo genera generar_datasets_acum.generar_acciones_explorador() a partir del libro
+    ORBIT_Acciones_Comerciales_<Mes>.xlsx del mes. Acá sólo se lee el JSON: el .xlsx no se
+    publica a Render (el .bat del cierre sólo sube `*/acciones_comerciales_*.csv` de esa
+    carpeta), así que leerlo en vivo andaría en local y fallaría en producción.
+
+    Es distinto del resto del payload: `acciones` mide el USO real sobre ventas.csv; esto
+    describe QUÉ ofrece cada acción. Un catálogo ausente no puede tumbar la pantalla, así que
+    cualquier problema vuelve como estado controlado con `nota`, nunca como excepción."""
+    p = DATASETS / "mod_acciones_explorador.json"
+    if not p.exists():
+        return {"mes": None, "fuente": None, "categorias": [],
+                "nota": "No se cargaron las Acciones Comerciales del mes."}
+    try:
+        with open(p, encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        app.logger.warning("Explorador de acciones ilegible (%s): %s", p, e)
+        return {"mes": None, "fuente": None, "categorias": [],
+                "nota": "El catálogo de Acciones Comerciales del mes no se pudo leer."}
+    if not isinstance(data, dict) or not data.get("categorias"):
+        nota = (data.get("nota") if isinstance(data, dict) else None) \
+               or "No se cargaron las Acciones Comerciales del mes."
+        app.logger.warning("Explorador de acciones sin categorias: %s", nota)
+        base = data if isinstance(data, dict) else {}
+        return {"mes": base.get("mes"), "fuente": base.get("fuente"),
+                "categorias": [], "nota": nota}
+    return data
+
+
 def _acc_seg_canon(seg_text, canal_text):
     t = (str(seg_text or "") + " | " + str(canal_text or "")).upper()
     out = set()
@@ -5959,6 +5991,12 @@ def _acc_mes_sig():
     except OSError:
         cat = 0
     sig.append(("acc_cat", cat))
+    # Catálogo de reglas del explorador: al regenerarlo el cierre, la pantalla se refresca sola.
+    _pe = DATASETS / "mod_acciones_explorador.json"
+    try:
+        sig.append(("acc_expl", os.path.getmtime(_pe) if _pe.exists() else 0))
+    except OSError:
+        sig.append(("acc_expl", 0))
     # Archivo de acciones ON del mes (xlsx): al resubirlo, el payload se refresca solo.
     try:
         onf = _acc_on_file()
@@ -5980,6 +6018,11 @@ def _acciones_mes_payload(vid_filtro=None):
     if cached is not None:
         return cached
     payload = _acciones_mes_payload_uncached(vid_filtro)
+    # El explorador se adjunta acá y no adentro del _uncached porque ese tiene varias salidas
+    # tempranas (sin catálogo de uso, sin ventas): el catálogo de reglas tiene que viajar igual
+    # en todas. Es idéntico para gerencia y vendedores —son las reglas del mes, no datos de
+    # cartera—, así que no depende de vid_filtro y no abre nada que el rol no viera ya.
+    payload["explorador"] = _acc_explorador()
     # purgar firmas viejas; conservar variantes por vendedor de la firma actual
     for k in [k for k in _ACC_MES_CACHE if k[0] != ckey[0]]:
         _ACC_MES_CACHE.pop(k, None)

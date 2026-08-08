@@ -8,6 +8,7 @@ Salidas en 04_DATASETS_ORBIT/:
 """
 import sys
 import re
+import json
 from pathlib import Path
 from datetime import datetime
 import pandas as pd
@@ -1685,6 +1686,265 @@ def generar_acciones_analisis(ventas, historial_path, clientes, maestro, cliente
 
 
 # ─────────────────────────────────────────────
+# EXPLORADOR DE ACCIONES COMERCIALES (catálogo de reglas del mes)
+# ─────────────────────────────────────────────
+#
+# Convierte el libro mensual "ORBIT_Acciones_Comerciales_<Mes>_<Año>.xlsx" de
+# 01_INPUTS/ACCIONES COMERCIALES/<YYYY-MM>/ en un catálogo JSON que el portal consume para el
+# explorador Categoría → Subcategoría → Segmento.
+#
+# POR QUÉ UN DATASET Y NO LEER EL XLSX EN EL ENDPOINT: el .bat del cierre publica de
+# 01_INPUTS/ACCIONES COMERCIALES/ únicamente `*/acciones_comerciales_*.csv`. El libro .xlsx
+# NO entra en ese allowlist, así que en Render no existe: un endpoint que lo leyera andaría
+# en local y mostraría la pantalla vacía en producción (mismo patrón que ERR-014). El JSON
+# vive en 04_DATASETS_ORBIT/, que sí se publica.
+#
+# Es SOLO el catálogo de reglas (qué ofrece cada acción). No mide uso ni plata: eso lo sigue
+# haciendo mod_acciones_ranking.csv sobre ventas.csv, intacto.
+#
+# Salida determinística a propósito: sin timestamp de generación. El JSON cambia únicamente
+# cuando cambia el Excel, así el cierre diario no ensucia el repo con un diff todos los días.
+
+ACC_EXPL_OUT = "mod_acciones_explorador.json"
+
+
+def _acc_expl_mes_dir():
+    """Carpeta mensual a usar: el mes en curso si ya tiene carpeta; si no, la más reciente que
+    NO sea futura (subir el mes siguiente por adelantado no lo adelanta). Misma regla que
+    server_orbit._acc_mes_dir, para que el catálogo y la medición de uso hablen del mismo mes."""
+    base = BASE / "01_INPUTS" / "ACCIONES COMERCIALES"
+    if not base.exists():
+        return None
+    meses = sorted(s.name for s in base.iterdir()
+                   if s.is_dir() and re.match(r"^\d{4}-\d{2}$", s.name))
+    if not meses:
+        return None
+    actual = datetime.now().strftime("%Y-%m")
+    if actual in meses:
+        return base / actual
+    pasados = [m for m in meses if m <= actual]
+    return base / (pasados[-1] if pasados else meses[-1])
+
+
+def _acc_expl_hoja(path, hoja, clave):
+    """Lee una hoja cuyo encabezado real NO está en la fila 1 (arriba hay un título de portada).
+    Busca la fila que contiene `clave` (p. ej. 'action_id') y la usa como header. Devuelve un
+    DataFrame vacío si la hoja o la clave no están, para que falte una hoja no voltee el cierre."""
+    try:
+        raw = pd.read_excel(path, sheet_name=hoja, header=None)
+    except Exception as e:
+        print(f"  [AVISO] explorador: no se pudo leer la hoja {hoja}: {e}")
+        return pd.DataFrame()
+    fila_hdr = None
+    for i in range(min(len(raw), 10)):
+        vals = [str(v).strip().lower() for v in raw.iloc[i].tolist()]
+        if clave.lower() in vals:
+            fila_hdr = i
+            break
+    if fila_hdr is None:
+        print(f"  [AVISO] explorador: la hoja {hoja} no tiene la columna '{clave}'")
+        return pd.DataFrame()
+    df = raw.iloc[fila_hdr + 1:].copy()
+    df.columns = [str(c).strip() for c in raw.iloc[fila_hdr].tolist()]
+    df = df.loc[:, [c for c in df.columns if c and c.lower() != "nan"]]
+    return df.dropna(how="all").reset_index(drop=True)
+
+
+def _acc_expl_txt(v):
+    """NaN / 'nan' / '' -> None. Todo lo demás, texto limpio."""
+    if v is None or (isinstance(v, float) and pd.isna(v)):
+        return None
+    s = str(v).strip()
+    return None if (s == "" or s.lower() == "nan") else s
+
+
+def _acc_expl_num(v):
+    n = pd.to_numeric(v, errors="coerce")
+    return None if pd.isna(n) else float(n)
+
+
+def _acc_expl_int(v):
+    """Cantidades de escala (cajas, packs, bultos): enteras. Evita que el portal muestre
+    '10.0 cajas' y que el JSON cambie de forma según cómo venga tipada la celda."""
+    n = pd.to_numeric(v, errors="coerce")
+    return None if pd.isna(n) else int(n)
+
+
+def _acc_expl_solapamientos(escalas):
+    """Marca escalas que se pisan entre sí DENTRO del mismo canal y unidad, sin elegir ganadora.
+
+    El caso testigo del libro de agosto es '10 a 20 cajas' seguido de '20 cajas o más': en 20
+    cajas aplican dos descuentos distintos y la fuente no dice cuál manda. Decidirlo acá sería
+    inventar una regla comercial, así que sólo se deja la marca `solapa` y el detalle del
+    conflicto para que la UI lo muestre y alguien de comercial lo resuelva.
+
+    Devuelve la lista de conflictos encontrados (texto legible)."""
+    conflictos = []
+    por_grupo = {}
+    for e in escalas:
+        por_grupo.setdefault((e["canal_regla"], e["unidad"]), []).append(e)
+    for (canal, unidad), grupo in por_grupo.items():
+        orden = sorted(grupo, key=lambda x: (x["min"] if x["min"] is not None else -1))
+        for a, b in zip(orden, orden[1:]):
+            a_max = a["max"]
+            if a_max is None or b["min"] is None:
+                continue          # tramo abierto: sin tope superior no hay pisada declarada
+            if b["min"] <= a_max:
+                a["solapa"] = True
+                b["solapa"] = True
+                txt = (f"{canal} · {unidad}: «{a['texto']}» y «{b['texto']}» se pisan en "
+                       f"{b['min']}. La fuente no define cuál gana.")
+                conflictos.append(txt)
+                for x in (a, b):
+                    x.setdefault("solapa_detalle", txt)
+    return conflictos
+
+
+def generar_acciones_explorador():
+    """Arma el catálogo de reglas del mes -> 04_DATASETS_ORBIT/mod_acciones_explorador.json.
+
+    Estructura: categorias[] -> subcategorias[] -> segmentos[] -> escalas[], más productos,
+    exclusiones y avisos por acción. Es exactamente el árbol que recorren los tres selectores
+    del portal, así el frontend no tiene que saber nada de reglas comerciales.
+
+    Si falta la carpeta, el Excel o una hoja, devuelve un catálogo vacío con `nota` explicando
+    qué pasó: la pantalla muestra un estado controlado y el resto del cierre sigue."""
+    mdir = _acc_expl_mes_dir()
+    if mdir is None:
+        return {"mes": None, "fuente": None, "categorias": [],
+                "nota": "No existe la carpeta 01_INPUTS/ACCIONES COMERCIALES."}
+    xls = sorted(p for p in mdir.glob("*.xlsx") if not p.name.startswith("~$"))
+    if not xls:
+        return {"mes": mdir.name, "fuente": None, "categorias": [],
+                "nota": f"No hay libro .xlsx de acciones en {mdir.name}."}
+    fuente = xls[0]
+
+    acciones = _acc_expl_hoja(fuente, "ACCIONES", "action_id")
+    escalas  = _acc_expl_hoja(fuente, "ESCALAS", "action_id")
+    prods    = _acc_expl_hoja(fuente, "PRODUCTOS_Y_LINEAS", "action_id")
+    excl     = _acc_expl_hoja(fuente, "EXCLUSIONES", "action_id")
+    valid    = _acc_expl_hoja(fuente, "VALIDACIONES", "severidad")
+    leeme    = _acc_expl_hoja(fuente, "LEEME", "Tema")
+
+    if acciones.empty or escalas.empty:
+        return {"mes": mdir.name, "fuente": fuente.name, "categorias": [],
+                "nota": "El libro no tiene las hojas ACCIONES y ESCALAS con el formato esperado."}
+
+    # Vigencia: sale de la fila "Vigencia" del LEEME, no cableada al mes.
+    vigencia = None
+    if not leeme.empty and "Tema" in leeme.columns:
+        col_def = [c for c in leeme.columns if c.lower().startswith("definici")]
+        for _, r in leeme.iterrows():
+            if str(r.get("Tema", "")).strip().lower() == "vigencia" and col_def:
+                vigencia = _acc_expl_txt(r.get(col_def[0]))
+                break
+
+    # Avisos globales: la hoja VALIDACIONES es la lista de ambigüedades que el propio libro
+    # declara sin resolver. Viajan al portal tal cual; no se interpretan acá.
+    avisos = []
+    if not valid.empty:
+        col_acc = [c for c in valid.columns if "acci" in c.lower()]
+        for _, r in valid.iterrows():
+            sev = _acc_expl_txt(r.get("severidad"))
+            if not sev:
+                continue
+            avisos.append({
+                "severidad": sev,
+                "tema":      _acc_expl_txt(r.get("tema")),
+                "hallazgo":  _acc_expl_txt(r.get("hallazgo")),
+                "accion":    _acc_expl_txt(r.get(col_acc[0])) if col_acc else None,
+            })
+
+    prods_por_accion, excl_por_accion = {}, {}
+    for _, r in prods.iterrows():
+        aid = _acc_expl_txt(r.get("action_id"))
+        if aid:
+            prods_por_accion.setdefault(aid, []).append({
+                "tipo":        _acc_expl_txt(r.get("tipo")),
+                "nombre":      _acc_expl_txt(r.get("nombre_visible")),
+                "regla":       _acc_expl_txt(r.get("regla_asociada")),
+                "observacion": _acc_expl_txt(r.get("observacion")),
+            })
+    for _, r in excl.iterrows():
+        aid = _acc_expl_txt(r.get("action_id"))
+        if aid:
+            excl_por_accion.setdefault(aid, []).append({
+                "categoria":   _acc_expl_txt(r.get("categoria_excluida")),
+                "tratamiento": _acc_expl_txt(r.get("tratamiento")),
+            })
+
+    escalas_por_accion = {}
+    for _, r in escalas.iterrows():
+        aid = _acc_expl_txt(r.get("action_id"))
+        if not aid:
+            continue
+        obs = _acc_expl_txt(r.get("observacion"))
+        # Los topes vienen redactados dentro de la observación ("Tope: ..."). Se separan por
+        # prefijo, que es mecánico; el resto del texto queda como observación sin tocar.
+        tope = None
+        if obs and obs.lower().startswith("tope"):
+            tope, obs = obs, None
+        escalas_por_accion.setdefault(aid, []).append({
+            "canal_regla": _acc_expl_txt(r.get("canal_regla")),
+            "segmentos":   [s.strip() for s in (_acc_expl_txt(r.get("segmentos_cliente")) or "").split("|") if s.strip()],
+            "unidad":      _acc_expl_txt(r.get("unidad")),
+            "min":         _acc_expl_int(r.get("min_inclusivo")),
+            "max":         _acc_expl_int(r.get("max_inclusivo")),
+            "descuento":   _acc_expl_num(r.get("descuento")),
+            "tipo":        _acc_expl_txt(r.get("tipo_beneficio")),
+            "texto":       _acc_expl_txt(r.get("texto_vendedor")),
+            "observacion": obs,
+            "tope":        tope,
+            "solapa":      False,
+        })
+
+    conflictos_total = []
+    cats = {}
+    for _, a in acciones.iterrows():
+        aid = _acc_expl_txt(a.get("action_id"))
+        if not aid:
+            continue
+        cat = _acc_expl_txt(a.get("categoria_ui")) or "Sin categoría"
+        mis_escalas = escalas_por_accion.get(aid, [])
+        conflictos = _acc_expl_solapamientos(mis_escalas)
+        conflictos_total.extend(conflictos)
+        # Un "segmento" del selector 3 = un canal_regla con sus escalas. Se agrupa acá y no en
+        # el navegador para que el front no tenga que conocer la semántica de los canales.
+        segs = {}
+        for e in mis_escalas:
+            k = e["canal_regla"] or "General"
+            s = segs.setdefault(k, {"canal": k, "segmentos_cliente": e["segmentos"], "escalas": []})
+            # `canal_regla` y `segmentos` ya viven en el nivel del segmento: no se repiten
+            # dentro de cada escala.
+            s["escalas"].append({kk: vv for kk, vv in e.items()
+                                 if kk not in ("canal_regla", "segmentos")})
+        sub = {
+            "action_id":   aid,
+            "subcategoria": _acc_expl_txt(a.get("subcategoria_ui")) or "General",
+            "mecanica":    _acc_expl_txt(a.get("mecanica")),
+            "grupo":       _acc_expl_txt(a.get("grupo_ui")),
+            "estado":      _acc_expl_txt(a.get("estado")),
+            "resumen":     _acc_expl_txt(a.get("resumen")),
+            "segmentos":   sorted(segs.values(), key=lambda s: s["canal"]),
+            "productos":   prods_por_accion.get(aid, []),
+            "exclusiones": excl_por_accion.get(aid, []),
+            "conflictos":  conflictos,
+        }
+        cats.setdefault(cat, []).append(sub)
+
+    categorias = [{"categoria": c, "subcategorias": subs} for c, subs in sorted(cats.items())]
+    return {
+        "mes":         mdir.name,
+        "fuente":      fuente.name,
+        "vigencia":    vigencia,
+        "categorias":  categorias,
+        "avisos":      avisos,
+        "conflictos":  sorted(set(conflictos_total)),
+        "nota":        None,
+    }
+
+
+# ─────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────
 
@@ -1813,6 +2073,31 @@ def main():
                      "pct_clientes_nuevos","delta_litros_pct","costo_activacion"]
         print(analisis[[c for c in cols_show if c in analisis.columns]].to_string(index=False))
 
+    # ── Explorador de Acciones Comerciales (catálogo de reglas del mes) ──
+    # Independiente del bloque de arriba: [7/9] y [8/9] miden el USO de las acciones sobre
+    # ventas.csv; esto publica las REGLAS del libro del mes para consultarlas en el portal.
+    print("\n[9/9] Generando mod_acciones_explorador.json (catálogo de reglas del mes) ...")
+    try:
+        cat_expl = generar_acciones_explorador()
+        (OUT / ACC_EXPL_OUT).write_text(
+            json.dumps(cat_expl, ensure_ascii=False, indent=1, sort_keys=False),
+            encoding="utf-8")
+        if cat_expl.get("nota"):
+            print(f"  [AVISO] {cat_expl['nota']}")
+        else:
+            n_sub = sum(len(c["subcategorias"]) for c in cat_expl["categorias"])
+            print(f"  OK: mes {cat_expl['mes']} · {len(cat_expl['categorias'])} categorias · "
+                  f"{n_sub} acciones · fuente {cat_expl['fuente']}")
+            if cat_expl.get("conflictos"):
+                print(f"  [ATENCION] {len(cat_expl['conflictos'])} solapamientos de escala sin "
+                      f"resolver en la fuente (se publican como advertencia, no se elige ganadora):")
+                for c in cat_expl["conflictos"]:
+                    print(f"      - {c}")
+    except Exception as e:
+        # El catálogo es una pantalla de consulta: si el libro del mes viene raro, no puede
+        # voltear el cierre diario ni dejar sin datasets al resto del portal.
+        print(f"  [AVISO] explorador de acciones no generado: {e}")
+
     print("\n[OK] Datasets generados en 04_DATASETS_ORBIT/")
     print("     mod_cobertura_acum.csv")
     print("     mod_cobertura_acum_detalle.csv")
@@ -1823,6 +2108,7 @@ def main():
     print("     mod_sellout_categoria.csv")
     print("     mod_acciones_ranking.csv")
     print("     mod_acciones_analisis.csv")
+    print("     mod_acciones_explorador.json")
 
 
 if __name__ == "__main__":
