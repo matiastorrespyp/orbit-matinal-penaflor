@@ -2400,9 +2400,14 @@ def matinal_resumen():
         tiene_real = True
         fecha_real = f_real_hoy
 
-    # PASO 3: Calcular real_map solo si hay datos de ventas
+    # PASO 3: Calcular el CCC real (viene de ventas.csv) sólo si ese día hay ventas.
+    # `tiene_real` no alcanza como condición: `usa_resultado` lo prende con el snapshot de
+    # resultado.xlsx aunque ventas_dia esté vacío, y `_cargar_ventas_dia` devuelve un DataFrame
+    # SIN columnas cuando no hay filas -> groupby("vendedor_codigo") tiraba KeyError y la pantalla
+    # respondía 500. Pasa justo el día sin facturación (sábado) con el cierre corrido: ahí el real
+    # en $ es 0 de verdad y el CCC es 0, que es lo que hay que mostrar, no un error.
     real_map = {}
-    if tiene_real:
+    if tiene_real and not ventas_dia.empty:
         for cod_v, grp in ventas_dia.groupby("vendedor_codigo"):
             cod_int = int(cod_v)
             ccc_t = int(grp[grp["segmento_operativo"] == "TRADICIONAL"]["cliente_id"].nunique())
@@ -2468,6 +2473,21 @@ def matinal_resumen():
                 "tiene_real":       v_tiene_real,
             })
 
+    # Aviso de real no confiable: si el acumulado no se movió en NINGÚN vendedor pero ese día SÍ
+    # hubo facturación en ventas.csv, el Real $0 no es un cero real — es resultado.xlsx sin
+    # actualizar (quedó pegado el del día anterior). El cero legítimo del sábado sin ventas no
+    # entra acá: ahí ventas_dia viene vacío. Mismo cruce de fuentes que el aviso del cierre en
+    # generar_datasets_acum._avisar_acumulado_sin_movimiento (allá el mtime; acá no sirve porque
+    # en Render el mtime es el del checkout de git).
+    aviso_real = None
+    if usa_resultado and not ventas_dia.empty:
+        _reales = [r["real_ayer"] for r in resultado if r["tiene_real"]]
+        if _reales and all(abs(float(x)) < 0.01 for x in _reales):
+            aviso_real = (f"Real $0 en los {len(_reales)} vendedores: el acumulado del {fecha_real} "
+                          f"es idéntico al del {f_real_ayer}, pero ese día sí hubo facturación en "
+                          f"ventas.csv. resultado.xlsx quedó sin actualizar — pegar el del día en "
+                          f"01_INPUTS y re-correr CIERRE_DIA_ORBIT.bat.")
+
     # Fecha efectiva única: si el día vivo NO está completo (falta plan o falta real, p.ej. modo
     # embebido en Orbit Home sin SQLite/02_HISTORY/01_INPUTS, o mañana sin real todavía), usar el
     # ÚLTIMO cierre completo del snapshot generado — nunca la fecha del reloj, sin mezclar fechas.
@@ -2485,6 +2505,7 @@ def matinal_resumen():
         "modo":        modo,
         "fuente_real": ("resultado.xlsx (acumulado hoy − ayer)" if usa_resultado else "ventas.csv"),
         "fecha_real_ayer": f_real_ayer if usa_resultado else None,
+        "aviso_real":  aviso_real,
         "generado_en": _now_ar(),
         "resumen":     resultado,
     })

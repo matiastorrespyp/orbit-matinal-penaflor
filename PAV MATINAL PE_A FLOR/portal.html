@@ -3707,6 +3707,13 @@ function gPlanVsReal(p){
       ⏳ Ventas del ${pvr.fecha_plan||'–'} aún no disponibles. Ejecutar <b>CIERRE_DIA_ORBIT.bat</b> después de pegar el ventas.csv del día para ver el real.
     </div>`;
   }
+  // Real $0 en todos pero con facturación ese día = resultado.xlsx viejo, no un cero real.
+  // El backend ya hizo el cruce (aviso_real); acá sólo se muestra.
+  if(pvr.aviso_real){
+    h+=`<div style="background:rgba(224,82,82,.10);border:1px solid rgba(224,82,82,.45);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:var(--bd);">
+      ⚠️ <b>Real no confiable:</b> ${pvr.aviso_real}
+    </div>`;
+  }
   h+=`<div class="card">
     <div class="card-hd"><span class="card-title">📊 Comparación por vendedor</span>
       <span style="font-size:10px;color:var(--text3);">Real desde ${fuenteR} · ${pvr.generado_en||''}</span>

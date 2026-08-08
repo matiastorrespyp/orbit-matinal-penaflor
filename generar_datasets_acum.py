@@ -229,6 +229,65 @@ def cargar_ventas_acumulada_11t():
     return pd.read_csv(p, encoding="latin1", sep=";", engine="python")
 
 
+def _avisar_acumulado_sin_movimiento(rp, ventas, snap, hist, fecha):
+    """Avisa cuando el Acumulado del día es IDÉNTICO al del snapshot anterior HABIENDO
+    facturación de ese día: eso no es un cero real, es resultado.xlsx sin actualizar (quedó
+    pegado el del día anterior) y Plan vs Real termina mostrando Real $0 en todos los vendedores.
+
+    El cero legítimo existe y no se puede tratar como error: un sábado sin ventas mueve el
+    acumulado en $0. Lo que separa un caso del otro es si el ERP facturó ese día, así que el
+    aviso cruza las dos fuentes (resultado.xlsx vs ventas.csv) y por eso NUNCA se dispara por
+    el sábado. Compara contra el último snapshot del MISMO mes: en el primer día del mes el
+    acumulado arranca de cero y la comparación no significa nada.
+
+    Avisa y sigue: el snapshot se graba igual (el dato es el dato), pero el cierre no puede
+    quedar en verde silencioso — es exactamente el fallo que dejó el 2026-08-07 con Real $0
+    en los 7 vendedores sin que nada lo advirtiera.
+    """
+    if hist.empty or "fecha" not in hist.columns:
+        return
+    previas = sorted(x for x in hist["fecha"].astype(str).unique()
+                     if x < fecha and x[:7] == fecha[:7])
+    if not previas:
+        return
+    f_ant = previas[-1]
+    ant = hist[hist["fecha"].astype(str) == f_ant]
+    ant_ac = dict(zip(pd.to_numeric(ant["vendedor_codigo"], errors="coerce"),
+                      pd.to_numeric(ant["acumulado"], errors="coerce")))
+    comparados = movidos = 0
+    for _, r in snap.iterrows():
+        a = ant_ac.get(r["vendedor_codigo"])
+        if a is None or pd.isna(a) or pd.isna(r["acumulado"]):
+            continue
+        comparados += 1
+        if abs(float(r["acumulado"]) - float(a)) > 0.01:
+            movidos += 1
+    if comparados == 0 or movidos > 0:
+        return
+    # Acumulado congelado. La única forma de distinguir "no se vendio" de "archivo viejo".
+    f = (pd.to_datetime(ventas.get("FechaComprobante"), dayfirst=True, errors="coerce")
+         if "FechaComprobante" in ventas.columns else None)
+    filas_dia = int((f.dt.strftime("%Y-%m-%d") == fecha).sum()) if f is not None else 0
+    if filas_dia == 0:
+        print(f"  [OK] Acumulado sin movimiento en {fecha} y ventas.csv no factura ese dia: cero real.")
+        return
+    mtime = datetime.fromtimestamp(rp.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
+    print("")
+    print("  " + "!" * 70)
+    print("  [ALERTA] resultado.xlsx NO ESTA ACTUALIZADO -> Plan vs Real va a dar Real $0")
+    print(f"           Acumulado del {fecha} identico al del {f_ant} en los {comparados} vendedores,")
+    print(f"           pero ventas.csv SI tiene {filas_dia} lineas facturadas el {fecha}.")
+    print(f"           resultado.xlsx modificado: {mtime} (deberia ser del cierre del {fecha})")
+    print("           QUE HACER: pegar el resultado.xlsx del dia en 01_INPUTS y re-correr el cierre HOY.")
+    print(f"           OJO: solo sirve mientras ventas.csv siga siendo el del {fecha}. El snapshot se")
+    print("           fecha con max(FechaComprobante) de ventas.csv, NO con la fecha del xlsx: si ya")
+    print("           se paso de dia, re-correr grabaria esos numeros con la fecha equivocada y")
+    print("           pisaria el snapshot bueno. Pasado ese punto el dia solo se corrige a mano en")
+    print("           02_HISTORY/acumulado_resultado_historico.csv.")
+    print("  " + "!" * 70)
+    print("")
+
+
 def snapshot_acumulado_resultado(ventas):
     """Snapshot diario del Acumulado por vendedor desde resultado.xlsx → para el real del día
     (= acumulado hoy − ayer) en Plan vs Real. Append a 02_HISTORY/acumulado_resultado_historico.csv,
@@ -270,6 +329,7 @@ def snapshot_acumulado_resultado(ventas):
     hp.parent.mkdir(parents=True, exist_ok=True)
     comb.to_csv(hp, index=False, encoding="utf-8-sig")
     print(f"  Snapshot acumulado resultado.xlsx -> {fecha} ({len(snap)} vendedores)")
+    _avisar_acumulado_sin_movimiento(rp, ventas, snap, hist, fecha)
 
 
 def _dedup_clientes(df, origen=""):

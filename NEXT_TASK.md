@@ -1,5 +1,33 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-08 - Plan vs Real: aviso cuando el Real $0 no es real
+
+### HECHO
+- [x] **Diagnostico**: Plan vs Real mostraba Real $0 en los 7 vendedores el 07/08 porque `01_INPUTS/resultado.xlsx` quedo sin actualizar (mtime 6-ago 18:55, cierre corrido el 7 a las 17:49). Los snapshots del 06 y del 07 en `02_HISTORY/acumulado_resultado_historico.csv` son identicos al centavo -> `Acumulado(hoy) - Acumulado(ayer)` = 0.
+- [x] **Aviso que NO confunde el cero legitimo del sabado**: se dispara solo si el acumulado quedo congelado en todos los vendedores **Y** ventas.csv tiene facturacion de esa fecha. Sin facturacion = cero real, no avisa.
+- [x] **Avisa en los dos lados**: bloque `[ALERTA]` en el cierre (`generar_datasets_acum._avisar_acumulado_sin_movimiento`) y cartel rojo "Real no confiable" en la pantalla (`aviso_real` en `/api/matinal/resumen` + `portal.html`).
+- [x] **Bug arreglado de paso**: el dia sin facturacion con el cierre corrido daba **500** en la pantalla (`groupby` sobre un DataFrame vacio sin columnas). Ahora muestra ceros.
+
+### PENDIENTE
+- [ ] **EL 07/08 YA NO SE RECUPERA RE-CORRIENDO EL CIERRE. NO INTENTARLO.** La receta que estaba
+  anotada aca ("pegar el resultado.xlsx del 07 y re-correr el .bat") **era incorrecta y hoy es
+  destructiva**: `snapshot_acumulado_resultado` fecha el snapshot con `max(FechaComprobante)` de
+  **ventas.csv**, no con la fecha del `resultado.xlsx` ni con el reloj. Con el `ventas.csv` actual
+  (que ya llega al 08), pegar el xlsx del 07 y re-correr grabaria esos numeros **con fecha
+  2026-08-08**, pisando el snapshot bueno del 08 y rompiendo tambien el real del 08. Para que la
+  receta funcionara habria que restaurar el par completo del 07 (`ventas.csv` **y**
+  `resultado.xlsx`), y el `ventas.csv` del 07 ya se sobrescribio.
+  - Estado del historico (verificado el 08/08): `2026-08-06` y `2026-08-07` identicos al centavo,
+    `2026-08-08` movido. Consecuencia: el **07 queda con Real $0** y el **08 muestra la venta de
+    los dos dias juntos** (`acum(08) - acum(07)` = 07+08), porque el 07 nunca entro al historico.
+  - Unica correccion posible: editar a mano la fila del `2026-08-07` en
+    `02_HISTORY/acumulado_resultado_historico.csv` con el Acumulado real de ese dia, si aparece el
+    `resultado.xlsx` del 07. **No se hizo**: no hay fuente para ese dato y no se inventan numeros.
+  - Al mirar Plan vs Real del 08/08 en la matinal del lunes, tener presente que ese Real viene
+    inflado por el dia perdido. El aviso nuevo evita que esto se repita.
+- [ ] **Deploy**: los cambios de `server_orbit.py` y `portal.html` todavia no se pushearon a Render; el cartel recien va a verse ahi despues del proximo push.
+- [ ] **Verificar el aviso en el proximo cierre bueno**: no tiene que aparecer nada cuando el archivo esta al dia. Si aparece con el xlsx recien pegado, revisar que el ERP este exportando el acumulado actualizado.
+
 ## Sesion 2026-08-07 - Cierre de Mes: tarjeta de Acciones Comerciales
 
 ### HECHO
