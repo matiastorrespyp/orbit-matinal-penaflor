@@ -9,11 +9,13 @@
 - [x] **Solapamientos detectados, no resueltos**: las escalas que se pisan quedan marcadas las dos con el conflicto textual. Los 6 avisos de VALIDACIONES viajan al portal.
 - [x] **26 tests** en `test_acciones_explorador.py` (libros sinteticos en tmpdir, nunca inputs reales) + verificacion en navegador de estados, plegado, responsive y permisos.
 
+### HECHO (2026-08-08, despues del commit b05d510)
+- [x] **Innovaciones "+5 bultos" = desde 5 inclusive.** Definido por comercial. Se edito el **Excel** (`ESCALAS!E43` min 6→5, texto, observacion, `ACCIONES!G15`, y `VALIDACIONES` fila 6 pasa a RESUELTA) y se regenero el catalogo. **No se toco codigo**: ni generar_datasets_acum.py, ni server_orbit.py, ni portal.html. Es la prueba de que el diseño Excel-driven funciona.
+
 ### PENDIENTE
-- [ ] **CONFIRMACION COMERCIAL — bloquea que el vendedor use la escala alta con seguridad**:
+- [ ] **CONFIRMACION COMERCIAL — unica ambiguedad abierta**:
   - **20 cajas en Autoservicios**: la fuente escribe "10 a 20" y "20 o mas". A las 20 cajas aplican dos descuentos. Afecta a **VDA Superior (6/8%), VDA Resto (8/10%) y VDG Premium (10/12%)**. Recomendacion de la propia hoja VALIDACIONES: usar **10–19 y 20+**. Hasta que alguien lo confirme, el portal muestra las dos escalas con ⚠️.
-  - **Innovaciones "+5 bultos"**: se normalizo como **6 o mas**. Falta confirmar si comercialmente significa desde 5.
-  - Cuando se resuelvan, **se corrigen en el Excel del mes y se regenera**; no se tocan ni el portal ni el server.
+  - Se corrige **en el Excel del mes** (`ESCALAS`, columna `max_inclusivo` de los tramos "10 a 20" -> 19) y se regenera; no se tocan ni el portal ni el server. Acordarse de pasar tambien esa fila de VALIDACIONES a RESUELTA.
 - [ ] **Deploy**: nada de esto se pusheo. El explorador recien se va a ver en Render despues del proximo push + cierre (que publica el JSON).
 - [ ] **Uso medido de agosto**: `mod_acciones_ranking.csv` no tiene catalogo CSV del mes, asi que la pantalla no muestra inversion/litros/clientes de agosto. Si gerencia lo quiere, hay que armar el CSV de catalogo de agosto en el formato que consume `_acc_catalogo_mes()` — es un trabajo aparte del explorador y toca plata, no reglas.
 - [ ] **Verificar en celular real**: el responsive se valido midiendo el layout a 360/390 px, no en un telefono fisico.

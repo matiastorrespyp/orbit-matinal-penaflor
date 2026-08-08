@@ -302,14 +302,55 @@ class ExcelRealDeAgosto(unittest.TestCase):
     def test_reporta_los_solapamientos_de_agosto(self):
         if self.cat.get("nota") or self.cat.get("mes") != "2026-08":
             self.skipTest("el mes vigente ya no es agosto 2026")
-        # Los tres tramos "10 a 20 / 20 o más" de Autoservicios (VDA Superior, VDA Resto, VDG
-        # Premium y VDG Super) que la hoja VALIDACIONES marca como ALTA.
+        # Los tramos "10 a 20 / 20 o más" de Autoservicios (VDA Superior, VDA Resto y VDG
+        # Premium) que la hoja VALIDACIONES marca como ALTA.
         self.assertTrue(self.cat["conflictos"], "deberían detectarse los solapes de 20 cajas")
         self.assertTrue(all("se pisan en 20" in c for c in self.cat["conflictos"]))
         altas = [a for a in self.cat["avisos"] if a["severidad"] == "ALTA"]
         temas = " ".join(a["tema"] for a in altas)
         self.assertIn("20 cajas", temas)
-        self.assertIn("+5 bultos", temas)   # la otra ambigüedad que no se resuelve sola
+
+    def test_las_20_cajas_son_la_unica_ambiguedad_alta_abierta(self):
+        """Innovaciones "+5 bultos" quedó definido el 2026-08-08 (desde 5 inclusive), así que
+        ya no puede figurar como pendiente: si vuelve a aparecer en ALTA, alguien revirtió el
+        Excel."""
+        if self.cat.get("nota") or self.cat.get("mes") != "2026-08":
+            self.skipTest("el mes vigente ya no es agosto 2026")
+        altas = [a for a in self.cat["avisos"] if a["severidad"] == "ALTA"]
+        self.assertEqual([a["tema"] for a in altas], ["Escalas AS de 20 cajas"])
+
+    def test_innovaciones_arranca_en_5_bultos(self):
+        """Regla comercial confirmada: "+5 bultos" = desde 5 inclusive, no desde 6."""
+        if self.cat.get("nota") or self.cat.get("mes") != "2026-08":
+            self.skipTest("el mes vigente ya no es agosto 2026")
+        innov = next(c for c in self.cat["categorias"] if c["categoria"] == "Innovaciones")
+        escalas = [e for s in innov["subcategorias"][0]["segmentos"] for e in s["escalas"]]
+        bultos = [e for e in escalas if e["unidad"] == "bulto"]
+        self.assertEqual(len(bultos), 1)
+        self.assertEqual(bultos[0]["min"], 5)
+        self.assertEqual(bultos[0]["descuento"], 0.2)     # el % no se tocó
+        self.assertIsNone(bultos[0]["max"])               # tramo abierto
+        # la escala de 3 unidades sigue como estaba
+        unidades = [e for e in escalas if e["unidad"] == "unidad"]
+        self.assertEqual([(u["min"], u["max"], u["descuento"]) for u in unidades], [(3, 3, 0.18)])
+
+    def test_4_bultos_no_alcanza_y_5_si(self):
+        """El umbral, medido como lo mediría el vendedor: contando bultos."""
+        if self.cat.get("nota") or self.cat.get("mes") != "2026-08":
+            self.skipTest("el mes vigente ya no es agosto 2026")
+        innov = next(c for c in self.cat["categorias"] if c["categoria"] == "Innovaciones")
+        escalas = [e for s in innov["subcategorias"][0]["segmentos"] for e in s["escalas"]
+                   if e["unidad"] == "bulto"]
+
+        def aplica(cant):
+            return [e for e in escalas
+                    if e["min"] is not None and cant >= e["min"]
+                    and (e["max"] is None or cant <= e["max"])]
+
+        self.assertEqual(aplica(4), [], "4 bultos no debe alcanzar la escala")
+        self.assertEqual([e["descuento"] for e in aplica(5)], [0.2], "5 bultos SÍ alcanza")
+        self.assertEqual([e["descuento"] for e in aplica(6)], [0.2])
+        self.assertEqual([e["descuento"] for e in aplica(50)], [0.2])
 
 
 class LoaderDelServidor(unittest.TestCase):

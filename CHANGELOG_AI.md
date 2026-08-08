@@ -1,5 +1,15 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-08 - data(acciones): Innovaciones "+5 bultos" aplica desde 5 inclusive
+
+Definición de comercial sobre una de las dos ambigüedades que el libro de agosto dejaba abiertas. **El cambio es de dato, no de código**: se editó el Excel del mes y se regeneró el catálogo; `generar_datasets_acum.py`, `server_orbit.py` y `portal.html` no se tocaron — que era justamente el objetivo de haber sacado las reglas del HTML.
+
+- `ESCALAS!E43` (AGO26-INNOV, unidad bulto): `min_inclusivo` **6 → 5**. Texto a "5 bultos surtidos o más · 20%" y la observación deja asentado quién y cuándo lo definió.
+- `ACCIONES!G15` (resumen) y `VALIDACIONES!A6/D6`, que pasa de **ALTA a RESUELTA** con la definición registrada. La fila no se borra: queda la trazabilidad de que la fuente decía "+5" y de cómo se resolvió.
+- **Nada más se movió**: el 20% intacto, el segmento intacto, la escala de "3 unidades · 18%" intacta y la bonificación 5+1 de la fila siguiente intacta (verificado releyendo el archivo guardado).
+- **Queda una sola ambigüedad abierta**: el solape de "10 a 20 cajas" / "20 cajas o más" en Autoservicios (VDA Superior, VDA Resto, VDG Premium). Sigue en ALTA y el portal sigue mostrando las dos escalas con ⚠️.
+- **Verificado**: 29 tests OK (3 nuevos: umbral en 5, 4 bultos no alcanza / 5 sí, y que las 20 cajas queden como única ALTA); endpoints de gerencia y vendedor devuelven `min=5`.
+
 ## 2026-08-08 - feat(acciones): explorador comercial de agosto 2026
 
 Pedido: las reglas del mes se leían como un mosaico de tarjetas (una por acción, por segmento y por escala) imposible de recorrer en un celular. Ahora hay **un solo panel** con tres selectores: **Categoría → Línea → Segmento**.
