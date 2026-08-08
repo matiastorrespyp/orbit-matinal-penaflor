@@ -209,6 +209,12 @@ git add "04_DATASETS_ORBIT/mod_vda_ranking_vendedor.csv"
 git add "04_DATASETS_ORBIT/mod_vda_resumen_mensual.csv"
 git add "04_DATASETS_ORBIT/mod_volumen_vendedor.csv"
 git add "01_INPUTS/ACCIONES COMERCIALES/*/acciones_comerciales_*.csv"
+REM Libro .xlsx de reglas del mes (ORBIT_Acciones_Comerciales_<Mes>.xlsx y anteriores):
+REM es la FUENTE editable del explorador. El portal lee el JSON de arriba, pero sin
+REM esta linea el libro vive solo en esta maquina y una definicion comercial cargada
+REM a mano se pierde sin respaldo. El patron sirve para cualquier mes YYYY-MM; las
+REM salidas temporales de */salida/ ya estan en .gitignore.
+git add "01_INPUTS/ACCIONES COMERCIALES/*/*.xlsx"
 
 REM ── Abortar si quedan cambios FUERA del allowlist operativo (desarrollo colado).
 REM    Los archivos operativos ya quedaron staged por los git add de arriba.

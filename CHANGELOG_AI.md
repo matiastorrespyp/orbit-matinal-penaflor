@@ -1,5 +1,20 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-08 - chore(cierre): versionar el libro .xlsx de Acciones del mes
+
+El explorador lee el JSON, pero la **fuente editable** es el `.xlsx` del mes, y el cierre no lo publicaba: el libro de agosto —con la definición de "+5 bultos" cargada a mano— vivía sólo en la máquina de operaciones, sin respaldo. Una línea nueva en `CIERRE_DIA_ORBIT.bat`:
+
+```
+git add "01_INPUTS/ACCIONES COMERCIALES/*/*.xlsx"
+```
+
+- **Sirve para cualquier mes** `YYYY-MM`, no sólo agosto. Queda al lado de la regla hermana de los `.csv` de esa carpeta.
+- **Alcance verificado con `git ls-files`**: toca exactamente los 4 libros de carpetas mensuales (junio, los dos de julio y el de agosto) y **ningún otro** `.xlsx` de `01_INPUTS` — ni clientes, ni resultado, ni stock, ni los `cierres mes`. Ojo con el detalle técnico: en un pathspec de git el `*` **sí cruza `/`**, así que el patrón alcanzaría subcarpetas; no es un problema porque `*/salida/` ya está en `.gitignore`.
+- **Simulación en seco antes de tocar el .bat**: se extrajeron las 44 reglas `git add` reales del archivo y se corrieron con `--dry-run`. Único agregado nuevo: el Excel de agosto.
+- **El guard no se tocó**: `check_git_cierre.py` ya clasificaba esa carpeta como operativa.
+- CRLF preservados (edición binaria + verificación: 299 CRLF, 0 LF sueltos).
+- `mod_acciones_explorador.json` ya se venía publicando desde el commit anterior; se confirmó en la corrida real del cierre `f7e285b` (1310 líneas subidas).
+
 ## 2026-08-08 - data(acciones): Innovaciones "+5 bultos" aplica desde 5 inclusive
 
 Definición de comercial sobre una de las dos ambigüedades que el libro de agosto dejaba abiertas. **El cambio es de dato, no de código**: se editó el Excel del mes y se regeneró el catálogo; `generar_datasets_acum.py`, `server_orbit.py` y `portal.html` no se tocaron — que era justamente el objetivo de haber sacado las reglas del HTML.
