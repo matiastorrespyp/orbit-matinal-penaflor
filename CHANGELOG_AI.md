@@ -1,5 +1,29 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-10 - fix(cierre): los objetivos editados a mano no llegaban a Render
+
+**Síntoma reportado**: se cargó el objetivo nuevo en `01_INPUTS/objetivo 11T.xlsx` y ORBIT siguió mostrando el viejo.
+
+**Causa raíz — ERR-014 otra vez, ahora sobre los objetivos.** `CIERRE_DIA_ORBIT.bat` publica por **allowlist explícita** (`git add` archivo por archivo, no `git add .`) y **ningún archivo de objetivos estaba en esa lista**. El portal los lee **en vivo desde el `.xlsx`** (`server_orbit.py:_objetivos_11t`, `_objetivos_ccc`, `_objetivos_sellout`, `_objetivo_dada`), sin dataset intermedio: en local el cambio se ve al instante, pero el archivo se quedaba modificado-sin-commitear para siempre y Render seguía sirviendo la versión del último commit manual. El guard no lo detecta —`check_git_cierre.py` clasifica todo `01_INPUTS/` como operativo permitido— y el cierre daba **verde** igual porque el resto de los `git add` sí dejaba algo staged.
+
+**Medida del desfasaje al momento del reporte** (11T, HEAD vs local): objetivo total **1864 → 3734**, con los 11 titulares desactualizados. El `.xlsx` de Render era del **2026-07-06**; `objccc.xlsx`, del 21/07.
+
+**Cambio**: 5 líneas nuevas en el allowlist de `CIERRE_DIA_ORBIT.bat`, junto a los demás inputs:
+
+```
+git add "01_INPUTS/objetivo 11T.xlsx"      REM 11 Titulares
+git add "01_INPUTS/objccc.xlsx"            REM CCC por canal y por vendedor
+git add "01_INPUTS/OBJSELLOUT.xlsx"        REM Sell Out por categoría (+ litros del semanal)
+git add "01_INPUTS/DADAVERANOOBJ.xlsx"     REM Incentivo DADA
+git add "01_INPUTS/dadatinto.csv"          REM ventas del incentivo DADA (input propio)
+```
+
+- **Sin tocar código ni datasets**: es publicación, no cálculo. `server_orbit.py` ya leía bien el archivo — el problema era que a Render le llegaba otro.
+- **`git add` de un archivo sin cambios es no-op** y no rompe el cierre, así que las líneas quedan fijas aunque ese mes no se toque el objetivo.
+- **Validado en seco** (`git add -n`, sin tocar el índice): stagea los 3 modificados (`objetivo 11T.xlsx`, `objccc.xlsx`, `dadatinto.csv`) y no dice nada de los 2 sin cambios.
+- CRLF preservados (edición binaria + verificación: **309 CRLF, 0 LF sueltos**) — ver regla del `.gitattributes`.
+- **Quedan fuera del allowlist a propósito, y siguen siendo publicación manual**: `04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx` (maestro congelado), `11 titulares autoservicio/…match_codigos.xlsx` (matriz oficial de SKU) y `MPA/MPA.xlsx` (lista fija). Si alguno se edita, no viaja con el cierre.
+
 ## 2026-08-08 - chore(cierre): versionar el libro .xlsx de Acciones del mes
 
 El explorador lee el JSON, pero la **fuente editable** es el `.xlsx` del mes, y el cierre no lo publicaba: el libro de agosto —con la definición de "+5 bultos" cargada a mano— vivía sólo en la máquina de operaciones, sin respaldo. Una línea nueva en `CIERRE_DIA_ORBIT.bat`:

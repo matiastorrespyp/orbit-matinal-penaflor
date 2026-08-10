@@ -1,5 +1,18 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-10 - Los objetivos editados a mano no llegaban a Render
+
+### HECHO
+- [x] **Diagnostico**: `objetivo 11T.xlsx` actualizado en local y ORBIT mostrando el viejo. No es un bug de calculo: el portal lee el .xlsx en vivo y calcula bien. El archivo **nunca se publicaba**, porque `CIERRE_DIA_ORBIT.bat` stagea por allowlist explicita y ningun archivo de objetivos estaba en la lista. Es el patron ERR-014.
+- [x] **Alcance real del agujero** (todos leidos en vivo por server_orbit.py, todos fuera del allowlist): `objetivo 11T.xlsx`, `objccc.xlsx`, `OBJSELLOUT.xlsx`, `DADAVERANOOBJ.xlsx` y `dadatinto.csv`. Se agregaron los 5 al `.bat`, CRLF preservados (309 CRLF, 0 LF sueltos) y validado con `git add -n`.
+- [x] **Desfasaje medido**: objetivo 11T total en Render **1864** vs local **3734**; el .xlsx publicado era del 06/07 y `objccc.xlsx` del 21/07.
+
+### PENDIENTE
+- [ ] **Publicar el objetivo nuevo**: el fix hace que *el proximo* cierre lo suba. Hasta que se corra `CIERRE_DIA_ORBIT.bat` en master, Render sigue con el objetivo viejo.
+- [ ] **Chequear el 11T despues del deploy**: con objetivo 1864 -> 3734 el % de avance de 11 Titulares se parte casi al medio. Es el numero correcto, pero avisarlo antes de la matinal para que no lo lean como una caida de venta.
+- [ ] **Siguen fuera del allowlist, publicacion manual**: `04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx`, `11 titulares autoservicio/…match_codigos.xlsx` y `MPA/MPA.xlsx`. Son catalogos casi fijos; si alguna vez se editan hay que commitearlos a mano o sumarlos al `.bat`.
+- [ ] **Mejora opcional del guard**: `check_git_cierre.py` clasifica todo `01_INPUTS/` como operativo permitido, asi que un input nuevo fuera del allowlist no frena ni avisa — el cierre da verde igual. Podria listar al final los archivos de `01_INPUTS/` modificados que **ningun** `git add` del .bat va a stagear. Evitaria el proximo ERR-014.
+
 ## Sesion 2026-08-08b - Explorador de Acciones Comerciales (agosto 2026)
 
 ### HECHO

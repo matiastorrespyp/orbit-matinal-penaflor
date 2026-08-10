@@ -155,6 +155,16 @@ git add "01_INPUTS/ventas.csv"
 git add "01_INPUTS/ventas_acumulada.csv"
 git add "01_INPUTS/ventas_mes.csv"
 git add "01_INPUTS/clientes.xlsx"
+REM -- Objetivos comerciales. Los carga el negocio a mano en 01_INPUTS y el portal
+REM    los lee EN VIVO desde el .xlsx (server_orbit.py), no via dataset regenerado:
+REM    si no viajan con el cierre, Render sigue mostrando el objetivo del ultimo
+REM    commit manual aunque el archivo local ya este actualizado (patron ERR-014).
+git add "01_INPUTS/objetivo 11T.xlsx"
+git add "01_INPUTS/objccc.xlsx"
+git add "01_INPUTS/OBJSELLOUT.xlsx"
+git add "01_INPUTS/DADAVERANOOBJ.xlsx"
+REM Ventas del incentivo DADA Tinto: input propio, no sale de ventas.csv.
+git add "01_INPUTS/dadatinto.csv"
 git add "01_INPUTS/ventas-clubfaro.csv"
 git add "01_INPUTS/incentivo_club_faro*.xlsx"
 git add "01_INPUTS/INNOVACIONES/Innovaciones.xlsx"
