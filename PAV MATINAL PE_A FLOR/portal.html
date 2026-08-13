@@ -1052,10 +1052,20 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 .accf-in:focus { outline:none; border-color:var(--mg); }
 .accf-in::placeholder { color:var(--text3); }
 .accf-sel {
-  padding:9px 10px; font-family:var(--f-txt); font-size:12px; color:var(--text2);
+  padding:9px 10px; font-family:var(--f-body); font-size:12px; color:var(--text2);
   background:var(--surf2); border:1px solid var(--b); border-radius:10px; cursor:pointer;
 }
 .accf-sel:focus { outline:none; border-color:var(--mg); }
+/* Selectores del Explorador de Acciones Comerciales */
+.accx-sel {
+  width:100%; padding:9px 10px; font-family:var(--f-body); font-size:13px; color:var(--text);
+  background:var(--surf2); border:1px solid var(--b); border-radius:8px; cursor:pointer;
+}
+.accx-sel:focus { outline:none; border-color:var(--mg); }
+/* El popup nativo del combo se pinta con el tema del SO: en Windows quedaba
+   fondo blanco con letra clara (ilegible hasta el hover). Se fuerza el tema oscuro. */
+.accf-sel, .accx-sel { color-scheme:dark; }
+.accf-sel option, .accx-sel option { background:var(--surf3); color:var(--text); }
 .accf-x {
   padding:9px 13px; font-family:var(--f-txt); font-size:12px; font-weight:600; color:var(--text3);
   background:transparent; border:1px solid var(--b); border-radius:10px; cursor:pointer;
@@ -3358,7 +3368,6 @@ function accxHTML(scope){
       </div></div></div>`;
   }
   if(!ACCX[scope]) ACCX[scope]={cat:'',sub:'',seg:''};
-  const selSty='width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--b);background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit;';
   const labSty='display:block;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:4px;';
   const opts=cats.map(c=>`<option value="${accxEsc(c.categoria)}">${accxEsc(c.categoria)}</option>`).join('');
   const avisos=(dat.avisos||[]).filter(a=>String(a.severidad||'').toUpperCase()==='ALTA');
@@ -3372,17 +3381,17 @@ function accxHTML(scope){
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
         <div style="flex:1 1 190px;min-width:150px;">
           <label style="${labSty}" for="accx-cat-${scope}">Categoría</label>
-          <select id="accx-cat-${scope}" style="${selSty}" onchange="accxSet('${scope}','cat',this.value)">
+          <select id="accx-cat-${scope}" class="accx-sel" onchange="accxSet('${scope}','cat',this.value)">
             <option value="">Seleccioná una categoría…</option>${opts}
           </select>
         </div>
         <div style="flex:1 1 190px;min-width:150px;" id="accx-subwrap-${scope}" hidden>
           <label style="${labSty}" for="accx-sub-${scope}">Línea / subcategoría</label>
-          <select id="accx-sub-${scope}" style="${selSty}" onchange="accxSet('${scope}','sub',this.value)"></select>
+          <select id="accx-sub-${scope}" class="accx-sel" onchange="accxSet('${scope}','sub',this.value)"></select>
         </div>
         <div style="flex:1 1 190px;min-width:150px;" id="accx-segwrap-${scope}" hidden>
           <label style="${labSty}" for="accx-seg-${scope}">Segmento / canal</label>
-          <select id="accx-seg-${scope}" style="${selSty}" onchange="accxSet('${scope}','seg',this.value)"></select>
+          <select id="accx-seg-${scope}" class="accx-sel" onchange="accxSet('${scope}','seg',this.value)"></select>
         </div>
       </div>
       <div id="accx-panel-${scope}"></div>

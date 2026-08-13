@@ -1,5 +1,21 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-13 - fix(portal): los desplegables de Acciones Comerciales eran ilegibles
+
+**Síntoma reportado**: en Acciones Comerciales el menú desplegable salía blanco con las letras blancas; sólo se leía la opción al pasarle el cursor por encima.
+
+**Causa raíz — un token de color que no existe.** Los 3 selectores del Explorador (Categoría / Línea / Segmento) se pintaban con un `style` inline que pedía `background:var(--bg2)`, y **`--bg2` no está definido en `:root`** (el design system tiene `--bg`, `--surf`, `--surf2`, `--surf3`). Una `var()` inválida en `background` cae a `transparent`, así que el control quedaba con el blanco del sistema mientras el texto conservaba `color:var(--text)` (#E8EDF5, casi blanco). Encima, el popup nativo del `<select>` en Windows se pinta con el tema del SO salvo que se le fije `color-scheme` y se estilen los `<option>` — el mismo detalle que ya estaba resuelto en la pantalla de login (`.ln-field select option`) y que faltaba acá.
+
+**Cambio — sólo `PAV MATINAL PE_A FLOR/portal.html`:**
+
+- Clase nueva `.accx-sel` junto a `.accf-sel`, con `background:var(--surf2)` y `color:var(--text)`, en reemplazo del `style` inline roto (constante `selSty` eliminada).
+- `color-scheme:dark` + `.accf-sel option, .accx-sel option { background:var(--surf3); color:var(--text); }` para que el desplegable abierto también respete el tema oscuro. Alcanza a los filtros del buscador (`.accf-sel`), que tenían el mismo riesgo en el popup.
+- De paso, `.accf-sel` usaba `font-family:var(--f-txt)`, otro token inexistente → `var(--f-body)`.
+
+**Validación real**: servidor levantado en 8502 y estilos computados leídos del DOM — select `rgb(17,24,32)` (#111820) con texto `rgb(232,237,245)`, opciones `rgb(22,30,42)` (#161E2A) con el mismo texto, `color-scheme: dark` en ambas clases. Sin cambios de identidad visual: todo sale de los tokens existentes.
+
+**Queda pendiente (no es el pedido, mismo bug)**: los buscadores de **Planes AS** (`#gpasSearch`) y **Stock sin Venta** (`#svSearch`) siguen con `background:var(--bg2)` y `border:1px solid var(--line)` inline — `--line` tampoco existe. Son `input`, no `select`, así que el síntoma es el campo de texto en blanco, no el desplegable.
+
 ## 2026-08-10 - fix(cierre): los objetivos editados a mano no llegaban a Render
 
 **Síntoma reportado**: se cargó el objetivo nuevo en `01_INPUTS/objetivo 11T.xlsx` y ORBIT siguió mostrando el viejo.

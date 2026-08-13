@@ -1,5 +1,17 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-13 - Desplegables ilegibles en Acciones Comerciales
+
+### HECHO
+- [x] **Causa raiz**: los 3 selectores del Explorador usaban `background:var(--bg2)` inline y **`--bg2` no existe** en `:root` -> fondo blanco del sistema con texto casi blanco. Ademas faltaba `color-scheme:dark` + estilo de `<option>`, sin lo cual el popup nativo de Windows ignora el tema oscuro.
+- [x] **Fix en `PAV MATINAL PE_A FLOR/portal.html`**: clase `.accx-sel` (surf2 + text) en lugar del inline roto, reglas de `option` con `--surf3` para `.accx-sel` y `.accf-sel`, y `--f-txt` -> `--f-body` en `.accf-sel`.
+- [x] **Validado en 8502** leyendo estilos computados: select #111820 / texto #E8EDF5 / option #161E2A, `color-scheme: dark`.
+
+### PENDIENTE
+- [ ] **Mismo bug en dos buscadores**: `#gpasSearch` (Planes AS) y `#svSearch` (Stock sin Venta) tienen inline `background:var(--bg2)` y `border:1px solid var(--line)`; **ninguno de los dos tokens existe**. Son `input`, no `select`: el campo de texto queda blanco con letra clara. Fix analogo, una clase con `--surf2` / `--b`.
+- [ ] **Barrido de tokens fantasma**: conviene un grep de `var(--…)` contra los definidos en `:root` para cazar el resto antes de que aparezca en otra pantalla.
+- [ ] **Publicar**: es cambio de portal, viaja con el proximo `CIERRE_DIA_ORBIT.bat` en master (o commit manual de `portal.html`).
+
 ## Sesion 2026-08-10 - Los objetivos editados a mano no llegaban a Render
 
 ### HECHO
