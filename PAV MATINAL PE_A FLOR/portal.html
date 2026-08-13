@@ -1066,6 +1066,15 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
    fondo blanco con letra clara (ilegible hasta el hover). Se fuerza el tema oscuro. */
 .accf-sel, .accx-sel { color-scheme:dark; }
 .accf-sel option, .accx-sel option { background:var(--surf3); color:var(--text); }
+/* Buscadores de lista (Planes AS, Stock sin Venta). Mismo bug que .accx-sel:
+   pedían background:var(--bg2) y border-color:var(--line) inline, y ninguno de
+   los dos tokens existe en :root, así que el campo quedaba blanco con letra clara. */
+.srch-in {
+  width:100%; box-sizing:border-box; padding:9px 12px; font-size:13px;
+  color:var(--text); background:var(--surf2); border:1px solid var(--b); border-radius:9px;
+}
+.srch-in:focus { outline:none; border-color:var(--mg); }
+.srch-in::placeholder { color:var(--text3); }
 .accf-x {
   padding:9px 13px; font-family:var(--f-txt); font-size:12px; font-weight:600; color:var(--text3);
   background:transparent; border:1px solid var(--b); border-radius:10px; cursor:pointer;
@@ -5715,7 +5724,7 @@ function gPlanesAS(p){
     <div class="card-hd"><span class="card-title">Clientes con Plan AS</span><span class="chip" id="gpasCount">${dat.clientes.length} clientes</span></div>
     <div class="card-body">
       <input id="gpasSearch" type="text" placeholder="🔎 Buscar cliente por nombre, código, localidad o vendedor…" oninput="_gPlanesASRows()"
-        style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:9px;border:1px solid var(--line);background:var(--bg2);color:var(--text);font-size:13px;">
+        class="srch-in">
     </div>
     <div class="card-body nop">
       <table style="width:100%;border-collapse:collapse;font-size:11px;">
@@ -6056,7 +6065,7 @@ function gStockSinVenta(p){
     </div>
     <div class="card-body">
       <input id="svSearch" type="text" placeholder="🔎 Buscar por código o descripción…" oninput="_stockSinVentaRender()"
-        style="width:100%;box-sizing:border-box;margin-bottom:10px;padding:9px 12px;border-radius:9px;border:1px solid var(--line);background:var(--bg2);color:var(--text);font-size:13px;">
+        class="srch-in" style="margin-bottom:10px;">
     </div>
     <div class="card-body nop">
       <table class="tbl"><thead><tr>

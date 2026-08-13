@@ -1,5 +1,27 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-13 - fix(portal): los buscadores de Planes AS y Stock sin Venta eran ilegibles
+
+**Continuación directa del fix de los desplegables** (misma sesión, mismo bug de tokens fantasma). Era el pendiente que quedó anotado abajo.
+
+**Causa raíz — los mismos dos tokens que no existen.** Los buscadores `#gpasSearch` (Planes AS, gerencia) y `#svSearch` (Stock sin Venta) traían `style` inline con `background:var(--bg2)` y `border:1px solid var(--line)`, y **ni `--bg2` ni `--line` están definidos en `:root`**. Medido en el navegador, el efecto era peor de lo que se veía en el código: la `var()` inválida en `background` deja `rgba(0,0,0,0)` (el campo toma el blanco del sistema) **y además el `border` desaparecía por completo — `border-width: 0px`**, porque una `var()` inválida invalida todo el shorthand y `border-style` vuelve a `none`. Con `color:var(--text)` (#E8EDF5) intacto, el campo quedaba blanco, sin borde y con letra casi blanca.
+
+**Cambio — sólo `PAV MATINAL PE_A FLOR/portal.html`:**
+
+- Clase nueva `.srch-in` (`--surf2` / `--text` / `--b`, con `:focus` en `--mg` y `::placeholder` en `--text3`), espejo de `.accf-in`, en reemplazo de los dos `style` inline rotos.
+- `#svSearch` conserva su `margin-bottom:10px` inline; el resto de la geometría (ancho 100%, `border-radius:9px`, padding) es idéntica a la anterior.
+
+**Validación real**: servidor en 8502 y A/B de estilos computados contra la hoja de estilos viva, mismo markup con el inline viejo vs la clase nueva —
+
+| | background | border | color |
+|---|---|---|---|
+| antes | `rgba(0,0,0,0)` | `0px` (sin borde) | `#E8EDF5` |
+| después | `rgb(17,24,32)` = `--surf2` | `1px rgba(255,255,255,.07)` = `--b` | `#E8EDF5` |
+
+Confirmado en runtime que `--bg2` y `--line` devuelven vacío desde `:root`. Geometría sin cambios (ancho y radio idénticos), así que no hay corrimiento de layout. Los dos son buscadores de render parcial: el `<input>` se editó en su lugar, dentro del shell, sin moverlo a la zona que se re-renderiza por tecla, así que no pierde el foco.
+
+**Queda pendiente (mismo bug, fuera del pedido)**: `#vpasSearch` (Planes AS del vendedor) tiene el fondo bien (`--surf2`) pero el borde con `var(--line)` → se queda sin borde; y la barrita de progreso de Stock sin Venta usa `background:var(--line)` para el riel, que por eso es invisible.
+
 ## 2026-08-13 - fix(portal): los desplegables de Acciones Comerciales eran ilegibles
 
 **Síntoma reportado**: en Acciones Comerciales el menú desplegable salía blanco con las letras blancas; sólo se leía la opción al pasarle el cursor por encima.

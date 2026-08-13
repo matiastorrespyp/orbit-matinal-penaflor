@@ -8,8 +8,8 @@
 - [x] **Validado en 8502** leyendo estilos computados: select #111820 / texto #E8EDF5 / option #161E2A, `color-scheme: dark`.
 
 ### PENDIENTE
-- [ ] **Mismo bug en dos buscadores**: `#gpasSearch` (Planes AS) y `#svSearch` (Stock sin Venta) tienen inline `background:var(--bg2)` y `border:1px solid var(--line)`; **ninguno de los dos tokens existe**. Son `input`, no `select`: el campo de texto queda blanco con letra clara. Fix analogo, una clase con `--surf2` / `--b`.
-- [ ] **Barrido de tokens fantasma**: conviene un grep de `var(--…)` contra los definidos en `:root` para cazar el resto antes de que aparezca en otra pantalla.
+- [x] **Mismo bug en dos buscadores**: `#gpasSearch` (Planes AS) y `#svSearch` (Stock sin Venta) tenian inline `background:var(--bg2)` y `border:1px solid var(--line)`; **ninguno de los dos tokens existe**. HECHO: clase `.srch-in` (`--surf2` / `--text` / `--b`). Medido en 8502: el borde ademas estaba en `0px`, no solo mal pintado (una `var()` invalida invalida todo el shorthand).
+- [ ] **Barrido de tokens fantasma**: conviene un grep de `var(--…)` contra los definidos en `:root` para cazar el resto antes de que aparezca en otra pantalla. Quedan **dos usos reales de `--line`** ya identificados: `#vpasSearch` (Planes AS del vendedor, se queda sin borde) y el riel de la barra de progreso de Stock sin Venta (invisible). Tambien `--f-txt` sigue en `.accf-in` y `.accf-x`, ahi es inocuo porque `font-family` hereda igual.
 - [ ] **Publicar**: es cambio de portal, viaja con el proximo `CIERRE_DIA_ORBIT.bat` en master (o commit manual de `portal.html`).
 
 ## Sesion 2026-08-10 - Los objetivos editados a mano no llegaban a Render
