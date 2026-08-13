@@ -1,5 +1,14 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-13 - El cierre de mes de agosto era una prueba y estaba publicado
+
+### HECHO
+- [x] **Quitado el cierre `_082026`** (commit `7ca377c`): los 4 archivos se habian generado el 1/8 (`e9ac41e`) como prueba, pero agosto sigue en curso. Mayo, junio y julio intactos (14 archivos en la carpeta). Reversible: `git show e9ac41e:"01_INPUTS/cierres mes/ventas_mes_082026.csv"`.
+
+### PENDIENTE
+- [ ] **CAUSA RAIZ, no arreglada — el autodescubrimiento no excluye el mes en curso.** `server_orbit.py:10550` globea `ventas_mes_*.csv` y agrega **cualquier** periodo que encuentre, marcandolo `estado: PASS`, sin comparar contra el mes actual. Por eso una prueba de cierre a mitad de mes se publica sola como si fuera un mes cerrado. **Si se vuelve a probar un cierre en septiembre, pasa lo mismo.** Fix propuesto: saltar el periodo si `periodo >= date.today().strftime('%Y-%m')` en el loop de descubrimiento.
+- [ ] **`01_INPUTS/cierres mes/` no esta en la allowlist de `CIERRE_DIA_ORBIT.bat`** (si en `CIERRE_MES_ORBIT.bat`). Es correcto que el cierre diario no la toque, pero implica que **cualquier correccion en esa carpeta necesita commit manual**: borrar los archivos del disco no alcanza, el borrado se queda pendiente para siempre y Render sigue sirviendo lo viejo. Mismo patron que ERR-014. Tenerlo presente, no es un bug a arreglar.
+
 ## Sesion 2026-08-13 - Desplegables ilegibles en Acciones Comerciales
 
 ### HECHO
