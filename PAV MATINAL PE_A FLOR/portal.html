@@ -6011,7 +6011,7 @@ function _stockSinVentaRender(){
       <td><b>${r.descripcion}</b></td>
       <td style="text-align:right;font-variant-numeric:tabular-nums"><b>${fmt(r.disponible)}</b>${tr}</td>
       <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--text3)">${r.reserva>0?fmt(r.reserva):'—'}</td>
-      <td style="min-width:120px"><div style="height:7px;border-radius:5px;background:var(--line);overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--wn)"></div></div></td>
+      <td style="min-width:120px"><div style="height:7px;border-radius:5px;background:var(--b);overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--wn)"></div></div></td>
     </tr>`;
   }).join('');
 }
@@ -6103,7 +6103,7 @@ function vPlanesAS(){
     </div>
   </div>`;
   h+=`<input id="vpasSearch" type="text" placeholder="🔎 Buscar cliente por nombre, código o dirección…" oninput="_vPlanesASCards()"
-    style="width:100%;box-sizing:border-box;margin-bottom:10px;padding:10px 12px;border-radius:9px;border:1px solid var(--line);background:var(--surf2);color:var(--text);font-size:13px;">
+    class="srch-in" style="margin-bottom:10px;">
   <div id="vpasBody"></div>`;
   document.getElementById('vT-planes_as').innerHTML=h;
   _vPlanesASCards();

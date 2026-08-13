@@ -9,7 +9,8 @@
 
 ### PENDIENTE
 - [x] **Mismo bug en dos buscadores**: `#gpasSearch` (Planes AS) y `#svSearch` (Stock sin Venta) tenian inline `background:var(--bg2)` y `border:1px solid var(--line)`; **ninguno de los dos tokens existe**. HECHO: clase `.srch-in` (`--surf2` / `--text` / `--b`). Medido en 8502: el borde ademas estaba en `0px`, no solo mal pintado (una `var()` invalida invalida todo el shorthand).
-- [ ] **Barrido de tokens fantasma**: conviene un grep de `var(--…)` contra los definidos en `:root` para cazar el resto antes de que aparezca en otra pantalla. Quedan **dos usos reales de `--line`** ya identificados: `#vpasSearch` (Planes AS del vendedor, se queda sin borde) y el riel de la barra de progreso de Stock sin Venta (invisible). Tambien `--f-txt` sigue en `.accf-in` y `.accf-x`, ahi es inocuo porque `font-family` hereda igual.
+- [x] **`--bg2` y `--line` eliminados del portal**: HECHO. `#vpasSearch` pasa a `.srch-in` (los 3 buscadores comparten clase) y el riel de la barra de Stock sin Venta pasa a `var(--b)`. Grep final: cero usos de ambos tokens.
+- [ ] **Barrido de tokens fantasma (lo que falta)**: queda `--f-txt` en `.accf-in` y `.accf-x`. Es **inocuo**: `font-family` con `var()` invalida hereda igual, y hay un `input, select, textarea { font-family:inherit }` global. Cambiarlo a `--f-body` es cosmetico, no hay bug visible. Conviene igual un grep sistematico de `var(--…)` contra los definidos en `:root` para cazar cualquier token nuevo antes de que aparezca en otra pantalla.
 - [ ] **Publicar**: es cambio de portal, viaja con el proximo `CIERRE_DIA_ORBIT.bat` en master (o commit manual de `portal.html`).
 
 ## Sesion 2026-08-10 - Los objetivos editados a mano no llegaban a Render

@@ -1,5 +1,25 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-13 - fix(portal): se terminan de eliminar los tokens `--bg2` y `--line`
+
+**Cierre de la serie de tokens fantasma** (tercer y último commit de la sesión). Quedaban los dos usos que habían aparecido buscando los buscadores anteriores.
+
+**Cambios — sólo `PAV MATINAL PE_A FLOR/portal.html`:**
+
+- **`#vpasSearch`** (Planes AS del vendedor): el fondo ya estaba bien (`--surf2`), pero el `border:1px solid var(--line)` hacía desaparecer el borde entero (`border-width: 0px`). Pasa a `.srch-in`, con lo que los **tres** buscadores del portal comparten una sola clase.
+- **Riel de la barra de progreso de Stock sin Venta**: `background:var(--line)` daba `rgba(0,0,0,0)`, o sea riel invisible — se veía la porción amarilla flotando sin canal detrás. Pasa a `var(--b)`. El relleno nunca estuvo roto: `--wn` (#F2B544) sí existe.
+
+**Por qué `--b` y no migrar a `.bar`**: la convención del design system para riel es `.bar { background: rgba(255,255,255,0.06) }`, y `--b` es `rgba(255,255,255,0.07)` — la misma superficie a 0.01 de diferencia. Migrar a `.bar`/`.bar-f` habría cambiado alto (7px→5px) y radio (5px→999px), que es un cambio visual y no un fix.
+
+**Validación real**: 8502 y A/B de estilos computados contra la hoja de estilos viva —
+
+| | antes | después |
+|---|---|---|
+| `#vpasSearch` borde | `0px` | `1px rgba(255,255,255,.07)` |
+| riel de la barra | `rgba(0,0,0,0)` | `rgba(255,255,255,.07)`, alto 7px sin cambio |
+
+Único efecto colateral, aceptado: `#vpasSearch` pasa de `padding:10px 12px` a `9px 12px` al adoptar la clase compartida — 1px vertical, a cambio de unificar los tres buscadores. Grep final: **cero usos de `var(--bg2)` y `var(--line)`** en todo el archivo.
+
 ## 2026-08-13 - fix(portal): los buscadores de Planes AS y Stock sin Venta eran ilegibles
 
 **Continuación directa del fix de los desplegables** (misma sesión, mismo bug de tokens fantasma). Era el pendiente que quedó anotado abajo.
