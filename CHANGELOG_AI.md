@@ -1,5 +1,27 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-13 - fix(cierre de mes): un mes sin terminar se publicaba solo como cerrado
+
+**Causa raíz del cierre de agosto que hubo que borrar** (commit `7ca377c`). Ese fue el síntoma; esto es el bug.
+
+**El problema.** El descubrimiento de cierres por carpeta (`server_orbit.py`, `_cierres_historicos`) globea `01_INPUTS/cierres mes/ventas_mes_*.csv` y agrega **cualquier** período que encuentre, marcándolo `estado: PASS`, sin comparar nunca contra el mes actual. Correr `CIERRE_MES_ORBIT.bat` a mitad de mes deja el trío versionado en la carpeta, y con eso solo el mes en curso aparecía en el selector como un mes cerrado, con datos de medio mes. Agosto figuró como cerrado desde el día 1.
+
+**Cambio — sólo `server_orbit.py`, dos puntos:**
+
+- En el loop de descubrimiento: `if periodo >= periodo_actual: continue`, con `periodo_actual = _now_ar()[:7]`. Se reusa el helper de hora argentina existente en vez de `date.today()`, que en Render (UTC) puede correrse un día en los bordes de mes. El `>=` cubre además un `MMAAAA` futuro mal tipeado.
+- En `_cierres_hist_key()`: se agrega el período actual a la huella de caché. **Sin esto el fix tenía un bug propio**: la caché sólo dependía de mtimes, así que el 1° de mes el cierre recién terminado se quedaba oculto detrás de la caché hasta que algún archivo cambiara.
+
+**Lo que NO se tocó**: el índice de `07_CIERRES_MENSUALES/` — un cierre real cargado ahí es un acto deliberado, no un descubrimiento automático. Y el glob de la línea 10509 sigue viendo *todos* los archivos, porque es la huella de invalidación de caché y tiene que ver hasta lo filtrado.
+
+**Validación real**, con el archivo de agosto restaurado desde git a la carpeta:
+
+| escenario | períodos devueltos | agosto |
+|---|---|---|
+| `ventas_mes_082026.csv` presente | `2026-07, 2026-06, 2026-05` | **excluido** |
+| el **mismo archivo** renombrado a `_042026` | `2026-07, 2026-06, 2026-05, 2026-04` | aparece |
+
+El control inverso es lo que cierra la prueba: el mismo archivo aparece como abril y se excluye como agosto, así que el descubrimiento sigue funcionando y lo único que lo saca es la regla del mes en curso. Temporales borrados, carpeta de vuelta en 14 archivos. Smoke de 6 endpoints en 200.
+
 ## 2026-08-13 - fix(portal): se terminan de eliminar los tokens `--bg2` y `--line`
 
 **Cierre de la serie de tokens fantasma** (tercer y último commit de la sesión). Quedaban los dos usos que habían aparecido buscando los buscadores anteriores.

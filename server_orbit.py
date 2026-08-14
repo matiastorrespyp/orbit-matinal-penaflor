@@ -10513,6 +10513,10 @@ def _cierres_hist_key():
                 pass
         m04 = CONFIG / "maestro_04D_productos.csv"
         partes.append(("04D", m04.stat().st_mtime if m04.exists() else 0))
+        # El descubrimiento por carpeta excluye el mes en curso, asi que el resultado
+        # depende del mes ademas de los mtimes: sin esto, el 1ro de mes el cierre recien
+        # terminado se quedaria oculto detras de la cache hasta que algun archivo cambie.
+        partes.append(("periodo", _now_ar()[:7]))
     except Exception:
         return None                      # sin huella confiable: no se cachea
     return tuple(partes)
@@ -10547,12 +10551,20 @@ def _cierres_historicos():
     # indice 07. Asi cada cierre que genera CIERRE_MES_ORBIT.bat aparece solo y el selector de
     # mes del portal crece con cada mes, sin depender de 07_CIERRES_MENSUALES/.
     periodos_idx = {str(e.get("periodo", "")) for e in indice}
+    periodo_actual = _now_ar()[:7]          # 'YYYY-MM' en hora argentina (UTC-3)
     for vm in sorted(CIERRES_MES_DIR.glob("ventas_mes_*.csv")):
         mmaaaa = vm.stem.replace("ventas_mes_", "")
         if len(mmaaaa) != 6 or not mmaaaa.isdigit():
             continue
         periodo = f"{mmaaaa[2:]}-{mmaaaa[:2]}"
         if periodo in periodos_idx:
+            continue
+        # Un mes sin terminar NO es un cierre. Correr CIERRE_MES_ORBIT.bat a mitad de
+        # mes deja el trio versionado en la carpeta, y sin este filtro el mes en curso
+        # se publicaba solo en el selector, con estado PASS y datos de medio mes.
+        # Paso 2026-08: agosto aparecio como cerrado desde el dia 1. El '>=' cubre
+        # ademas un archivo con periodo futuro (un MMAAAA mal tipeado).
+        if periodo >= periodo_actual:
             continue
         try:
             ts = datetime.fromtimestamp(vm.stat().st_mtime).strftime("%Y-%m-%dT%H:%M:%S-03:00")
