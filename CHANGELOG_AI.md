@@ -1,5 +1,112 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-18 - feat(Acciones): tarjeta "Análisis de la acción" en el Explorador
+
+**Qué se agrega:** debajo de la tarjeta que explica QUÉ ofrece cada acción, una segunda tarjeta
+que responde QUÉ PASÓ con ella. Se carga diferida (sólo cuando ya hay una acción elegida),
+tiene selector "vs. mes anterior" / "vs. mismo mes del año anterior", una conclusión corta,
+seis indicadores, secundarios, embudo, 11 Titulares y un Top 5.
+
+**Atribución — no hay identificador de acción en el ERP.** Antes de programar se auditaron las
+columnas de etiqueta sobre ventas.csv de agosto:
+
+- `Promociones` tiene 2 valores: 19 = Spirits/Diageo (Gordon's, Smirnoff, JW, Tanqueray) y
+  21 = resto del portfolio. Es la agrupación del proveedor, no la acción: el 21 aparece con 17
+  porcentajes de descuento distintos.
+- `Tags` / `EtiquetaItem` traen `%10` / `%20` + "PEÑAFLOR GRUPO OBJETIVO". El `%20` aparece con
+  TODOS los descuentos de 0 a 100, así que tampoco identifica la acción.
+- `ComboCodigo` y `Etiqueta` vienen vacías en el 100% de las filas.
+
+Conclusión: hoy la atribución sólo puede ser por regla. El payload informa siempre `metodo`
+(`exact_tag` / `rule_discount` / `ambiguous`); `buscar_tag_accion()` queda implementada y
+testeada para que la atribución exacta entre sola si el ERP empieza a emitir el código.
+Dos acciones con el mismo canal, productos y descuento se marcan `ambiguous` con advertencia
+visible. Los textos dicen "ventas asociadas a la acción" y "clientes incorporados dentro del
+alcance": con atribución por regla hay asociación, no causalidad demostrada.
+
+**Períodos.** Pertenencia por `FechaComprobante`, siempre. Un mes en curso NO se compara contra
+un mes completo: el período comparado se corta a la MISMA cantidad de días comerciales
+(lun-sáb sin feriados) y la tarjeta muestra los dos rangos y sus fuentes. El total cerrado del
+mes comparado viaja aparte (`mes_completo_hasta`) y no entra en ninguna variación.
+
+**Fuentes históricas, con precedencia.** Mes en curso -> `01_INPUTS/ventas.csv`. Mes cerrado ->
+`01_INPUTS/cierres mes/ventas_mes_MMAAAA.csv` y, si no está, `02_HISTORY/historial_ventas.csv`.
+El mes en curso sale SIEMPRE de ventas.csv aunque exista un cierre con su nombre: un cierre de
+agosto generado por adelantado describiría un mes que todavía no terminó.
+
+**Definiciones.** Cliente que usó la acción = tiene al menos un comprobante que cumple canal,
+productos, cantidades y descuento. Nuevo para Peñaflor = usó la acción y no compró ni en el
+período comparado ni en los 12 meses previos (sin la ventana, cualquiera que se salteara un mes
+figuraba como nuevo). Reactivado = no compró en el comparado pero sí en esos 12 meses.
+Recurrente = compró en el comparado. Nuevo en categoría / en marca = ejes de producto
+independientes. Estar en el universo elegible NO clasifica a nadie.
+
+**AGO26-TRAD-NC.** Ser elegible no es haber usado la acción: el cumplimiento se valida a nivel
+`NroComprobante` — 3 botellas de una marca + 3 de otra marca distinta del catálogo, con el 15%,
+en el MISMO comprobante. No cuentan 6 de una sola marca, 3+3 en comprobantes distintos, otro
+descuento, productos fuera del catálogo ni neto <= 0. `CantBase` ya viene en botellas/unidades
+(regla oficial de motor_11t), así que se suma tal cual.
+
+**11 Titulares.** El titular sale de la matriz oficial SKU->titular, nunca del nombre de marca.
+Un impacto es un par (cliente, titular) cubierto con el umbral de SU segmento aplicado después
+de sumar. `habilitado` = sacando las botellas de la acción no llegaba al umbral; `acompanado` =
+llegaba igual. Si la acción no toca SKU del 11T, la sección devuelve `aplica: false` y no se
+muestra.
+
+**Se elimina el despliegue masivo.** El "Ver clientes elegibles (1458)" de AGO26-TRAD-NC salió
+de la pantalla: 1.458 filas no sirven para decidir. La tarjeta muestra potenciales, usaron,
+convertidos, conversión y Top 5. `acciones_trad_nc` devuelve sólo contadores; la lista queda
+detrás de `?detalle=1` para auditar a mano y ninguna pantalla la pide.
+
+**Bugs preexistentes corregidos en el camino:**
+
+1. `_acc_preparar_from_df` parseaba `FechaComprobante` con `dayfirst=True`, pero el cierre
+   versionado viene en ISO: sobre `ventas_mes_072026.csv` se perdían 4.863 de 5.811 filas como
+   NaT y las que sobrevivían caían en meses inventados (2026-01 a 2026-06). Ahora usa
+   `_semanal_fechas`, el parser único del proyecto. Afectaba también a la vista "Acciones
+   cierre", que ya consumía esa fuente.
+2. La función rompía si la lectura no incluía `FechaCarga` (columna informativa que nunca
+   decide período). Ahora la tolera.
+
+**Archivos:**
+
+- `motor_acciones_analisis.py` (nuevo): lógica pura, sin I/O ni Flask, igual que motor_11t y
+  motor_padron. Atribución, alcance de producto, caja mixta 3+3, clasificación, embudo, 11T,
+  Top 5 e insight determinístico.
+- `server_orbit.py`: fuentes por período con precedencia y caché por ruta+tamaño+mtime,
+  `_acciones_analisis()` y los endpoints; `_fec` agregado a la preparación (el corte parcial
+  necesita el día); los dos arreglos de fecha de arriba.
+- `PAV MATINAL PE_A FLOR/portal.html`: tarjeta diferida con selector de comparación, estado de
+  carga y error explícito; se quita el drill-down masivo.
+- `test_acciones_analisis.py` (nuevo): 54 aserciones sobre las 21 áreas pedidas.
+
+**Alcance de producto resuelto contra el maestro 04D.** El Excel nombra el alcance como lo dice
+comercial ("VDA Superior", "VDG Super y Ultra Premium", "Espumante / Sidra", "Smirnoff
+botella"). Se resuelve contra la apertura Categoría x Segmento del 04D, no con una lista
+cableada. Antes de esto, 5 de las 15 acciones no resolvían ningún producto y `AGO26-VDA-RESTO`
+resolvía TODAS las líneas del mes. Si el alcance no resuelve, la tarjeta corta con
+"Dato no disponible" en vez de publicar 0 litros, que se leería como "no hubo ventas".
+
+**Endpoints:**
+
+- `GET /api/gerencia/acciones_analisis/<action_id>?comparacion=mes_anterior|anio_anterior`
+- `GET /api/vendedor/<vid>/acciones_analisis/<action_id>?comparacion=...`
+
+**Validación (2026-08-18, datos reales, sin mocks):**
+
+- `test_acciones_analisis.py`: 54 OK, 0 fallas. Regresión: `test_acciones_trad_nc.py` 23 OK y
+  `test_acciones_explorador.py` 29 OK.
+- Endpoints en 8502: las 15 acciones responden 200 con alcance resuelto; V2, V5 y V20 dan 403;
+  una acción inexistente da 404. Payload de 3.783 bytes (antes la lista de elegibles sola eran
+  ~1.458 registros). Primera consulta 1,9 s (mes anterior) / 5,4 s (año anterior, parsea el
+  historial de 66 MB una vez); consultas siguientes 0,02 s por caché.
+- Portal: las 15 acciones renderizan la tarjeta sin un solo error de consola; el selector de
+  comparación cambia la fuente a `historial_ventas.csv`; el Top se mantiene en 5 filas en
+  ambos modos; el scope vendedor (V8) muestra sólo su cartera; AGO26-5X1 muestra la
+  advertencia de atribución por no declarar porcentaje.
+- Caso testigo 11T: en AGO26-TRAD-NC, 11 impactos asociados y 10 habilitados — coherente con
+  una caja de 3+3 que deja al cliente Tradicional justo en el umbral de 3 botellas.
+
 ## 2026-08-18 - feat(Acciones): AGO26-TRAD-NC "Tradicionales no compradores" + SKU Alma Mora Low
 
 **Regla comercial (agosto 2026):** 15% de descuento en una caja mixta de 6 botellas, armada con

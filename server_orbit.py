@@ -16,6 +16,7 @@ import os, shutil, csv as _csv, threading
 
 import motor_11t          # motor autoritativo de cobertura 11T (única fuente de la regla)
 import motor_padron       # regla única de pertenencia de cartera (duplicados del padrón)
+import motor_acciones_analisis as motor_acc_an   # lógica pura del análisis de una acción
 
 # M1 (mount embebido en Orbit Home): con PENAFLOR_SKIP_BOOT=1, importar este módulo NO ejecuta
 # el bloque STARTUP (backup/init/restore/export) ni lanza el hilo de warmup: sólo deja el objeto
@@ -5984,11 +5985,21 @@ def _acc_preparar_from_df(df):
     # global mete al mayorista en AUTOSERVICIO; acá se detecta aparte, sin tocarlo.
     _ramo_txt = df.get("Ramo", pd.Series([""] * len(df))).astype(str).str.upper()
     out["_es_mayorista"] = (_ramo_txt + " " + _subr.astype(str).str.upper()).str.contains("MAYORISTA", na=False)
-    _fc = pd.to_datetime(df.get("FechaComprobante"), dayfirst=True, errors="coerce")
+    # FechaComprobante con el parser único del proyecto: las fuentes NO comparten formato.
+    # ventas.csv y el historial vienen en dd/mm/aaaa, pero el cierre versionado
+    # (01_INPUTS/cierres mes/ventas_mes_MMAAAA.csv) viene en ISO. Con dayfirst=True sobre el
+    # cierre de julio se perdían 4.863 de 5.811 filas como NaT y las que sobrevivían caían en
+    # meses inventados (2026-01 a 2026-06) por inversión de día y mes.
+    _fc = _semanal_fechas(df.get("FechaComprobante", pd.Series([""] * len(df), index=df.index)))
     out["_mes"]  = _fc.dt.to_period("M")
+    # Fecha real: la comparación contra un corte parcial necesita el día, no sólo el mes.
+    out["_fec"]  = _fc
     out["_fcomp"] = _fc.dt.strftime("%d/%m/%Y").fillna("")
-    out["_fcarga"] = (pd.to_datetime(df.get("FechaCarga"), dayfirst=True, errors="coerce")
-                      .dt.strftime("%d/%m/%Y").fillna(""))
+    # FechaCarga es informativa (nunca decide período) y no todas las lecturas la piden:
+    # con `usecols` puede no venir, y ahí la columna sale vacía en vez de romper la lectura.
+    _fcg = df.get("FechaCarga")
+    out["_fcarga"] = (_semanal_fechas(_fcg).dt.strftime("%d/%m/%Y").fillna("")
+                      if _fcg is not None else "")
     out = out[(out["_imp_neto"] > 0) & (~out["_vend"].isin(_VENDEDORES_EXCLUIDOS))]
     return out
 
@@ -6392,6 +6403,516 @@ def _acc_adjuntar_trad_nc(explorador, vid_filtro=None):
                 sub["elegibilidad"] = _trad_nc_elegibles(
                     mes=explorador.get("mes"), vid=vid_filtro, detalle=False)
                 return
+
+
+# ─────────────────────────────────────────────
+# ANÁLISIS DE UNA ACCIÓN (tarjeta "Análisis de la acción" del Explorador)
+# ─────────────────────────────────────────────
+#
+# Responde "¿qué pasó con esta acción?" para la acción que el usuario tiene seleccionada.
+# La lógica pura vive en motor_acciones_analisis (sin I/O, testeable con datos sintéticos);
+# acá se resuelven las fuentes, la caché y el payload.
+#
+# NO es un tercer motor de acciones: la regla sale del catálogo del explorador (el Excel del
+# mes) y los datos de `_acc_preparar_from_df`, que es la única lectura del ERP del proyecto.
+# El predicado de producto es el mismo `_acc_product_pred` que usa la medición de uso.
+#
+# FUENTES POR PERÍODO (precedencia obligatoria):
+#   mes en curso  -> 01_INPUTS/ventas.csv
+#   mes cerrado   -> 01_INPUTS/cierres mes/ventas_mes_MMAAAA.csv, y si no está,
+#                    02_HISTORY/historial_ventas.csv
+# El mes en curso SIEMPRE sale de ventas.csv aunque exista un cierre con su nombre: un cierre
+# de agosto generado por adelantado describiría un mes que todavía no terminó.
+
+_ACC_AN_COLS = ["Cliente", "FechaComprobante", "CodVendedor", "ImporteNetoItem", "ImporteItem",
+                "CantBase", "Codigo", "Articulo", "Marca", "Linea", "PesoKg", "NroComprobante",
+                "RazonSocial", "Vendedor", "Direccion", "Localidad", "Ramo", "Subramo",
+                "valorDescuento", "Tags", "Promociones"]
+
+_ACC_AN_FUENTE_CACHE = {}   # (path, mtime) -> DataFrame preparado completo
+_ACC_AN_CACHE = {}          # (action_id, comparacion, vid, firma) -> payload
+_ACC_AN_IDS_CACHE = {}      # (firma, desde, hasta) -> set de clientes con compra válida
+
+
+def _acc_an_mes_vivo():
+    """Período que cubre ventas.csv (el mes en curso). Ancla de todo el cálculo: el corte no
+    es 'hoy' del calendario sino hasta dónde llegan los datos cargados."""
+    v = _acc_preparar_ventas("ventas.csv")
+    if v.empty or v["_mes"].dropna().empty:
+        return None
+    return v["_mes"].dropna().max()
+
+
+def _acc_an_fuente(per):
+    """(path, etiqueta) de la fuente que manda para el período `per`."""
+    vivo = _acc_an_mes_vivo()
+    if vivo is not None and per >= vivo:
+        return INPUTS / "ventas.csv", "ventas.csv (mes en curso)"
+    p = INPUTS / "cierres mes" / f"ventas_mes_{per.strftime('%m%Y')}.csv"
+    if p.exists():
+        return p, f"cierre mensual {p.name}"
+    return BASE / "02_HISTORY" / "historial_ventas.csv", "historial_ventas.csv"
+
+
+def _acc_an_fuente_df(path):
+    """DataFrame preparado de una fuente entera, cacheado por (ruta, tamaño, mtime).
+
+    El historial pesa 66 MB: se parsea UNA vez por proceso y todos los períodos que salgan de
+    él se cortan de esta copia. `_leer_ventas_min` toma sólo las columnas necesarias, que es
+    lo que hace viable leerlo en Render."""
+    try:
+        st = path.stat()
+        key = (str(path), st.st_size, st.st_mtime)
+    except OSError:
+        return pd.DataFrame()
+    cached = _ACC_AN_FUENTE_CACHE.get(key)
+    if cached is not None:
+        return cached
+    df = _acc_preparar_from_df(_leer_ventas_min(path, _ACC_AN_COLS))
+    for k in [k for k in _ACC_AN_FUENTE_CACHE if k[0] == str(path)]:
+        _ACC_AN_FUENTE_CACHE.pop(k, None)     # purgar versiones viejas del mismo archivo
+    _ACC_AN_FUENTE_CACHE[key] = df
+    return df
+
+
+def _acc_an_rango(desde, hasta):
+    """Ventas válidas entre dos fechas (inclusive), tomando la fuente correcta de cada mes
+    que toque el rango. Devuelve (DataFrame, [etiquetas de fuente])."""
+    frames, fuentes = [], []
+    per = pd.Period(desde, freq="M")
+    fin = pd.Period(hasta, freq="M")
+    while per <= fin:
+        path, etiqueta = _acc_an_fuente(per)
+        df = _acc_an_fuente_df(path)
+        if not df.empty:
+            m = df[(df["_mes"] == per) & df["_fec"].notna()
+                   & (df["_fec"] >= pd.Timestamp(desde)) & (df["_fec"] <= pd.Timestamp(hasta))]
+            if not m.empty:
+                frames.append(m)
+        if etiqueta not in fuentes:
+            fuentes.append(etiqueta)
+        per += 1
+    if not frames:
+        return pd.DataFrame(), fuentes
+    return pd.concat(frames, ignore_index=True), fuentes
+
+
+#: Para la ventana de 12 meses sólo hace falta saber QUIÉN compró, no qué. Cuatro columnas
+#: en vez de veintiuna: sobre el historial de 66 MB es la diferencia entre ~1 s y ~8 s, y esa
+#: ventana se consulta en cada apertura de la tarjeta.
+_ACC_AN_IDS_COLS = ["Cliente", "FechaComprobante", "CodVendedor", "ImporteNetoItem"]
+
+_ACC_AN_IDS_FUENTE_CACHE = {}
+
+
+def _acc_an_ids_fuente(path):
+    """[cliente, fecha] válidos de una fuente, con lectura mínima. Cacheado por ruta+mtime."""
+    try:
+        st = path.stat()
+        key = (str(path), st.st_size, st.st_mtime)
+    except OSError:
+        return pd.DataFrame()
+    cached = _ACC_AN_IDS_FUENTE_CACHE.get(key)
+    if cached is not None:
+        return cached
+    raw = _leer_ventas_min(path, _ACC_AN_IDS_COLS)
+    if raw.empty:
+        out = pd.DataFrame(columns=["_cli", "_fec"])
+    else:
+        neto = pd.to_numeric(raw["ImporteNetoItem"].astype(str)
+                             .str.replace(".", "", regex=False)
+                             .str.replace(",", ".", regex=False), errors="coerce").fillna(0)
+        vend = pd.to_numeric(raw.get("CodVendedor"), errors="coerce")
+        out = pd.DataFrame({
+            "_cli": pd.to_numeric(raw["Cliente"], errors="coerce"),
+            "_fec": _semanal_fechas(raw["FechaComprobante"]),
+        })
+        # Mismo criterio de validez que la preparación completa: neto > 0 y sin excluidos.
+        out = out[(neto > 0) & (~vend.isin(_VENDEDORES_EXCLUIDOS))].dropna()
+    for k in [k for k in _ACC_AN_IDS_FUENTE_CACHE if k[0] == str(path)]:
+        _ACC_AN_IDS_FUENTE_CACHE.pop(k, None)
+    _ACC_AN_IDS_FUENTE_CACHE[key] = out
+    return out
+
+
+def _acc_an_ids_rango(desde, hasta):
+    """Clientes con al menos una compra válida en el rango. Cacheado: la ventana de 12 meses
+    para 'reactivado' se pide en cada consulta y no puede reparsear el historial cada vez."""
+    key = (str(desde), str(hasta), _acc_mes_sig())
+    cached = _ACC_AN_IDS_CACHE.get(key)
+    if cached is not None:
+        return cached
+    ids, vistos = set(), set()
+    per = pd.Period(desde, freq="M")
+    fin = pd.Period(hasta, freq="M")
+    while per <= fin:
+        path, _ = _acc_an_fuente(per)
+        if str(path) not in vistos:
+            vistos.add(str(path))
+        d = _acc_an_ids_fuente(path)
+        if not d.empty:
+            m = d[(d["_fec"] >= pd.Timestamp(desde)) & (d["_fec"] <= pd.Timestamp(hasta))]
+            ids |= set(m["_cli"].astype(int))
+        per += 1
+    for k in [k for k in _ACC_AN_IDS_CACHE if k[2] != key[2]]:
+        _ACC_AN_IDS_CACHE.pop(k, None)
+    _ACC_AN_IDS_CACHE[key] = ids
+    return ids
+
+
+def _acc_an_dias_comerciales(desde, hasta):
+    """Días operativos (lunes a sábado, sin feriados) entre dos fechas, inclusive."""
+    n, d = 0, desde
+    while d <= hasta:
+        if _es_dia_operativo(d):
+            n += 1
+        d += timedelta(days=1)
+    return n
+
+
+def _acc_an_hasta_por_dias(inicio, dias):
+    """Fecha en la que se completan `dias` días comerciales desde `inicio`. Es lo que hace
+    comparable un mes parcial contra otro mes: mismo esfuerzo comercial, no mismo número de
+    día. Si el mes se termina antes, devuelve el último día del mes."""
+    fin_mes = (pd.Period(inicio, freq="M").end_time).date()
+    if dias <= 0:
+        return inicio
+    n, d, ultimo = 0, inicio, inicio
+    while d <= fin_mes:
+        if _es_dia_operativo(d):
+            n += 1
+            ultimo = d
+            if n >= dias:
+                return d
+        d += timedelta(days=1)
+    return ultimo
+
+
+def _acc_an_periodos(comparacion):
+    """(actual, comparado) con desde/hasta/fuente/parcial/días comerciales.
+
+    Si el mes en curso todavía no terminó NO se compara un mes parcial contra uno completo:
+    el período comparado se corta al mismo número de días comerciales. El total cerrado del
+    mes comparado viaja aparte como contexto y no entra en ninguna variación."""
+    vivo = _acc_an_mes_vivo()
+    if vivo is None:
+        return None, None
+    v = _acc_preparar_ventas("ventas.csv")
+    corte = v.loc[v["_mes"] == vivo, "_fec"].max()
+    corte = corte.date() if pd.notna(corte) else vivo.end_time.date()
+    inicio = vivo.start_time.date()
+    fin_mes = vivo.end_time.date()
+    parcial = corte < fin_mes
+    dias = _acc_an_dias_comerciales(inicio, corte)
+
+    per_cmp = (vivo - 1) if comparacion == "mes_anterior" else (vivo - 12)
+    ini_cmp = per_cmp.start_time.date()
+    fin_cmp = (_acc_an_hasta_por_dias(ini_cmp, dias) if parcial
+               else per_cmp.end_time.date())
+
+    _, f_act = _acc_an_rango(inicio, corte)
+    _, f_cmp = _acc_an_rango(ini_cmp, fin_cmp)
+    actual = {"periodo": str(vivo), "desde": str(inicio), "hasta": str(corte),
+              "dias_comerciales": dias, "parcial": parcial,
+              "fuente": ", ".join(f_act) or "sin fuente"}
+    comparado = {"tipo": comparacion, "periodo": str(per_cmp), "desde": str(ini_cmp),
+                 "hasta": str(fin_cmp),
+                 "dias_comerciales": _acc_an_dias_comerciales(ini_cmp, fin_cmp),
+                 "parcial": parcial, "fuente": ", ".join(f_cmp) or "sin fuente",
+                 "mes_completo_hasta": str(per_cmp.end_time.date())}
+    return actual, comparado
+
+
+def _acc_an_sub(action_id):
+    """(categoria_ui, subcategoria) del catálogo para un action_id. None si no está."""
+    for cat in (_acc_explorador().get("categorias") or []):
+        for sub in cat.get("subcategorias") or []:
+            if sub.get("action_id") == action_id:
+                return cat.get("categoria"), sub
+    return None, None
+
+
+def _acc_an_segs_canon(sub):
+    """Segmentos canónicos del portal (TRADICIONAL / AUTOSERVICIO / ...) que declara la acción."""
+    out = set()
+    for seg in sub.get("segmentos") or []:
+        out |= _acc_seg_canon(" | ".join(seg.get("segmentos_cliente") or []), seg.get("canal"))
+    return out
+
+
+def _acc_an_marca_trad_nc(marca, articulo, cod=None):
+    """Marca participante de AGO26-TRAD-NC a la que pertenece la línea, o None.
+
+    Reusa el mapeo exacto de `Marca` del ERP ya validado para la elegibilidad; no se vuelve a
+    inferir la marca del texto salvo cuando el ERP la deja vacía."""
+    m = _acc_norm(marca)
+    a = _acc_norm(articulo)
+    for visible, valores in _TRAD_NC_MARCAS:
+        if m in valores:
+            return visible
+    if m:
+        return None
+    for visible, claves in _TRAD_NC_FALLBACK_ART.items():
+        if any(k in a for k in claves):
+            if visible == "Smirnoff botella" and _re.search(r"ICE|LATA|LAT ", a):
+                continue
+            return visible
+    return None
+
+
+def _acc_an_maestro_filas():
+    """Maestro 04D como lista [{cod, cat, seg}] — la apertura Categoría x Segmento que el
+    catálogo nombra en castellano ('VDA Superior', 'VDG Super y Ultra Premium')."""
+    cod2cat, cod2seg, _lxu, _lin = _cargar_maestro_04D()
+    return [{"cod": c, "cat": cod2cat.get(c), "seg": cod2seg.get(c)} for c in cod2cat]
+
+
+def _acc_an_segmentos_hermanos(sub):
+    """Segmentos de producto que reclaman las OTRAS acciones de la misma categoría del
+    explorador. Es lo que le da significado a 'Resto segmentos': el resto de qué."""
+    cat_ui, _ = _acc_an_sub(sub.get("action_id"))
+    fuera = set()
+    for cat in (_acc_explorador().get("categorias") or []):
+        if cat.get("categoria") != cat_ui:
+            continue
+        for otra in cat.get("subcategorias") or []:
+            if otra.get("action_id") == sub.get("action_id"):
+                continue
+            for nombre in motor_acc_an.marcas_de(otra):
+                t = motor_acc_an.norm(nombre)
+                if "RESTO" in t.split():
+                    continue
+                # se queda con lo que sigue al nombre de la categoría (el segmento)
+                fuera.add(" ".join(t.split()[1:]) if len(t.split()) > 1 else t)
+    return {f for f in fuera if f}
+
+
+def _acc_an_alcance(sub):
+    """Alcance de producto de la acción, resuelto contra el maestro 04D."""
+    return motor_acc_an.resolver_alcance(
+        motor_acc_an.marcas_de(sub), _acc_an_maestro_filas(), _acc_canon_cat,
+        _acc_an_segmentos_hermanos(sub))
+
+
+def _acc_an_pred(sub, all_lineas, alcance=None):
+    """Predicado de producto de la acción.
+
+    Cascada, de más preciso a más general:
+      1. AGO26-TRAD-NC: mapeo exacto contra el campo `Marca` del ERP. Es una excepción
+         documentada — la coincidencia por texto metía El Esteco dentro de Don David y
+         Finca Notables dentro de Las Moras.
+      2. Alcance resuelto contra el maestro 04D (categoría + segmento + envase). Cubre las
+         acciones que el Excel describe por línea comercial en vez de por marca.
+      3. `_acc_product_pred`, el mismo predicado que usa la medición de uso, como respaldo."""
+    if sub.get("action_id") == TRAD_NC_ACTION_ID:
+        return lambda cat, linea, art, marca, cod=None: _acc_an_marca_trad_nc(marca, art, cod) is not None
+    alcance = alcance if alcance is not None else _acc_an_alcance(sub)
+    if alcance.get("resuelto"):
+        return motor_acc_an.pred_alcance(alcance, es_botella=_acc_es_botella)
+    regla = {
+        "categoria":          sub.get("subcategoria") or "",
+        "subcategoria":       sub.get("subcategoria") or "",
+        "productos_marcas":   ";".join(motor_acc_an.marcas_de(sub)),
+        "lineas_comerciales": "",
+        "tipo_regla":         sub.get("mecanica") or "",
+    }
+    return _acc_product_pred(regla, all_lineas)
+
+
+def _acc_an_universo_potencial(segs_canon, vid=None):
+    """Cartera real del canal de la acción (clientes.xlsx), como CANTIDAD.
+
+    Es el denominador del embudo. Nunca se devuelve la lista: el potencial de una acción de
+    canal son miles de clientes y no es lo que se mira para decidir."""
+    cli = _clientes_maestro()
+    if cli.empty:
+        return None
+    cli = cli.copy()
+    cli["_segc"] = [_clasificar_segmento(r, s)
+                    for r, s in zip(cli.get("Ramo", ""), cli.get("SubSegmento", ""))]
+    cli = cli[cli["_vend_id"].isin(_VENDEDORES_ACTIVOS_PLAN)]
+    if vid:
+        cli = cli[cli["_vend_id"] == vid]
+    if segs_canon:
+        cli = cli[cli["_segc"].isin(list(segs_canon))]
+    # V3 no trabaja Autoservicio: su cartera no puede aportar potencial de ese canal.
+    if vid == "V3":
+        cli = cli[cli["_segc"] != "AUTOSERVICIO"]
+    return int(len(cli))
+
+
+def _acciones_analisis(action_id, comparacion="mes_anterior", vid=None):
+    """Payload de la tarjeta *Análisis de la acción*. Nunca devuelve listas masivas."""
+    if comparacion not in ("mes_anterior", "anio_anterior"):
+        comparacion = "mes_anterior"
+    ckey = (action_id, comparacion, vid, _acc_mes_sig())
+    cached = _ACC_AN_CACHE.get(ckey)
+    if cached is not None:
+        return cached
+
+    cat_ui, sub = _acc_an_sub(action_id)
+    if sub is None:
+        return {"error": f"La acción {action_id} no está en el catálogo del mes.",
+                "action_id": action_id}, 404
+
+    actual, comparado = _acc_an_periodos(comparacion)
+    if actual is None:
+        return {"error": "Dato no disponible: no hay ventas del mes en curso para analizar.",
+                "action_id": action_id}, 503
+
+    d_act, _ = _acc_an_rango(pd.Timestamp(actual["desde"]).date(),
+                             pd.Timestamp(actual["hasta"]).date())
+    d_cmp, _ = _acc_an_rango(pd.Timestamp(comparado["desde"]).date(),
+                             pd.Timestamp(comparado["hasta"]).date())
+    if vid:
+        # La cartera manda: se filtra por el vendedor del padrón, no por el de la factura.
+        _cm = _clientes_maestro()
+        mios = set(_cm.loc[_cm["_vend_id"] == vid, "_cliente_id"])
+        d_act = d_act[d_act["_cli"].isin(mios)] if not d_act.empty else d_act
+        d_cmp = d_cmp[d_cmp["_cli"].isin(mios)] if not d_cmp.empty else d_cmp
+
+    segs = _acc_an_segs_canon(sub)
+    tramos = motor_acc_an.tramos_de(sub)
+    all_lineas = set()
+    for df in (d_act, d_cmp):
+        if not df.empty:
+            all_lineas |= {l for l in df["_linea"].dropna().unique() if l and l != "NAN"}
+    alcance = _acc_an_alcance(sub)
+    pred = _acc_an_pred(sub, all_lineas, alcance)
+
+    # ── Atribución ──
+    todas = [s for c in (_acc_explorador().get("categorias") or [])
+             for s in (c.get("subcategorias") or [])]
+    atribucion = motor_acc_an.resolver_atribucion(
+        sub, todas, lambda ss: _acc_seg_canon(" | ".join(ss), ""),
+        motor_acc_an.buscar_tag_accion(d_act, action_id))
+
+    # ── Líneas de la acción en el período actual ──
+    m_seg = motor_acc_an.mask_segmento(d_act, segs)
+    m_prod = motor_acc_an.mask_productos(d_act, pred) if not d_act.empty else m_seg
+    # Alcance sin resolver = no sé qué productos mirar. Publicar 0 litros acá sería afirmar
+    # que no hubo ventas, que es otra cosa: se corta con una nota y sin números inventados.
+    if not d_act.empty and int(m_prod.sum()) == 0 and motor_acc_an.marcas_de(sub):
+        return {
+            "action_id": action_id, "categoria": cat_ui,
+            "subcategoria": sub.get("subcategoria"),
+            "periodo_actual": actual, "periodo_comparado": comparado,
+            "atribucion": atribucion, "kpis": None, "embudo": None,
+            "once_titulares": {"aplica": False, "impactos_asociados": None,
+                               "impactos_habilitados": None, "impactos_acompanados": None},
+            "insight": None, "top_clientes": {"compradores": [], "incorporaciones": []},
+            "nota": ("Dato no disponible: no se pudo resolver contra el maestro qué productos "
+                     "entran en esta acción (" +
+                     ", ".join(motor_acc_an.marcas_de(sub)[:4]) +
+                     "). Sin alcance de producto no se puede medir el uso."),
+        }, 200
+    if action_id == TRAD_NC_ACTION_ID:
+        # Caja mixta: el cumplimiento se valida por comprobante, no por línea suelta.
+        base = d_act[m_seg & m_prod] if not d_act.empty else d_act
+        ok = motor_acc_an.comprobantes_caja_mixta(
+            base, _acc_an_marca_trad_nc, pct_objetivo=15.0, botellas=3,
+            solo_botella=_acc_es_botella)
+        nros = set(zip(ok["_nro"], ok["_cli"])) if len(ok) else set()
+        m_acc = (pd.Series([(n, c) in nros for n, c in zip(d_act["_nro"], d_act["_cli"])],
+                           index=d_act.index) & m_seg & m_prod
+                 if not d_act.empty else pd.Series(dtype=bool))
+    else:
+        m_acc = (m_seg & m_prod & motor_acc_an.mask_descuento(d_act, tramos)
+                 if not d_act.empty else pd.Series(dtype=bool))
+    d_accion = d_act[m_acc] if not d_act.empty else d_act
+
+    # ── Categoría: la del maestro 04D para los productos del alcance (no el nombre de la
+    #    marca). Es lo que separa "nuevo en la categoría" de "nuevo en la marca". ──
+    cats = set(d_act.loc[m_prod, "_cat"].dropna().unique()) if not d_act.empty else set()
+    def _en_cat(df):
+        if df.empty or not cats:
+            return pd.Series([False] * len(df), index=df.index)
+        return df["_cat"].isin(list(cats))
+    d_cat_act = d_act[_en_cat(d_act) & m_seg] if not d_act.empty else d_act
+
+    ids_accion = set(d_accion["_cli"].dropna().astype(int)) if not d_accion.empty else set()
+    if d_cmp.empty:
+        ids_cmp_todo = ids_cmp_cat = ids_cmp_marca = set()
+        litros_cat_cmp = 0.0
+    else:
+        m_seg_c = motor_acc_an.mask_segmento(d_cmp, segs)
+        m_prod_c = motor_acc_an.mask_productos(d_cmp, pred)
+        ids_cmp_todo = set(d_cmp["_cli"].dropna().astype(int))
+        ids_cmp_cat = set(d_cmp.loc[_en_cat(d_cmp) & m_seg_c, "_cli"].dropna().astype(int))
+        ids_cmp_marca = set(d_cmp.loc[m_prod_c & m_seg_c, "_cli"].dropna().astype(int))
+        litros_cat_cmp = float(d_cmp.loc[_en_cat(d_cmp) & m_seg_c, "_litros"].sum())
+
+    # Ventana de 12 meses ANTERIORES al período comparado: distingue al cliente realmente
+    # nuevo del que simplemente se salteó un mes.
+    ini_cmp = pd.Timestamp(comparado["desde"]).date()
+    ids_hist = _acc_an_ids_rango((pd.Period(ini_cmp, freq="M") - 12).start_time.date(),
+                                 ini_cmp - timedelta(days=1))
+
+    clasif = motor_acc_an.clasificar_clientes(ids_accion, ids_cmp_todo, ids_cmp_cat,
+                                              ids_cmp_marca, ids_hist)
+    cuenta = motor_acc_an.contar_clasificacion(clasif)
+
+    litros_accion = float(d_accion["_litros"].sum()) if not d_accion.empty else 0.0
+    litros_cat = float(d_cat_act["_litros"].sum()) if not d_cat_act.empty else 0.0
+    kpis = {
+        "clientes_accion":        len(ids_accion),
+        "comprobantes_accion":    int(d_accion["_nro"].nunique()) if not d_accion.empty else 0,
+        "clientes_nuevos_penaflor":  cuenta["nuevo_penaflor"],
+        "clientes_nuevos_categoria": cuenta["nuevo_categoria"],
+        "clientes_nuevos_marca":     cuenta["nuevo_marca"],
+        "clientes_reactivados":      cuenta["reactivado"],
+        "clientes_recurrentes":      cuenta["recurrente"],
+        "litros_accion":          round(litros_accion, 1),
+        "litros_categoria":       round(litros_cat, 1),
+        "participacion_litros_pct": round(litros_accion / litros_cat * 100, 1) if litros_cat else 0.0,
+        "importe_neto_accion":    round(float(d_accion["_imp_neto"].sum()) if not d_accion.empty else 0.0, 2),
+        "inversion_descuento":    round(float(d_accion["_desc"].sum()) if not d_accion.empty else 0.0, 2),
+        "compradores_categoria_actual":   int(d_cat_act["_cli"].nunique()) if not d_cat_act.empty else 0,
+        "compradores_categoria_comparado": len(ids_cmp_cat),
+        "litros_categoria_comparado":     round(litros_cat_cmp, 1),
+        "variacion_litros_categoria_pct": (round((litros_cat - litros_cat_cmp) / litros_cat_cmp * 100, 1)
+                                           if litros_cat_cmp else None),
+    }
+
+    universo = _acc_an_universo_potencial(segs, vid)
+    convertidos = {c for c, f in clasif.items() if f.get("nuevo_marca")}
+    emb = motor_acc_an.embudo(universo, ids_accion, convertidos)
+
+    # ── 11 Titulares ──
+    sku_tit = motor_11t._mapa_sku_titular()
+    # El umbral 11T depende del segmento del cliente. `_seg` ya viene canonizado por el
+    # clasificador único del portal y sus valores coinciden con las claves de UMBRALES_11T
+    # (TRADICIONAL / AUTOSERVICIO); los demás canales no tienen umbral y quedan fuera solos.
+    seg_cli = {}
+    if not d_act.empty:
+        seg_cli = {int(c): s for c, s in zip(d_act["_cli"].dropna().astype(int), d_act["_seg"])}
+    once = motor_acc_an.impacto_once_titulares(d_act, m_acc, sku_tit, seg_cli,
+                                               motor_11t.UMBRALES_11T)
+    once.pop("detalle", None)
+
+    per_txt = ("el mes anterior" if comparacion == "mes_anterior"
+               else "el mismo período del año anterior")
+    payload = {
+        "action_id":   action_id,
+        "categoria":   cat_ui,
+        "subcategoria": sub.get("subcategoria"),
+        "periodo_actual":   actual,
+        "periodo_comparado": comparado,
+        "atribucion":  atribucion,
+        "kpis":        kpis,
+        "embudo":      emb,
+        "once_titulares": once,
+        "insight":     motor_acc_an.construir_insight(kpis, emb, atribucion, per_txt),
+        "top_clientes": {
+            "compradores":     motor_acc_an.top_clientes(d_accion, clasif, "compradores"),
+            "incorporaciones": motor_acc_an.top_clientes(d_accion, clasif, "incorporaciones"),
+        },
+        "nota": None,
+    }
+    for k in [k for k in _ACC_AN_CACHE if k[3] != ckey[3]]:
+        _ACC_AN_CACHE.pop(k, None)
+    _ACC_AN_CACHE[ckey] = payload
+    return payload
 
 
 def _acciones_mes_payload(vid_filtro=None):
@@ -6916,15 +7437,17 @@ def vendedor_acciones_mes(vid):
     return jsonify(_acciones_mes_payload(vid_norm))
 
 
-# ── AGO26-TRAD-NC: drill-down de clientes elegibles ──
-# La lista completa NO viaja en acciones_mes: son ~1.500 clientes en gerencia y el payload ya
-# es lo más pesado del login. El explorador manda el resumen y el portal pide el detalle sólo
-# cuando el usuario lo despliega (mismo patrón que cobertura_acum_faltantes).
+# ── AGO26-TRAD-NC: elegibilidad (SOLO cantidades) ──
+# Antes esto devolvía la lista completa de elegibles y el portal la desplegaba entera
+# ("Ver clientes elegibles (1458)"). No servía para decidir: con 1.458 filas nadie mira nada.
+# Ahora devuelve únicamente los contadores; a quién le fue bien lo responde el Top 5 de la
+# tarjeta de análisis. La lista sigue disponible con ?detalle=1 para auditar a mano, pero
+# ninguna pantalla la pide.
 
 @app.route("/api/gerencia/acciones_trad_nc")
 def gerencia_acciones_trad_nc():
-    mes = _acc_explorador().get("mes")
-    return jsonify(_trad_nc_elegibles(mes=mes, vid=None, detalle=True))
+    det = request.args.get("detalle") == "1"
+    return jsonify(_trad_nc_elegibles(mes=_acc_explorador().get("mes"), vid=None, detalle=det))
 
 
 @app.route("/api/vendedor/<vid>/acciones_trad_nc")
@@ -6932,8 +7455,33 @@ def vendedor_acciones_trad_nc(vid):
     vid_norm = normalizar_vendedor_codigo(vid)
     if vid_norm not in _VENDEDORES_ACTIVOS_PLAN:
         return jsonify({"error": "Vendedor no autorizado"}), 403
-    mes = _acc_explorador().get("mes")
-    return jsonify(_trad_nc_elegibles(mes=mes, vid=vid_norm, detalle=True))
+    det = request.args.get("detalle") == "1"
+    return jsonify(_trad_nc_elegibles(mes=_acc_explorador().get("mes"), vid=vid_norm, detalle=det))
+
+
+# ── Análisis de una acción (tarjeta diferida del Explorador) ──
+# Se carga sólo cuando el usuario ya eligió una acción: es la consulta más cara del módulo
+# (puede tocar el historial) y no tiene por qué pesar en el login.
+
+def _acc_an_responder(action_id, vid=None):
+    comp = (request.args.get("comparacion") or "mes_anterior").strip()
+    res = _acciones_analisis(action_id, comp, vid)
+    if isinstance(res, tuple):          # (payload, status) en los casos de error controlado
+        return jsonify(res[0]), res[1]
+    return jsonify(res)
+
+
+@app.route("/api/gerencia/acciones_analisis/<action_id>")
+def gerencia_acciones_analisis(action_id):
+    return _acc_an_responder(action_id, None)
+
+
+@app.route("/api/vendedor/<vid>/acciones_analisis/<action_id>")
+def vendedor_acciones_analisis(vid, action_id):
+    vid_norm = normalizar_vendedor_codigo(vid)
+    if vid_norm not in _VENDEDORES_ACTIVOS_PLAN:
+        return jsonify({"error": "Vendedor no autorizado"}), 403
+    return _acc_an_responder(action_id, vid_norm)
 
 
 # ====== PLANES AS — VENDEDOR ======

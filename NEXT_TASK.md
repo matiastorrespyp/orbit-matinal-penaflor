@@ -1,5 +1,35 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-18 - Tarjeta "Analisis de la accion"
+
+### HECHO
+- [x] Tarjeta diferida bajo el detalle del Explorador, con selector mes anterior / anio anterior,
+  insight determinista (sin IA), 6 KPIs, secundarios, embudo, 11T y Top 5.
+- [x] Comparacion honesta de mes parcial: mismo numero de dias comerciales, rangos y fuentes a
+  la vista, total cerrado del mes comparado aparte.
+- [x] Atribucion auditada: el ERP NO tiene identificador de accion (Promociones = proveedor,
+  Tags = %10/%20). Metodo informado siempre; ambiguous con advertencia.
+- [x] AGO26-TRAD-NC validada por NroComprobante (3+3 real, 15%, mismo comprobante).
+- [x] 11T habilitado / acompanado / no aplica con la matriz oficial y umbral por segmento.
+- [x] Eliminado el despliegue de 1.458 elegibles; el endpoint devuelve solo contadores.
+- [x] Alcance de producto resuelto contra el maestro 04D (Categoria x Segmento).
+- [x] Corregidos dos bugs preexistentes de `_acc_preparar_from_df` (fecha ISO del cierre
+  versionado y FechaCarga ausente).
+- [x] 54 aserciones nuevas + regresion de las dos suites previas. Validacion visual y de consola.
+
+### PROXIMA TAREA
+- [ ] Cargar el `acciones_comerciales_*.csv` de agosto en
+  `01_INPUTS/ACCIONES COMERCIALES/2026-08/`. Sigue faltando: la MEDICION de uso e inversion del
+  mes (`acciones[]` y `mod_acciones_ranking.csv`) viene vacia con la nota "Sin catalogo de
+  acciones del mes". La tarjeta de analisis no depende de ese archivo, pero el footprint de
+  plata de agosto si.
+- [ ] Revisar con comercial el criterio de "categoria" del KPI de participacion: hoy es la
+  categoria del maestro 04D de los productos del alcance. Para AGO26-TRAD-NC eso abarca
+  VDA + VDG + RTD + Spirits + Vodka, asi que "nuevo en la categoria" queda cerca de "nuevo en
+  Penaflor". Es correcto pero conviene confirmar que es la lectura que quieren.
+- [ ] Evaluar si el analisis debe poder consultarse sobre un mes CERRADO (hoy el periodo actual
+  es siempre el mes vivo de ventas.csv). Requiere un selector de mes, no solo de comparacion.
+
 ## Sesion 2026-08-18 - Accion AGO26-TRAD-NC y SKU Alma Mora Low
 
 ### HECHO

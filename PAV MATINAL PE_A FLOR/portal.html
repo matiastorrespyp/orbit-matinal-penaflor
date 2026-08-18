@@ -3454,17 +3454,21 @@ function accxPanel(scope){
   if(!st.cat){ box.innerHTML=vacio('Seleccioná una categoría para consultar la acción.'); return; }
   const c=accxCat(scope), sub=accxSub(scope);
   if(!sub){ box.innerHTML=vacio('Elegí una línea para ver la acción.','📂'); return; }
+  // A partir de acá la ACCIÓN ya está identificada (categoría + línea). El segmento sólo
+  // elige qué escala se muestra, así que el análisis —que es de la acción entera— se cuelga
+  // igual aunque todavía no se haya elegido canal.
+  const finPanel=(html)=>{ box.innerHTML=html+`<div id="accx-an-${scope}"></div>`; accxAnLoad(scope); };
   const seg=accxSeg(scope);
   if(!seg){
     // Sin ningún segmento cargado no hay nada que elegir: es una acción que el libro declara
     // pero no llegó a definir. Pedir "elegí un segmento" mandaría al vendedor a un menú vacío.
-    box.innerHTML=(sub.segmentos||[]).length
+    finPanel((sub.segmentos||[]).length
       ? vacio('Elegí un segmento para ver la escala aplicable.','🎯')
-      : vacio('No hay una acción disponible para esta combinación.','🚫');
+      : vacio('No hay una acción disponible para esta combinación.','🚫'));
     return;
   }
   const escalas=seg.escalas||[];
-  if(!escalas.length){ box.innerHTML=vacio('No hay una acción disponible para esta combinación.','🚫'); return; }
+  if(!escalas.length){ finPanel(vacio('No hay una acción disponible para esta combinación.','🚫')); return; }
 
   // Compra mínima = el umbral más bajo declarado en las escalas de este segmento. Es una
   // lectura del dato, no una regla nueva: si la fuente dice "sin mínimo", se dice eso.
@@ -3529,7 +3533,189 @@ function accxPanel(scope){
       </div>`).join('');
   }
   h+=`</div></details></div></div>`;
+  // El contenedor de análisis va vacío: el dato se pide recién cuando ya hay una acción
+  // elegida, porque es la consulta más cara del módulo (puede tocar el historial).
+  finPanel(h);
+}
+
+/* ════════ TARJETA "ANÁLISIS DE LA ACCIÓN" ════════
+   La tarjeta de arriba explica QUÉ ofrece la acción; ésta responde QUÉ PASÓ con ella.
+
+   Se carga diferida y sólo para la acción seleccionada. El estado (comparación y modo del
+   Top) vive por scope y al cambiarlo se repinta SOLO el cuerpo de esta tarjeta: repintar el
+   panel entero le sacaría el foco al <select> y en celular cerraría el desplegable. */
+
+const ACCAN={};   // por scope: {comp, modo, data, cargando, error}
+
+function accxAnEstado(scope){
+  if(!ACCAN[scope]) ACCAN[scope]={comp:'mes_anterior',modo:'compradores',data:null,cargando:false,error:null};
+  return ACCAN[scope];
+}
+
+async function accxAnLoad(scope){
+  const cont=document.getElementById('accx-an-'+scope); if(!cont) return;
+  const sub=accxSub(scope); if(!sub||!sub.action_id){ cont.innerHTML=''; return; }
+  const st=accxAnEstado(scope);
+  st.cargando=true; st.error=null; st.data=null;
+  cont.innerHTML=accxAnShell(scope,sub);
+  const base=scope==='v'
+    ? '/api/vendedor/'+encodeURIComponent((userData||{}).vendedor_id||'')+'/acciones_analisis/'
+    : '/api/gerencia/acciones_analisis/';
+  const url=base+encodeURIComponent(sub.action_id)+'?comparacion='+encodeURIComponent(st.comp);
+  const pedido=sub.action_id+'|'+st.comp;
+  st.pedido=pedido;
+  try{
+    const r=await fetch(url);
+    const j=await r.json();
+    if(st.pedido!==pedido) return;            // llegó tarde: el usuario ya cambió de acción
+    if(!r.ok) throw new Error(j.error||('HTTP '+r.status));
+    st.data=j;
+  }catch(e){
+    // Nunca se rellena con ceros: si no se pudo calcular, se dice.
+    st.error=String(e.message||e);
+  }
+  st.cargando=false;
+  accxAnRender(scope);
+}
+
+function accxAnSetComp(scope,val){ accxAnEstado(scope).comp=val; accxAnLoad(scope); }
+function accxAnSetModo(scope,val){ accxAnEstado(scope).modo=val; accxAnRender(scope); }
+
+/* Cabecera + selector de comparación + cuerpo vacío. Se pinta una vez por carga. */
+function accxAnShell(scope,sub){
+  const st=accxAnEstado(scope);
+  const opt=(v,t)=>`<option value="${v}"${st.comp===v?' selected':''}>${t}</option>`;
+  return `<div class="card" style="margin-top:12px;">
+    <div class="card-hd">
+      <span class="card-title">📈 Análisis de la acción</span>
+      <select class="accx-sel" style="max-width:230px;font-size:11px;"
+              aria-label="Período de comparación" onchange="accxAnSetComp('${scope}',this.value)">
+        ${opt('mes_anterior','vs. mes anterior')}
+        ${opt('anio_anterior','vs. mismo mes del año anterior')}
+      </select>
+    </div>
+    <div class="card-body" id="accx-anbody-${scope}">
+      <div class="xs" style="color:var(--text3);">Calculando…</div>
+    </div>
+  </div>`;
+}
+
+function accxAnRender(scope){
+  const box=document.getElementById('accx-anbody-'+scope); if(!box) return;
+  const st=accxAnEstado(scope);
+  if(st.cargando){ box.innerHTML=`<div class="xs" style="color:var(--text3);">Calculando…</div>`; return; }
+  if(st.error){
+    box.innerHTML=`<div class="xs" style="color:var(--bad);">⚠️ No se pudo calcular el análisis: ${accxEsc(st.error)}</div>`;
+    return;
+  }
+  const d=st.data; if(!d){ box.innerHTML=''; return; }
+  const pa=d.periodo_actual||{}, pc=d.periodo_comparado||{};
+
+  // Período: se dice siempre contra qué se compara. Un mes parcial contra un mes completo
+  // no es una comparación, así que el corte equivalente se muestra explícito.
+  let h=`<div style="font-size:11px;color:var(--text3);line-height:1.6;margin-bottom:9px;">
+      📅 <b>${accxEsc(pa.desde)} → ${accxEsc(pa.hasta)}</b> (${pa.dias_comerciales} días comerciales)
+      vs <b>${accxEsc(pc.desde)} → ${accxEsc(pc.hasta)}</b> (${pc.dias_comerciales} días)
+      ${pa.parcial?`<span class="chip" style="font-size:9px;">mes en curso · corte equivalente</span>`:''}
+      <br><span style="font-size:10px;">Fuente: ${accxEsc(pa.fuente)} · comparado: ${accxEsc(pc.fuente)}</span>
+    </div>`;
+
+  if(d.nota){ box.innerHTML=h+`<div class="xs" style="color:var(--wn);">⚠️ ${accxEsc(d.nota)}</div>`; return; }
+
+  const at=d.atribucion||{};
+  if(at.advertencia){
+    h+=`<div style="margin-bottom:9px;background:rgba(255,200,0,.08);border:1px solid rgba(255,200,0,.3);border-radius:8px;padding:8px 11px;font-size:11px;color:var(--wn);line-height:1.5;">
+        ⚠️ <b>Atribución ${accxEsc(at.metodo)}.</b> ${accxEsc(at.advertencia)}</div>`;
+  }
+  if(d.insight){
+    h+=`<div style="background:rgba(226,20,122,.07);border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.55;margin-bottom:11px;">${accxEsc(d.insight)}</div>`;
+  }
+
+  const k=d.kpis||{};
+  const kpi=(n,t,c)=>`<div style="flex:1 1 96px;min-width:96px;">
+      <div style="font-size:18px;font-weight:800;color:${c||'var(--text)'};">${n==null?'—':accxAnNum(n)}</div>
+      <div style="font-size:10px;color:var(--text3);line-height:1.35;">${accxEsc(t)}</div></div>`;
+  h+=`<div style="display:flex;flex-wrap:wrap;gap:11px;margin-bottom:11px;">
+      ${kpi(k.clientes_accion,'clientes usaron la acción','var(--ok)')}
+      ${kpi(k.comprobantes_accion,'comprobantes')}
+      ${kpi(k.clientes_nuevos_categoria,'nuevos en la categoría')}
+      ${kpi(k.clientes_nuevos_marca,'nuevos en la marca')}
+      ${kpi(k.litros_accion,'litros asociados')}
+      ${kpi(k.participacion_litros_pct==null?null:accxAnNum(k.participacion_litros_pct)+'%','de los litros de la categoría')}
+    </div>`;
+
+  // Secundarios: contexto, no titular.
+  const sec=[];
+  if(k.importe_neto_accion!=null) sec.push(`Importe neto ${accxAnPesos(k.importe_neto_accion)}`);
+  if(k.inversion_descuento!=null) sec.push(`Inversión en descuento ${accxAnPesos(k.inversion_descuento)}`);
+  if(k.clientes_nuevos_penaflor!=null) sec.push(`${accxAnNum(k.clientes_nuevos_penaflor)} nuevos para Peñaflor`);
+  if(k.clientes_reactivados!=null) sec.push(`${accxAnNum(k.clientes_reactivados)} reactivados`);
+  if(k.clientes_recurrentes!=null) sec.push(`${accxAnNum(k.clientes_recurrentes)} recurrentes`);
+  if(k.compradores_categoria_actual!=null) sec.push(`Compradores de la categoría ${accxAnNum(k.compradores_categoria_actual)} vs ${accxAnNum(k.compradores_categoria_comparado)}`);
+  if(k.variacion_litros_categoria_pct!=null) sec.push(`Litros de la categoría ${k.variacion_litros_categoria_pct>0?'+':''}${accxAnNum(k.variacion_litros_categoria_pct)}%`);
+  if(sec.length) h+=`<div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:11px;">${sec.map(accxEsc).join(' · ')}</div>`;
+
+  const e=d.embudo||{};
+  if(e.universo_potencial){
+    const paso=(n,t)=>`<div style="flex:1 1 84px;min-width:84px;text-align:center;">
+        <div style="font-size:15px;font-weight:800;">${accxAnNum(n)}</div>
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;">${accxEsc(t)}</div></div>`;
+    h+=`<div style="border-top:1px solid var(--b);padding-top:10px;margin-bottom:11px;">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;">Embudo</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+          ${paso(e.universo_potencial,'potenciales')}<span style="color:var(--text3);">→</span>
+          ${paso(e.utilizaron_accion,'usaron')}<span style="color:var(--text3);">→</span>
+          ${paso(e.convertidos,'convertidos')}
+          ${paso(accxAnNum(e.conversion_pct)+'%','conversión')}
+          ${paso(e.potenciales_restantes,'siguen potenciales')}
+        </div></div>`;
+  }
+
+  const ot=d.once_titulares||{};
+  if(ot.aplica){
+    h+=`<div style="border-top:1px solid var(--b);padding-top:10px;margin-bottom:11px;font-size:11px;color:var(--text2);">
+        🎯 <b>11 Titulares:</b> ${accxAnNum(ot.impactos_asociados)} impactos asociados ·
+        <b style="color:var(--ok);">${accxAnNum(ot.impactos_habilitados)} habilitados</b>
+        (no llegaban al umbral sin la acción) · ${accxAnNum(ot.impactos_acompanados)} acompañados</div>`;
+  }
+
+  // Top 5 — nunca más de cinco filas.
+  const tops=d.top_clientes||{}, lista=(tops[st.modo]||[]);
+  const btn=(v,t)=>`<button onclick="accxAnSetModo('${scope}','${v}')" style="cursor:pointer;border:1px solid var(--b);background:${st.modo===v?'rgba(226,20,122,.15)':'transparent'};color:var(--text2);border-radius:6px;padding:3px 9px;font-size:10px;">${t}</button>`;
+  h+=`<div style="border-top:1px solid var(--b);padding-top:10px;">
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+        <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-right:4px;">Top 5</span>
+        ${btn('compradores','Top compradores')}${btn('incorporaciones','Top incorporaciones')}
+      </div>`;
+  if(!lista.length){
+    h+=`<div class="xs" style="color:var(--text3);">Sin clientes que hayan usado la acción en el período.</div>`;
+  }else{
+    h+=`<div style="overflow-x:auto;"><table class="tbl" style="font-size:11px;min-width:520px;"><tbody>
+        <tr style="color:var(--text3);"><td>Cliente</td><td>Vendedor</td><td style="text-align:right;">Litros</td>
+        <td style="text-align:right;">Comp.</td><td style="text-align:right;">Neto</td><td style="text-align:right;">Desc.</td><td>Clasif.</td></tr>`;
+    lista.forEach(c=>{h+=`<tr>
+        <td style="line-height:1.35;">${accxEsc(c.cliente||('#'+c.cliente_id))}</td>
+        <td style="color:var(--text3);">${accxEsc(c.vendedor_id)}</td>
+        <td style="text-align:right;font-weight:700;">${accxAnNum(c.litros)}</td>
+        <td style="text-align:right;color:var(--text3);">${c.comprobantes}</td>
+        <td style="text-align:right;">${accxAnPesos(c.importe_neto)}</td>
+        <td style="text-align:right;color:var(--text3);">${accxAnPesos(c.descuento)}</td>
+        <td><span class="chip${c.clasificacion==='recurrente'?'':' ok'}" style="font-size:9px;">${accxEsc(c.clasificacion_label)}</span></td>
+      </tr>`;});
+    h+=`</tbody></table></div>`;
+  }
+  h+=`</div>`;
   box.innerHTML=h;
+}
+
+function accxAnNum(n){
+  if(n==null) return '—';
+  if(typeof n==='string') return n;
+  return (Math.round(n*10)/10).toLocaleString('es-AR');
+}
+function accxAnPesos(n){
+  if(n==null) return '—';
+  return '$'+Math.round(n).toLocaleString('es-AR');
 }
 
 /* ── Elegibilidad dinámica de una acción (AGO26-TRAD-NC) ──
@@ -3570,44 +3756,11 @@ function accxElegHTML(scope,el){
   const pm=(el.por_marca||[]).filter(m=>m.clientes>0);
   if(pm.length) h+=`<div style="font-size:11px;color:var(--text2);margin-bottom:9px;">
       🛒 <b>Ya compraron:</b> ${pm.map(m=>accxEsc(m.marca)+' ('+m.clientes+')').join(' · ')}</div>`;
-  h+=`<details ontoggle="accxElegLoad('${scope}',this)">
-      <summary style="cursor:pointer;font-size:12px;font-weight:600;">👥 Ver clientes elegibles${el.elegibles!=null?` (${el.elegibles})`:''}</summary>
-      <div id="accx-eleg-${scope}" style="margin-top:8px;font-size:11px;color:var(--text3);">Cargando…</div>
-    </details>
-    <div style="margin-top:8px;font-size:10px;color:var(--text3);">Fuente: ${accxEsc(el.fuente||'')}</div>
+  // Acá NO va el listado de elegibles. Desplegar 1.458 filas no ayudaba a decidir nada;
+  // quién efectivamente usó la acción lo responde el Top 5 de la tarjeta de análisis.
+  h+=`<div style="margin-top:8px;font-size:10px;color:var(--text3);">Fuente: ${accxEsc(el.fuente||'')}</div>
   </div>`;
   return h;
-}
-
-/* Carga perezosa del detalle. Se pide una sola vez por scope y queda cacheado en memoria:
-   reabrir el <details> no vuelve a pegarle al backend. */
-async function accxElegLoad(scope,det){
-  if(!det.open) return;
-  const box=document.getElementById('accx-eleg-'+scope); if(!box) return;
-  window.__accxEleg=window.__accxEleg||{};
-  const cache=window.__accxEleg;
-  if(cache[scope]!==undefined){ box.innerHTML=cache[scope]; return; }
-  const url=scope==='v'
-    ? '/api/vendedor/'+encodeURIComponent((userData||{}).vendedor_id||'')+'/acciones_trad_nc'
-    : '/api/gerencia/acciones_trad_nc';
-  let html;
-  try{
-    const r=await fetch(url);
-    if(!r.ok) throw new Error(r.status);
-    const j=await r.json();
-    const cl=j.clientes||[];
-    html=cl.length
-      ? cl.map(c=>`<div class="row-b" style="padding:3px 0;border-top:1px solid var(--bd3);display:flex;gap:8px;justify-content:space-between;">
-          <span style="color:var(--text2);">${accxEsc(c.cliente||('#'+c.cliente_id))}${c.localidad?' · '+accxEsc(c.localidad):''}</span>
-          <span style="white-space:nowrap;color:var(--text3);">${accxEsc(c.vendedor_id)} · ${c.sin_compras?'sin compras':'compró otros'}</span>
-        </div>`).join('')
-      : 'No hay clientes elegibles con los datos de hoy.';
-  }catch(e){
-    // Sin lista no se inventa nada ni se muestra vacío: se dice que no se pudo traer.
-    html='⚠️ No se pudo cargar la lista de clientes elegibles.';
-  }
-  cache[scope]=html;
-  box.innerHTML=html;
 }
 
 /* Se llama después de inyectar el shell en el DOM (innerHTML no ejecuta scripts). */
