@@ -64,19 +64,37 @@ METODO_AMBIGUO = "ambiguous"
 #: sin llegar a confundir tramos vecinos (el más angosto del mes es 4% vs 5%).
 TOL_PCT = 0.6
 
-#: Prioridad al etiquetar un cliente con UNA sola clasificación (Top 5). Las categorías no
-#: son excluyentes entre sí —alguien nuevo para Peñaflor es también nuevo para la marca— así
-#: que se muestra la más informativa.
-ORDEN_CLASIFICACION = ("nuevo_penaflor", "reactivado", "nuevo_categoria",
-                       "nuevo_marca", "recurrente")
+#: Los tres grupos de movimiento son MUTUAMENTE EXCLUYENTES: cada cliente que usó la acción
+#: cae en exactamente uno. Se ordenan de "más nuevo" a "más conocido".
+GRUPOS_MOVIMIENTO = ("incorporado", "reactivado", "recurrente")
 
 ETIQUETA_CLASIFICACION = {
-    "nuevo_penaflor":  "Nuevo",
-    "reactivado":      "Reactivado",
-    "nuevo_categoria": "Nuevo en categoría",
-    "nuevo_marca":     "Nuevo en marca",
-    "recurrente":      "Recurrente",
+    "incorporado": "Incorporado",
+    "reactivado":  "Reactivado",
+    "recurrente":  "Recurrente",
 }
+
+#: Tipos de objetivo que puede tener una acción, con la unidad en la que se mide cada uno.
+#: El tipo define CONTRA QUÉ se evalúa: una acción de captación no se juzga por litros.
+OBJETIVO_TIPOS = {
+    "captacion":      {"unidad": "clientes",  "label": "Captación",
+                       "descripcion": "compradores incorporados"},
+    "reactivacion":   {"unidad": "clientes",  "label": "Reactivación",
+                       "descripcion": "compradores recuperados"},
+    "volumen":        {"unidad": "litros",    "label": "Volumen",
+                       "descripcion": "litros asociados a la acción"},
+    "mix":            {"unidad": "clientes",  "label": "Mix",
+                       "descripcion": "clientes incorporados a las marcas"},
+    "once_titulares": {"unidad": "impactos",  "label": "11 Titulares",
+                       "descripcion": "impactos habilitados"},
+    "cobertura":      {"unidad": "clientes",  "label": "Cobertura",
+                       "descripcion": "nuevos clientes cubiertos del canal"},
+}
+
+#: Prioridades del Top de oportunidades, en el orden que pidió comercial.
+OPORTUNIDAD_LAPSED = 1      # compraba las marcas y dejó de comprarlas
+OPORTUNIDAD_VOLUMEN = 2     # compra la categoría pero no estas marcas
+OPORTUNIDAD_TRAMO = 3       # está cerca del siguiente tramo de la escala
 
 
 def norm(s) -> str:
@@ -442,64 +460,193 @@ def comprobantes_caja_mixta(df, marca_de_linea, pct_objetivo=15.0, botellas=3,
 # CLASIFICACIÓN DE CLIENTES
 # ─────────────────────────────────────────────
 
-def clasificar_clientes(ids_accion, ids_comparado_todo, ids_comparado_categoria,
-                        ids_comparado_marca, ids_ventana_historica) -> dict:
-    """{cliente_id: {flags..., clasificacion}} para los que usaron la acción.
+def clasificar_clientes(ids_accion, ids_marca_comparado, ids_marca_ventana,
+                        ids_historial_completo=frozenset()) -> dict:
+    """{cliente_id: {grupo, ...}} para los que usaron la acción.
 
-    Dos ejes independientes, a propósito:
+    Tres grupos MUTUAMENTE EXCLUYENTES, todos definidos sobre LOS PRODUCTOS/MARCAS DE LA
+    ACCIÓN (no sobre "compró algo de Peñaflor", que es otra pregunta):
 
-      * **relación con Peñaflor**: recurrente (compró en el período comparado) / reactivado
-        (no compró entonces pero sí en los 12 meses previos) / nuevo para Peñaflor (no compró
-        ni entonces ni antes). Son excluyentes entre sí.
-      * **novedad de producto**: nuevo para la categoría y nuevo para la marca.
+      * **recurrente** : ya compraba esas marcas en el período comparable.
+      * **reactivado** : no las compró en el comparable, pero sí en los 12 meses previos.
+      * **incorporado**: no las compró ni en el comparable ni en esos 12 meses.
 
-    Nuevo-para-Peñaflor se cruza contra la ventana histórica y no sólo contra el período
-    comparado: sin eso, cualquiera que se hubiera salteado un mes figuraba como cliente nuevo
-    y el número no significaba nada.
+    `nuevo_penaflor_real` es un dato APARTE, no un cuarto grupo: sólo es cierto cuando el
+    cliente no tiene ninguna compra válida en TODO el historial disponible. No se llama
+    "nuevo" a alguien por no haber comprado en agosto del año pasado — eso es un cliente
+    existente que no compró ese mes, y mezclarlo inflaba el número de altas.
 
-    Importante: acá sólo entra quien USÓ la acción. Estar en el universo elegible no
-    convierte a nadie en cliente nuevo."""
+    Acá sólo entra quien USÓ la acción: estar en el universo elegible no clasifica a nadie."""
     out = {}
     for c in ids_accion:
-        recurrente = c in ids_comparado_todo
-        reactivado = (not recurrente) and (c in ids_ventana_historica)
-        nuevo_pf = (not recurrente) and (not reactivado)
-        flags = {
-            "recurrente":      recurrente,
-            "reactivado":      reactivado,
-            "nuevo_penaflor":  nuevo_pf,
-            "nuevo_categoria": c not in ids_comparado_categoria,
-            "nuevo_marca":     c not in ids_comparado_marca,
+        recurrente = c in ids_marca_comparado
+        reactivado = (not recurrente) and (c in ids_marca_ventana)
+        incorporado = (not recurrente) and (not reactivado)
+        grupo = ("recurrente" if recurrente else
+                 "reactivado" if reactivado else "incorporado")
+        out[c] = {
+            "grupo": grupo,
+            "clasificacion": grupo,                     # alias estable para el front
+            "clasificacion_label": ETIQUETA_CLASIFICACION[grupo],
+            "incorporado": incorporado,
+            "reactivado":  reactivado,
+            "recurrente":  recurrente,
+            # Nuevo de verdad: sin NINGUNA compra en todo el historial disponible.
+            "nuevo_penaflor_real": c not in ids_historial_completo,
         }
-        etiqueta = next((k for k in ORDEN_CLASIFICACION if flags.get(k)), "recurrente")
-        flags["clasificacion"] = etiqueta
-        flags["clasificacion_label"] = ETIQUETA_CLASIFICACION[etiqueta]
-        out[c] = flags
     return out
 
 
 def contar_clasificacion(clasif) -> dict:
-    """Totales por flag. Cada cliente puede sumar a más de una columna del eje de producto."""
-    keys = ("nuevo_penaflor", "reactivado", "recurrente", "nuevo_categoria", "nuevo_marca")
+    """Totales por grupo. Los tres primeros suman exactamente la cantidad de clientes."""
+    keys = ("incorporado", "reactivado", "recurrente", "nuevo_penaflor_real")
     return {k: int(sum(1 for v in clasif.values() if v.get(k))) for k in keys}
 
 
 # ─────────────────────────────────────────────
-# EMBUDO
+# OBJETIVO DE LA ACCIÓN
+# ─────────────────────────────────────────────
+#
+# No todas las acciones se evalúan con la misma vara: una de captación no se juzga por litros.
+# El objetivo NO sale de ninguna fuente de ventas — hay que configurarlo (ver
+# `09_CONFIG/objetivos_acciones.csv`). Si no está configurado se dice así, con todas las
+# letras: inventar un objetivo o mostrar 0% haría que la acción parezca un fracaso cuando en
+# realidad nadie definió contra qué medirla. Es la misma regla que ya aplica el cierre mensual
+# (REGLAS_NEGOCIO_PAV: "Acciones NO traen objetivo... No se les inventa uno").
+
+def valor_logrado(objetivo_tipo, kpis) -> float:
+    """Qué número de la acción se compara contra el objetivo, según su tipo."""
+    if objetivo_tipo == "volumen":
+        return float(kpis.get("litros") or 0)
+    if objetivo_tipo == "captacion":
+        return float(kpis.get("incorporados") or 0)
+    if objetivo_tipo == "reactivacion":
+        return float(kpis.get("reactivados") or 0)
+    if objetivo_tipo == "mix":
+        return float(kpis.get("incorporados") or 0)
+    if objetivo_tipo == "once_titulares":
+        return float(kpis.get("impactos_habilitados") or 0)
+    if objetivo_tipo == "cobertura":
+        return float(kpis.get("clientes") or 0)
+    return 0.0
+
+
+def evaluar_objetivo(objetivo, kpis, dias_transcurridos, dias_totales) -> dict:
+    """Cumplimiento actual y proyección al cierre.
+
+    Son DOS cosas distintas y se informan por separado:
+      * **cumplimiento**: lo ya logrado sobre el objetivo. Es un hecho.
+      * **proyección**  : (logrado / días comerciales transcurridos) x días comerciales
+        totales. Es una estimación, y llamarla "cumplimiento" haría creer que ya pasó.
+
+    Los días son COMERCIALES (lunes a sábado, sin domingos ni feriados de feriados.csv):
+    proyectar sobre días corridos infla el resultado de un mes que arranca en sábado."""
+    base = {"configurado": False, "tipo": None, "unidad": None, "valor": None,
+            "logrado": None, "cumplimiento_pct": None,
+            "proyeccion_valor": None, "proyeccion_pct": None,
+            "nota": "Objetivo comercial no configurado"}
+    if not objetivo or not objetivo.get("tipo") or objetivo.get("valor") in (None, ""):
+        return base
+    tipo = objetivo["tipo"]
+    try:
+        meta = float(objetivo["valor"])
+    except (TypeError, ValueError):
+        return base
+    if meta <= 0:
+        return base
+
+    logrado = valor_logrado(tipo, kpis)
+    unidad = objetivo.get("unidad") or OBJETIVO_TIPOS.get(tipo, {}).get("unidad")
+    cumpl = round(logrado / meta * 100, 1)
+    proy_val, proy_pct = None, None
+    if dias_transcurridos and dias_totales:
+        proy_val = round(logrado / dias_transcurridos * dias_totales, 1)
+        proy_pct = round(proy_val / meta * 100, 1)
+    return {"configurado": True, "tipo": tipo, "unidad": unidad, "valor": meta,
+            "logrado": round(logrado, 1), "cumplimiento_pct": cumpl,
+            "proyeccion_valor": proy_val, "proyeccion_pct": proy_pct,
+            "label": OBJETIVO_TIPOS.get(tipo, {}).get("label", tipo),
+            "descripcion": OBJETIVO_TIPOS.get(tipo, {}).get("descripcion", ""),
+            "nota": None}
+
+
+# ─────────────────────────────────────────────
+# ESCALAS: TRAMOS SIN SUPERPOSICIÓN
 # ─────────────────────────────────────────────
 
-def embudo(universo_potencial, ids_accion, ids_convertidos) -> dict:
-    """Universo → usaron → convirtieron. Devuelve cantidades, nunca la lista de clientes:
-    el potencial de una acción de canal son miles de filas y no entran en una tarjeta."""
+def normalizar_tramos(escalas) -> list:
+    """Cierra los tramos para que no se pisen: si un tramo termina en el mismo número en el
+    que empieza el siguiente, su tope pasa a ser ese número menos uno.
+
+    La fuente escribe "10 a 20 cajas" y "20 cajas o más", que en 20 daba dos descuentos
+    distintos. La definición comercial es **10 <= cajas < 20 -> primer tramo** y
+    **cajas >= 20 -> segundo tramo**, así que el tope real del primero es 19. Se ajusta acá,
+    en la lectura, y no en el Excel: la fuente queda como la escribió comercial y la regla
+    vive en un solo lugar del código.
+
+    También arregla el texto visible ("10 a 20 cajas · 6%" -> "10 a 19 cajas · 6%") para que
+    la tarjeta no contradiga al número."""
+    if not escalas:
+        return escalas
+    orden = sorted(range(len(escalas)),
+                   key=lambda i: (escalas[i].get("min") if escalas[i].get("min") is not None else -1))
+    for a, b in zip(orden, orden[1:]):
+        ea, eb = escalas[a], escalas[b]
+        if ea.get("max") is None or eb.get("min") is None:
+            continue
+        if ea["max"] == eb["min"]:
+            viejo = ea["max"]
+            ea["max"] = viejo - 1
+            ea["solapa"] = False
+            ea.pop("solapa_detalle", None)
+            eb["solapa"] = False
+            eb.pop("solapa_detalle", None)
+            if ea.get("texto"):
+                ea["texto"] = re.sub(rf"\b{viejo}\b", str(viejo - 1), ea["texto"], count=1)
+    return escalas
+
+
+def tramo_de(cantidad, escalas):
+    """(tramo_actual, tramo_siguiente, faltan) para una cantidad de cajas.
+
+    `tramo_actual` es el tramo cuyo rango contiene la cantidad; `faltan` es cuánto le falta
+    al cliente para entrar en el siguiente. Devuelve (None, primer_tramo, faltan) cuando
+    todavía no llegó ni al primero."""
+    if not escalas:
+        return None, None, None
+    conmin = [e for e in escalas if e.get("min") is not None]
+    if not conmin:
+        return None, None, None
+    orden = sorted(conmin, key=lambda e: e["min"])
+    actual = None
+    for e in orden:
+        techo = e.get("max")
+        if cantidad >= e["min"] and (techo is None or cantidad <= techo):
+            actual = e
+            break
+    siguientes = [e for e in orden if e["min"] > cantidad]
+    siguiente = siguientes[0] if siguientes else None
+    faltan = (siguiente["min"] - cantidad) if siguiente else None
+    return actual, siguiente, faltan
+
+
+# ─────────────────────────────────────────────
+# UNIVERSO (dato técnico, no titular)
+# ─────────────────────────────────────────────
+
+def universo(universo_potencial, ids_accion) -> dict:
+    """Cantidad de clientes del canal y cuántos usaron la acción.
+
+    Antes esto era un embudo de tres pasos en el centro de la tarjeta, con el potencial del
+    canal —miles de clientes— como número más grande de la pantalla. Un 0,2% de conversión
+    sobre 1.689 potenciales no dice nada accionable: la lectura útil es quién se movió, y eso
+    lo responde el bloque de movimiento. El universo queda como dato de auditoría."""
     usaron = len(ids_accion)
-    convertidos = len(ids_convertidos)
-    universo = int(universo_potencial or 0)
+    tot = int(universo_potencial or 0)
     return {
-        "universo_potencial":   universo,
+        "universo_potencial":   tot,
         "utilizaron_accion":    int(usaron),
-        "convertidos":          int(convertidos),
-        "conversion_pct":       round(usaron / universo * 100, 1) if universo else 0.0,
-        "potenciales_restantes": int(max(universo - usaron, 0)),
+        "penetracion_pct":      round(usaron / tot * 100, 1) if tot else None,
     }
 
 
@@ -573,16 +720,90 @@ def impacto_once_titulares(df_periodo, mask_accion, sku_titular, segmento_por_cl
 
 
 # ─────────────────────────────────────────────
-# TOP 5
+# AVISOS DEL CATÁLOGO
 # ─────────────────────────────────────────────
 
-def top_clientes(df_accion, clasif, modo="compradores", limite=5) -> list:
-    """Top de clientes de la acción. SIEMPRE acotado a `limite` (5): la tarjeta es para
-    decidir rápido, no para auditar la cartera.
+#: Nombres de herramientas/agentes que no pueden aparecer en el portal. El libro del mes usa
+#: la hoja VALIDACIONES para dejarle notas al que implementa ("Claude debe revisar...");
+#: son instrucciones de trabajo, no información comercial, y no van a la pantalla del vendedor.
+_TOKENS_HERRAMIENTA = ("CLAUDE", "CODEX", "AGENTE", "COPILOT", "CHATGPT", "GPT", "ORBIT BOT")
 
-      * `compradores`  : ordena por litros asociados y desempata por importe neto.
-      * `incorporaciones`: primero los que entran por primera vez (nuevo Peñaflor,
-        reactivado, nuevo en categoría o en marca) y recién después por litros."""
+
+def sanear_avisos(avisos) -> list:
+    """Saca de los avisos del catálogo los que son notas para el implementador.
+
+    Regla general, no una lista de casos: si el aviso nombra una herramienta o un agente, es
+    una instrucción de trabajo y no se muestra. Eso saca solo el aviso de las escalas de 20
+    cajas —cuya definición comercial ya quedó implementada en `normalizar_tramos`— y
+    cualquier nota parecida que aparezca en libros futuros, sin tener que editarlos."""
+    out = []
+    for a in avisos or []:
+        texto = norm(" ".join(str(a.get(k) or "") for k in ("tema", "hallazgo", "accion")))
+        if any(t in texto for t in _TOKENS_HERRAMIENTA):
+            continue
+        out.append(a)
+    return out
+
+
+# ─────────────────────────────────────────────
+# OPORTUNIDADES
+# ─────────────────────────────────────────────
+
+def top_oportunidades(candidatos, limite=5) -> list:
+    """Top de clientes accionables, con el motivo concreto de por qué entran.
+
+    `candidatos` es una lista de dicts ya armada por quien tiene los datos; acá se ordena y se
+    corta. El orden de prioridad es el que pidió comercial: primero el que compraba y dejó de
+    comprar, después el que mueve la categoría pero no estas marcas, y por último el que está
+    cerca del siguiente tramo. Dentro de cada prioridad manda el volumen.
+
+    Con prioridad pura la lista salía monótona: el balde "dejó de comprar" tiene cientos de
+    clientes y se quedaba con los cinco lugares, así que el vendedor nunca veía un "le faltan
+    3 cajas para el tramo de 20", que es la oportunidad más concreta que hay. Por eso primero
+    se reserva UN lugar para cada tipo de oportunidad que exista y recién después se completa
+    por prioridad y volumen. Con un solo tipo disponible, la lista sale entera de ése.
+
+    Nunca devuelve más de `limite`: es una lista para trabajar mañana, no el padrón del canal."""
+    if not candidatos:
+        return []
+    orden = sorted(candidatos,
+                   key=lambda c: (c.get("prioridad", 99), -float(c.get("volumen") or 0)))
+    elegidos, vistos = [], set()
+    for p in sorted({c.get("prioridad", 99) for c in orden}):     # 1 de cada tipo primero
+        if len(elegidos) >= limite:
+            break
+        mejor = next((c for c in orden if c.get("prioridad", 99) == p), None)
+        if mejor is not None:
+            elegidos.append(mejor)
+            vistos.add(id(mejor))
+    for c in orden:                                              # después, por prioridad
+        if len(elegidos) >= limite:
+            break
+        if id(c) not in vistos:
+            elegidos.append(c)
+    return sorted(elegidos, key=lambda c: (c.get("prioridad", 99),
+                                           -float(c.get("volumen") or 0)))[:limite]
+
+
+def motivo_lapsed(unidad="L"):
+    return "Compraba la marca y todavía no compró en este período"
+
+
+def motivo_volumen(vol, unidad="L"):
+    return f"Mueve {_n(vol)} {unidad} de la categoría, sin compra de estas marcas"
+
+
+def motivo_tramo(cajas, faltan, siguiente_min, pct):
+    pct_txt = f" ({round(pct * 100)}%)" if pct is not None else ""
+    return (f"Compró {_n(cajas)} cajas; con {_n(faltan)} más llega al tramo de "
+            f"{_n(siguiente_min)}{pct_txt}")
+
+
+def top_clientes(df_accion, clasif, limite=5) -> list:
+    """Top 5 de RESULTADOS: los clientes que más generaron con la acción.
+
+    Ordena por litros asociados y desempata por importe neto. SIEMPRE acotado a `limite`:
+    la tarjeta es para decidir rápido, no para auditar la cartera."""
     if df_accion is None or not len(df_accion):
         return []
     g = (df_accion.groupby("_cli")
@@ -594,13 +815,7 @@ def top_clientes(df_accion, clasif, modo="compradores", limite=5) -> list:
               vendedor=("_vnom", "first"),
               vendedor_cod=("_vend", "first"))
          .reset_index())
-    g["_orden_inc"] = [
-        0 if (clasif.get(int(c), {}).get("clasificacion") != "recurrente") else 1
-        for c in g["_cli"]]
-    if modo == "incorporaciones":
-        g = g.sort_values(["_orden_inc", "litros", "importe_neto"], ascending=[True, False, False])
-    else:
-        g = g.sort_values(["litros", "importe_neto"], ascending=[False, False])
+    g = g.sort_values(["litros", "importe_neto"], ascending=[False, False])
     out = []
     for _, r in g.head(limite).iterrows():
         cid = int(r["_cli"])
@@ -634,41 +849,48 @@ def _pct(x, dec=1):
     return f"{x:.{dec}f}".replace(".", ",")
 
 
-def construir_insight(kpis, embudo_d, atribucion, periodo_txt) -> str:
+def construir_insight(kpis, objetivo, atribucion, periodo_txt) -> str:
     """Conclusión corta armada con reglas y datos, sin IA y sin adjetivos.
 
-    Deliberadamente dice "asociadas a la acción" y "durante la vigencia": con atribución por
+    Responde en una línea las tres preguntas de la tarjeta: si la acción se está usando, qué
+    movimiento nuevo produjo y si llega al objetivo.
+
+    Deliberadamente dice "asociados a la acción" y "resultado observado": con atribución por
     regla hay asociación entre la venta y el descuento, no prueba de que la acción la haya
     causado. Afirmar causalidad sería inventar un dato que la fuente no tiene."""
-    cl = kpis.get("clientes_accion") or 0
+    cl = kpis.get("clientes") or 0
     if not cl:
-        return (f"Ninguna compra {periodo_txt} cumple las condiciones de la acción. "
-                "No hay uso para analizar.")
+        return (f"Ninguna compra cumple las condiciones de la acción. Sin uso registrado, "
+                f"no hay resultado para comparar contra {periodo_txt}.")
 
     partes = [f"{_n(cl)} cliente{'s' if cl != 1 else ''} "
-              f"{'utilizaron' if cl != 1 else 'utilizó'} la acción "
-              f"en {_n(kpis.get('comprobantes_accion') or 0)} comprobante"
-              f"{'s' if (kpis.get('comprobantes_accion') or 0) != 1 else ''}."]
+              f"{'utilizaron' if cl != 1 else 'utilizó'} la acción, "
+              f"con {_n(kpis.get('litros') or 0)} litros asociados."]
 
-    nuevos_cat = kpis.get("clientes_nuevos_categoria") or 0
-    if nuevos_cat:
-        partes.append(f"{_n(nuevos_cat)} no compraba{'n' if nuevos_cat != 1 else ''} "
-                      f"esta categoría {periodo_txt}.")
-
-    nuevos_pf = kpis.get("clientes_nuevos_penaflor") or 0
-    react = kpis.get("clientes_reactivados") or 0
-    if nuevos_pf or react:
+    inc = kpis.get("incorporados") or 0
+    react = kpis.get("reactivados") or 0
+    if inc or react:
         det = []
-        if nuevos_pf:
-            det.append(f"{_n(nuevos_pf)} sin compras previas de Peñaflor")
+        if inc:
+            det.append(f"{_n(inc)} incorporado{'s' if inc != 1 else ''}")
         if react:
             det.append(f"{_n(react)} reactivado{'s' if react != 1 else ''}")
-        partes.append("Entre ellos, " + " y ".join(det) + ".")
+        partes.append(" y ".join(det) + f" comparado con {periodo_txt}.")
 
-    part = kpis.get("participacion_litros_pct")
-    if part is not None:
-        partes.append(f"Las ventas asociadas a la acción representan el {_pct(part)}% "
-                      f"de los litros actuales de la categoría.")
+    var = kpis.get("variacion_comparable_pct")
+    if var is not None:
+        signo = "+" if var >= 0 else ""
+        partes.append(f"Los litros de las marcas participantes varían {signo}{_pct(var)}% "
+                      f"contra {periodo_txt}.")
+
+    if objetivo and objetivo.get("configurado"):
+        partes.append(f"Cumplimiento {_pct(objetivo['cumplimiento_pct'])}% del objetivo")
+        if objetivo.get("proyeccion_pct") is not None:
+            partes[-1] += f"; proyección al cierre {_pct(objetivo['proyeccion_pct'])}%."
+        else:
+            partes[-1] += "."
+    else:
+        partes.append("Sin objetivo comercial configurado, no se puede evaluar cumplimiento.")
 
     if atribucion.get("metodo") == METODO_AMBIGUO:
         partes.append("Atribución ambigua: hay otra acción del mes con el mismo canal, "

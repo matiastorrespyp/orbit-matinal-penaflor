@@ -5653,6 +5653,20 @@ def _acc_explorador():
         base = data if isinstance(data, dict) else {}
         return {"mes": base.get("mes"), "fuente": base.get("fuente"),
                 "categorias": [], "nota": nota}
+    # ── Reglas que se aplican en la LECTURA, no en el Excel ni en el dataset ──
+    # 1) Tramos cerrados: la fuente escribe "10 a 20" y "20 o más", que en 20 daba dos
+    #    descuentos. La definición comercial es 10<=cajas<20 y cajas>=20, así que el tope del
+    #    primero pasa a 19. Se hace acá para que el arreglo llegue a producción con el deploy
+    #    de código, sin editar el libro del mes ni regenerar el dataset.
+    # 2) Avisos saneados: la hoja VALIDACIONES trae notas para quien implementa; el portal es
+    #    la pantalla del vendedor y no menciona herramientas.
+    for cat in data.get("categorias") or []:
+        for sub in cat.get("subcategorias") or []:
+            for seg in sub.get("segmentos") or []:
+                motor_acc_an.normalizar_tramos(seg.get("escalas") or [])
+            sub["conflictos"] = []
+    data["avisos"] = motor_acc_an.sanear_avisos(data.get("avisos"))
+    data["conflictos"] = []
     return data
 
 
@@ -6157,8 +6171,11 @@ def _acc_mes_sig():
     sig = []
     # clientes.xlsx entra en la firma por la elegibilidad de AGO26-TRAD-NC: la cartera
     # Tradicional sale del padrón, así que un cambio de padrón tiene que invalidar el payload.
+    # objetivos_acciones.csv entra en la firma para que cargar un objetivo se vea en la
+    # tarjeta sin reiniciar: sin esto el análisis quedaba servido desde la caché anterior.
     for p in (INPUTS / "ventas.csv", INPUTS / "ventas_acumulada.csv", INPUTS / "clientes.xlsx",
               DATASETS / "mod_planes_as.csv", CONFIG / "maestro_04D_productos.csv",
+              CONFIG / "objetivos_acciones.csv",
               INPUTS / "04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx"):
         try:
             sig.append((p.name, os.path.getmtime(p) if p.exists() else 0))
@@ -6560,6 +6577,29 @@ def _acc_an_ids_rango(desde, hasta):
     return ids
 
 
+def _acc_an_ids_historial(hasta):
+    """Clientes con alguna compra válida en TODO el historial disponible hasta `hasta`.
+
+    Es lo que permite decir "nuevo para Peñaflor" de verdad, en vez de llamar nuevo al que no
+    compró el mes pasado. Recorre las FUENTES una sola vez (historial + cierres versionados)
+    en lugar de iterar mes por mes: barrer 26 años de períodos costaba 15 s por consulta."""
+    key = ("historial_completo", str(hasta), _acc_mes_sig())
+    cached = _ACC_AN_IDS_CACHE.get(key)
+    if cached is not None:
+        return cached
+    rutas = [BASE / "02_HISTORY" / "historial_ventas.csv", INPUTS / "ventas.csv"]
+    cierres = INPUTS / "cierres mes"
+    if cierres.exists():
+        rutas += sorted(cierres.glob("ventas_mes_*.csv"))
+    ids = set()
+    for p in rutas:
+        d = _acc_an_ids_fuente(p)
+        if not d.empty:
+            ids |= set(d.loc[d["_fec"] <= pd.Timestamp(hasta), "_cli"].astype(int))
+    _ACC_AN_IDS_CACHE[key] = ids
+    return ids
+
+
 def _acc_an_dias_comerciales(desde, hasta):
     """Días operativos (lunes a sábado, sin feriados) entre dos fechas, inclusive."""
     n, d = 0, desde
@@ -6613,7 +6653,10 @@ def _acc_an_periodos(comparacion):
     _, f_act = _acc_an_rango(inicio, corte)
     _, f_cmp = _acc_an_rango(ini_cmp, fin_cmp)
     actual = {"periodo": str(vivo), "desde": str(inicio), "hasta": str(corte),
-              "dias_comerciales": dias, "parcial": parcial,
+              "dias_comerciales": dias,
+              # Días comerciales del mes ENTERO: es el denominador de la proyección al cierre.
+              "dias_comerciales_totales": _acc_an_dias_comerciales(inicio, fin_mes),
+              "parcial": parcial,
               "fuente": ", ".join(f_act) or "sin fuente"}
     comparado = {"tipo": comparacion, "periodo": str(per_cmp), "desde": str(ini_cmp),
                  "hasta": str(fin_cmp),
@@ -6719,6 +6762,98 @@ def _acc_an_pred(sub, all_lineas, alcance=None):
     return _acc_product_pred(regla, all_lineas)
 
 
+_ACC_AN_OBJ_CACHE = {}
+
+
+def _acc_an_objetivos():
+    """{action_id: {tipo, valor, unidad, nota}} desde 09_CONFIG/objetivos_acciones.csv.
+
+    Los objetivos de las acciones NO existen en ninguna fuente de ventas: hay que cargarlos.
+    Es la misma regla que ya aplica el cierre mensual — a las acciones no se les inventa un
+    objetivo, porque un plan armado contra un objetivo inventado no se puede evaluar después.
+    Sin archivo o sin fila, la acción sale como "no configurado" y la tarjeta lo dice.
+
+    Formato (separador `;`):
+        action_id;objetivo_tipo;objetivo_valor;objetivo_unidad;nota
+        AGO26-TRAD-NC;captacion;40;clientes;Meta de incorporacion del canal Tradicional
+    """
+    p = CONFIG / "objetivos_acciones.csv"
+    try:
+        key = (p.stat().st_mtime, p.stat().st_size) if p.exists() else None
+    except OSError:
+        key = None
+    if key is not None and key in _ACC_AN_OBJ_CACHE:
+        return _ACC_AN_OBJ_CACHE[key]
+    out = {}
+    if p.exists():
+        try:
+            df = pd.read_csv(p, sep=";", encoding="utf-8-sig", dtype=str).fillna("")
+            df.columns = [c.strip() for c in df.columns]
+            for _, r in df.iterrows():
+                aid = str(r.get("action_id", "")).strip()
+                tipo = str(r.get("objetivo_tipo", "")).strip().lower()
+                if not aid or tipo not in motor_acc_an.OBJETIVO_TIPOS:
+                    continue
+                val = pd.to_numeric(str(r.get("objetivo_valor", "")).replace(",", "."),
+                                    errors="coerce")
+                out[aid] = {
+                    "tipo": tipo,
+                    "valor": None if pd.isna(val) else float(val),
+                    "unidad": (str(r.get("objetivo_unidad", "")).strip()
+                               or motor_acc_an.OBJETIVO_TIPOS[tipo]["unidad"]),
+                    "nota": str(r.get("nota", "")).strip() or None,
+                }
+        except Exception as e:
+            app.logger.warning("objetivos_acciones.csv ilegible: %s", e)
+    _ACC_AN_OBJ_CACHE.clear()
+    if key is not None:
+        _ACC_AN_OBJ_CACHE[key] = out
+    return out
+
+
+_ACC_AN_UXC_CACHE = {}
+
+
+def _acc_an_uxc():
+    """{codigo: unidades por caja} del maestro 04D.
+
+    Las escalas de las acciones se expresan en CAJAS, pero `CantBase` del ERP viene en
+    botellas/unidades (regla oficial de motor_11t). Sin este mapa no se puede decir "le faltan
+    3 cajas para el tramo de 20". Va aparte de `_cargar_maestro_04D` para no cambiarle la
+    firma a una función que usan media docena de pantallas."""
+    p = CONFIG / "maestro_04D_productos.csv"
+    try:
+        key = (p.stat().st_mtime, p.stat().st_size) if p.exists() else None
+    except OSError:
+        key = None
+    if key is not None and key in _ACC_AN_UXC_CACHE:
+        return _ACC_AN_UXC_CACHE[key]
+    out = {}
+    if p.exists():
+        try:
+            df = pd.read_csv(p, dtype=str, encoding="utf-8-sig")
+            df.columns = [c.strip() for c in df.columns]
+            cod = df["Codigo"].astype(str).str.strip().str.upper().str.replace(r"\.0$", "", regex=True)
+            uxc = pd.to_numeric(df.get("UxC"), errors="coerce")
+            out = {c: float(u) for c, u in zip(cod, uxc) if pd.notna(u) and u > 0}
+        except Exception as e:
+            app.logger.warning("UxC del maestro 04D ilegible: %s", e)
+    _ACC_AN_UXC_CACHE.clear()
+    if key is not None:
+        _ACC_AN_UXC_CACHE[key] = out
+    return out
+
+
+def _acc_an_cajas(df):
+    """Serie de cajas por línea = unidades / unidades-por-caja. 0 si el SKU no está en el
+    maestro (no se estima: una caja inventada movería de tramo a un cliente)."""
+    if df is None or df.empty:
+        return pd.Series(dtype=float)
+    uxc = _acc_an_uxc()
+    u = df["_cod"].map(uxc)
+    return (df["_cant"] / u).where(u.notna() & (u > 0), 0.0)
+
+
 def _acc_an_universo_potencial(segs_canon, vid=None):
     """Cartera real del canal de la acción (clientes.xlsx), como CANTIDAD.
 
@@ -6739,6 +6874,112 @@ def _acc_an_universo_potencial(segs_canon, vid=None):
     if vid == "V3":
         cli = cli[cli["_segc"] != "AUTOSERVICIO"]
     return int(len(cli))
+
+
+def _acc_an_oportunidades(d_act, d_cmp, d_ventana, m_prod, m_seg, pred, segs, sub,
+                          ids_accion, vid=None, limite=5):
+    """Top 5 de clientes accionables, cada uno con el motivo concreto de por qué entra.
+
+    Tres orígenes, en el orden de prioridad que pidió comercial:
+
+      1. **Dejó de comprar**: compraba las marcas de la acción en el período comparable o en
+         los 12 meses previos, y en este período todavía no.
+      2. **Volumen sin la marca**: mueve la categoría en este período pero no compró estas
+         marcas.
+      3. **Cerca del tramo**: ya usó la acción y le faltan pocas cajas para el siguiente
+         escalón de la escala.
+
+    Filtros duros en los tres casos: el cliente tiene que ser del canal de la acción y estar
+    en la cartera de un vendedor activo (si no, no hay quién lo visite). Devuelve como máximo
+    `limite` filas: es una lista para trabajar mañana, no el padrón del canal."""
+    cli = _clientes_maestro()
+    if cli.empty:
+        return []
+    cli = cli.copy()
+    cli["_segc"] = [_clasificar_segmento(r, s)
+                    for r, s in zip(cli.get("Ramo", ""), cli.get("SubSegmento", ""))]
+    cli = cli[cli["_vend_id"].isin(_VENDEDORES_ACTIVOS_PLAN)]
+    if vid:
+        cli = cli[cli["_vend_id"] == vid]
+    if segs:
+        cli = cli[cli["_segc"].isin(list(segs))]
+    # V3 no trabaja Autoservicio: no puede recibir una oportunidad de ese canal.
+    cli = cli[~((cli["_vend_id"] == "V3") & (cli["_segc"] == "AUTOSERVICIO"))]
+    if cli.empty:
+        return []
+    visitables = dict(zip(cli["_cliente_id"], cli["_vend_id"]))
+    nombres = dict(zip(cli["_cliente_id"], cli.get("Razon_Social", "")))
+
+    # Compras de las marcas de la acción en el período actual (con o sin la acción aplicada)
+    marca_act = (d_act.loc[m_prod & m_seg] if not d_act.empty else d_act)
+    ids_marca_act = set(marca_act["_cli"].dropna().astype(int)) if not marca_act.empty else set()
+
+    cands = []
+
+    # ── 1. Compraba las marcas y dejó de comprarlas ──
+    previos = {}
+    for df in (d_cmp, d_ventana):
+        if df is None or df.empty:
+            continue
+        mp = motor_acc_an.mask_productos(df, pred)
+        g = df.loc[mp].groupby("_cli")["_litros"].sum()
+        for c, v in g.items():
+            if pd.notna(c):
+                previos[int(c)] = previos.get(int(c), 0.0) + float(v)
+    for c, vol in previos.items():
+        if c in ids_marca_act or c not in visitables:
+            continue
+        cands.append({"cliente_id": c, "cliente": str(nombres.get(c) or ""),
+                      "vendedor_id": visitables[c], "volumen": round(vol, 1),
+                      "unidad": "L", "prioridad": motor_acc_an.OPORTUNIDAD_LAPSED,
+                      "motivo": motor_acc_an.motivo_lapsed()})
+
+    # ── 2. Mueve la categoría pero no estas marcas ──
+    if not d_act.empty:
+        otros = d_act[m_seg & ~m_prod]
+        if not otros.empty:
+            g = otros.groupby("_cli")["_litros"].sum().sort_values(ascending=False)
+            for c, vol in g.items():
+                if pd.isna(c):
+                    continue
+                c = int(c)
+                if c in ids_marca_act or c not in visitables or any(x["cliente_id"] == c for x in cands):
+                    continue
+                cands.append({"cliente_id": c, "cliente": str(nombres.get(c) or ""),
+                              "vendedor_id": visitables[c], "volumen": round(float(vol), 1),
+                              "unidad": "L", "prioridad": motor_acc_an.OPORTUNIDAD_VOLUMEN,
+                              "motivo": motor_acc_an.motivo_volumen(float(vol))})
+
+    # ── 3. Cerca del siguiente tramo de la escala ──
+    escalas = []
+    for seg in sub.get("segmentos") or []:
+        if not segs or _acc_seg_canon(" | ".join(seg.get("segmentos_cliente") or []),
+                                      seg.get("canal")) & segs:
+            escalas = seg.get("escalas") or []
+            break
+    unidad_esc = (escalas[0].get("unidad") if escalas else "") or ""
+    if escalas and unidad_esc.lower() == "caja" and not marca_act.empty:
+        cajas = _acc_an_cajas(marca_act)
+        porcli = marca_act.assign(_cajas=cajas).groupby("_cli")["_cajas"].sum()
+        for c, cj in porcli.items():
+            if pd.isna(c):
+                continue
+            c = int(c)
+            if c not in visitables or any(x["cliente_id"] == c for x in cands):
+                continue
+            _act, sig, faltan = motor_acc_an.tramo_de(float(cj), escalas)
+            if not sig or faltan is None or faltan <= 0:
+                continue
+            cands.append({"cliente_id": c, "cliente": str(nombres.get(c) or ""),
+                          "vendedor_id": visitables[c], "volumen": round(float(cj), 1),
+                          "unidad": "cajas", "prioridad": motor_acc_an.OPORTUNIDAD_TRAMO,
+                          "cajas_actuales": round(float(cj), 1),
+                          "faltan": round(float(faltan), 1),
+                          "tramo_siguiente": sig.get("min"),
+                          "motivo": motor_acc_an.motivo_tramo(float(cj), float(faltan),
+                                                              sig.get("min"), sig.get("descuento"))})
+
+    return motor_acc_an.top_oportunidades(cands, limite)
 
 
 def _acciones_analisis(action_id, comparacion="mes_anterior", vid=None):
@@ -6794,13 +7035,16 @@ def _acciones_analisis(action_id, comparacion="mes_anterior", vid=None):
     # que no hubo ventas, que es otra cosa: se corta con una nota y sin números inventados.
     if not d_act.empty and int(m_prod.sum()) == 0 and motor_acc_an.marcas_de(sub):
         return {
-            "action_id": action_id, "categoria": cat_ui,
-            "subcategoria": sub.get("subcategoria"),
-            "periodo_actual": actual, "periodo_comparado": comparado,
-            "atribucion": atribucion, "kpis": None, "embudo": None,
-            "once_titulares": {"aplica": False, "impactos_asociados": None,
-                               "impactos_habilitados": None, "impactos_acompanados": None},
-            "insight": None, "top_clientes": {"compradores": [], "incorporaciones": []},
+            "accion": {"id": action_id, "nombre": f"{cat_ui} · {sub.get('subcategoria')}",
+                       "categoria": cat_ui, "subcategoria": sub.get("subcategoria"),
+                       "objetivo_tipo": None, "objetivo_valor": None,
+                       "objetivo_unidad": None, "objetivo_label": None,
+                       "objetivo_nota": None},
+            "periodos": {"actual": actual, "comparado": comparado},
+            "resultado": None, "movimiento": None, "comparacion": None,
+            "insight": None, "top_resultados": [], "top_oportunidades": [],
+            "detalle": {"atribucion": atribucion, "fuente_actual": actual["fuente"],
+                        "fuente_comparado": comparado["fuente"], "advertencias": []},
             "nota": ("Dato no disponible: no se pudo resolver contra el maestro qué productos "
                      "entran en esta acción (" +
                      ", ".join(motor_acc_an.marcas_de(sub)[:4]) +
@@ -6831,54 +7075,43 @@ def _acciones_analisis(action_id, comparacion="mes_anterior", vid=None):
     d_cat_act = d_act[_en_cat(d_act) & m_seg] if not d_act.empty else d_act
 
     ids_accion = set(d_accion["_cli"].dropna().astype(int)) if not d_accion.empty else set()
+
+    # ── Litros de las MARCAS PARTICIPANTES, que es lo comparable ──
+    # No se compara contra "la categoría entera" (que para TRAD-NC abarcaba VDA+VDG+RTD+
+    # Spirits+Vodka y diluía cualquier lectura): se compara el mismo alcance de producto en
+    # los dos períodos, que es lo único que la acción puede mover.
+    litros_marca_act = float(d_act.loc[m_prod & m_seg, "_litros"].sum()) if not d_act.empty else 0.0
     if d_cmp.empty:
-        ids_cmp_todo = ids_cmp_cat = ids_cmp_marca = set()
-        litros_cat_cmp = 0.0
+        ids_cmp_marca = set()
+        litros_marca_cmp = 0.0
     else:
         m_seg_c = motor_acc_an.mask_segmento(d_cmp, segs)
         m_prod_c = motor_acc_an.mask_productos(d_cmp, pred)
-        ids_cmp_todo = set(d_cmp["_cli"].dropna().astype(int))
-        ids_cmp_cat = set(d_cmp.loc[_en_cat(d_cmp) & m_seg_c, "_cli"].dropna().astype(int))
         ids_cmp_marca = set(d_cmp.loc[m_prod_c & m_seg_c, "_cli"].dropna().astype(int))
-        litros_cat_cmp = float(d_cmp.loc[_en_cat(d_cmp) & m_seg_c, "_litros"].sum())
+        litros_marca_cmp = float(d_cmp.loc[m_prod_c & m_seg_c, "_litros"].sum())
 
-    # Ventana de 12 meses ANTERIORES al período comparado: distingue al cliente realmente
-    # nuevo del que simplemente se salteó un mes.
+    # Ventana de 12 meses ANTERIORES al período comparado, acotada a las marcas de la acción:
+    # es lo que separa al reactivado (ya las compraba antes) del incorporado.
     ini_cmp = pd.Timestamp(comparado["desde"]).date()
-    ids_hist = _acc_an_ids_rango((pd.Period(ini_cmp, freq="M") - 12).start_time.date(),
+    d_ventana, _ = _acc_an_rango((pd.Period(ini_cmp, freq="M") - 12).start_time.date(),
                                  ini_cmp - timedelta(days=1))
+    if d_ventana.empty:
+        ids_ventana_marca = set()
+    else:
+        mv = motor_acc_an.mask_productos(d_ventana, pred)
+        ids_ventana_marca = set(d_ventana.loc[mv, "_cli"].dropna().astype(int))
+    # Historial COMPLETO disponible: sólo así se puede decir "nuevo para Peñaflor" de verdad.
+    ids_hist_total = _acc_an_ids_historial(pd.Timestamp(actual["desde"]).date() - timedelta(days=1))
 
-    clasif = motor_acc_an.clasificar_clientes(ids_accion, ids_cmp_todo, ids_cmp_cat,
-                                              ids_cmp_marca, ids_hist)
+    clasif = motor_acc_an.clasificar_clientes(ids_accion, ids_cmp_marca, ids_ventana_marca,
+                                              ids_hist_total)
     cuenta = motor_acc_an.contar_clasificacion(clasif)
 
     litros_accion = float(d_accion["_litros"].sum()) if not d_accion.empty else 0.0
-    litros_cat = float(d_cat_act["_litros"].sum()) if not d_cat_act.empty else 0.0
-    kpis = {
-        "clientes_accion":        len(ids_accion),
-        "comprobantes_accion":    int(d_accion["_nro"].nunique()) if not d_accion.empty else 0,
-        "clientes_nuevos_penaflor":  cuenta["nuevo_penaflor"],
-        "clientes_nuevos_categoria": cuenta["nuevo_categoria"],
-        "clientes_nuevos_marca":     cuenta["nuevo_marca"],
-        "clientes_reactivados":      cuenta["reactivado"],
-        "clientes_recurrentes":      cuenta["recurrente"],
-        "litros_accion":          round(litros_accion, 1),
-        "litros_categoria":       round(litros_cat, 1),
-        "participacion_litros_pct": round(litros_accion / litros_cat * 100, 1) if litros_cat else 0.0,
-        "importe_neto_accion":    round(float(d_accion["_imp_neto"].sum()) if not d_accion.empty else 0.0, 2),
-        "inversion_descuento":    round(float(d_accion["_desc"].sum()) if not d_accion.empty else 0.0, 2),
-        "compradores_categoria_actual":   int(d_cat_act["_cli"].nunique()) if not d_cat_act.empty else 0,
-        "compradores_categoria_comparado": len(ids_cmp_cat),
-        "litros_categoria_comparado":     round(litros_cat_cmp, 1),
-        "variacion_litros_categoria_pct": (round((litros_cat - litros_cat_cmp) / litros_cat_cmp * 100, 1)
-                                           if litros_cat_cmp else None),
-    }
+    variacion = (round((litros_marca_act - litros_marca_cmp) / litros_marca_cmp * 100, 1)
+                 if litros_marca_cmp else None)
 
-    universo = _acc_an_universo_potencial(segs, vid)
-    convertidos = {c for c, f in clasif.items() if f.get("nuevo_marca")}
-    emb = motor_acc_an.embudo(universo, ids_accion, convertidos)
-
-    # ── 11 Titulares ──
+    # ── 11 Titulares (dato de detalle salvo que el objetivo de la acción sea 11T) ──
     sku_tit = motor_11t._mapa_sku_titular()
     # El umbral 11T depende del segmento del cliente. `_seg` ya viene canonizado por el
     # clasificador único del portal y sus valores coinciden con las claves de UMBRALES_11T
@@ -6890,22 +7123,73 @@ def _acciones_analisis(action_id, comparacion="mes_anterior", vid=None):
                                                motor_11t.UMBRALES_11T)
     once.pop("detalle", None)
 
+    # ── Resultado y objetivo ──
+    kpis = {
+        "clientes":      len(ids_accion),
+        "litros":        round(litros_accion, 1),
+        "incorporados":  cuenta["incorporado"],
+        "reactivados":   cuenta["reactivado"],
+        "recurrentes":   cuenta["recurrente"],
+        "impactos_habilitados": once.get("impactos_habilitados") or 0,
+        "variacion_comparable_pct": variacion,
+    }
+    obj_cfg = _acc_an_objetivos().get(action_id)
+    objetivo = motor_acc_an.evaluar_objetivo(obj_cfg, kpis,
+                                             actual["dias_comerciales"],
+                                             actual["dias_comerciales_totales"])
+
     per_txt = ("el mes anterior" if comparacion == "mes_anterior"
                else "el mismo período del año anterior")
     payload = {
-        "action_id":   action_id,
-        "categoria":   cat_ui,
-        "subcategoria": sub.get("subcategoria"),
-        "periodo_actual":   actual,
-        "periodo_comparado": comparado,
-        "atribucion":  atribucion,
-        "kpis":        kpis,
-        "embudo":      emb,
-        "once_titulares": once,
-        "insight":     motor_acc_an.construir_insight(kpis, emb, atribucion, per_txt),
-        "top_clientes": {
-            "compradores":     motor_acc_an.top_clientes(d_accion, clasif, "compradores"),
-            "incorporaciones": motor_acc_an.top_clientes(d_accion, clasif, "incorporaciones"),
+        "accion": {
+            "id":              action_id,
+            "nombre":          f"{cat_ui} · {sub.get('subcategoria')}",
+            "categoria":       cat_ui,
+            "subcategoria":    sub.get("subcategoria"),
+            "objetivo_tipo":   objetivo.get("tipo"),
+            "objetivo_valor":  objetivo.get("valor"),
+            "objetivo_unidad": objetivo.get("unidad"),
+            "objetivo_label":  objetivo.get("label"),
+            "objetivo_nota":   objetivo.get("nota"),
+        },
+        "periodos": {"actual": actual, "comparado": comparado},
+        "resultado": {
+            "clientes":                 kpis["clientes"],
+            "litros":                   kpis["litros"],
+            "cumplimiento_pct":         objetivo.get("cumplimiento_pct"),
+            "logrado":                  objetivo.get("logrado"),
+            "proyeccion_valor":         objetivo.get("proyeccion_valor"),
+            "proyeccion_pct":           objetivo.get("proyeccion_pct"),
+            "variacion_comparable_pct": variacion,
+            "objetivo_configurado":     objetivo.get("configurado"),
+        },
+        "movimiento": {
+            "incorporados":          cuenta["incorporado"],
+            "reactivados":           cuenta["reactivado"],
+            "recurrentes":           cuenta["recurrente"],
+            "nuevos_penaflor_reales": cuenta["nuevo_penaflor_real"],
+        },
+        "comparacion": {
+            "litros_actual":    round(litros_marca_act, 1),
+            "litros_comparado": round(litros_marca_cmp, 1),
+            "variacion_pct":    variacion,
+        },
+        "insight":          motor_acc_an.construir_insight(kpis, objetivo, atribucion, per_txt),
+        "top_resultados":   motor_acc_an.top_clientes(d_accion, clasif),
+        "top_oportunidades": _acc_an_oportunidades(d_act, d_cmp, d_ventana, m_prod, m_seg,
+                                                   pred, segs, sub, ids_accion, vid),
+        "detalle": {
+            "comprobantes":       int(d_accion["_nro"].nunique()) if not d_accion.empty else 0,
+            "importe_neto":       round(float(d_accion["_imp_neto"].sum()) if not d_accion.empty else 0.0, 2),
+            "inversion_descuento": round(float(d_accion["_desc"].sum()) if not d_accion.empty else 0.0, 2),
+            "atribucion":         atribucion,
+            "fuente_actual":      actual["fuente"],
+            "fuente_comparado":   comparado["fuente"],
+            "universo":           motor_acc_an.universo(
+                                      _acc_an_universo_potencial(segs, vid), ids_accion),
+            "once_titulares":     once,
+            "advertencias":       [a for a in [atribucion.get("advertencia"),
+                                               objetivo.get("nota")] if a],
         },
         "nota": None,
     }

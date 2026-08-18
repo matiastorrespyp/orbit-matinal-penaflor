@@ -1,5 +1,131 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-18 - refactor(Acciones): rediseño de la tarjeta "Análisis de la acción"
+
+**Problema:** la tarjeta anterior era una acumulación de indicadores. Mostraba doce KPI a la
+vez, un embudo cuyo número más grande era el potencial del canal (1.689 clientes, 0,2% de
+conversión), conceptos superpuestos ("nuevo en categoría" y "nuevo en marca" no eran
+excluyentes) y ninguna conclusión accionable. Era información, no una herramienta de trabajo.
+
+**Ahora la tarjeta responde cuatro preguntas y nada más:** si la acción está funcionando, qué
+resultado nuevo produjo, si llega al objetivo al cierre y qué cinco clientes conviene trabajar.
+
+### Bloque 1 — Resultado
+
+Cuatro números arriba (clientes, litros, % de objetivo, variación comparable) y dos barras que
+NO son lo mismo y se etiquetan distinto:
+
+- **Cumplimiento**: logrado / objetivo. Es un hecho.
+- **Proyección al cierre**: (logrado / días comerciales transcurridos) x días comerciales
+  totales. Es una estimación; llamarla "cumplimiento" haría creer que ya pasó.
+
+Los días son COMERCIALES: lunes a sábado, sin domingos y sin los feriados de
+`09_CONFIG/feriados.csv` (no hay ninguno cableado). Agosto 1-18 da 14 días, no 18: tres
+domingos y San Martín el 17.
+
+### Objetivo por acción — y por qué hoy dice "no configurado"
+
+Cada acción se evalúa contra el objetivo que le corresponde, no todas contra litros:
+`captacion` / `reactivacion` / `volumen` / `mix` / `once_titulares` / `cobertura`, cada uno con
+su unidad. Se configuran en **`09_CONFIG/objetivos_acciones.csv`** (nuevo):
+
+    action_id;objetivo_tipo;objetivo_valor;objetivo_unidad;nota
+    AGO26-VDA-SUP;volumen;300;litros;Meta de volumen del canal
+
+**El archivo se entrega con el encabezado y sin filas.** Los objetivos de las acciones no
+existen en ninguna fuente de ventas y no se inventan: es la misma regla que ya aplica el cierre
+mensual (REGLAS_NEGOCIO_PAV: "Acciones NO traen objetivo... No se les inventa uno"). Hasta que
+comercial los cargue, las quince acciones muestran "Objetivo comercial no configurado" y las
+barras no aparecen. No se muestra 0%, que se leería como fracaso.
+
+### Bloque 2 — Movimiento de compradores
+
+El embudo se reemplazó por tres grupos **mutuamente excluyentes**, todos definidos sobre LOS
+PRODUCTOS DE LA ACCIÓN (no sobre "compró algo de Peñaflor", que es otra pregunta):
+
+- **incorporado**: no compró esas marcas ni en el período comparable ni en los 12 meses previos.
+- **reactivado** : no las compró en el comparable, pero sí en esos 12 meses.
+- **recurrente** : ya las compraba en el comparable.
+
+**"Nuevo para Peñaflor" es un dato aparte, no un cuarto grupo**, y ahora es de verdad: sólo
+cuando el cliente no tiene NINGUNA compra válida en todo el historial disponible. Antes se
+llamaba nuevo a quien no había comprado en agosto del año pasado, que es un cliente existente
+que no compró ese mes — el número no significaba nada.
+
+Debajo, dos barras comparables de litros de las marcas participantes (antes / actual) con su
+variación. Se compara el mismo alcance de producto en los dos períodos y no "la categoría
+entera": para AGO26-TRAD-NC la categoría abarcaba VDA+VDG+RTD+Spirits+Vodka y diluía cualquier
+lectura.
+
+### Bloque 3 — Seguimiento comercial
+
+Dos rankings de cinco filas: **Top 5 resultados** (quién generó) y **Top 5 oportunidades**
+(a quién visitar), con el motivo concreto de cada uno:
+
+- "Compraba la marca y todavía no compró en este período"
+- "Mueve 495 L de la categoría, sin compra de estas marcas"
+- "Compró 16 cajas; con 4 más llega al tramo de 20 (8%)"
+
+Filtros duros: canal de la acción y cartera de un vendedor activo (V3 nunca recibe una
+oportunidad de Autoservicio). Con prioridad pura la lista salía monótona —el balde "dejó de
+comprar" tiene cientos de clientes y se quedaba con los cinco lugares—, así que se reserva un
+lugar para cada tipo antes de completar por prioridad y volumen.
+
+### Escalas: se resolvió el aviso que estaba en Render
+
+La fuente escribe "10 a 20 cajas" y "20 cajas o más", que en 20 daba dos descuentos. La
+definición comercial es **10 <= cajas < 20** y **cajas >= 20**, así que el tope del primer tramo
+pasa a 19 y el texto visible acompaña ("10 a 19 cajas · 6%"). Se aplica en la LECTURA
+(`_acc_explorador`) y no editando el libro ni regenerando el dataset: así el arreglo llega a
+producción con el deploy de código.
+
+Además, los avisos que nombran herramientas o agentes ya no llegan al portal. Es una regla
+general —si un aviso nombra una herramienta, es una instrucción para quien implementa, no
+información comercial— y no una lista de casos: saca el "Claude debe revisar..." de agosto y
+cualquier nota parecida en libros futuros, sin tener que editarlos.
+
+### Detalle técnico
+
+Detrás de un desplegable "Ver detalle": comprobantes, importe neto, inversión en descuento,
+método de atribución, fuentes, período exacto, universo del canal, 11 Titulares y advertencias.
+11T dejó de ser indicador principal; queda en el detalle salvo que el objetivo de la acción
+sea 11T.
+
+### Atribución (sin cambios de criterio)
+
+Sigue siendo por regla: el ERP no tiene identificador de acción (`Promociones` = proveedor,
+`Tags` = %10/%20). El payload informa `exact_tag` / `rule_discount` / `ambiguous` y los textos
+dicen "litros asociados a la acción" y "resultado observado", nunca que la acción generó la
+venta.
+
+### Archivos
+
+- `motor_acciones_analisis.py`: objetivos y su evaluación, `normalizar_tramos`, `tramo_de`,
+  movimiento excluyente, `sanear_avisos`, `top_oportunidades` con motivos, insight reescrito.
+- `server_orbit.py`: normalización de escalas y saneo de avisos en `_acc_explorador`; loader de
+  objetivos; mapa UxC para convertir botellas a cajas; `_acc_an_oportunidades`; payload nuevo;
+  `_acc_an_ids_historial` (una lectura por fuente en vez de barrer 26 años de períodos: 15 s
+  -> 1 s); `objetivos_acciones.csv` sumado a la firma de caché.
+- `09_CONFIG/objetivos_acciones.csv` (nuevo, sólo encabezado).
+- `PAV MATINAL PE_A FLOR/portal.html`: tarjeta en tres bloques, barras en HTML/CSS (sin
+  librería nueva), pestañas de Top y detalle plegado.
+- `test_acciones_analisis.py`: 71 aserciones sobre las 22 áreas pedidas.
+
+### Validación (2026-08-18, datos reales, sin mocks)
+
+- `test_acciones_analisis.py` 71 OK / 0 fallas. Regresión: `test_acciones_trad_nc.py` 23 OK,
+  `test_acciones_explorador.py` 29 OK.
+- Las 15 acciones responden 200 con datos. Conciliación fuente -> endpoint exacta en
+  AGO26-VDA-SUP: 22 clientes, 114,8 L y 24 comprobantes por los dos caminos.
+- Catálogo servido: los cuatro pares de escalas de cajas salen 10-19 / 20+ con `solapa=False`
+  y sin conflictos; ningún aviso menciona herramientas.
+- V2, V5 y V20 dan 403; acción inexistente 404. Payload de 4.035 bytes; segunda consulta 0,01 s.
+- Portal sin errores de consola: barras de cumplimiento y proyección, tres grupos de
+  movimiento, barras comparables, las dos pestañas de Top y el detalle plegado.
+- Prueba de objetivo: cargando temporalmente `AGO26-VDA-SUP;volumen;300;litros` la tarjeta
+  mostró 38,3% de cumplimiento (114,8/300) y 68,3% de proyección (114,8/14x25 = 205). El
+  archivo se dejó otra vez sólo con el encabezado.
+
 ## 2026-08-18 - feat(Acciones): tarjeta "Análisis de la acción" en el Explorador
 
 **Qué se agrega:** debajo de la tarjeta que explica QUÉ ofrece cada acción, una segunda tarjeta

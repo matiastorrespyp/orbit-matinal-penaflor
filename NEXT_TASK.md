@@ -1,5 +1,39 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-18 - Rediseno de la tarjeta "Analisis de la accion"
+
+### HECHO
+- [x] Tarjeta en tres bloques: Resultado (4 numeros + barras de cumplimiento y proyeccion),
+  Movimiento (incorporados / reactivados / recurrentes + barras comparables) y Seguimiento
+  (Top 5 resultados y Top 5 oportunidades con motivo concreto).
+- [x] Objetivo por accion con tipo y unidad, configurable en 09_CONFIG/objetivos_acciones.csv.
+  Sin configurar dice "Objetivo comercial no configurado"; no se inventa ni se muestra 0%.
+- [x] Proyeccion al cierre por dias comerciales (lun-sab, sin domingos ni feriados.csv),
+  separada del cumplimiento actual.
+- [x] Grupos de movimiento mutuamente excluyentes; "nuevo para Penaflor" solo contra el
+  historial completo.
+- [x] Escalas 10-19 / 20+ resueltas en la lectura; eliminado del portal el aviso que nombraba
+  una herramienta.
+- [x] 11T y el universo del canal movidos al detalle plegado.
+- [x] 71 aserciones nuevas + regresion de las dos suites previas; conciliacion fuente/endpoint
+  y validacion visual con consola limpia.
+
+### PROXIMA TAREA
+- [ ] **Cargar los objetivos comerciales en `09_CONFIG/objetivos_acciones.csv`.** Es lo unico
+  que falta para que el bloque 1 muestre cumplimiento y proyeccion; hoy las 15 acciones dicen
+  "no configurado". Formato:
+  `action_id;objetivo_tipo;objetivo_valor;objetivo_unidad;nota`, con objetivo_tipo en
+  captacion / reactivacion / volumen / mix / once_titulares / cobertura.
+- [ ] Sigue faltando el `acciones_comerciales_*.csv` de agosto en
+  `01_INPUTS/ACCIONES COMERCIALES/2026-08/`: la MEDICION de uso e inversion del mes
+  (`acciones[]` y `mod_acciones_ranking.csv`) viene vacia. La tarjeta de analisis no depende de
+  ese archivo.
+- [ ] Evaluar si conviene poder analizar un mes CERRADO (hoy el periodo actual es siempre el
+  mes vivo de ventas.csv). Requiere un selector de mes, no solo de comparacion.
+- [ ] El libro del mes sigue teniendo "10 a 20" en la hoja ESCALAS. El codigo lo corrige al
+  leer, pero conviene que el proximo libro ya venga con "10 a 19" para que la fuente y la
+  pantalla digan lo mismo.
+
 ## Sesion 2026-08-18 - Tarjeta "Analisis de la accion"
 
 ### HECHO

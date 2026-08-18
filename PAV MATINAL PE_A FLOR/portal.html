@@ -3548,7 +3548,7 @@ function accxPanel(scope){
 const ACCAN={};   // por scope: {comp, modo, data, cargando, error}
 
 function accxAnEstado(scope){
-  if(!ACCAN[scope]) ACCAN[scope]={comp:'mes_anterior',modo:'compradores',data:null,cargando:false,error:null};
+  if(!ACCAN[scope]) ACCAN[scope]={comp:'mes_anterior',tab:'resultados',data:null,cargando:false,error:null};
   return ACCAN[scope];
 }
 
@@ -3579,7 +3579,8 @@ async function accxAnLoad(scope){
 }
 
 function accxAnSetComp(scope,val){ accxAnEstado(scope).comp=val; accxAnLoad(scope); }
-function accxAnSetModo(scope,val){ accxAnEstado(scope).modo=val; accxAnRender(scope); }
+/* Cambiar de pestaña NO vuelve a pedir datos: los dos tops ya vienen en el payload. */
+function accxAnSetTab(scope,val){ accxAnEstado(scope).tab=val; accxAnRender(scope); }
 
 /* Cabecera + selector de comparación + cuerpo vacío. Se pinta una vez por carga. */
 function accxAnShell(scope,sub){
@@ -3600,6 +3601,14 @@ function accxAnShell(scope,sub){
   </div>`;
 }
 
+/* Barra de progreso simple. HTML+CSS, sin librería: agregar una dependencia de gráficos
+   para dibujar tres rectángulos no se justifica. */
+function accxAnBarra(pct,color,alto){
+  const w=Math.max(0,Math.min(100,pct||0));
+  return `<div style="flex:1;height:${alto||9}px;background:var(--bd3);border-radius:5px;overflow:hidden;min-width:70px;">
+    <div style="width:${w}%;height:100%;background:${color||'var(--ok)'};border-radius:5px;"></div></div>`;
+}
+
 function accxAnRender(scope){
   const box=document.getElementById('accx-anbody-'+scope); if(!box) return;
   const st=accxAnEstado(scope);
@@ -3609,102 +3618,140 @@ function accxAnRender(scope){
     return;
   }
   const d=st.data; if(!d){ box.innerHTML=''; return; }
-  const pa=d.periodo_actual||{}, pc=d.periodo_comparado||{};
+  const per=d.periodos||{}, pa=per.actual||{}, pc=per.comparado||{};
 
-  // Período: se dice siempre contra qué se compara. Un mes parcial contra un mes completo
-  // no es una comparación, así que el corte equivalente se muestra explícito.
-  let h=`<div style="font-size:11px;color:var(--text3);line-height:1.6;margin-bottom:9px;">
-      📅 <b>${accxEsc(pa.desde)} → ${accxEsc(pa.hasta)}</b> (${pa.dias_comerciales} días comerciales)
-      vs <b>${accxEsc(pc.desde)} → ${accxEsc(pc.hasta)}</b> (${pc.dias_comerciales} días)
-      ${pa.parcial?`<span class="chip" style="font-size:9px;">mes en curso · corte equivalente</span>`:''}
-      <br><span style="font-size:10px;">Fuente: ${accxEsc(pa.fuente)} · comparado: ${accxEsc(pc.fuente)}</span>
+  if(d.nota){
+    box.innerHTML=`<div class="xs" style="color:var(--wn);">⚠️ ${accxEsc(d.nota)}</div>`;
+    return;
+  }
+
+  const r=d.resultado||{}, mov=d.movimiento||{}, cmp=d.comparacion||{}, det=d.detalle||{};
+  let h='';
+
+  // ── BLOQUE 1 · RESULTADO ──────────────────────────────────────────────
+  // Cuatro números y nada más. La lectura tiene que entrar de un vistazo.
+  const chip=(txt,col)=>`<span style="font-size:13px;font-weight:800;color:${col||'var(--text)'};">${txt}</span>`;
+  const sep=`<span style="color:var(--bd);margin:0 7px;">|</span>`;
+  const varTxt=(r.variacion_comparable_pct==null)?null
+    :((r.variacion_comparable_pct>=0?'+':'')+accxAnNum(r.variacion_comparable_pct)+'%');
+  const varCol=(r.variacion_comparable_pct==null)?'var(--text3)'
+    :(r.variacion_comparable_pct>=0?'var(--ok)':'var(--bad)');
+  h+=`<div style="display:flex;flex-wrap:wrap;align-items:baseline;margin-bottom:11px;line-height:1.7;">
+      ${chip(accxAnNum(r.clientes)+' clientes')}${sep}
+      ${chip(accxAnNum(r.litros)+' litros')}${sep}
+      ${r.objetivo_configurado
+        ? chip(accxAnNum(r.cumplimiento_pct)+'% objetivo','var(--ok)')
+        : `<span style="font-size:11px;color:var(--wn);">Objetivo comercial no configurado</span>`}
+      ${varTxt?sep+chip(varTxt+' comparable',varCol):''}
     </div>`;
 
-  if(d.nota){ box.innerHTML=h+`<div class="xs" style="color:var(--wn);">⚠️ ${accxEsc(d.nota)}</div>`; return; }
-
-  const at=d.atribucion||{};
-  if(at.advertencia){
-    h+=`<div style="margin-bottom:9px;background:rgba(255,200,0,.08);border:1px solid rgba(255,200,0,.3);border-radius:8px;padding:8px 11px;font-size:11px;color:var(--wn);line-height:1.5;">
-        ⚠️ <b>Atribución ${accxEsc(at.metodo)}.</b> ${accxEsc(at.advertencia)}</div>`;
+  // Barras: cumplimiento (hecho) y proyección (estimación). Son cosas distintas y se
+  // etiquetan distinto a propósito.
+  if(r.objetivo_configurado){
+    const uni=d.accion.objetivo_unidad||'';
+    h+=`<div style="margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:5px;">
+        <span style="font-size:10px;color:var(--text3);width:96px;flex:none;">Cumplimiento</span>
+        ${accxAnBarra(r.cumplimiento_pct,'var(--ok)')}
+        <span style="font-size:12px;font-weight:700;width:46px;text-align:right;flex:none;">${accxAnNum(r.cumplimiento_pct)}%</span>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-left:105px;margin-bottom:8px;">
+        ${accxAnNum(r.logrado)} de ${accxAnNum(d.accion.objetivo_valor)} ${accxEsc(uni)}</div>`;
+    if(r.proyeccion_pct!=null){
+      h+=`<div style="display:flex;align-items:center;gap:9px;margin-bottom:5px;">
+        <span style="font-size:10px;color:var(--text3);width:96px;flex:none;">Proyección al cierre</span>
+        ${accxAnBarra(r.proyeccion_pct,'var(--orbit-magenta,#E2147A)')}
+        <span style="font-size:12px;font-weight:700;width:46px;text-align:right;flex:none;">${accxAnNum(r.proyeccion_pct)}%</span>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-left:105px;">
+        ${accxAnNum(r.proyeccion_valor)} de ${accxAnNum(d.accion.objetivo_valor)} ${accxEsc(uni)} ·
+        estimado sobre ${pa.dias_comerciales} de ${pa.dias_comerciales_totales} días comerciales</div>`;
+    }
+    h+=`</div>`;
   }
+
   if(d.insight){
-    h+=`<div style="background:rgba(226,20,122,.07);border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.55;margin-bottom:11px;">${accxEsc(d.insight)}</div>`;
+    h+=`<div style="background:rgba(226,20,122,.07);border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.55;margin-bottom:12px;">${accxEsc(d.insight)}</div>`;
   }
 
-  const k=d.kpis||{};
-  const kpi=(n,t,c)=>`<div style="flex:1 1 96px;min-width:96px;">
-      <div style="font-size:18px;font-weight:800;color:${c||'var(--text)'};">${n==null?'—':accxAnNum(n)}</div>
-      <div style="font-size:10px;color:var(--text3);line-height:1.35;">${accxEsc(t)}</div></div>`;
-  h+=`<div style="display:flex;flex-wrap:wrap;gap:11px;margin-bottom:11px;">
-      ${kpi(k.clientes_accion,'clientes usaron la acción','var(--ok)')}
-      ${kpi(k.comprobantes_accion,'comprobantes')}
-      ${kpi(k.clientes_nuevos_categoria,'nuevos en la categoría')}
-      ${kpi(k.clientes_nuevos_marca,'nuevos en la marca')}
-      ${kpi(k.litros_accion,'litros asociados')}
-      ${kpi(k.participacion_litros_pct==null?null:accxAnNum(k.participacion_litros_pct)+'%','de los litros de la categoría')}
+  // ── BLOQUE 2 · MOVIMIENTO DE COMPRADORES ──────────────────────────────
+  h+=`<div style="border-top:1px solid var(--b);padding-top:11px;margin-bottom:11px;">
+      <div style="display:flex;flex-wrap:wrap;align-items:baseline;margin-bottom:10px;line-height:1.7;">
+        ${chip(accxAnNum(mov.incorporados)+' incorporados','var(--ok)')}${sep}
+        ${chip(accxAnNum(mov.reactivados)+' reactivados','var(--wn)')}${sep}
+        ${chip(accxAnNum(mov.recurrentes)+' recurrentes','var(--text2)')}
+        ${mov.nuevos_penaflor_reales?`<span style="font-size:10px;color:var(--text3);margin-left:8px;">
+           (${accxAnNum(mov.nuevos_penaflor_reales)} sin ninguna compra previa de Peñaflor)</span>`:''}
+      </div>`;
+
+  // Barras comparables: mismo alcance de producto en los dos períodos.
+  const la=cmp.litros_actual||0, lc=cmp.litros_comparado||0, mx=Math.max(la,lc,1);
+  h+=`<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Litros de las marcas participantes</div>
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:5px;">
+        <span style="font-size:10px;color:var(--text3);width:96px;flex:none;">Comparable</span>
+        ${accxAnBarra(lc/mx*100,'var(--bd)',11)}
+        <span style="font-size:11px;width:70px;text-align:right;flex:none;">${accxAnNum(lc)} L</span></div>
+      <div style="display:flex;align-items:center;gap:9px;">
+        <span style="font-size:10px;color:var(--text3);width:96px;flex:none;">Actual</span>
+        ${accxAnBarra(la/mx*100,'var(--ok)',11)}
+        <span style="font-size:11px;font-weight:700;width:70px;text-align:right;flex:none;">${accxAnNum(la)} L</span></div>
+      ${varTxt?`<div style="font-size:11px;color:${varCol};margin-top:5px;margin-left:105px;">Variación ${varTxt}</div>`:''}
     </div>`;
 
-  // Secundarios: contexto, no titular.
-  const sec=[];
-  if(k.importe_neto_accion!=null) sec.push(`Importe neto ${accxAnPesos(k.importe_neto_accion)}`);
-  if(k.inversion_descuento!=null) sec.push(`Inversión en descuento ${accxAnPesos(k.inversion_descuento)}`);
-  if(k.clientes_nuevos_penaflor!=null) sec.push(`${accxAnNum(k.clientes_nuevos_penaflor)} nuevos para Peñaflor`);
-  if(k.clientes_reactivados!=null) sec.push(`${accxAnNum(k.clientes_reactivados)} reactivados`);
-  if(k.clientes_recurrentes!=null) sec.push(`${accxAnNum(k.clientes_recurrentes)} recurrentes`);
-  if(k.compradores_categoria_actual!=null) sec.push(`Compradores de la categoría ${accxAnNum(k.compradores_categoria_actual)} vs ${accxAnNum(k.compradores_categoria_comparado)}`);
-  if(k.variacion_litros_categoria_pct!=null) sec.push(`Litros de la categoría ${k.variacion_litros_categoria_pct>0?'+':''}${accxAnNum(k.variacion_litros_categoria_pct)}%`);
-  if(sec.length) h+=`<div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:11px;">${sec.map(accxEsc).join(' · ')}</div>`;
-
-  const e=d.embudo||{};
-  if(e.universo_potencial){
-    const paso=(n,t)=>`<div style="flex:1 1 84px;min-width:84px;text-align:center;">
-        <div style="font-size:15px;font-weight:800;">${accxAnNum(n)}</div>
-        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;">${accxEsc(t)}</div></div>`;
-    h+=`<div style="border-top:1px solid var(--b);padding-top:10px;margin-bottom:11px;">
-        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;">Embudo</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-          ${paso(e.universo_potencial,'potenciales')}<span style="color:var(--text3);">→</span>
-          ${paso(e.utilizaron_accion,'usaron')}<span style="color:var(--text3);">→</span>
-          ${paso(e.convertidos,'convertidos')}
-          ${paso(accxAnNum(e.conversion_pct)+'%','conversión')}
-          ${paso(e.potenciales_restantes,'siguen potenciales')}
-        </div></div>`;
-  }
-
-  const ot=d.once_titulares||{};
-  if(ot.aplica){
-    h+=`<div style="border-top:1px solid var(--b);padding-top:10px;margin-bottom:11px;font-size:11px;color:var(--text2);">
-        🎯 <b>11 Titulares:</b> ${accxAnNum(ot.impactos_asociados)} impactos asociados ·
-        <b style="color:var(--ok);">${accxAnNum(ot.impactos_habilitados)} habilitados</b>
-        (no llegaban al umbral sin la acción) · ${accxAnNum(ot.impactos_acompanados)} acompañados</div>`;
-  }
-
-  // Top 5 — nunca más de cinco filas.
-  const tops=d.top_clientes||{}, lista=(tops[st.modo]||[]);
-  const btn=(v,t)=>`<button onclick="accxAnSetModo('${scope}','${v}')" style="cursor:pointer;border:1px solid var(--b);background:${st.modo===v?'rgba(226,20,122,.15)':'transparent'};color:var(--text2);border-radius:6px;padding:3px 9px;font-size:10px;">${t}</button>`;
-  h+=`<div style="border-top:1px solid var(--b);padding-top:10px;">
-      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
-        <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-right:4px;">Top 5</span>
-        ${btn('compradores','Top compradores')}${btn('incorporaciones','Top incorporaciones')}
+  // ── BLOQUE 3 · SEGUIMIENTO COMERCIAL ──────────────────────────────────
+  const tab=(v,t,n)=>`<button onclick="accxAnSetTab('${scope}','${v}')" style="cursor:pointer;border:1px solid var(--b);background:${st.tab===v?'rgba(226,20,122,.15)':'transparent'};color:var(--text2);border-radius:6px;padding:4px 10px;font-size:11px;">${t}${n!=null?` (${n})`:''}</button>`;
+  h+=`<div style="border-top:1px solid var(--b);padding-top:11px;">
+      <div style="display:flex;gap:6px;margin-bottom:9px;flex-wrap:wrap;">
+        ${tab('resultados','Top 5 resultados',(d.top_resultados||[]).length)}
+        ${tab('oportunidades','Top 5 oportunidades',(d.top_oportunidades||[]).length)}
       </div>`;
-  if(!lista.length){
-    h+=`<div class="xs" style="color:var(--text3);">Sin clientes que hayan usado la acción en el período.</div>`;
+  if(st.tab==='oportunidades'){
+    const lst=d.top_oportunidades||[];
+    h+=lst.length?`<div style="overflow-x:auto;"><table class="tbl" style="font-size:11px;min-width:460px;"><tbody>
+        <tr style="color:var(--text3);"><td>Cliente</td><td>Vend.</td><td style="text-align:right;">Volumen</td><td>Por qué</td></tr>
+        ${lst.map(c=>`<tr>
+          <td style="line-height:1.35;">${accxEsc(c.cliente||('#'+c.cliente_id))}</td>
+          <td style="color:var(--text3);">${accxEsc(c.vendedor_id)}</td>
+          <td style="text-align:right;white-space:nowrap;">${accxAnNum(c.volumen)} ${accxEsc(c.unidad||'')}</td>
+          <td style="line-height:1.35;color:var(--text2);">${accxEsc(c.motivo||'')}</td></tr>`).join('')}
+      </tbody></table></div>`
+      :`<div class="xs" style="color:var(--text3);">No hay clientes accionables con los datos de hoy.</div>`;
   }else{
-    h+=`<div style="overflow-x:auto;"><table class="tbl" style="font-size:11px;min-width:520px;"><tbody>
-        <tr style="color:var(--text3);"><td>Cliente</td><td>Vendedor</td><td style="text-align:right;">Litros</td>
-        <td style="text-align:right;">Comp.</td><td style="text-align:right;">Neto</td><td style="text-align:right;">Desc.</td><td>Clasif.</td></tr>`;
-    lista.forEach(c=>{h+=`<tr>
-        <td style="line-height:1.35;">${accxEsc(c.cliente||('#'+c.cliente_id))}</td>
-        <td style="color:var(--text3);">${accxEsc(c.vendedor_id)}</td>
-        <td style="text-align:right;font-weight:700;">${accxAnNum(c.litros)}</td>
-        <td style="text-align:right;color:var(--text3);">${c.comprobantes}</td>
-        <td style="text-align:right;">${accxAnPesos(c.importe_neto)}</td>
-        <td style="text-align:right;color:var(--text3);">${accxAnPesos(c.descuento)}</td>
-        <td><span class="chip${c.clasificacion==='recurrente'?'':' ok'}" style="font-size:9px;">${accxEsc(c.clasificacion_label)}</span></td>
-      </tr>`;});
-    h+=`</tbody></table></div>`;
+    const lst=d.top_resultados||[];
+    h+=lst.length?`<div style="overflow-x:auto;"><table class="tbl" style="font-size:11px;min-width:460px;"><tbody>
+        <tr style="color:var(--text3);"><td>Cliente</td><td>Vend.</td><td style="text-align:right;">Litros</td><td style="text-align:right;">Neto</td><td>Grupo</td></tr>
+        ${lst.map(c=>`<tr>
+          <td style="line-height:1.35;">${accxEsc(c.cliente||('#'+c.cliente_id))}</td>
+          <td style="color:var(--text3);">${accxEsc(c.vendedor_id)}</td>
+          <td style="text-align:right;font-weight:700;">${accxAnNum(c.litros)}</td>
+          <td style="text-align:right;">${accxAnPesos(c.importe_neto)}</td>
+          <td><span class="chip${c.clasificacion==='recurrente'?'':' ok'}" style="font-size:9px;">${accxEsc(c.clasificacion_label)}</span></td>
+        </tr>`).join('')}
+      </tbody></table></div>`
+      :`<div class="xs" style="color:var(--text3);">Ningún cliente usó la acción en el período.</div>`;
   }
   h+=`</div>`;
+
+  // ── DETALLE TÉCNICO ───────────────────────────────────────────────────
+  // Existe para auditar, pero plegado: no puede competir con la lectura comercial.
+  const at=det.atribucion||{}, uni=det.universo||{}, ot=det.once_titulares||{};
+  h+=`<details style="margin-top:12px;border-top:1px solid var(--b);padding-top:10px;">
+      <summary style="cursor:pointer;font-size:11px;color:var(--text3);">Ver detalle</summary>
+      <div style="margin-top:8px;font-size:11px;color:var(--text2);line-height:1.75;">
+        📅 ${accxEsc(pa.desde)} → ${accxEsc(pa.hasta)} (${pa.dias_comerciales} de ${pa.dias_comerciales_totales} días comerciales)
+        vs ${accxEsc(pc.desde)} → ${accxEsc(pc.hasta)} (${pc.dias_comerciales} días)
+        ${pa.parcial?' · mes en curso, corte equivalente':''}<br>
+        Fuente: ${accxEsc(det.fuente_actual||'')} · comparado: ${accxEsc(det.fuente_comparado||'')}<br>
+        Comprobantes ${accxAnNum(det.comprobantes)} · Importe neto ${accxAnPesos(det.importe_neto)} ·
+        Inversión en descuento ${accxAnPesos(det.inversion_descuento)}<br>
+        Atribución: ${accxEsc(at.metodo||'—')} · Universo del canal: ${accxAnNum(uni.universo_potencial)} clientes
+        ${uni.penetracion_pct!=null?` · penetración ${accxAnNum(uni.penetracion_pct)}%`:''}
+        ${ot.aplica?`<br>11 Titulares: ${accxAnNum(ot.impactos_asociados)} impactos asociados ·
+           ${accxAnNum(ot.impactos_habilitados)} habilitados · ${accxAnNum(ot.impactos_acompanados)} acompañados`:''}
+        ${(det.advertencias||[]).length?`<div style="margin-top:6px;color:var(--wn);">
+           ${det.advertencias.map(a=>'⚠️ '+accxEsc(a)).join('<br>')}</div>`:''}
+      </div></details>`;
+
   box.innerHTML=h;
 }
 
