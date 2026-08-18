@@ -1,5 +1,16 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-18 - BAT exclusivo de Plan AASS
+
+### HECHO
+- [x] Creado `ACTUALIZAR_PLAN_AASS.bat`: valida el Excel del mes, respalda y regenera únicamente
+  `mod_planes_as.csv` y `mod_sincargos_envios.csv`, reconcilia la salida y restaura ante error.
+- [x] No ejecuta cierre diario, no abre el portal y no hace operaciones Git.
+
+### PROXIMA TAREA
+- [ ] Cuando se use con un Excel nuevo, revisar el log `actualizar_plan_aass_<timestamp>.log` y
+  publicar en Git los inputs/datasets de Plan AASS para que el cambio llegue a Render.
+
 ## Sesion 2026-08-18 - Planes AASS agosto sin cierre diario
 
 ### HECHO

@@ -1,5 +1,22 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-18 - feat(Planes AASS): BAT independiente sin cierre diario
+
+**Archivo nuevo:** `ACTUALIZAR_PLAN_AASS.bat`.
+
+**Objetivo:** permitir actualizar Plan AASS por doble clic sin ejecutar `CIERRE_DIA_ORBIT.bat`
+ni `REGENERAR_DATOS_ORBIT.bat`. El BAT exige el `sincargos<mes>.xlsx` del mes calendario actual,
+valida `ventas.csv`, `clientes.xlsx`, Python y la estructura real del Excel, y llama únicamente a
+`generar_datasets_acum.py --solo-planes-as`.
+
+**Seguridad:** antes de escribir crea un respaldo timestamped exclusivamente de
+`mod_planes_as.csv` y `mod_sincargos_envios.csv`; si falla la generación o la reconciliación,
+restaura ambos. Genera `99_LOGS_ORBIT/actualizar_plan_aass_<timestamp>.log`, no abre el portal y
+no hace commit ni push.
+
+**Validación incluida:** reconcilia cajas sin cargo, clientes de Plan Frío y cajas de Puntera entre
+el Excel mensual y el CSV; verifica las columnas de envíos y bloquea V2, V3, V5 y V20.
+
 ## 2026-08-18 - feat(Planes AASS): actualización parcial de agosto sin cierre diario
 
 **Pedido:** publicar `01_INPUTS/Planes AASS/sincargosagosto.xlsx` en ORBIT sin ejecutar el
