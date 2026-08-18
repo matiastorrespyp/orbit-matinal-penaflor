@@ -5756,11 +5756,11 @@ function _gPlanesASRows(){
   tb.innerHTML=clientes.map(c=>{
             const col=planCol[c.plan_as]||'var(--text2)';
             const scProds=[
-              {n:'Alaris',   prod:'Alaris',           env:c.sc_env_alaris||0,    pend:c.sc_pend_alaris||0},
-              {n:'AlmaMora', prod:'Alma Mora',        env:c.sc_env_alma_mora||0,  pend:c.sc_pend_alma_mora||0},
-              {n:'Frizze',   prod:'Frizze',           env:c.sc_env_frizze||0,     pend:c.sc_pend_frizze||0},
-              {n:'Antares',  prod:'Antares IPA',      env:c.sc_env_antares_ipa||0,pend:c.sc_pend_antares_ipa||0},
-              {n:'SMF',      prod:'Smirnoff Flavours',env:c.sc_env_smf_flavours||0,pend:c.sc_pend_smf_flavours||0},
+              {n:c.sc_label_alaris||'Alaris',prod:c.sc_label_alaris||'Alaris',env:c.sc_env_alaris||0,pend:c.sc_pend_alaris||0},
+              {n:c.sc_label_alma_mora||'Alma Mora',prod:c.sc_label_alma_mora||'Alma Mora',env:c.sc_env_alma_mora||0,pend:c.sc_pend_alma_mora||0},
+              {n:c.sc_label_frizze||'Frizze',prod:c.sc_label_frizze||'Frizze',env:c.sc_env_frizze||0,pend:c.sc_pend_frizze||0},
+              {n:c.sc_label_antares_ipa||'Antares IPA',prod:c.sc_label_antares_ipa||'Antares IPA',env:c.sc_env_antares_ipa||0,pend:c.sc_pend_antares_ipa||0},
+              {n:c.sc_label_smf_flavours||'Smirnoff Flavours',prod:c.sc_label_smf_flavours||'Smirnoff Flavours',env:c.sc_env_smf_flavours||0,pend:c.sc_pend_smf_flavours||0},
             ].filter(p=>p.env>0||p.pend>0);
             const scInner=scProds.map(p=>`<span data-nostop style="font-size:9px;cursor:pointer;" title="Ver fechas de envío" onclick="verSincargo(${c.cliente_id},'${p.prod}')">${p.n}: `+
               (p.env?`<span style="color:var(--ok);">✓${p.env}</span> `:'')+(p.pend?`<span style="color:var(--wn);">⚠${p.pend}</span>`:'')+'</span>').join(' · ');
@@ -6124,11 +6124,11 @@ function _vPlanesASCards(){
     const pcol2=pctEsc>=100?'ok':pctEsc>=60?'wn':'bd';
     // Sin cargo por producto: ganado vs enviado vs pendiente
     const scProds=[
-      {nom:'Alaris',    prod:'Alaris',           gan:c.sc_alaris||0,     env:c.sc_env_alaris||0,     pend:c.sc_pend_alaris||0},
-      {nom:'Alma Mora', prod:'Alma Mora',        gan:c.sc_alma_mora||0,   env:c.sc_env_alma_mora||0,  pend:c.sc_pend_alma_mora||0},
-      {nom:'Frizze',    prod:'Frizze',           gan:c.sc_frizze||0,      env:c.sc_env_frizze||0,     pend:c.sc_pend_frizze||0},
-      {nom:'Antares',   prod:'Antares IPA',      gan:c.sc_antares_ipa||0, env:c.sc_env_antares_ipa||0,pend:c.sc_pend_antares_ipa||0},
-      {nom:'SMF',       prod:'Smirnoff Flavours',gan:c.sc_smf_flavours||0,env:c.sc_env_smf_flavours||0,pend:c.sc_pend_smf_flavours||0},
+      {nom:c.sc_label_alaris||'Alaris',prod:c.sc_label_alaris||'Alaris',gan:c.sc_alaris||0,env:c.sc_env_alaris||0,pend:c.sc_pend_alaris||0},
+      {nom:c.sc_label_alma_mora||'Alma Mora',prod:c.sc_label_alma_mora||'Alma Mora',gan:c.sc_alma_mora||0,env:c.sc_env_alma_mora||0,pend:c.sc_pend_alma_mora||0},
+      {nom:c.sc_label_frizze||'Frizze',prod:c.sc_label_frizze||'Frizze',gan:c.sc_frizze||0,env:c.sc_env_frizze||0,pend:c.sc_pend_frizze||0},
+      {nom:c.sc_label_antares_ipa||'Antares IPA',prod:c.sc_label_antares_ipa||'Antares IPA',gan:c.sc_antares_ipa||0,env:c.sc_env_antares_ipa||0,pend:c.sc_pend_antares_ipa||0},
+      {nom:c.sc_label_smf_flavours||'Smirnoff Flavours',prod:c.sc_label_smf_flavours||'Smirnoff Flavours',gan:c.sc_smf_flavours||0,env:c.sc_env_smf_flavours||0,pend:c.sc_pend_smf_flavours||0},
     ].filter(p=>p.gan>0);
     const scGan=c.sc_total_ganado||0, scPend=c.sc_pendiente||0;
     const estChip=scGan>0?`<span class="chip ${scPend>0?'wn':'ok'}" style="font-size:10px;">${scPend>0?'pendiente':'enviados'}</span>`:'';

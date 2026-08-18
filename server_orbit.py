@@ -4973,6 +4973,8 @@ def gerencia_planes_as():
         print(f"[WARN] planes_as join clientes: {e}")
 
     def _int(v): return int(v) if pd.notna(v) else 0
+    def _txt(v, fallback):
+        return str(v).strip() if pd.notna(v) and str(v).strip() else fallback
     registros = []
     for _, row in df.iterrows():
         cid = int(row["cliente_id"]) if pd.notna(row["cliente_id"]) else None
@@ -4997,6 +4999,11 @@ def gerencia_planes_as():
             "sc_frizze":       _int(row["sc_frizze"]),
             "sc_antares_ipa":  _int(row["sc_antares_ipa"]),
             "sc_smf_flavours": _int(row["sc_smf_flavours"]),
+            "sc_label_alaris":       _txt(row.get("sc_label_alaris"), "Alaris"),
+            "sc_label_alma_mora":    _txt(row.get("sc_label_alma_mora"), "Alma Mora"),
+            "sc_label_frizze":       _txt(row.get("sc_label_frizze"), "Frizze"),
+            "sc_label_antares_ipa":  _txt(row.get("sc_label_antares_ipa"), "Antares IPA"),
+            "sc_label_smf_flavours": _txt(row.get("sc_label_smf_flavours"), "Smirnoff Flavours"),
             "sc_total_ganado": _int(row["sc_total_ganado"]),
             "sc_env_alaris":   _int(row.get("sc_env_alaris", 0)),
             "sc_env_alma_mora":_int(row.get("sc_env_alma_mora", 0)),
@@ -6532,7 +6539,7 @@ def vendedor_acciones_mes(vid):
 @app.route("/api/vendedor/<vid>/planes_as")
 def vendedor_planes_as(vid):
     vid_norm = normalizar_vendedor_codigo(vid)
-    if vid_norm in ("V2", "V5", "V20"):
+    if vid_norm in ("V2", "V3", "V5", "V20"):
         return jsonify({"error": "Vendedor no autorizado"}), 403
     try:
         cod = int(vid_norm.replace("V", ""))
@@ -6556,6 +6563,9 @@ def vendedor_planes_as(vid):
         if c in df.columns:
             df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
     def _i(row, k): return int(row[k]) if k in row.index and pd.notna(row[k]) else 0
+    def _txt(row, k, fallback):
+        v = row.get(k)
+        return str(v).strip() if pd.notna(v) and str(v).strip() else fallback
     registros = []
     for _, row in df.iterrows():
         _cid = int(row["cliente_id"]) if pd.notna(row["cliente_id"]) else None
@@ -6576,6 +6586,11 @@ def vendedor_planes_as(vid):
             "sc_frizze":       _i(row, "sc_frizze"),
             "sc_antares_ipa":  _i(row, "sc_antares_ipa"),
             "sc_smf_flavours": _i(row, "sc_smf_flavours"),
+            "sc_label_alaris":       _txt(row, "sc_label_alaris", "Alaris"),
+            "sc_label_alma_mora":    _txt(row, "sc_label_alma_mora", "Alma Mora"),
+            "sc_label_frizze":       _txt(row, "sc_label_frizze", "Frizze"),
+            "sc_label_antares_ipa":  _txt(row, "sc_label_antares_ipa", "Antares IPA"),
+            "sc_label_smf_flavours": _txt(row, "sc_label_smf_flavours", "Smirnoff Flavours"),
             "sc_total_ganado": _i(row, "sc_total_ganado"),
             "sc_enviadas_total": _i(row, "sc_cajas_enviadas_total"),
             "sc_pendiente":    _i(row, "sc_pendiente"),

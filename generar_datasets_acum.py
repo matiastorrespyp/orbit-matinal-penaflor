@@ -371,6 +371,50 @@ def cargar_clientes():
 _MESES_ES = ("enero", "febrero", "marzo", "abril", "mayo", "junio",
              "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre")
 
+_SC_COLS_PLAN_AS = [
+    "sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa", "sc_smf_flavours",
+]
+_SC_ENV_COLS_PLAN_AS = {
+    "sc_alaris": "sc_env_alaris",
+    "sc_alma_mora": "sc_env_alma_mora",
+    "sc_frizze": "sc_env_frizze",
+    "sc_antares_ipa": "sc_env_antares_ipa",
+    "sc_smf_flavours": "sc_env_smf_flavours",
+}
+_SC_LABEL_COLS_PLAN_AS = {
+    "sc_alaris": "sc_label_alaris",
+    "sc_alma_mora": "sc_label_alma_mora",
+    "sc_frizze": "sc_label_frizze",
+    "sc_antares_ipa": "sc_label_antares_ipa",
+    "sc_smf_flavours": "sc_label_smf_flavours",
+}
+_SC_DEFAULT_LABELS_PLAN_AS = {
+    "sc_alaris": "Alaris",
+    "sc_alma_mora": "Alma Mora",
+    "sc_frizze": "Frizze",
+    "sc_antares_ipa": "Antares IPA",
+    "sc_smf_flavours": "Smirnoff Flavours",
+}
+
+
+def _texto_ascii(valor):
+    """Normaliza encabezados/textos del Excel sin depender de tildes o mojibake."""
+    return "".join(c for c in str(valor).strip().lower() if c.isascii())
+
+
+def _texto_match(valor):
+    """Texto comparable para Articulo: minúsculas y separadores normalizados a espacios."""
+    return re.sub(r"[^a-z0-9]+", " ", str(valor).lower()).strip()
+
+
+def _candidatos_sincargos(path=None):
+    """Fuente mensual elegida normalmente, o un xlsx explícito para validaciones reales."""
+    if path is not None:
+        p = Path(path)
+        return [p] if p.exists() else []
+    pdir = BASE / "01_INPUTS" / "Planes AASS"
+    return _ordenar_por_mes(pdir.glob("sincargos*.xlsx")) if pdir.exists() else []
+
 
 def _ordenar_por_mes(candidatos, mes_idx=None):
     """Ordena Paths cuyo nombre incluye el mes en español (escalajulio.xlsx,
@@ -448,31 +492,29 @@ def _cargar_escala_df():
     return pd.DataFrame(columns=["escala_num", "thresh_gold", "thresh_silver", "thresh_inicial"])
 
 
-def _cargar_sincargos_mes():
+def _cargar_sincargos_mes(path=None):
     """Sin cargos ASIGNADOS del mes desde 01_INPUTS/Planes AASS/sincargos*.xlsx
     (elige por el MES del nombre → sincargosjulio.xlsx en julio; fallback a mtime).
 
     Hoja 'Planes AASS': columna código + 'Cjas Sin Cargos' (total del mes) + tabla escala
-    (ESCALA 1..N → LC = marca). La escala es ACUMULATIVA: para N cajas se toman las primeras
-    N posiciones de la escala y se cuentan por marca. Ej: 9 cajas con escala
-    1-4 Alaris, 5-8 Alma Mora, 9 Frizze → 4 Alaris + 4 Alma Mora + 1 Frizze.
+    (ESCALA 1..N → LC = producto). La escala es ACUMULATIVA: para N cajas se toman las
+    primeras N posiciones. Las columnas internas se conservan por compatibilidad, pero sus
+    etiquetas salen del Excel (ej. agosto: Finca Las Moras y Elementos).
 
     Devuelve {cliente_id: {sc_alaris, sc_alma_mora, sc_frizze, sc_antares_ipa,
     sc_smf_flavours, sc_total_ganado}}. Si no hay archivo válido devuelve {} y el motor
     cae al cálculo por facturación (fail-safe)."""
-    pdir = BASE / "01_INPUTS" / "Planes AASS"
-    if not pdir.exists():
-        return {}
     # marca de la escala (LC) → columna sc_* del dataset
     MARCA_COL = {
+        "finca las moras": "sc_alaris",
+        "elementos":       "sc_alma_mora",
         "alaris":    "sc_alaris",
         "alma mora": "sc_alma_mora",
         "frizze":    "sc_frizze",
         "antares":   "sc_antares_ipa",
         "smirnoff":  "sc_smf_flavours",
     }
-    SC_COLS = ["sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa", "sc_smf_flavours"]
-    cand = _ordenar_por_mes(pdir.glob("sincargos*.xlsx"))
+    cand = _candidatos_sincargos(path)
     for path in cand:
         try:
             df = pd.read_excel(path, sheet_name="Planes AASS", header=0)
@@ -492,9 +534,20 @@ def _cargar_sincargos_mes():
             esc[ecol] = pd.to_numeric(esc[ecol], errors="coerce")
             esc = esc.dropna(subset=[ecol]).sort_values(ecol)
             pos_to_col = []
+            labels = dict(_SC_DEFAULT_LABELS_PLAN_AS)
+            no_mapeadas = set()
             for _, r in esc.iterrows():
-                marca = str(r[lcol]).strip().lower()
-                pos_to_col.append(next((v for k, v in MARCA_COL.items() if k in marca), None))
+                etiqueta = str(r[lcol]).strip()
+                marca = etiqueta.lower()
+                col = next((v for k, v in MARCA_COL.items() if k in marca), None)
+                pos_to_col.append(col)
+                if col and etiqueta:
+                    labels[col] = etiqueta
+                elif etiqueta:
+                    no_mapeadas.add(etiqueta)
+            if no_mapeadas:
+                print(f"  [AVISO] sincargos {path.name}: productos sin mapear {sorted(no_mapeadas)}")
+                continue
             # Asignación por cliente
             out = {}
             for _, r in df[[ccol, qcol]].dropna(subset=[ccol]).iterrows():
@@ -503,12 +556,14 @@ def _cargar_sincargos_mes():
                 if pd.isna(cid) or pd.isna(n):
                     continue
                 cid, n = int(cid), int(n)
-                alloc = {c: 0 for c in SC_COLS}
+                alloc = {c: 0 for c in _SC_COLS_PLAN_AS}
                 for i in range(min(n, len(pos_to_col))):
                     col = pos_to_col[i]
                     if col:
                         alloc[col] += 1
-                alloc["sc_total_ganado"] = sum(alloc[c] for c in SC_COLS)
+                alloc["sc_total_ganado"] = sum(alloc[c] for c in _SC_COLS_PLAN_AS)
+                for col, label_col in _SC_LABEL_COLS_PLAN_AS.items():
+                    alloc[label_col] = labels[col]
                 out[cid] = alloc
             if out:
                 print(f"  Sin cargos del mes desde: {path.name} ({len(out)} clientes)")
@@ -518,14 +573,12 @@ def _cargar_sincargos_mes():
     return {}
 
 
-def _cargar_planfrio_mes():
+def _cargar_planfrio_mes(path=None):
     """Plan frío del mes: clientes que tienen 1 Six Pack Smirnoff ICE sin cargo.
-    Hoja 'plan frío' de Planes AASS/sincargos*.xlsx (columna 'clientes' con los códigos).
+    Hoja 'plan frío' de Planes AASS/sincargos*.xlsx (columna 'clientes' o 'código').
+    Sólo incorpora filas cuyo beneficio dice Smirnoff ICE; excluye explícitamente NO CUMPLE.
     Devuelve set de cliente_id. Si no hay archivo/hoja válida devuelve set vacío."""
-    pdir = BASE / "01_INPUTS" / "Planes AASS"
-    if not pdir.exists():
-        return set()
-    cand = _ordenar_por_mes(pdir.glob("sincargos*.xlsx"))
+    cand = _candidatos_sincargos(path)
     for path in cand:
         try:
             xl = pd.ExcelFile(path)
@@ -535,18 +588,33 @@ def _cargar_planfrio_mes():
                 continue
             raw = xl.parse(hoja, header=None)
             # Header: fila con 'clientes'. Los códigos están en esa columna, filas siguientes.
-            hdr_idx, ccol = None, None
+            hdr_idx, ccol, scol = None, None, None
             for i in range(min(6, len(raw))):
                 for j, x in enumerate(raw.iloc[i].tolist()):
-                    if str(x).strip().lower() == "clientes":
-                        hdr_idx, ccol = i, j
-                        break
-                if hdr_idx is not None:
+                    xa = _texto_ascii(x)
+                    if xa in ("clientes", "cliente", "codigo", "cdigo", "cod"):
+                        ccol = j
+                    if "sin cargo" in xa:
+                        scol = j
+                if ccol is not None:
+                    hdr_idx = i
                     break
             if hdr_idx is None:
                 continue
-            cods = pd.to_numeric(raw.iloc[hdr_idx + 1:, ccol], errors="coerce").dropna()
-            out = set(int(c) for c in cods)
+            if scol is None:
+                print(f"  [AVISO] plan frío {path.name}: falta columna Sin cargo")
+                continue
+            out = set()
+            for _, r in raw.iloc[hdr_idx + 1:].iterrows():
+                cid = pd.to_numeric(r.iloc[ccol], errors="coerce")
+                if pd.isna(cid):
+                    continue
+                if scol is not None:
+                    beneficio = _texto_match(r.iloc[scol])
+                    if ("no cumple" in beneficio
+                            or not ("smirnoff" in beneficio and "ice" in beneficio)):
+                        continue
+                out.add(int(cid))
             if out:
                 print(f"  Plan frío (Six Pack Smirnoff ICE) desde: {path.name} ({len(out)} clientes)")
                 return out
@@ -555,36 +623,37 @@ def _cargar_planfrio_mes():
     return set()
 
 
-def _cargar_puntera_mes():
+def _cargar_puntera_mes(path=None):
     """Puntera del mes: cajas de un vino (cualquier varietal) sin cargo por cliente.
-    Hoja 'Puntera' de Planes AASS/sincargos*.xlsx (columna código + 'Cjas Sin Cargos (<Producto>)').
+    Lee la hoja histórica 'Puntera' o el formato actual embebido en 'Planes AASS'
+    (columna Punteras y fila ESCALA=Puntera / LC=<Producto>).
     El PRODUCTO sale del encabezado de esa columna (texto entre paréntesis), así se puede cambiar
     desde el Excel sin tocar código: la etiqueta que muestra el portal y el criterio de detección
     del enviado (marca en el Articulo del ERP) siguen a ese nombre. Requisito: el nombre entre
     paréntesis debe aparecer tal cual en el Articulo del ERP (ej. 'Los Arboles' → 'LOS ARBOLES ...').
     Devuelve ({cliente_id: cajas}, producto). Si no hay archivo/hoja válida devuelve ({}, "")."""
-    pdir = BASE / "01_INPUTS" / "Planes AASS"
-    if not pdir.exists():
-        return {}, ""
-    cand = _ordenar_por_mes(pdir.glob("sincargos*.xlsx"))
+    cand = _candidatos_sincargos(path)
     for path in cand:
         try:
             xl = pd.ExcelFile(path)
             hoja = next((s for s in xl.sheet_names if "puntera" in s.lower()), None)
+            es_embebida = hoja is None
             if hoja is None:
-                continue
+                hoja = next((s for s in xl.sheet_names if s.strip().lower() == "planes aass"), None)
+                if hoja is None:
+                    continue
             raw = xl.parse(hoja, header=None)
             # Fila header: la que tiene 'código' (col código) y 'sin cargo' (col cajas).
             # Los headers del Excel traen mojibake (código → 'c�digo'); se normaliza dejando
             # sólo ASCII para no depender del carácter roto exacto.
-            _ascii = lambda s: "".join(c for c in str(s).strip().lower() if c.isascii())
             hdr_idx = ccol = qcol = None
             for i in range(min(6, len(raw))):
                 for j, x in enumerate(raw.iloc[i].tolist()):
-                    xa = _ascii(x)
+                    xa = _texto_ascii(x)
                     if xa in ("codigo", "cdigo", "cod", "cliente"):
                         ccol = j
-                    if "sin cargo" in xa:
+                    if ((es_embebida and "puntera" in xa)
+                            or (not es_embebida and "sin cargo" in xa)):
                         qcol = j
                 if ccol is not None and qcol is not None:
                     hdr_idx = i
@@ -594,7 +663,19 @@ def _cargar_puntera_mes():
             # Producto = texto entre paréntesis del encabezado de la columna de cajas.
             hdr_txt = str(raw.iloc[hdr_idx, qcol])
             m = re.search(r"\(([^)]+)\)", hdr_txt)
-            producto = m.group(1).strip() if m and m.group(1).strip() else "Puntera"
+            producto = m.group(1).strip() if m and m.group(1).strip() else ""
+            if es_embebida and not producto:
+                for _, r in raw.iloc[hdr_idx + 1:].iterrows():
+                    vals = r.tolist()
+                    for j, valor in enumerate(vals[:-1]):
+                        if _texto_match(valor) == "puntera":
+                            producto = str(vals[j + 1]).strip()
+                            break
+                    if producto:
+                        break
+            if not producto:
+                print(f"  [AVISO] puntera {path.name}: falta producto")
+                continue
             out = {}
             for _, r in raw.iloc[hdr_idx + 1:].iterrows():
                 cid = pd.to_numeric(r.iloc[ccol], errors="coerce")
@@ -1002,6 +1083,17 @@ def generar_planes_as(ventas, bbdd, clientes):
     # Sin cargo: filas con 100% descuento
     sc = ventas[ventas["Descuento_pct"] >= 99.9].copy()
 
+    # La asignación y los nombres visibles salen del Excel mensual. Las columnas sc_*
+    # históricas quedan como slots compatibles, pero ya no definen qué producto se muestra.
+    sc_mes = _cargar_sincargos_mes()
+    sc_labels = dict(_SC_DEFAULT_LABELS_PLAN_AS)
+    if sc_mes:
+        primera_asignacion = next(iter(sc_mes.values()))
+        for col, label_col in _SC_LABEL_COLS_PLAN_AS.items():
+            etiqueta = str(primera_asignacion.get(label_col, "") or "").strip()
+            if etiqueta:
+                sc_labels[col] = etiqueta
+
     # Resumen sin cargo enviado por cliente × marca
     sc_det = (sc.groupby(["Cliente", "Marca"])["CantBase"]
               .sum().reset_index()
@@ -1025,19 +1117,19 @@ def generar_planes_as(ventas, bbdd, clientes):
     #   - COD 14619/14620 "FRIZZE..." tiene Marca=NaN → falso negativo si usamos solo Marca
     #   - COD 35103/35104/35105 "SMF ICE..." tiene Marca="Smirnoff Ice Flavours" → correcto,
     #     pero Articulo usa abreviatura "SMF" no "SMIRNOFF", por eso se incluye "smf ice".
-    _AS_MARCAS = {
-        "alaris": "sc_env_alaris",
-        "alma mora": "sc_env_alma_mora",
-        "frizze": "sc_env_frizze",
-        "antares": "sc_env_antares_ipa",
-        "smirnoff": "sc_env_smf_flavours",
-    }
+    def _keywords_producto_as(col, etiqueta):
+        nombre = _texto_match(etiqueta)
+        if col == "sc_alaris" and "finca las moras" in nombre:
+            return ["f las moras", "finca las moras"]
+        if col == "sc_antares_ipa":
+            return ["antares"]
+        if col == "sc_smf_flavours":
+            return ["smirnoff", "smf ice"]
+        return [nombre] if nombre else []
+
     _ARTICULO_AS = {
-        "sc_env_alaris":       ["alaris"],
-        "sc_env_alma_mora":    ["alma mora"],
-        "sc_env_frizze":       ["frizze"],
-        "sc_env_antares_ipa":  ["antares"],
-        "sc_env_smf_flavours": ["smirnoff", "smf ice"],
+        _SC_ENV_COLS_PLAN_AS[col]: _keywords_producto_as(col, sc_labels[col])
+        for col in _SC_COLS_PLAN_AS
     }
 
     def _detectar_prod_as(row):
@@ -1045,7 +1137,7 @@ def generar_planes_as(ventas, bbdd, clientes):
         # Marca tiene errores conocidos en el ERP (ej: COD 74510 "F. LAS MORAS ROSADO"
         # con Marca="Alaris" → falso positivo). Si el Articulo no dice explícitamente
         # el nombre de la marca del plan, no se cuenta como sin cargo del plan.
-        art = str(row.get("Articulo", "")).lower()
+        art = _texto_match(row.get("Articulo", ""))
         for prod_col, kws in _ARTICULO_AS.items():
             if any(kw in art for kw in kws):
                 return prod_col
@@ -1055,7 +1147,7 @@ def generar_planes_as(ventas, bbdd, clientes):
     sc_copy["_prod_as"] = sc_copy.apply(_detectar_prod_as, axis=1)
     sc_plan = sc_copy[sc_copy["_prod_as"].notna()]
     sc_env_prod = {}
-    for prod_col in _AS_MARCAS.values():
+    for prod_col in _SC_ENV_COLS_PLAN_AS.values():
         sub = sc_plan[sc_plan["_prod_as"] == prod_col]
         grp = sub.groupby("Cliente")["CantBase"].sum().reset_index().rename(
             columns={"Cliente": "cliente_id", "CantBase": prod_col}
@@ -1064,6 +1156,8 @@ def generar_planes_as(ventas, bbdd, clientes):
 
     # Join
     df = bbdd.merge(vend_cli, on="cliente_id", how="left")
+    # V3 (Nadia) no trabaja Autoservicio: nunca debe aparecer en Planes AASS.
+    df = df[pd.to_numeric(df["vendedor_codigo"], errors="coerce") != 3].copy()
     df = df.merge(sc_total_env, on="cliente_id", how="left")
     df["sc_cajas_enviadas_total"] = df["sc_cajas_enviadas_total"].fillna(0)
 
@@ -1076,21 +1170,21 @@ def generar_planes_as(ventas, bbdd, clientes):
     # Sólo el bloque de sin cargo (disponible/enviado/pendiente) y el Estado pasan a regirse
     # por este Excel. Clientes no listados este mes → sin cargos disponibles = 0.
     # Si el Excel falta o falla, se conserva el disponible calculado por facturación (fail-safe).
-    _SC_COLS = ["sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa", "sc_smf_flavours"]
-    sc_mes = _cargar_sincargos_mes()
     if sc_mes:
-        for col in _SC_COLS + ["sc_total_ganado"]:
+        for col in _SC_COLS_PLAN_AS + ["sc_total_ganado"]:
             if col in df.columns:
                 df[col] = 0
         for cid, alloc in sc_mes.items():
             mask = df["cliente_id"] == cid
             if mask.any():
-                for col in _SC_COLS:
+                for col in _SC_COLS_PLAN_AS:
                     df.loc[mask, col] = alloc.get(col, 0)
                 df.loc[mask, "sc_total_ganado"] = alloc.get("sc_total_ganado", 0)
         df["sc_origen_disponible"] = "sincargos_mes"
     else:
         df["sc_origen_disponible"] = "facturacion"
+    for col, label_col in _SC_LABEL_COLS_PLAN_AS.items():
+        df[label_col] = sc_labels[col]
 
     # sc_pendiente por producto Plan AS
     df["sc_pend_alaris"] = (df["sc_alaris"] - df.get("sc_env_alaris", 0)).clip(lower=0)
@@ -1128,7 +1222,8 @@ def generar_planes_as(ventas, bbdd, clientes):
         axis=1)
 
     # ── PUNTERA: cajas de un vino (cualquier varietal) sin cargo por cliente listado en la hoja
-    # 'Puntera'. El PRODUCTO sale del encabezado del Excel (ver _cargar_puntera_mes), no del código.
+    # 'Puntera' o columna Punteras embebida. El PRODUCTO sale del Excel
+    # (ver _cargar_puntera_mes), no del código.
     # Disponible = cajas del Excel. Enviado = cajas 100% descuento de ese producto en ventas.csv
     # (detección por Articulo que contiene el nombre del producto en mayúsculas, ej. 'LOS ARBOLES').
     pt_clientes, pt_producto = _cargar_puntera_mes()
@@ -1151,9 +1246,9 @@ def generar_planes_as(ventas, bbdd, clientes):
     # ── DETALLE de envíos de sin cargo (fecha de cada entrega) → mod_sincargos_envios.csv.
     # Alimenta la tarjeta desplegable al clickear un sin cargo en el portal. Fecha =
     # FechaComprobante (regla de facturación). Una fila por cliente × producto × fecha.
-    _PROD_LABEL = {"sc_env_alaris": "Alaris", "sc_env_alma_mora": "Alma Mora",
-                   "sc_env_frizze": "Frizze", "sc_env_antares_ipa": "Antares IPA",
-                   "sc_env_smf_flavours": "Smirnoff Flavours"}
+    _PROD_LABEL = {
+        _SC_ENV_COLS_PLAN_AS[col]: sc_labels[col] for col in _SC_COLS_PLAN_AS
+    }
     det_rows = []
     if not sc_plan.empty:
         _f = pd.to_datetime(sc_plan["FechaComprobante"], dayfirst=True, errors="coerce")
@@ -1210,6 +1305,8 @@ def generar_planes_as(ventas, bbdd, clientes):
         "plan_as", "escala_actual", "escala_max", "total_facturado", "dcto_plan",
         "cant_cajas", "tope", "cant_cajas_tope",
         "sc_alaris", "sc_alma_mora", "sc_frizze", "sc_antares_ipa", "sc_smf_flavours",
+        "sc_label_alaris", "sc_label_alma_mora", "sc_label_frizze",
+        "sc_label_antares_ipa", "sc_label_smf_flavours",
         "sc_total_ganado",
         "sc_env_alaris", "sc_env_alma_mora", "sc_env_frizze", "sc_env_antares_ipa", "sc_env_smf_flavours",
         "sc_pend_alaris", "sc_pend_alma_mora", "sc_pend_frizze", "sc_pend_antares_ipa", "sc_pend_smf_flavours",
@@ -1948,6 +2045,23 @@ def generar_acciones_explorador():
 # MAIN
 # ─────────────────────────────────────────────
 
+def main_planes_as():
+    """Regeneración parcial: toca únicamente los dos datasets de Planes AASS."""
+    print("=" * 50)
+    print("generar_datasets_acum.py --solo-planes-as")
+    print("=" * 50)
+    ventas = cargar_ventas_acum()
+    clientes = cargar_clientes()
+    bbdd = cargar_planes_as_bbdd()
+    print(f"  ventas mes activo : {len(ventas):>6} filas")
+    print(f"  clientes maestro  : {len(clientes):>6} filas")
+    print(f"  clientes Plan AASS: {len(bbdd):>6} filas")
+    pas = generar_planes_as(ventas, bbdd, clientes)
+    pas.to_csv(OUT / "mod_planes_as.csv", index=False, encoding="utf-8-sig")
+    print(f"  OK: mod_planes_as.csv ({len(pas)} clientes)")
+    print("  OK: mod_sincargos_envios.csv")
+
+
 def main():
     print("=" * 50)
     print("generar_datasets_acum.py")
@@ -2112,4 +2226,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if "--solo-planes-as" in sys.argv[1:]:
+        main_planes_as()
+    else:
+        main()

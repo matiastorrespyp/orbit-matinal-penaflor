@@ -1,5 +1,34 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-18 - feat(Planes AASS): actualización parcial de agosto sin cierre diario
+
+**Pedido:** publicar `01_INPUTS/Planes AASS/sincargosagosto.xlsx` en ORBIT sin ejecutar el
+cierre porque el día comercial recién había comenzado.
+
+**Problemas detectados en la fuente nueva y resueltos:**
+
+- La escala cambió `Alaris`/`Alma Mora` por **Finca Las Moras**/**Elementos**. El motor conserva
+  las columnas históricas como slots compatibles, pero ahora lee y publica las etiquetas reales
+  del Excel; la detección de enviados usa `Articulo` y reconoce `F. LAS MORAS` sin confiar en la
+  columna Marca del ERP.
+- Plan frío acepta encabezado `clientes` o `código` y excluye las filas `NO CUMPLE`.
+- Puntera acepta la hoja histórica o el formato agosto embebido: columna `Punteras` y fila
+  `ESCALA=Puntera / LC=Los Arboles`.
+- Los productos desconocidos ya no se ignoran parcialmente: el lector avisa y rechaza esa fuente.
+- V3 queda excluida del dataset y recibe 403 en el endpoint vendedor de Planes AASS.
+
+**Actualización aislada:** `generar_datasets_acum.py --solo-planes-as` carga únicamente ventas,
+maestro y Planes AASS, y escribe sólo `mod_planes_as.csv` y `mod_sincargos_envios.csv`. No toca
+historial, cobertura, 11T, planificación, otros datasets ni `LEGACY/`.
+
+**Fuente vs salida validada:** 31 clientes; 30 con asignación; **134 cajas de escala**
+(109 Finca Las Moras, 23 Elementos, 2 Frizze), **27** clientes Plan Frío y **4** clientes de
+puntera con **12 cajas**. Endpoints gerencia/vendedor en HTTP 200; V4=1, V8=16, V9=7, V10=7;
+V3=403. Playwright validó gerencia y V8 mostrando Finca Las Moras/Elementos sin errores de consola.
+
+**Respaldo:** `99_BACKUPS_ORBIT/20260818_092020_planes_aass/`. La publicación incluye sólo código,
+prueba, fuente y los dos datasets de Planes AASS.
+
 ## 2026-08-13 - fix(cierre de mes): un mes sin terminar se publicaba solo como cerrado
 
 **Causa raíz del cierre de agosto que hubo que borrar** (commit `7ca377c`). Ese fue el síntoma; esto es el bug.

@@ -1,5 +1,21 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-18 - Planes AASS agosto sin cierre diario
+
+### HECHO
+- [x] Adaptado el lector al formato real de `sincargosagosto.xlsx`: Finca Las Moras, Elementos,
+  `código` en Plan Frío y puntera embebida.
+- [x] Agregado `--solo-planes-as`, que regenera exclusivamente `mod_planes_as.csv` y
+  `mod_sincargos_envios.csv`.
+- [x] Reconciliación fuente/backend/portal: 134 cajas de escala, 27 Plan Frío, 12 cajas de puntera,
+  31 clientes repartidos V4/V8/V9/V10 y V3 bloqueada.
+- [x] Validación visual gerencia + V8 con etiquetas reales del Excel.
+
+### PROXIMA TAREA
+- [ ] En el próximo cierre diario normal, comprobar que la regeneración completa conserva los
+  mismos productos y elegibilidades de agosto; el código ya quedó compatible, no se debe volver
+  a editar ni renombrar el Excel.
+
 ## Sesion 2026-08-13 - El cierre de mes de agosto era una prueba y estaba publicado
 
 ### HECHO
