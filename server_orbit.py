@@ -6144,7 +6144,9 @@ def _acc_on_cards():
 def _acc_mes_sig():
     """Firma de invalidación del payload de acciones: mtime de las fuentes reales."""
     sig = []
-    for p in (INPUTS / "ventas.csv", INPUTS / "ventas_acumulada.csv",
+    # clientes.xlsx entra en la firma por la elegibilidad de AGO26-TRAD-NC: la cartera
+    # Tradicional sale del padrón, así que un cambio de padrón tiene que invalidar el payload.
+    for p in (INPUTS / "ventas.csv", INPUTS / "ventas_acumulada.csv", INPUTS / "clientes.xlsx",
               DATASETS / "mod_planes_as.csv", CONFIG / "maestro_04D_productos.csv",
               INPUTS / "04D_MAESTRO_PRODUCTOS_PENAFLOR.xlsx"):
         try:
@@ -6182,6 +6184,216 @@ def _acc_mes_sig():
     return tuple(sig)
 
 
+# ─────────────────────────────────────────────
+# AGO26-TRAD-NC · "Tradicionales no compradores" — ELEGIBILIDAD DINÁMICA
+# ─────────────────────────────────────────────
+#
+# El explorador publica reglas ESTÁTICAS: el Excel describe qué ofrece cada acción y el JSON
+# del cierre lo congela. Esta acción es la primera cuya elegibilidad depende de los datos —
+# entra el cliente Tradicional que durante el mes NO compró ninguna de las marcas del
+# catálogo—, así que no puede resolverse en el Excel ni quedar congelada en el dataset: un
+# cliente deja de ser elegible en el momento en que le entra una factura con esas marcas.
+# Se calcula acá, sobre ventas.csv vivo + el padrón, y se refresca solo.
+#
+# PERTENENCIA AL MES: por FechaComprobante, la regla general del proyecto (`_mes` de
+# _acc_preparar_from_df ya sale de esa columna). FechaCarga y FechaEntrega no deciden período.
+#
+# QUÉ ES "MARCA": el campo `Marca` del ERP es la marca COMERCIAL, no la etiqueta del envase.
+# "Alaris" agrupa también los Finca Las Moras de entrada de gama, "Don David" agrupa El Esteco
+# y "Trapiche Reserva" agrupa Puro / Impuro / Origen by Trapiche. Deducir la marca del texto
+# del artículo daría otro agrupamiento —uno que el ERP no reconoce— así que se compara contra
+# `Marca` por igualdad exacta normalizada. Eso además separa solo "Smirnoff botella" de
+# "Smirnoff Ice"/"Smirnoff Ice Flavours", que son las latas RTD y NO entran en la acción.
+#
+# El único caso que necesita el nombre del artículo es el SKU que el ERP todavía exporta sin
+# `Marca` (pasa con las altas nuevas: 74887 Alma Mora Malbec Dulce Low, 74883/74886 Dadá Low).
+# Sin ese fallback, un cliente que compró Alma Mora Low figuraría como no comprador.
+
+TRAD_NC_ACTION_ID = "AGO26-TRAD-NC"
+
+# marca visible -> valores de `Marca` del ERP (ya normalizados con _acc_norm) que le pertenecen
+_TRAD_NC_MARCAS = [
+    ("Alma Mora",        ["ALMA MORA", "ALMA MORA RESERVA"]),
+    ("Alaris",           ["ALARIS"]),
+    ("Finca Las Moras",  ["FINCA LAS MORAS"]),
+    ("Dadá",             ["DADA", "CHAMPANA DADA"]),
+    ("Los Árboles",      ["LOS ARBOLES"]),
+    ("Trapiche Reserva", ["TRAPICHE RESERVA"]),
+    ("Don David",        ["DON DAVID", "DON DAVID RVA"]),
+    ("Smirnoff botella", ["SMIRNOFF"]),
+    ("Frizze",           ["FRIZZE"]),
+    ("Gordon's",         ["GORDONS", "GORDONS FLAVORS"]),
+]
+
+# Fallback SOLO para filas con `Marca` vacía: se busca el nombre de la marca dentro del
+# artículo. No se usa cuando el ERP trae marca, para no pisar su agrupamiento.
+_TRAD_NC_FALLBACK_ART = {
+    "Alma Mora":        ["ALMA MORA"],
+    "Alaris":           ["ALARIS"],
+    "Finca Las Moras":  ["FINCA LAS MORAS", "F LAS MORAS"],
+    "Dadá":             ["DADA"],
+    "Los Árboles":      ["LOS ARBOLES"],
+    "Trapiche Reserva": ["TRAPICHE RESERVA"],
+    "Don David":        ["DON DAVID"],
+    "Smirnoff botella": ["SMIRNOFF"],
+    "Frizze":           ["FRIZZE"],
+    "Gordon's":         ["GORDONS", "GORDON S"],
+}
+
+TRAD_NC_CRITERIO = (
+    "Cliente del canal Tradicional que durante el mes (FechaComprobante) no compró ninguna "
+    "de las 10 marcas elegibles, con ImporteNetoItem > 0. Incluye tanto al que no compró nada "
+    "de Peñaflor como al que compró otros productos fuera de esas marcas."
+)
+
+_TRAD_NC_CACHE = {}
+
+
+def _trad_nc_marcas_compradas(v):
+    """{marca_visible: set(cliente_id)} sobre un DataFrame de ventas ya acotado al mes y a
+    ImporteNetoItem > 0. La compra cuenta la haya facturado quien la haya facturado: lo que
+    define al 'no comprador' es que el cliente no se llevó la marca, no quién se la vendió."""
+    marca_erp = v["_marca"].map(_acc_norm)
+    art = v["_art"].map(_acc_norm)
+    sin_marca = marca_erp.eq("")
+    out = {}
+    for visible, valores in _TRAD_NC_MARCAS:
+        m = marca_erp.isin(valores)
+        claves = _TRAD_NC_FALLBACK_ART.get(visible, [])
+        if claves:
+            fb = pd.Series(False, index=v.index)
+            for k in claves:
+                fb |= art.str.contains(_re.escape(k), regex=True, na=False)
+            if visible == "Smirnoff botella":
+                # sin `Marca` no hay nada que distinga la botella de la lata salvo el nombre
+                fb &= ~art.str.contains("ICE|LATA|LAT ", regex=True, na=False)
+            m |= (sin_marca & fb)
+        out[visible] = set(v.loc[m, "_cli"].dropna().astype(int))
+    return out
+
+
+def _trad_nc_elegibles(mes=None, vid=None, detalle=False):
+    """Elegibles de AGO26-TRAD-NC: cartera Tradicional − quienes compraron alguna marca.
+
+    `mes` es el período del catálogo ('YYYY-MM'); así el explorador y la elegibilidad hablan
+    siempre del mismo mes. `vid` acota a la cartera de un vendedor. `detalle=True` agrega la
+    lista de clientes (la usa el drill-down; el payload del portal viaja sólo con el resumen).
+
+    Estado controlado ante fuente faltante: devuelve `nota` y contadores en None, nunca 0
+    —un 0 acá se leería como 'no hay ningún cliente elegible', que es una afirmación
+    comercial distinta de 'no pude calcularlo'."""
+    key = (mes, vid, detalle, _acc_mes_sig())
+    cached = _TRAD_NC_CACHE.get(key)
+    if cached is not None:
+        return cached
+
+    base = {"action_id": TRAD_NC_ACTION_ID, "mes": mes, "criterio": TRAD_NC_CRITERIO,
+            "fuente": "01_INPUTS/ventas.csv (FechaComprobante) + 01_INPUTS/clientes.xlsx",
+            "marcas": [m for m, _ in _TRAD_NC_MARCAS]}
+
+    cli = _clientes_maestro()          # ya excluye V2/V5 (y V1/V20 depósito)
+    v = _acc_preparar_ventas("ventas.csv")
+    if cli.empty or v.empty:
+        falta = "clientes.xlsx" if cli.empty else "ventas.csv"
+        out = dict(base, cartera_tradicional=None, elegibles=None, no_elegibles=None,
+                   sin_compras_penaflor=None, compro_otros=None, por_vendedor=[],
+                   por_marca=[], clientes=[],
+                   nota=f"Dato no disponible: falta {falta}.")
+        _TRAD_NC_CACHE[key] = out
+        return out
+
+    # Mes: el del catálogo; si no vino o no parsea, el más reciente de las ventas.
+    per = None
+    if mes:
+        try:
+            per = pd.Period(mes, freq="M")
+        except Exception:
+            per = None
+    if per is None:
+        per = v["_mes"].max()
+    vm = v[(v["_mes"] == per) & (v["_imp_neto"] > 0)]
+
+    compradas = _trad_nc_marcas_compradas(vm)
+    compradores = set().union(*compradas.values()) if compradas else set()
+    con_compra = set(vm["_cli"].dropna().astype(int))
+
+    # Cartera Tradicional. El segmento sale de Ramo/SubSegmento con el clasificador único
+    # del portal (el SubSegmento manda sobre el Ramo).
+    cli = cli.copy()
+    cli["_seg"] = [_clasificar_segmento(r, s)
+                   for r, s in zip(cli.get("Ramo", ""), cli.get("SubSegmento", ""))]
+    trad = cli[(cli["_seg"] == "TRADICIONAL")
+               & (cli["_vend_id"].isin(_VENDEDORES_ACTIVOS_PLAN))].copy()
+    if vid:
+        trad = trad[trad["_vend_id"] == vid]
+
+    eleg = trad[~trad["_cliente_id"].isin(compradores)].copy()
+    eleg["_sin_compras"] = ~eleg["_cliente_id"].isin(con_compra)
+
+    por_vend = []
+    for vd in sorted(trad["_vend_id"].unique(), key=lambda x: int(str(x)[1:] or 0)):
+        cart = trad[trad["_vend_id"] == vd]
+        el = eleg[eleg["_vend_id"] == vd]
+        por_vend.append({
+            "vendedor_id": vd,
+            "cartera_tradicional": int(len(cart)),
+            "elegibles": int(len(el)),
+            "sin_compras_penaflor": int(el["_sin_compras"].sum()),
+            "compro_otros": int((~el["_sin_compras"]).sum()),
+        })
+
+    # Sólo informativo: cuántos clientes de ESTA cartera se llevaron cada marca. Explica por
+    # qué el resto quedó fuera sin obligar a abrir el detalle.
+    ids_cartera = set(trad["_cliente_id"])
+    por_marca = [{"marca": m, "clientes": len(compradas.get(m, set()) & ids_cartera)}
+                 for m, _ in _TRAD_NC_MARCAS]
+
+    out = dict(
+        base,
+        mes=str(per),
+        cartera_tradicional=int(len(trad)),
+        elegibles=int(len(eleg)),
+        no_elegibles=int(len(trad) - len(eleg)),
+        sin_compras_penaflor=int(eleg["_sin_compras"].sum()),
+        compro_otros=int((~eleg["_sin_compras"]).sum()),
+        por_vendedor=por_vend,
+        por_marca=por_marca,
+        nota=None,
+    )
+    if detalle:
+        det = eleg.sort_values(["_vend_id", "_cliente_id"])
+        out["clientes"] = [{
+            "cliente_id":   int(r["_cliente_id"]),
+            "cliente":      str(r.get("Razon_Social") or ""),
+            "localidad":    str(r.get("Localidad") or ""),
+            "vendedor_id":  r["_vend_id"],
+            "sin_compras":  bool(r["_sin_compras"]),
+        } for _, r in det.iterrows()]
+    else:
+        out["clientes"] = []
+
+    for k in [k for k in _TRAD_NC_CACHE if k[3] != key[3]]:   # purgar firmas viejas
+        _TRAD_NC_CACHE.pop(k, None)
+    _TRAD_NC_CACHE[key] = out
+    return out
+
+
+def _acc_adjuntar_trad_nc(explorador, vid_filtro=None):
+    """Cuelga el resumen de elegibilidad en la subcategoría AGO26-TRAD-NC del explorador.
+
+    Se hace acá y no en el dataset porque el catálogo del cierre es estático: el JSON sólo
+    dice qué ofrece la acción, y a quién le aplica lo decide la venta del día. Si el Excel del
+    mes no trae la acción, no se agrega nada (no se inventa una tarjeta que la fuente no pide)."""
+    if not isinstance(explorador, dict):
+        return
+    for cat in explorador.get("categorias") or []:
+        for sub in cat.get("subcategorias") or []:
+            if sub.get("action_id") == TRAD_NC_ACTION_ID:
+                sub["elegibilidad"] = _trad_nc_elegibles(
+                    mes=explorador.get("mes"), vid=vid_filtro, detalle=False)
+                return
+
+
 def _acciones_mes_payload(vid_filtro=None):
     """Wrapper cacheado por (firma de fuentes, vendedor). Evita recalcular el payload
     (lectura de ventas + apply por regla, ~18s) en cada login; el cómputo real está en
@@ -6196,6 +6408,9 @@ def _acciones_mes_payload(vid_filtro=None):
     # en todas. Es idéntico para gerencia y vendedores —son las reglas del mes, no datos de
     # cartera—, así que no depende de vid_filtro y no abre nada que el rol no viera ya.
     payload["explorador"] = _acc_explorador()
+    # La elegibilidad de AGO26-TRAD-NC sí depende del vendedor (es su cartera), así que se
+    # calcula con vid_filtro y queda dentro de la entrada cacheada de ese vendedor.
+    _acc_adjuntar_trad_nc(payload["explorador"], vid_filtro)
     # purgar firmas viejas; conservar variantes por vendedor de la firma actual
     for k in [k for k in _ACC_MES_CACHE if k[0] != ckey[0]]:
         _ACC_MES_CACHE.pop(k, None)
@@ -6699,6 +6914,26 @@ def vendedor_acciones_mes(vid):
     if vid_norm in ("V2", "V5", "V20"):
         return jsonify({"error": "Vendedor no autorizado"}), 403
     return jsonify(_acciones_mes_payload(vid_norm))
+
+
+# ── AGO26-TRAD-NC: drill-down de clientes elegibles ──
+# La lista completa NO viaja en acciones_mes: son ~1.500 clientes en gerencia y el payload ya
+# es lo más pesado del login. El explorador manda el resumen y el portal pide el detalle sólo
+# cuando el usuario lo despliega (mismo patrón que cobertura_acum_faltantes).
+
+@app.route("/api/gerencia/acciones_trad_nc")
+def gerencia_acciones_trad_nc():
+    mes = _acc_explorador().get("mes")
+    return jsonify(_trad_nc_elegibles(mes=mes, vid=None, detalle=True))
+
+
+@app.route("/api/vendedor/<vid>/acciones_trad_nc")
+def vendedor_acciones_trad_nc(vid):
+    vid_norm = normalizar_vendedor_codigo(vid)
+    if vid_norm not in _VENDEDORES_ACTIVOS_PLAN:
+        return jsonify({"error": "Vendedor no autorizado"}), 403
+    mes = _acc_explorador().get("mes")
+    return jsonify(_trad_nc_elegibles(mes=mes, vid=vid_norm, detalle=True))
 
 
 # ====== PLANES AS — VENDEDOR ======

@@ -155,10 +155,16 @@
        "observacion": "Lista principal de la tabla."
       },
       {
-       "tipo": "producto/línea",
-       "nombre": "Alma Mora Low",
+       "tipo": "sku",
+       "nombre": "74827 — Alma Mora Blanco Dulce Low 6x750",
        "regla": "Incluido",
-       "observacion": "Lista principal de la tabla."
+       "observacion": "SKU explicito (antes: entrada generica “Alma Mora Low”). ERP: ALMA MORA BLANCO DULCE LOW 6X750, linea comercial Alma Mora, vigente."
+      },
+      {
+       "tipo": "sku",
+       "nombre": "74887 — Alma Mora Malbec Dulce Low 6x750",
+       "regla": "Incluido",
+       "observacion": "SKU explicito (antes: entrada generica “Alma Mora Low”). ERP: ALMA MORA MALBEC DULCE LOW 6X750, linea comercial Alma Mora, en proceso de alta en el maestro."
       },
       {
        "tipo": "producto/línea",
@@ -641,6 +647,106 @@
        "nombre": "Smirnoff botella",
        "regla": "5%",
        "observacion": null
+      }
+     ],
+     "exclusiones": [],
+     "conflictos": []
+    }
+   ]
+  },
+  {
+   "categoria": "Tradicionales no compradores",
+   "subcategorias": [
+    {
+     "action_id": "AGO26-TRAD-NC",
+     "subcategoria": "Caja mixta 3+3",
+     "mecanica": "Caja mixta",
+     "grupo": "Especiales",
+     "estado": "Activa",
+     "resumen": "15% en caja mixta de 6 botellas: 3 de una marca y 3 de otra distinta, entre las 10 marcas elegibles. Solo para clientes del canal Tradicional que en agosto no compraron ninguna de esas marcas (pertenencia al mes por FechaComprobante).",
+     "segmentos": [
+      {
+       "canal": "Tradicional",
+       "segmentos_cliente": [
+        "Tradicional",
+        "Almacenes",
+        "Kioscos"
+       ],
+       "escalas": [
+        {
+         "unidad": "botella",
+         "min": 6,
+         "max": 6,
+         "descuento": 0.15,
+         "tipo": "descuento",
+         "texto": "Caja mixta de 6 botellas · 3 + 3 de dos marcas distintas · 15%",
+         "observacion": "Elegibles: clientes Tradicionales sin compra de ninguna de las 10 marcas durante agosto (FechaComprobante, ImporteNetoItem > 0). La caja debe llevar 3 botellas de una marca y 3 de otra diferente: 6 de una sola marca no califica.",
+         "tope": null,
+         "solapa": false
+        }
+       ]
+      }
+     ],
+     "productos": [
+      {
+       "tipo": "marca",
+       "nombre": "Alma Mora",
+       "regla": "Elegible para la caja mixta 3+3 · 15%",
+       "observacion": "Comprar esta marca durante agosto deja al cliente fuera de la accion (deja de ser no comprador)."
+      },
+      {
+       "tipo": "marca",
+       "nombre": "Alaris",
+       "regla": "Elegible para la caja mixta 3+3 · 15%",
+       "observacion": "Comprar esta marca durante agosto deja al cliente fuera de la accion (deja de ser no comprador)."
+      },
+      {
+       "tipo": "marca",
+       "nombre": "Finca Las Moras",
+       "regla": "Elegible para la caja mixta 3+3 · 15%",
+       "observacion": "Comprar esta marca durante agosto deja al cliente fuera de la accion (deja de ser no comprador)."
+      },
+      {
+       "tipo": "marca",
+       "nombre": "Dadá",
+       "regla": "Elegible para la caja mixta 3+3 · 15%",
+       "observacion": "Comprar esta marca durante agosto deja al cliente fuera de la accion (deja de ser no comprador)."
+      },
+      {
+       "tipo": "marca",
+       "nombre": "Los Árboles",
+       "regla": "Elegible para la caja mixta 3+3 · 15%",
+       "observacion": "Comprar esta marca durante agosto deja al cliente fuera de la accion (deja de ser no comprador)."
+      },
+      {
+       "tipo": "marca",
+       "nombre": "Trapiche Reserva",
+       "regla": "Elegible para la caja mixta 3+3 · 15%",
+       "observacion": "Comprar esta marca durante agosto deja al cliente fuera de la accion (deja de ser no comprador)."
+      },
+      {
+       "tipo": "marca",
+       "nombre": "Don David",
+       "regla": "Elegible para la caja mixta 3+3 · 15%",
+       "observacion": "Comprar esta marca durante agosto deja al cliente fuera de la accion (deja de ser no comprador)."
+      },
+      {
+       "tipo": "marca",
+       "nombre": "Smirnoff botella",
+       "regla": "Elegible para la caja mixta 3+3 · 15%",
+       "observacion": "Comprar esta marca durante agosto deja al cliente fuera de la accion (deja de ser no comprador)."
+      },
+      {
+       "tipo": "marca",
+       "nombre": "Frizze",
+       "regla": "Elegible para la caja mixta 3+3 · 15%",
+       "observacion": "Comprar esta marca durante agosto deja al cliente fuera de la accion (deja de ser no comprador)."
+      },
+      {
+       "tipo": "marca",
+       "nombre": "Gordon's",
+       "regla": "Elegible para la caja mixta 3+3 · 15%",
+       "observacion": "Comprar esta marca durante agosto deja al cliente fuera de la accion (deja de ser no comprador)."
       }
      ],
      "exclusiones": [],

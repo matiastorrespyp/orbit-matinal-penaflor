@@ -1,5 +1,33 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-18 - Accion AGO26-TRAD-NC y SKU Alma Mora Low
+
+### HECHO
+- [x] Alta de `AGO26-TRAD-NC` ("Tradicionales no compradores") en ACCIONES, ESCALAS y
+  PRODUCTOS_Y_LINEAS del libro de agosto, conservando formato, anchos, merges y zebra.
+- [x] Mecanica publicada: 15%, caja mixta de 6 botellas, 3 + 3 de dos marcas distintas, 6 de una
+  sola marca no califica. Diez marcas elegibles cargadas como productos de la accion.
+- [x] Elegibilidad dinamica en `server_orbit.py` sobre `ventas.csv` (FechaComprobante,
+  ImporteNetoItem > 0) + padron, con V2/V5 y deposito excluidos, y endpoints de drill-down
+  `acciones_trad_nc` para gerencia y vendedor.
+- [x] Bloque "Clientes elegibles" en el panel del explorador del portal, con carga perezosa.
+- [x] La entrada generica "Alma Mora Low" de AGO26-INNOV reemplazada por 74827 y 74887, verificados
+  contra mpa_codigos.csv, maestro_04D_productos.csv y RAW_PRODUCTOS/productosjulio.xlsx.
+- [x] `--solo-explorador` en `generar_datasets_acum.py` y `mod_acciones_explorador.json` regenerado.
+- [x] `test_acciones_trad_nc.py`: 23 OK, 0 fallas. Validacion fuente/backend/portal en 8502.
+
+### PROXIMA TAREA
+- [ ] Cargar el `acciones_comerciales_*.csv` de agosto en
+  `01_INPUTS/ACCIONES COMERCIALES/2026-08/`. Hoy falta y por eso la medicion de uso e inversion del
+  mes (`acciones[]` y `mod_acciones_ranking.csv`) viene vacia con la nota "Sin catalogo de acciones
+  del mes". El explorador y la elegibilidad no dependen de ese archivo, pero el footprint de plata
+  de agosto si.
+- [ ] Confirmar con comercial si "Alma Mora Reserva", "Champana Dada" y "Gordon's Flavors" (marcas
+  del ERP que hoy se cuentan dentro de Alma Mora, Dada y Gordon's) deben seguir contando como
+  compra de la marca a los efectos de dejar al cliente fuera de la accion.
+- [ ] Recordar que el libro `.xlsx` NO se publica a Render: el cambio llega por
+  `04_DATASETS_ORBIT/mod_acciones_explorador.json`, que si esta en la allowlist del cierre.
+
 ## Sesion 2026-08-18 - Persistencia de planificación semanal
 
 ### HECHO

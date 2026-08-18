@@ -3511,6 +3511,9 @@ function accxPanel(scope){
       ⚠️ <b>Escalas superpuestas — pendiente de confirmación comercial.</b><br>${confl.map(accxEsc).join('<br>')}</div>`;
   if(excl.length) h+=`<div style="margin-top:10px;font-size:11px;color:var(--text2);">
       🚫 <b>Exclusiones:</b> ${excl.map(x=>accxEsc(x.categoria)+(x.tratamiento?` <i style="color:var(--text3);">(${accxEsc(x.tratamiento)})</i>`:'')).join(' · ')}</div>`;
+  // Elegibilidad dinámica: sólo la traen las acciones cuyo público depende de la venta del
+  // mes y no del Excel (hoy, AGO26-TRAD-NC). El resto de las acciones no muestra este bloque.
+  if(sub.elegibilidad) h+=accxElegHTML(scope,sub.elegibilidad);
   // Productos plegados: el vendedor abre sólo si necesita el detalle. <details> nativo =
   // accesible por teclado y sin JS extra.
   h+=`<details style="margin-top:12px;border-top:1px solid var(--b);padding-top:10px;">
@@ -3527,6 +3530,84 @@ function accxPanel(scope){
   }
   h+=`</div></details></div></div>`;
   box.innerHTML=h;
+}
+
+/* ── Elegibilidad dinámica de una acción (AGO26-TRAD-NC) ──
+   El explorador describe reglas; esto responde "¿a quién le aplica hoy?". El resumen viaja
+   dentro de acciones_mes; la lista de clientes se pide aparte y sólo si el usuario la abre,
+   porque en gerencia son ~1.500 filas y no tienen por qué viajar en cada login. */
+function accxElegHTML(scope,el){
+  const kpi=(n,t,c)=>`<div style="flex:1 1 92px;min-width:92px;">
+      <div style="font-size:19px;font-weight:800;color:${c||'var(--text)'};">${n==null?'—':n}</div>
+      <div style="font-size:10px;color:var(--text3);line-height:1.35;">${accxEsc(t)}</div></div>`;
+  let h=`<div style="margin-top:12px;border-top:1px solid var(--b);padding-top:11px;">
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;">
+      🎯 Clientes elegibles${el.mes?' · '+accxEsc(el.mes):''}</div>`;
+  // Fuente ausente: se dice "Dato no disponible". Un 0 acá se leería como "no hay ningún
+  // cliente elegible", que es una afirmación comercial distinta.
+  if(el.nota){
+    h+=`<div style="font-size:11px;color:var(--wn);">⚠️ ${accxEsc(el.nota)}</div></div>`;
+    return h;
+  }
+  h+=`<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:9px;">
+      ${kpi(el.elegibles,'elegibles','var(--ok)')}
+      ${kpi(el.cartera_tradicional,'cartera Tradicional')}
+      ${kpi(el.sin_compras_penaflor,'sin compras Peñaflor')}
+      ${kpi(el.compro_otros,'compraron otros productos')}
+      ${kpi(el.no_elegibles,'ya compraron una marca','var(--text3)')}
+    </div>
+    <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:9px;">${accxEsc(el.criterio||'')}</div>`;
+  // Desglose por vendedor: sólo tiene sentido cuando se está mirando más de una cartera.
+  const pv=el.por_vendedor||[];
+  if(pv.length>1){
+    h+=`<table class="tbl" style="font-size:11px;margin-bottom:9px;"><tbody>
+      <tr><td style="color:var(--text3);">Vendedor</td><td style="text-align:right;color:var(--text3);">Elegibles</td><td style="text-align:right;color:var(--text3);">Cartera trad.</td></tr>`;
+    pv.forEach(x=>{h+=`<tr><td>${accxEsc(x.vendedor_id)}</td>
+        <td style="text-align:right;font-weight:700;">${x.elegibles}</td>
+        <td style="text-align:right;color:var(--text3);">${x.cartera_tradicional}</td></tr>`;});
+    h+=`</tbody></table>`;
+  }
+  const pm=(el.por_marca||[]).filter(m=>m.clientes>0);
+  if(pm.length) h+=`<div style="font-size:11px;color:var(--text2);margin-bottom:9px;">
+      🛒 <b>Ya compraron:</b> ${pm.map(m=>accxEsc(m.marca)+' ('+m.clientes+')').join(' · ')}</div>`;
+  h+=`<details ontoggle="accxElegLoad('${scope}',this)">
+      <summary style="cursor:pointer;font-size:12px;font-weight:600;">👥 Ver clientes elegibles${el.elegibles!=null?` (${el.elegibles})`:''}</summary>
+      <div id="accx-eleg-${scope}" style="margin-top:8px;font-size:11px;color:var(--text3);">Cargando…</div>
+    </details>
+    <div style="margin-top:8px;font-size:10px;color:var(--text3);">Fuente: ${accxEsc(el.fuente||'')}</div>
+  </div>`;
+  return h;
+}
+
+/* Carga perezosa del detalle. Se pide una sola vez por scope y queda cacheado en memoria:
+   reabrir el <details> no vuelve a pegarle al backend. */
+async function accxElegLoad(scope,det){
+  if(!det.open) return;
+  const box=document.getElementById('accx-eleg-'+scope); if(!box) return;
+  window.__accxEleg=window.__accxEleg||{};
+  const cache=window.__accxEleg;
+  if(cache[scope]!==undefined){ box.innerHTML=cache[scope]; return; }
+  const url=scope==='v'
+    ? '/api/vendedor/'+encodeURIComponent((userData||{}).vendedor_id||'')+'/acciones_trad_nc'
+    : '/api/gerencia/acciones_trad_nc';
+  let html;
+  try{
+    const r=await fetch(url);
+    if(!r.ok) throw new Error(r.status);
+    const j=await r.json();
+    const cl=j.clientes||[];
+    html=cl.length
+      ? cl.map(c=>`<div class="row-b" style="padding:3px 0;border-top:1px solid var(--bd3);display:flex;gap:8px;justify-content:space-between;">
+          <span style="color:var(--text2);">${accxEsc(c.cliente||('#'+c.cliente_id))}${c.localidad?' · '+accxEsc(c.localidad):''}</span>
+          <span style="white-space:nowrap;color:var(--text3);">${accxEsc(c.vendedor_id)} · ${c.sin_compras?'sin compras':'compró otros'}</span>
+        </div>`).join('')
+      : 'No hay clientes elegibles con los datos de hoy.';
+  }catch(e){
+    // Sin lista no se inventa nada ni se muestra vacío: se dice que no se pudo traer.
+    html='⚠️ No se pudo cargar la lista de clientes elegibles.';
+  }
+  cache[scope]=html;
+  box.innerHTML=html;
 }
 
 /* Se llama después de inyectar el shell en el DOM (innerHTML no ejecuta scripts). */

@@ -2062,6 +2062,30 @@ def main_planes_as():
     print("  OK: mod_sincargos_envios.csv")
 
 
+def main_explorador():
+    """Regeneración parcial: sólo el catálogo de reglas del mes.
+
+    Cuando cambia el libro de Acciones Comerciales no hace falta recalcular cobertura, 11T ni
+    planes: ese dataset se arma únicamente del .xlsx. Correr el pipeline completo por un cambio
+    de reglas además tocaría el snapshot de 02_HISTORY, que no es lo que se pidió."""
+    print("=" * 50)
+    print("generar_datasets_acum.py --solo-explorador")
+    print("=" * 50)
+    cat_expl = generar_acciones_explorador()
+    (OUT / ACC_EXPL_OUT).write_text(
+        json.dumps(cat_expl, ensure_ascii=False, indent=1, sort_keys=False),
+        encoding="utf-8")
+    if cat_expl.get("nota"):
+        print(f"  [AVISO] {cat_expl['nota']}")
+    else:
+        n_sub = sum(len(c["subcategorias"]) for c in cat_expl["categorias"])
+        print(f"  OK: mes {cat_expl['mes']} · {len(cat_expl['categorias'])} categorias · "
+              f"{n_sub} acciones · fuente {cat_expl['fuente']}")
+        for c in cat_expl.get("conflictos") or []:
+            print(f"  [ATENCION] {c}")
+    print(f"  -> {OUT / ACC_EXPL_OUT}")
+
+
 def main():
     print("=" * 50)
     print("generar_datasets_acum.py")
@@ -2228,5 +2252,7 @@ def main():
 if __name__ == "__main__":
     if "--solo-planes-as" in sys.argv[1:]:
         main_planes_as()
+    elif "--solo-explorador" in sys.argv[1:]:
+        main_explorador()
     else:
         main()

@@ -1,5 +1,93 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-18 - feat(Acciones): AGO26-TRAD-NC "Tradicionales no compradores" + SKU Alma Mora Low
+
+**Regla comercial (agosto 2026):** 15% de descuento en una caja mixta de 6 botellas, armada con
+exactamente 3 botellas de una marca y 3 de otra marca diferente del catalogo elegible. Seis
+botellas de una sola marca NO califican. Marcas elegibles: Alma Mora, Alaris, Finca Las Moras,
+Dada, Los Arboles, Trapiche Reserva, Don David, Smirnoff botella, Frizze y Gordon's.
+
+**Elegibilidad:** cliente del canal Tradicional que durante agosto no compro NINGUNA de esas diez
+marcas. Entran los dos casos: el que no compro nada de Penaflor y el que compro otros productos
+Penaflor fuera de esas marcas. V2 y V5 excluidos; tampoco entran deposito (V1/V20) ni canales no
+Tradicionales.
+
+**Fecha autoritativa:** la pertenencia al mes se define EXCLUSIVAMENTE por `FechaComprobante`
+(regla general del proyecto, sin cambios). `FechaCarga` y `FechaEntrega` no deciden periodo.
+Compra valida = `ImporteNetoItem > 0`.
+
+**Que es "marca":** se usa el campo `Marca` del ERP por igualdad exacta normalizada, porque es la
+marca COMERCIAL y no la etiqueta del envase: "Alaris" agrupa tambien los Finca Las Moras de entrada
+de gama, "Don David" agrupa El Esteco y "Trapiche Reserva" agrupa Puro / Impuro / Origen by
+Trapiche. Deducir la marca del texto del articulo daria un agrupamiento que el ERP no reconoce.
+La igualdad exacta ademas separa sola "Smirnoff botella" de "Smirnoff Ice" / "Smirnoff Ice
+Flavours", que son las latas RTD y no entran. Unico fallback por nombre de articulo: las filas que
+el ERP todavia exporta SIN `Marca` (altas nuevas, ej. 74887 y los Dada Low); sin eso, un cliente que
+compro Alma Mora Low figuraria como no comprador.
+
+**Innovaciones:** la entrada generica "Alma Mora Low" de AGO26-INNOV quedo reemplazada por los dos
+SKU explicitos, con las escalas vigentes intactas (3 unidades 18% / 5 bultos surtidos o mas 20%):
+
+- `74827` - Alma Mora Blanco Dulce Low 6x750 (ERP: ALMA MORA BLANCO DULCE LOW 6X750, vigente).
+- `74887` - Alma Mora Malbec Dulce Low 6x750 (ERP: ALMA MORA MALBEC DULCE LOW 6X750, en proceso de
+  alta).
+
+Ambos verificados contra `09_CONFIG/mpa_codigos.csv`, `09_CONFIG/maestro_04D_productos.csv` y el
+maestro de articulos vigente `01_INPUTS/RAW_PRODUCTOS/productosjulio.xlsx`. No se invento ningun
+codigo ni descripcion.
+
+**Por que hubo cambio de codigo y no solo una fila en el Excel:** el explorador publica reglas
+ESTATICAS y el dataset del cierre las congela; esta es la primera accion cuyo publico depende de la
+venta del mes, asi que un cliente deja de ser elegible en cuanto le entra una factura con esas
+marcas. La elegibilidad se calcula en vivo en `server_orbit.py` sobre `ventas.csv` + el padron, y se
+cuelga del nodo de la accion en el payload del explorador.
+
+**Archivos:**
+
+- `01_INPUTS/ACCIONES COMERCIALES/2026-08/ORBIT_Acciones_Comerciales_Agosto_2026.xlsx`: +1 fila en
+  ACCIONES, +1 en ESCALAS, +10 marcas y el split de los dos SKU en PRODUCTOS_Y_LINEAS. Formato,
+  anchos, merges, zebra, bordes y el `0%` de la columna descuento preservados.
+- `tools/actualizar_acciones_agosto_trad_nc.py` (nuevo): editor idempotente del libro. Existe
+  porque insertar filas en el medio de PRODUCTOS_Y_LINEAS corre el bloque de abajo y openpyxl no
+  arrastra la convencion de formato; el script reescribe el bloque y la vuelve a aplicar.
+- `generar_datasets_acum.py`: `--solo-explorador` (espejo de `--solo-planes-as`) para regenerar solo
+  `mod_acciones_explorador.json` sin correr el pipeline completo ni tocar el snapshot de 02_HISTORY.
+  El parser del Excel NO se toco: ya era generico y las filas nuevas fluyen solas.
+- `server_orbit.py`: `_trad_nc_marcas_compradas`, `_trad_nc_elegibles`, `_acc_adjuntar_trad_nc` y las
+  constantes de marcas; `clientes.xlsx` sumado a `_acc_mes_sig()` para que un cambio de padron
+  invalide el payload.
+- `PAV MATINAL PE_A FLOR/portal.html`: `accxElegHTML` / `accxElegLoad`, bloque "Clientes elegibles"
+  dentro del panel del explorador, con carga perezosa del detalle.
+- `test_acciones_trad_nc.py` (nuevo): 23 casos sobre datos reales.
+- `04_DATASETS_ORBIT/mod_acciones_explorador.json`: regenerado (14 -> 15 acciones).
+
+**Endpoints:** `/api/gerencia/acciones_mes` y `/api/vendedor/<vid>/acciones_mes` traen el resumen de
+elegibilidad dentro de `explorador`; `/api/gerencia/acciones_trad_nc` y
+`/api/vendedor/<vid>/acciones_trad_nc` (nuevos) devuelven la lista de clientes. La lista NO viaja en
+el payload del login: son ~1.500 filas en gerencia y se piden solo al desplegar el detalle (mismo
+patron que `cobertura_acum_faltantes`).
+
+**Validacion (2026-08-18, datos reales, sin mocks):**
+
+- Excel: 8 hojas intactas, anchos/merges/encabezados/titulos iguales al backup, 0 desvios de
+  formato en las tres hojas tocadas, sin formulas ni celdas de error.
+- Dataset: unica accion nueva `AGO26-TRAD-NC`; el unico cambio en otra accion es
+  `AGO26-INNOV.productos` (el split de SKU). Avisos y conflictos identicos al backup.
+- `test_acciones_trad_nc.py`: 23 OK, 0 fallas.
+- Fuente vs backend vs portal con el server en 8502: cartera Tradicional 1689, elegibles 1458
+  (1413 sin compras Penaflor + 45 que compraron otros productos), 231 ya compraron una marca. El
+  drill-down devolvio 1458 clientes y el portal renderizo 1458 filas. V3: 182 de 284.
+- V2, V5 y V20 rechazados con 403 en ambos endpoints de vendedor.
+- Portal: el selector de categoria ofrece "Tradicionales no compradores"; el panel muestra 15%,
+  "Desde 6 botellas", el texto 3+3, la advertencia de que 6 de una sola marca no califica, los KPIs,
+  el desglose por vendedor y las 10 marcas. Innovaciones muestra los dos SKU y conserva 18%/20%.
+  Las demas acciones no traen bloque de elegibilidad.
+
+**Pendiente ajeno a este cambio:** `01_INPUTS/ACCIONES COMERCIALES/2026-08/` no tiene el
+`acciones_comerciales_*.csv` del mes, asi que la MEDICION de uso e inversion de agosto
+(`acciones[]`, `mod_acciones_ranking.csv`) viene vacia con la nota "Sin catalogo de acciones del
+mes". Es previo a esta tarea y no lo toca: el explorador y la elegibilidad funcionan igual.
+
 ## 2026-08-18 - fix(Semanal): planificación persistente en Google Sheets
 
 **Síntoma:** el botón Guardar plan respondía OK, pero la planificación semanal desaparecía al
