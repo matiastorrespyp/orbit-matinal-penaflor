@@ -1,5 +1,17 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-18 - Persistencia de planificación semanal
+
+### HECHO
+- [x] Migrado el plan semanal de SQLite efímero a la pestaña `plan_semanal` del spreadsheet ya
+  configurado en Render; SQLite queda como caché.
+- [x] Guardado fail-closed con verificación por relectura y estado visible en el portal.
+- [x] Prueba aislada de guardar, releer con otra conexión y borrar el período.
+
+### PROXIMA TAREA
+- [ ] Publicar y verificar en Render que la hoja `plan_semanal` se crea, guardar el plan real de
+  agosto y confirmar su relectura tras un nuevo deploy/reinicio.
+
 ## Sesion 2026-08-18 - BAT exclusivo de Plan AASS
 
 ### HECHO

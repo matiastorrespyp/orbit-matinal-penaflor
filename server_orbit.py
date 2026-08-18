@@ -265,8 +265,12 @@ def get_gsheets_config():
         "credentials_present": cred_ok,
     }
 
-def _gsheets_get_worksheet():
-    """Devuelve (worksheet, None) o (None, mensaje_error). Crea la pestaña/header si falta."""
+def _gsheets_get_or_create_worksheet(sheet_name, columns, rows=1000):
+    """Abre una pestaña del spreadsheet configurado y la crea con su header si falta.
+
+    Es el acceso común para las planificaciones de vendedores y la planificación semanal.
+    Las credenciales siguen siendo las mismas y nunca se escriben ni se registran en logs.
+    """
     if not _GSHEETS_SPREADSHEET_ID:
         return None, "GSHEETS_SPREADSHEET_ID no configurado"
     try:
@@ -282,17 +286,22 @@ def _gsheets_get_worksheet():
         gc = gspread.authorize(creds)
         sh = gc.open_by_key(_GSHEETS_SPREADSHEET_ID)
         try:
-            ws = sh.worksheet(_GSHEETS_SHEET_NAME)
+            ws = sh.worksheet(sheet_name)
         except Exception:
-            ws = sh.add_worksheet(title=_GSHEETS_SHEET_NAME,
-                                  rows=1000, cols=len(PLAN_SHEET_COLS))
-            ws.update(range_name="A1", values=[PLAN_SHEET_COLS])
+            ws = sh.add_worksheet(title=sheet_name,
+                                  rows=rows, cols=len(columns))
+            ws.update(range_name="A1", values=[columns])
             return ws, None
         if not ws.row_values(1):   # header faltante
-            ws.update(range_name="A1", values=[PLAN_SHEET_COLS])
+            ws.update(range_name="A1", values=[columns])
         return ws, None
     except Exception as e:
         return None, f"error abriendo Google Sheet: {e}"
+
+
+def _gsheets_get_worksheet():
+    """Pestaña histórica de planificaciones de vendedores."""
+    return _gsheets_get_or_create_worksheet(_GSHEETS_SHEET_NAME, PLAN_SHEET_COLS)
 
 def _gsheets_find_row(values, header, plan_id):
     """Devuelve (num_fila_1based, fila_existente) buscando por columna 'id'. (None, None) si no está."""
@@ -2737,6 +2746,10 @@ _SEMANAL_KPIS = [
 ]
 _SEMANAL_KPI_IDS = [k["id"] for k in _SEMANAL_KPIS]
 _SEMANAL_UNIVERSO = {k["id"]: k["universo"] for k in _SEMANAL_KPIS}
+_SEMANAL_SHEET_NAME = _penv("WEEKLY_SHEET_NAME", "plan_semanal") or "plan_semanal"
+_SEMANAL_SHEET_COLS = (["periodo"]
+    + [f"{kpi}_s{sem}" for kpi in _SEMANAL_KPI_IDS for sem in range(1, 5)]
+    + ["editado_por", "updated_at"])
 # KPIs que son una suma sobre una columna numérica de la línea de venta (no CCC).
 _SEMANAL_SUMAS = {"facturacion": "imp", "litros": "litros"}
 _SEMANAL_CANALES = {
@@ -3051,10 +3064,15 @@ def _semanal_objetivos():
     return obj
 
 
-def _semanal_plan_leer(periodo):
-    """{kpi: [p1,p2,p3,p4]} + metadata de la última edición."""
-    plan = {k: [None] * 4 for k in _SEMANAL_KPI_IDS}
-    meta = {"updated_at": None, "editado_por": None}
+def _semanal_plan_vacio():
+    return {k: [None] * 4 for k in _SEMANAL_KPI_IDS}
+
+
+def _semanal_plan_local_leer(periodo):
+    """Lee la caché SQLite: {kpi: [p1,p2,p3,p4]} + metadata."""
+    plan = _semanal_plan_vacio()
+    meta = {"updated_at": None, "editado_por": None,
+            "persistencia": "sqlite_local", "advertencia": None}
     try:
         conn = sqlite3.connect(str(DB_PATH))
         rows = conn.execute(
@@ -3068,8 +3086,148 @@ def _semanal_plan_leer(periodo):
         if kpi in plan and 1 <= int(sem) <= 4:
             plan[kpi][int(sem) - 1] = None if pct is None else round(float(pct), 2)
         if ts and (meta["updated_at"] is None or ts > meta["updated_at"]):
-            meta = {"updated_at": ts, "editado_por": autor}
+            meta.update({"updated_at": ts, "editado_por": autor})
     return plan, meta
+
+
+def _semanal_sheet_num(valor):
+    """Número de una celda Sheets, tolerando coma decimal del locale es-AR."""
+    txt = str(valor or "").strip().replace("%", "").replace(",", ".")
+    if not txt:
+        return None
+    try:
+        return round(float(txt), 2)
+    except (TypeError, ValueError):
+        raise ValueError(f"porcentaje inválido en Google Sheets: {valor!r}")
+
+
+def _semanal_sheet_leer(periodo):
+    """Lee un mes desde la pestaña permanente `plan_semanal`.
+
+    Devuelve (plan, meta, None) o (None, None, error). La ausencia de fila es un plan
+    vacío válido: Google Sheets manda sobre cualquier caché SQLite vieja.
+    """
+    ws, err = _gsheets_get_or_create_worksheet(
+        _SEMANAL_SHEET_NAME, _SEMANAL_SHEET_COLS, rows=240)
+    if err:
+        return None, None, err
+    try:
+        values = ws.get_all_values()
+        if not values:
+            return None, None, "la pestaña plan_semanal no tiene encabezado"
+        header = values[0]
+        faltan = [c for c in _SEMANAL_SHEET_COLS if c not in header]
+        if faltan:
+            return None, None, "columnas faltantes en plan_semanal: " + ", ".join(faltan)
+        idx = {name: i for i, name in enumerate(header)}
+        row = next((r for r in values[1:]
+                    if len(r) > idx["periodo"] and str(r[idx["periodo"]]).strip() == periodo), None)
+        plan = _semanal_plan_vacio()
+        meta = {"updated_at": None, "editado_por": None,
+                "persistencia": "google_sheets", "advertencia": None}
+        if row is None:
+            return plan, meta, None
+        for kpi in _SEMANAL_KPI_IDS:
+            for sem in range(1, 5):
+                col = f"{kpi}_s{sem}"
+                cell = row[idx[col]] if len(row) > idx[col] else ""
+                plan[kpi][sem - 1] = _semanal_sheet_num(cell)
+        for campo in ("editado_por", "updated_at"):
+            i = idx[campo]
+            meta[campo] = (row[i] if len(row) > i else "") or None
+        return plan, meta, None
+    except Exception as e:
+        return None, None, str(e)
+
+
+def _semanal_sheet_guardar(periodo, plan, autor, ts):
+    """UPSERT de una fila mensual en Sheets y verificación por relectura.
+
+    Una fila por período evita 20 requests y permite reemplazar el plan completo de forma
+    consistente. Si todas las celdas quedan vacías se elimina la fila del período.
+    """
+    ws, err = _gsheets_get_or_create_worksheet(
+        _SEMANAL_SHEET_NAME, _SEMANAL_SHEET_COLS, rows=240)
+    if err:
+        return False, None, None, err
+    try:
+        values = ws.get_all_values()
+        header = values[0] if values else list(_SEMANAL_SHEET_COLS)
+        faltan = [c for c in _SEMANAL_SHEET_COLS if c not in header]
+        if faltan:
+            return False, None, None, "columnas faltantes en plan_semanal: " + ", ".join(faltan)
+        idx = {name: i for i, name in enumerate(header)}
+        row_num = next((n for n, r in enumerate(values[1:], start=2)
+                        if len(r) > idx["periodo"] and str(r[idx["periodo"]]).strip() == periodo), None)
+        hay_plan = any(plan[kpi][i] is not None
+                       for kpi in _SEMANAL_KPI_IDS for i in range(4))
+        if not hay_plan:
+            if row_num:
+                ws.delete_rows(row_num)
+        else:
+            data = {"periodo": periodo, "editado_por": autor, "updated_at": ts}
+            for kpi in _SEMANAL_KPI_IDS:
+                for sem in range(1, 5):
+                    data[f"{kpi}_s{sem}"] = _gsheet_cell(plan[kpi][sem - 1])
+            ordered = [_gsheet_cell(data.get(c)) for c in header]
+            if row_num:
+                ws.update(range_name=f"A{row_num}", values=[ordered])
+            else:
+                ws.append_row(ordered, value_input_option="RAW")
+        releido, meta, read_err = _semanal_sheet_leer(periodo)
+        if read_err:
+            return False, None, None, "guardado no verificable: " + read_err
+        for kpi in _SEMANAL_KPI_IDS:
+            for i in range(4):
+                esperado = plan[kpi][i]
+                recibido = releido[kpi][i]
+                if esperado is None and recibido is None:
+                    continue
+                if esperado is None or recibido is None or abs(float(esperado) - float(recibido)) > 0.001:
+                    return False, None, None, f"guardado no verificado en {kpi} S{i + 1}"
+        if hay_plan and meta.get("updated_at") != ts:
+            return False, None, None, "guardado no verificado por timestamp"
+        return True, releido, meta, None
+    except Exception as e:
+        return False, None, None, str(e)
+
+
+def _semanal_plan_cache_reemplazar(periodo, plan, meta):
+    """Reemplaza sólo el período indicado en SQLite; Sheets sigue siendo la fuente."""
+    conn = sqlite3.connect(str(DB_PATH), timeout=10, check_same_thread=False)
+    try:
+        conn.execute("DELETE FROM plan_semanal WHERE periodo=?", (periodo,))
+        filas = []
+        for kpi in _SEMANAL_KPI_IDS:
+            for i, pct in enumerate(plan[kpi], start=1):
+                if pct is not None:
+                    filas.append((periodo, kpi, i, round(float(pct), 2),
+                                  meta.get("editado_por"), meta.get("updated_at")))
+        if filas:
+            conn.executemany("""INSERT INTO plan_semanal(
+                    periodo,kpi,semana,pct,editado_por,updated_at)
+                VALUES(?,?,?,?,?,?)""", filas)
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _semanal_plan_leer(periodo):
+    """Lee Sheets como fuente de verdad y mantiene SQLite como caché recuperable."""
+    if gsheets_enabled():
+        plan, meta, err = _semanal_sheet_leer(periodo)
+        if not err:
+            try:
+                _semanal_plan_cache_reemplazar(periodo, plan, meta)
+            except Exception as e:
+                meta["advertencia"] = f"Guardado permanente disponible; caché SQLite no actualizada: {e}"
+            return plan, meta
+        plan, meta = _semanal_plan_local_leer(periodo)
+        meta["persistencia"] = "sqlite_cache"
+        meta["advertencia"] = "Google Sheets no disponible: se muestra una caché que puede estar desactualizada"
+        print(f"[WARN] plan_semanal Sheets leer: {err}")
+        return plan, meta
+    return _semanal_plan_local_leer(periodo)
 
 
 def _semanal_plan_export_csv():
@@ -3135,13 +3293,14 @@ def gerencia_semanal_plan():
         return jsonify({"ok": False, "error": "plan inválido"}), 400
     autor = str(body.get("autor", "gerencia")).strip()[:40]
     ts = _now_ar()
-    filas, borrar = [], []
+    actual, _ = _semanal_plan_leer(periodo)
+    normalizado = {k: list(actual.get(k, [None] * 4)) for k in _SEMANAL_KPI_IDS}
     for kpi, vals in plan.items():
         if kpi not in _SEMANAL_KPI_IDS or not isinstance(vals, list):
             continue
         for i, v in enumerate(vals[:4], start=1):
             if v is None or v == "":
-                borrar.append((periodo, kpi, i))
+                normalizado[kpi][i - 1] = None
                 continue
             try:
                 pct = float(v)
@@ -3149,26 +3308,33 @@ def gerencia_semanal_plan():
                 return jsonify({"ok": False, "error": f"valor no numérico en {kpi} S{i}"}), 400
             if pct < 0 or pct > 100:
                 return jsonify({"ok": False, "error": f"{kpi} S{i}: el % debe estar entre 0 y 100"}), 400
-            filas.append((periodo, kpi, i, round(pct, 2), autor, ts))
+            normalizado[kpi][i - 1] = round(pct, 2)
+
+    # En Render: fail-closed. No se devuelve OK si la fuente permanente no escribió
+    # y releyó exactamente el plan. En local sin credenciales, SQLite sigue habilitado.
+    if gsheets_enabled():
+        ok_sheet, guardado, meta, err = _semanal_sheet_guardar(periodo, normalizado, autor, ts)
+        if not ok_sheet:
+            print(f"[ERROR] plan_semanal Sheets guardar: {err}")
+            return jsonify({"ok": False,
+                            "error": f"No se pudo guardar permanentemente en Google Sheets: {err}"}), 503
+    else:
+        guardado = normalizado
+        meta = {"updated_at": ts, "editado_por": autor,
+                "persistencia": "sqlite_local", "advertencia": None}
+
     try:
-        conn = sqlite3.connect(str(DB_PATH))
-        c = conn.cursor()
-        if borrar:
-            c.executemany("DELETE FROM plan_semanal WHERE periodo=? AND kpi=? AND semana=?", borrar)
-        if filas:
-            c.executemany("""INSERT INTO plan_semanal(periodo,kpi,semana,pct,editado_por,updated_at)
-                             VALUES(?,?,?,?,?,?)
-                             ON CONFLICT(periodo,kpi,semana) DO UPDATE SET
-                               pct=excluded.pct, editado_por=excluded.editado_por,
-                               updated_at=excluded.updated_at""", filas)
-        conn.commit()
-        conn.close()
+        _semanal_plan_cache_reemplazar(periodo, guardado, meta)
     except Exception as e:
-        print(f"[ERROR] plan_semanal guardar: {e}")
-        return jsonify({"ok": False, "error": f"no se pudo guardar: {e}"}), 500
+        if meta.get("persistencia") == "google_sheets":
+            meta["advertencia"] = f"Plan permanente guardado; caché SQLite no actualizada: {e}"
+            print(f"[WARN] plan_semanal cache guardar: {e}")
+        else:
+            print(f"[ERROR] plan_semanal guardar: {e}")
+            return jsonify({"ok": False, "error": f"no se pudo guardar: {e}"}), 500
     _semanal_plan_export_csv()
-    guardado, meta = _semanal_plan_leer(periodo)
-    return jsonify({"ok": True, "periodo": periodo, "plan": guardado, "plan_meta": meta})
+    return jsonify({"ok": True, "periodo": periodo, "plan": guardado,
+                    "plan_meta": meta, "persistencia": meta.get("persistencia")})
 
 
 # ══════════════════════════════════════════════════════════════════════════════

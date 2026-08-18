@@ -1,5 +1,23 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-18 - fix(Semanal): planificación persistente en Google Sheets
+
+**Síntoma:** el botón Guardar plan respondía OK, pero la planificación semanal desaparecía al
+reiniciarse o desplegarse Render.
+
+**Causa raíz:** `plan_semanal` vivía sólo en `orbit.db`. El servicio real de Render fue creado
+manualmente y no tiene montado el disco definido en `render.yaml`, por lo que su SQLite está en el
+filesystem efímero. El endpoint guardaba correctamente, pero no de forma permanente (ERR-015).
+
+**Solución:** la misma Google Sheet que ya es fuente de verdad de las planificaciones de vendedores
+incorpora una pestaña `plan_semanal`, con una fila por período y las cuatro semanas de cada KPI.
+`POST /api/gerencia/semanal/plan` escribe y verifica primero Sheets; sólo después actualiza SQLite
+como caché. `GET /api/gerencia/semanal` relee Sheets y rehidrata esa caché. Si Sheets falla, el POST
+devuelve 503 en lugar de mostrar un guardado falso y el portal identifica explícitamente la caché.
+
+**Frontend:** el éxito confirma “guardado permanentemente” y la tarjeta muestra la fuente de
+persistencia y cualquier advertencia.
+
 ## 2026-08-18 - feat(Planes AASS): BAT independiente sin cierre diario
 
 **Archivo nuevo:** `ACTUALIZAR_PLAN_AASS.bat`.

@@ -4252,6 +4252,9 @@ function semRenderPlan(){
   }).join('');
 
   const meta=SEM.plan_meta||{};
+  const persistTxt=meta.persistencia==='google_sheets' ? 'Persistencia permanente: Google Sheets'
+    : meta.persistencia==='sqlite_cache' ? 'Sólo caché local (Google Sheets no disponible)'
+    : 'Persistencia local: SQLite';
   cont.innerHTML=`<div class="card">
     <div class="card-hd">
       <span class="card-title">🎯 Planificación semanal · ${A.label||''}</span>
@@ -4279,6 +4282,8 @@ function semRenderPlan(){
         CCC miden sólo <b>ruta</b>, que es el universo de los suyos.
         ${A.ultima_fecha_venta?`Última venta cargada: ${A.ultima_fecha_venta}.`:''}
         ${meta.updated_at?`<br>Último guardado: ${meta.updated_at}${meta.editado_por?' · '+meta.editado_por:''}.`:''}
+        <br><b>${persistTxt}.</b>
+        ${meta.advertencia?`<br><span style="color:var(--wn)">⚠ ${meta.advertencia}</span>`:''}
       </div>
       <div class="pf-ok" id="semOk">✓ Plan semanal guardado</div>
       <div class="pf-ok" id="semErr" style="background:rgba(220,50,50,.18);color:#ff6b6b;display:none;"></div>
@@ -4384,7 +4389,12 @@ async function semGuardar(){
       SEM.plan=d.plan; SEM.plan_meta=d.plan_meta; semEdit={};
       semRenderPlan();
       const o2=document.getElementById('semOk');
-      if(o2){ o2.style.display='block'; setTimeout(()=>o2.style.display='none',3000); }
+      if(o2){
+        o2.textContent=d.persistencia==='google_sheets'
+          ? '✓ Plan semanal guardado permanentemente'
+          : '✓ Plan semanal guardado';
+        o2.style.display='block'; setTimeout(()=>o2.style.display='none',3000);
+      }
     } else if(err){
       err.textContent='✗ '+(d.error||'No se pudo guardar.'); err.style.display='block';
     }
