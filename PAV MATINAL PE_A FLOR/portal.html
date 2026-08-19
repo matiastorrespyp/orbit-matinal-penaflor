@@ -1690,7 +1690,7 @@ async function loadRole(){
 
 async function reloadData(){
   const savedDay = currentDay;
-  SEM=null; STK=null; PCOB=null; PCOBV=null;   // Semanal y Plan Cobertura se cargan lazy: forzar refetch al Actualizar
+  SEM=null; STK=null; PCOB=null; PCOBV=null; IA=null;   // Semanal, Plan Cobertura e Interanual son lazy: forzar refetch al Actualizar
   const p = document.getElementById('gPage');
   if(p) p.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);">↻ Actualizando datos…</div>';
   await loadAll();
@@ -4399,8 +4399,10 @@ function gSemanal(p){
       <div class="eico" style="font-size:28px">⏳</div><p>Cargando histórico semanal…</p>
     </div></div></div></div>
     <div id="sem-plan"></div>
+    <div id="sem-inter"></div>
     <div id="sem-stock"></div>`;
   semStockCargar();
+  semInterCargar();
   if(SEM){ semRenderAll(); return; }
   safe('/api/gerencia/semanal').then(j=>{
     if(gScreen!=='semanal') return;          // el usuario ya cambió de pantalla
@@ -4685,6 +4687,269 @@ async function semGuardar(){
     semSaving=false;
     const b2=document.getElementById('sem-save'); if(b2) b2.textContent='Guardar plan';
   }
+}
+
+/* ════════ INTERANUAL DE LITROS · CANAL Y CATEGORÍA ════════
+   Tercera tarjeta de Semanal. Carga LAZY y propia: el histórico y el plan no la esperan.
+
+   Dos vistas: el mes en curso (MTD contra el mismo tramo del año pasado, más la proyección
+   al cierre contra el LY completo) y el último mes cerrado (completo contra completo, sin
+   proyección). Todo por FechaComprobante y con la cascada de litros del proyecto.
+
+   El shell (cabecera + selectores) se pinta UNA vez; los cambios repintan sólo el cuerpo,
+   así el botón que se acaba de tocar no se destruye debajo del dedo. */
+
+let IA=null, iaVista='actual', iaDim='canal', iaSel=null;
+const iaExp={}, iaTops={};
+
+function iaEsc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function iaL(n){ return n==null?'—':(Math.round(n*10)/10).toLocaleString('es-AR'); }
+function iaPct(n){ return n==null?'—':((n>=0?'+':'')+(Math.round(n*10)/10).toLocaleString('es-AR')+'%'); }
+/* Nunca sólo color: siempre flecha + signo + texto (accesibilidad y daltonismo). */
+function iaCol(estado){
+  return estado==='Crecimiento'||estado==='Nuevo' ? 'var(--ok)'
+       : estado==='Caída'||estado==='Perdido'     ? 'var(--bad)'
+       : 'var(--text3)';
+}
+function iaFlecha(estado){
+  return estado==='Crecimiento'||estado==='Nuevo' ? '▲'
+       : estado==='Caída'||estado==='Perdido'     ? '▼' : '=';
+}
+
+function semInterCargar(){
+  const cont=document.getElementById('sem-inter'); if(!cont) return;
+  if(IA){ cont.innerHTML=semInterShell(); semInterBody(); return; }
+  cont.innerHTML=`<div class="card"><div class="card-body"><div class="empty">
+    <div class="eico" style="font-size:26px">⏳</div><p>Cargando interanual de litros…</p>
+  </div></div></div>`;
+  safe('/api/gerencia/semanal/interanual').then(j=>{
+    if(gScreen!=='semanal') return;              // el usuario ya cambió de pantalla
+    const c=document.getElementById('sem-inter'); if(!c) return;
+    if(!j || j.error){
+      // Sin dato real no se dibuja nada: se dice qué falta.
+      c.innerHTML=`<div class="card"><div class="card-body"><div class="empty">
+        <div class="eico" style="font-size:26px">⚠️</div>
+        <p>${iaEsc((j&&j.error)||'No se pudo cargar el interanual de litros.')}</p>
+      </div></div></div>`;
+      return;
+    }
+    IA=j; c.innerHTML=semInterShell(); semInterBody();
+  });
+}
+
+function iaSetVista(v){ iaVista=v; iaSel=null; semInterSync(); semInterBody(); }
+function iaSetDim(d){ iaDim=d; iaSel=null; semInterBody(); }
+function iaToggle(ruta){ iaExp[ruta]=!iaExp[ruta]; semInterBody(); }
+
+function semInterShell(){
+  const r=IA.reglas||{};
+  return `<div class="card" style="margin-top:14px;">
+    <div class="card-hd">
+      <span class="card-title">📊 Interanual de litros · Canal y categoría</span>
+      <span class="chip mg" style="font-size:10px;" id="ia-chip"></span>
+    </div>
+    <div class="card-body">
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:11px;">
+        <div>
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Comparación</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;" id="ia-vista"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Dimensión</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;" id="ia-dim"></div>
+        </div>
+      </div>
+      <div id="sem-inter-body"></div>
+      <details style="margin-top:12px;border-top:1px solid var(--b);padding-top:9px;">
+        <summary style="cursor:pointer;font-size:11px;color:var(--text3);">Fuentes y reglas del cálculo</summary>
+        <div style="margin-top:7px;font-size:11px;color:var(--text2);line-height:1.75;">
+          📅 Período por <b>${iaEsc(r.fecha||'FechaComprobante')}</b><br>
+          Litros: ${iaEsc(r.litros||'')}<br>
+          Universo: ${iaEsc(r.universo||'')} · excluidos ${iaEsc((r.excluidos||[]).join(', '))}<br>
+          Devoluciones: ${iaEsc(r.devoluciones||'')}<br>
+          Proyección: ${iaEsc(r.proyeccion||'')}<br>
+          Días comerciales: ${iaEsc(r.dias_comerciales||'')}<br>
+          Corte: ${iaEsc(r.corte||'')}<br>
+          Categorías: ${iaEsc(r.categorias||'')}<br>
+          <span id="ia-fuentes"></span>
+          <span id="ia-diag"></span>
+        </div></details>
+    </div></div>`;
+}
+
+/* Pinta los selectores (sin tocar el resto) y la línea de fuentes. */
+function semInterSync(){
+  const bt=(id,v,txt,activo)=>`<button onclick="${id}('${v}')" style="cursor:pointer;border:1px solid var(--b);background:${activo?'rgba(226,20,122,.15)':'transparent'};color:var(--text2);border-radius:6px;padding:4px 10px;font-size:11px;">${txt}</button>`;
+  const a=IA.actual||{}, c=IA.cerrado_anterior||{};
+  const v=document.getElementById('ia-vista');
+  if(v) v.innerHTML=bt('iaSetVista','actual',`Mes actual proyectado (${iaEsc(a.periodo||'')})`,iaVista==='actual')
+                   +bt('iaSetVista','cerrado',`Mes cerrado anterior (${iaEsc(c.periodo||'')})`,iaVista==='cerrado');
+  const d=document.getElementById('ia-dim');
+  if(d) d.innerHTML=bt('iaSetDim','canal','Canal',iaDim==='canal')
+                   +bt('iaSetDim','categoria','Categoría',iaDim==='categoria');
+  const ch=document.getElementById('ia-chip');
+  if(ch) ch.textContent = iaVista==='actual'
+    ? `${a.periodo||''} vs ${a.periodo_ly||''}` : `${c.periodo||''} vs ${c.periodo_ly||''}`;
+  const f=IA.fuente||{}, dg=IA.diagnostico||{};
+  const ef=document.getElementById('ia-fuentes');
+  if(ef) ef.innerHTML=`<br><b>Fuentes:</b> ${iaEsc(a.periodo)} ← ${iaEsc(f.actual)} · ${iaEsc(a.periodo_ly)} ← ${iaEsc(f.actual_ly)}
+      · ${iaEsc(c.periodo)} ← ${iaEsc(f.cerrado)} · ${iaEsc(c.periodo_ly)} ← ${iaEsc(f.cerrado_ly)}`;
+  const ed=document.getElementById('ia-diag');
+  if(ed) ed.innerHTML=`<br><b>Diagnóstico:</b> ${iaL(dg.lineas_sin_litros)} líneas sin litros ·
+      ${iaL(dg.litros_sin_categoria)} L sin categoría · ${iaL(dg.skus_sin_maestro_total)} SKU fuera del maestro`;
+}
+
+function semInterBody(){
+  semInterSync();
+  const box=document.getElementById('sem-inter-body'); if(!box||!IA) return;
+  const esActual=iaVista==='actual';
+  const d=esActual?(IA.actual||{}):(IA.cerrado_anterior||{});
+  let h='';
+
+  // ── KPIs superiores ──
+  const kpi=(v,t,c)=>`<div style="flex:1 1 108px;min-width:108px;">
+      <div style="font-size:17px;font-weight:800;color:${c||'var(--text)'};">${v}</div>
+      <div style="font-size:10px;color:var(--text3);line-height:1.35;">${iaEsc(t)}</div></div>`;
+  const est=d.estado||'', col=iaCol(est);
+  h+=`<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;">
+      ${kpi(iaL(esActual?d.litros_actual_mtd:d.litros)+' L', esActual?'litros al corte':'litros del mes cerrado')}
+      ${kpi(iaL(esActual?d.litros_ly_mtd:d.litros_ly)+' L','comparable año anterior')}
+      ${esActual?kpi(iaL(d.litros_proyectados)+' L','proyección al cierre','var(--orbit-magenta,#E2147A)'):''}
+      ${esActual?kpi(iaL(d.litros_ly_completo)+' L','año anterior mes completo'):''}
+      ${kpi(iaFlecha(est)+' '+iaL(esActual?d.delta_mtd:d.delta)+' L','delta litros',col)}
+      ${kpi(iaPct(esActual?d.delta_mtd_pct:d.delta_pct),'delta %',col)}
+    </div>`;
+  if(esActual){
+    h+=`<div style="font-size:11px;color:var(--text3);line-height:1.6;margin-bottom:11px;">
+        📅 <b>${iaEsc(d.periodo)}</b> del ${iaEsc(d.corte_actual&&d.corte_actual.split('-').reverse().join('/'))}
+        · <b>${iaEsc(d.periodo_ly)}</b> hasta el ${iaEsc(d.corte_ly_comparable&&d.corte_ly_comparable.split('-').reverse().join('/'))}
+        (mismo esfuerzo comercial) · <b>${d.dias_transcurridos} de ${d.dias_totales}</b> días comerciales<br>
+        Proyección al cierre ${iaL(d.litros_proyectados)} L vs ${iaL(d.litros_ly_completo)} L del año anterior completo:
+        <b style="color:${iaCol(iaEstadoDe(d.delta_proyectado_pct))}">${iaFlecha(iaEstadoDe(d.delta_proyectado_pct))} ${iaL(d.delta_proyectado)} L (${iaPct(d.delta_proyectado_pct)})</b>
+      </div>`;
+  }else{
+    h+=`<div style="font-size:11px;color:var(--text3);margin-bottom:11px;">
+        📅 <b>${iaEsc(d.periodo)}</b> completo vs <b>${iaEsc(d.periodo_ly)}</b> completo · sin proyección, el mes ya cerró</div>`;
+  }
+
+  // ── Tabla principal ──
+  const filas=iaDim==='canal'?(d.por_canal||[]):(d.por_categoria||[]);
+  h+=`<div style="overflow-x:auto;"><table class="tbl" style="font-size:11px;min-width:660px;"><tbody>
+      <tr style="color:var(--text3);">
+        <td>${iaDim==='canal'?'Canal':'Categoría'}</td>
+        <td style="text-align:right;">${esActual?'Actual MTD':'Mes cerrado'}</td>
+        <td style="text-align:right;">LY comparable</td>
+        ${esActual?'<td style="text-align:right;">Proyección</td><td style="text-align:right;">LY completo</td>':''}
+        <td style="text-align:right;">Delta L</td><td style="text-align:right;">Delta %</td><td>Estado</td></tr>`;
+  h+=iaFilas(filas,esActual,0);
+  h+=`</tbody></table></div>`;
+
+  // ── Top 5 del nodo seleccionado ──
+  h+=`<div id="ia-tops" style="margin-top:12px;"></div>`;
+  box.innerHTML=h;
+  iaRenderTops();
+}
+
+function iaEstadoDe(pct){
+  if(pct==null) return 'Sin base';
+  return Math.abs(pct)<2 ? 'Estable' : (pct>0?'Crecimiento':'Caída');
+}
+
+/* Filas recursivas del árbol de categoría (o planas, si la dimensión es canal). */
+function iaFilas(nodos,esActual,nivel){
+  let h='';
+  (nodos||[]).forEach(n=>{
+    const ruta=(n.ruta||[n.clave]).join('›');
+    const hijos=n.hijos||[];
+    const abierto=!!iaExp[ruta];
+    const sel=iaSel&&iaSel.ruta===ruta;
+    // El estado tiene que describir el MISMO delta que muestra la fila: en la vista actual
+    // la columna es el delta PROYECTADO contra el año anterior completo, no el MTD.
+    const est=(esActual&&n.estado_proyectado)?n.estado_proyectado:n.estado;
+    const col=iaCol(est);
+    h+=`<tr style="${sel?'background:rgba(226,20,122,.10);':''}cursor:pointer;" onclick="iaSel1('${encodeURIComponent(ruta)}','${encodeURIComponent(n.clave)}','${n.nivel}')">
+        <td style="padding-left:${8+nivel*15}px;line-height:1.35;">
+          ${hijos.length?`<span onclick="event.stopPropagation();iaToggle('${ruta.replace(/'/g,"\\'")}')" style="cursor:pointer;color:var(--text3);margin-right:5px;">${abierto?'▾':'▸'}</span>`:''}
+          ${n.nivel==='canal_agregado'?'<span style="color:var(--text3);">Σ </span>':''}${iaEsc(n.clave)}
+        </td>
+        <td style="text-align:right;font-weight:700;">${iaL(n.litros_actual)}</td>
+        <td style="text-align:right;color:var(--text3);">${iaL(n.litros_ly)}</td>
+        ${esActual?`<td style="text-align:right;">${iaL(n.litros_proyectados)}</td>
+                    <td style="text-align:right;color:var(--text3);">${iaL(n.litros_ly_completo)}</td>`:''}
+        <td style="text-align:right;color:${col};">${iaL(esActual?n.delta_proyectado:n.delta)}</td>
+        <td style="text-align:right;color:${col};">${iaPct(esActual?n.delta_proyectado_pct:n.delta_pct)}</td>
+        <td style="color:${col};white-space:nowrap;">${iaFlecha(est)} ${iaEsc(est)}</td>
+      </tr>`;
+    if(abierto&&hijos.length) h+=iaFilas(hijos,esActual,nivel+1);
+  });
+  return h;
+}
+
+function iaSel1(ruta,clave,nivel){
+  iaSel={ruta:decodeURIComponent(ruta),clave:decodeURIComponent(clave),nivel};
+  semInterBody();
+}
+
+/* Los canales y las categorías de primer nivel ya traen sus tops en el payload; los niveles
+   profundos se piden al endpoint de detalle una sola vez y quedan cacheados en memoria. */
+async function iaRenderTops(){
+  const box=document.getElementById('ia-tops'); if(!box) return;
+  if(!iaSel){ box.innerHTML=`<div class="xs" style="color:var(--text3);">Tocá una fila para ver sus 5 mayores caídas y crecimientos.</div>`; return; }
+  const d=iaVista==='actual'?(IA.actual||{}):(IA.cerrado_anterior||{});
+  const buscar=(nodos)=>{
+    for(const n of nodos||[]){
+      if((n.ruta||[n.clave]).join('›')===iaSel.ruta) return n;
+      const h=buscar(n.hijos); if(h) return h;
+    }
+    return null;
+  };
+  const nodo=buscar(iaDim==='canal'?d.por_canal:d.por_categoria);
+  let tops=nodo&&nodo.top_caidas?{c:nodo.top_caidas,g:nodo.top_crecimientos}:null;
+  if(!tops){
+    const ck=[iaVista,iaDim,iaSel.clave,iaSel.nivel].join('|');
+    if(iaTops[ck]) tops=iaTops[ck];
+    else{
+      box.innerHTML=`<div class="xs" style="color:var(--text3);">Buscando clientes…</div>`;
+      try{
+        const q=`vista=${iaVista}&dimension=${iaDim}&clave=${encodeURIComponent(iaSel.clave)}&nivel=${encodeURIComponent(iaSel.nivel)}`;
+        const r=await fetch('/api/gerencia/semanal/interanual/clientes?'+q);
+        const j=await r.json();
+        if(!r.ok) throw new Error(j.error||r.status);
+        tops={c:j.top_caidas||[],g:j.top_crecimientos||[]};
+        iaTops[ck]=tops;
+      }catch(e){
+        box.innerHTML=`<div class="xs" style="color:var(--bad);">⚠️ No se pudieron traer los clientes: ${iaEsc(e.message||e)}</div>`;
+        return;
+      }
+    }
+  }
+  const esActual=iaVista==='actual';
+  const tabla=(titulo,lista,color)=>`<div style="flex:1 1 330px;min-width:300px;">
+      <div style="font-size:10px;color:${color};text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">${titulo}</div>
+      ${lista.length?`<div style="overflow-x:auto;"><table class="tbl" style="font-size:11px;min-width:300px;"><tbody>
+        <tr style="color:var(--text3);"><td>Cliente</td><td>Vend.</td>
+          <td style="text-align:right;">${esActual?'MTD':'Actual'}</td>
+          <td style="text-align:right;">LY</td>
+          ${esActual?'<td style="text-align:right;">Proy.</td>':''}
+          <td style="text-align:right;">Delta</td><td>Estado</td></tr>
+        ${lista.map(f=>`<tr>
+          <td style="line-height:1.3;">${iaEsc(f.cliente)}</td>
+          <td style="color:var(--text3);">${iaEsc(f.vendedor_id||'—')}</td>
+          <td style="text-align:right;">${iaL(f.litros_actual)}</td>
+          <td style="text-align:right;color:var(--text3);">${iaL(esActual?f.litros_ly_completo:f.litros_ly)}</td>
+          ${esActual?`<td style="text-align:right;">${iaL(f.litros_proyectados)}</td>`:''}
+          <td style="text-align:right;font-weight:700;color:${iaCol(f.estado)};">${iaL(f.delta)}</td>
+          <td style="color:${iaCol(f.estado)};white-space:nowrap;">${iaFlecha(f.estado)} ${iaEsc(f.estado)}${f.delta_pct==null?'':' '+iaPct(f.delta_pct)}</td>
+        </tr>`).join('')}</tbody></table></div>`
+        :`<div class="xs" style="color:var(--text3);">Sin clientes en este grupo.</div>`}
+    </div>`;
+  box.innerHTML=`<div style="border-top:1px solid var(--b);padding-top:10px;">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">
+        Clientes de <b>${iaEsc(iaSel.clave)}</b>${iaSel.nivel&&iaSel.nivel!=='canal'?` <span style="color:var(--text3);">(${iaEsc(iaSel.nivel)})</span>`:''}</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        ${tabla('▼ Top 5 caídas',tops.c,'var(--bad)')}
+        ${tabla('▲ Top 5 crecimientos',tops.g,'var(--ok)')}
+      </div></div>`;
 }
 
 /* ════ DÍAS DE STOCK (tarjeta al pie de la pantalla Semanal) ════ */

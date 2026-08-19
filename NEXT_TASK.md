@@ -1,5 +1,38 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-18 - Interanual de litros en Semanal
+
+### HECHO
+- [x] Tercera tarjeta de Semanal: interanual de litros por canal, categoria y cliente, con
+  carga lazy y endpoint propio (`/api/gerencia/semanal/interanual`).
+- [x] Dos comparaciones: mes en curso MTD vs mismo tramo LY + proyeccion al cierre vs LY mes
+  completo; y mes cerrado anterior completo vs completo, sin proyeccion.
+- [x] Proyeccion por dias comerciales (lun-sab, sin domingos ni feriados.csv), con corte en la
+  ultima FechaComprobante cargada y corte LY por igual cantidad de dias comerciales.
+- [x] Fuentes por periodo sin concatenar: ventas.csv (curso), cierres mes (cerrados),
+  historial_ventas.csv (fallback). Verificado en la validacion.
+- [x] Apertura por canal reusando `_canal_ccc_empresa`, con agregado "On Premise + VTK" y los
+  tres canales por separado; y arbol Categoria -> Segmento -> Linea Comercial -> Marca desde
+  el maestro 04D, con "Sin clasificacion" visible y cuantificado.
+- [x] Top 5 caidas y crecimientos por nodo con outer join: cliente perdido con actual 0 y
+  cliente nuevo con delta_pct null y estado "Nuevo".
+- [x] 51 aserciones nuevas + regresion de las tres suites previas. Reconciliacion de totales,
+  validacion visual desktop y de comportamiento responsive.
+
+### PROXIMA TAREA
+- [ ] **Completar el maestro 04D**: 18 SKU del periodo analizado no estan y caen a "Sin
+  clasificacion" (728,5 L). Salen listados en `diagnostico.skus_sin_maestro` del endpoint.
+  Se completan con `01_INPUTS/RAW_PRODUCTOS/productos<mes>.xlsx` (ver la regla del maestro
+  completado en CHANGELOG). Tambien hay 54 lineas que no dan litros por ninguna de las tres
+  vias de la cascada.
+- [ ] El historial `02_HISTORY/historial_ventas.csv` llega hasta 2026-04. Cuando haga falta
+  comparar contra meses mas nuevos que no tengan cierre versionado, hay que actualizarlo o el
+  interanual de esos meses quedara sin fuente.
+- [ ] Evaluar si conviene un selector de mes libre (hoy la tarjeta muestra el mes en curso y
+  el ultimo cerrado, que es lo que se pidio).
+- [ ] Sigue faltando el `acciones_comerciales_*.csv` de agosto y los objetivos en
+  `09_CONFIG/objetivos_acciones.csv` (pendientes de tareas anteriores, ajenos a esta).
+
 ## Sesion 2026-08-18 - Rediseno de la tarjeta "Analisis de la accion"
 
 ### HECHO

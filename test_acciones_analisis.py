@@ -135,14 +135,14 @@ chk("11c. Año anterior: mismo mes, un año antes",
     f"{act_a['periodo']} vs {cmp_a['periodo']}")
 
 # Agosto 2026: del 1 al 18 hay 18 días corridos, 3 domingos (2, 9, 16) y el feriado del 17.
-d_ago = S._acc_an_dias_comerciales(date(2026, 8, 1), date(2026, 8, 18))
+d_ago = S._dias_comerciales(date(2026, 8, 1), date(2026, 8, 18))
 chk("12. Domingos y feriados fuera del conteo", d_ago == 14,
     f"18 corridos - 3 domingos - 1 feriado (17/08 San Martín) = {d_ago}")
-chk("12b. Un domingo solo no cuenta", S._acc_an_dias_comerciales(date(2026, 8, 9), date(2026, 8, 9)) == 0)
+chk("12b. Un domingo solo no cuenta", S._dias_comerciales(date(2026, 8, 9), date(2026, 8, 9)) == 0)
 chk("12c. El feriado de feriados.csv no cuenta",
-    S._acc_an_dias_comerciales(date(2026, 8, 17), date(2026, 8, 17)) == 0,
+    S._dias_comerciales(date(2026, 8, 17), date(2026, 8, 17)) == 0,
     "17/08/2026 San Martín")
-chk("12d. Un sábado sí cuenta", S._acc_an_dias_comerciales(date(2026, 8, 8), date(2026, 8, 8)) == 1)
+chk("12d. Un sábado sí cuenta", S._dias_comerciales(date(2026, 8, 8), date(2026, 8, 8)) == 1)
 chk("12e. Los feriados no están cableados",
     "2026-08-17" not in open(S.__file__, encoding="utf-8").read(),
     "salen de 09_CONFIG/feriados.csv")

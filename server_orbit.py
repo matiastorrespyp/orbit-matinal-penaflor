@@ -3250,6 +3250,551 @@ def _semanal_plan_export_csv():
         print(f"[WARN] _semanal_plan_export_csv: {e}")
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# INTERANUAL DE LITROS · Canal y categoría
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Compara el volumen contra el MISMO mes del año anterior, en dos vistas:
+#
+#   · "actual"  : mes en curso hasta el último comprobante cargado, contra el mismo tramo
+#                 del año anterior, más la proyección al cierre contra el LY mes completo.
+#   · "cerrado" : el último mes cerrado contra su mismo mes del año anterior, completo
+#                 contra completo. Sin proyección: ya pasó.
+#
+# NO ES UNA SEGUNDA PANTALLA SEMANAL. Reusa sus piezas y su criterio, no los reimplementa:
+#   `_semanal_fuente_de` (qué archivo manda cada mes), `_leer_ventas_min` (lectura por
+#   columnas), `_semanal_fechas` / `_semanal_num` (parseo), `_litros_por_linea` (la cascada
+#   única de litros: maestro 04D → PesoKg → nombre del artículo) y `_canal_ccc_empresa`
+#   (el clasificador de canal de objccc.xlsx). Lo único propio es la comparación interanual.
+#
+# CRITERIOS HEREDADOS DE SEMANAL, a propósito:
+#   · Período por `FechaComprobante`. FechaCarga y FechaEntrega no deciden el mes.
+#   · Compra válida = `ImporteNetoItem > 0`. Las notas de crédito y devoluciones quedan
+#     FUERA del cálculo: no restan litros. Es lo que ya hace `_semanal_leer` y mantener dos
+#     criterios de litros en el mismo portal sería peor que el redondeo que esto implica.
+#   · Universo `empresa`: toda la venta de la distribuidora, ruta + V1/V20 Depósito, sin las
+#     bajas V2/V5. Es el universo con el que Semanal mide litros y el de su objetivo (el
+#     TOTAL de Sell Out). Medir el interanual sobre ruta y compararlo contra ese total daría
+#     una caída sistemática que no existe.
+#
+# CORTE: la última `FechaComprobante` de ventas.csv, NO la fecha del servidor. Si el input
+# quedó atrasado, proyectar con los días transcurridos del calendario inventaría una caída.
+
+#: Superset de `_SEMANAL_COLS`: se agregan RazonSocial (nombre del cliente en el ranking) y
+#: Marca (último nivel de la jerarquía de categoría). Las 3 fuentes las traen.
+_IA_COLS = ["Cliente", "RazonSocial", "FechaComprobante", "CodVendedor", "Vendedor",
+            "ImporteNetoItem", "Ramo", "Subramo", "Codigo", "CantBase", "PesoKg",
+            "Articulo", "Marca"]
+
+_IA_SIN_CLASIF = "Sin clasificación"
+_IA_NIVELES = ("categoria", "segmento", "linea", "marca")
+
+_IA_FUENTE_CACHE = {}
+_IA_CACHE = {}
+
+
+def _ia_mes_vivo():
+    """Período que cubre ventas.csv. Es el mes 'en curso' a todos los efectos."""
+    d = _ia_leer(INPUTS / "ventas.csv")
+    if d.empty:
+        return None
+    return d["periodo"].max()
+
+
+def _ia_fuente_de(periodo):
+    """(path, etiqueta) del archivo que manda para `periodo` (Period mensual).
+
+    Reusa `_semanal_fuente_de` para los meses cerrados y le agrega la única regla que esa
+    función no tiene: el mes EN CURSO sale de ventas.csv aunque exista un cierre con su
+    nombre. Un cierre generado por adelantado describiría un mes que todavía no terminó.
+    Nunca se concatenan dos fuentes para el mismo mes."""
+    vivo = _ia_mes_vivo()
+    if vivo is not None and periodo >= vivo:
+        return INPUTS / "ventas.csv", "01_INPUTS/ventas.csv (mes en curso)"
+    p, etiqueta = _semanal_fuente_de(str(periodo))
+    return p, f"{etiqueta}: {p.name}"
+
+
+def _ia_leer(path):
+    """Ventas de una fuente, preparadas para el interanual. Cacheado por (ruta, tamaño, mtime).
+
+    El historial pesa 63 MB: se lee UNA vez por proceso, sólo las columnas necesarias, y
+    todos los períodos que salgan de él se cortan de esta copia en memoria."""
+    try:
+        st = path.stat()
+        key = (str(path), st.st_size, st.st_mtime, _ia_maestro_sig())
+    except OSError:
+        return pd.DataFrame()
+    cached = _IA_FUENTE_CACHE.get(key)
+    if cached is not None:
+        return cached
+
+    raw = _leer_ventas_min(path, _IA_COLS)
+    if raw.empty or "FechaComprobante" not in raw.columns:
+        out = pd.DataFrame(columns=["cli", "razon", "fecha", "periodo", "litros", "canal",
+                                    "categoria", "segmento", "linea", "marca", "cod",
+                                    "articulo", "vend"])
+    else:
+        imp = _semanal_num(raw["ImporteNetoItem"])
+        cv = pd.to_numeric(raw.get("CodVendedor"), errors="coerce")
+        fec = _semanal_fechas(raw["FechaComprobante"])
+        # Mismo filtro que `_semanal_leer`: fuera las bajas y fuera las líneas sin neto
+        # positivo (las devoluciones no restan litros, quedan afuera).
+        ok = (~cv.isin(motor_11t.VENDEDORES_BAJA)) & (imp > 0) & fec.notna() & raw["Cliente"].notna()
+        raw = raw[ok].copy()
+        fec = fec[ok]
+        if raw.empty:
+            out = pd.DataFrame(columns=["cli", "razon", "fecha", "periodo", "litros", "canal",
+                                        "categoria", "segmento", "linea", "marca", "cod",
+                                        "articulo", "vend"])
+        else:
+            cod2cat, cod2seg, _lxu, cod2linea = _cargar_maestro_04D()
+            cod = (raw["Codigo"].astype(str).str.strip().str.upper()
+                   .str.replace(r"\.0$", "", regex=True))
+            def _txt(col, defecto=""):
+                s = raw.get(col)
+                if s is None:
+                    return pd.Series(defecto, index=raw.index)
+                s = s.astype(str).str.strip()
+                return s.where(~s.str.lower().isin(["nan", "none", "nat", ""]), defecto)
+            out = pd.DataFrame({
+                "cli":   pd.to_numeric(raw["Cliente"], errors="coerce"),
+                "razon": _txt("RazonSocial"),
+                "fecha": fec,
+                "periodo": fec.dt.to_period("M"),
+                # Cascada única de litros del proyecto. No se recalcula acá.
+                "litros": pd.to_numeric(_litros_por_linea(raw), errors="coerce").fillna(0.0),
+                "canal": _canal_ccc_empresa(raw),
+                # Taxonomía desde el maestro 04D. Un SKU que el maestro no trae NO se
+                # descarta: cae a "Sin clasificación" y queda contado en el diagnóstico.
+                "categoria": cod.map(cod2cat),
+                "segmento":  cod.map(cod2seg),
+                "linea":     cod.map(cod2linea),
+                "marca":     _txt("Marca", _IA_SIN_CLASIF),
+                "cod":       cod,
+                "articulo":  _txt("Articulo"),
+                "vend":      cv,
+            }).dropna(subset=["cli"])
+            for c in ("categoria", "segmento", "linea"):
+                out[c] = out[c].fillna(_IA_SIN_CLASIF).replace("", _IA_SIN_CLASIF)
+            out["cli"] = out["cli"].astype(int)
+
+    for k in [k for k in _IA_FUENTE_CACHE if k[0] == str(path)]:
+        _IA_FUENTE_CACHE.pop(k, None)
+    _IA_FUENTE_CACHE[key] = out
+    return out
+
+
+def _ia_maestro_sig():
+    """mtime de las fuentes de clasificación: el maestro decide categoría y litros, y
+    feriados.csv decide los días comerciales de la proyección."""
+    sig = []
+    for p in (CONFIG / "maestro_04D_productos.csv", CONFIG / "feriados.csv",
+              INPUTS / "clientes.xlsx"):
+        try:
+            sig.append(os.path.getmtime(p) if p.exists() else 0)
+        except OSError:
+            sig.append(0)
+    return tuple(sig)
+
+
+def _ia_rango(periodo, desde=None, hasta=None):
+    """Ventas de un período (opcionalmente acotadas por día), desde su fuente única."""
+    path, etiqueta = _ia_fuente_de(periodo)
+    d = _ia_leer(path)
+    if d.empty:
+        return d, etiqueta
+    m = d[d["periodo"] == periodo]
+    if desde is not None:
+        m = m[m["fecha"] >= pd.Timestamp(desde)]
+    if hasta is not None:
+        m = m[m["fecha"] <= pd.Timestamp(hasta)]
+    return m, etiqueta
+
+
+def _ia_pct(actual, base):
+    """Variación %. Con base 0 devuelve None: un cliente que no compró el año pasado no
+    tiene un crecimiento del infinito por ciento, es un alta y se dice así."""
+    if not base:
+        return None
+    return round((actual - base) / base * 100, 1)
+
+
+def _ia_estado(actual, base, delta_pct, umbral=2.0):
+    if not base and actual:
+        return "Nuevo"
+    if base and not actual:
+        return "Perdido"
+    if delta_pct is None:
+        return "Sin base"
+    if abs(delta_pct) < umbral:
+        return "Estable"
+    return "Crecimiento" if delta_pct > 0 else "Caída"
+
+
+def _ia_nodo(clave, nivel, litros_act, litros_ly, factor=None, litros_ly_completo=None):
+    """Fila comparable de canal o categoría."""
+    proy = round(litros_act * factor, 1) if factor else None
+    d = round(litros_act - litros_ly, 1)
+    dp = _ia_pct(litros_act, litros_ly)
+    nodo = {
+        "clave": clave, "nivel": nivel,
+        "litros_actual": round(litros_act, 1),
+        "litros_ly": round(litros_ly, 1),
+        "delta": d, "delta_pct": dp,
+        "estado": _ia_estado(litros_act, litros_ly, dp),
+    }
+    if factor:
+        lyc = litros_ly_completo or 0
+        dpp = _ia_pct(proy, lyc)
+        nodo["litros_proyectados"] = proy
+        nodo["litros_ly_completo"] = round(lyc, 1)
+        nodo["delta_proyectado"] = round(proy - lyc, 1)
+        nodo["delta_proyectado_pct"] = dpp
+        # Estado de la comparación PROYECTADA, aparte del estado del MTD. Son dos lecturas
+        # distintas y pueden apuntar para lados opuestos: un canal puede venir +55% contra el
+        # mismo tramo del año pasado y aun así proyectar por debajo del mes completo. La tabla
+        # muestra el delta proyectado, así que tiene que mostrar el estado que le corresponde;
+        # con el estado del MTD la fila decía "Crecimiento" al lado de un -1.843 L.
+        nodo["estado_proyectado"] = _ia_estado(proy, lyc, dpp)
+    return nodo
+
+
+def _ia_nombres_clientes(*frames):
+    """{cliente_id: razón social}. Prioriza el nombre de la fuente de ventas y cae al maestro
+    `clientes.xlsx` cuando la venta viene sin RazonSocial, para no listar un `#1234` pelado."""
+    nombres = {}
+    cm = _clientes_maestro(incluir_deposito=True)
+    if not cm.empty and "Razon_Social" in cm.columns:
+        nombres.update({int(c): str(n) for c, n in
+                        zip(cm["_cliente_id"], cm["Razon_Social"]) if str(n).strip()})
+    for f in frames:
+        if f is None or f.empty:
+            continue
+        g = f[f["razon"].astype(str).str.strip() != ""]
+        if not g.empty:
+            nombres.update(dict(zip(g["cli"].astype(int), g["razon"].astype(str))))
+    return nombres
+
+
+def _ia_vendedores(*frames):
+    """{cliente_id: 'V<n>'} a partir del vendedor que facturó (informativo en el ranking)."""
+    out = {}
+    for f in frames:
+        if f is None or f.empty:
+            continue
+        g = f.dropna(subset=["vend"])
+        out.update({int(c): f"V{int(v)}" for c, v in zip(g["cli"], g["vend"])})
+    return out
+
+
+def _ia_tops(df_act, df_ly, factor=None, df_ly_completo=None, limite=5):
+    """(top_caidas, top_crecimientos) por cliente, con OUTER JOIN.
+
+    El outer join es la parte que importa: con un inner join el cliente que compraba el año
+    pasado y este año no compró NADA desaparecería del ranking, que es justo el que hay que
+    ver. Acá queda con actual = 0 y caída completa.
+
+    Con `factor` (mes en curso) el ranking principal es por diferencia PROYECTADA contra el
+    LY mes completo; sin él (mes cerrado) es la diferencia directa."""
+    a = df_act.groupby("cli")["litros"].sum() if not df_act.empty else pd.Series(dtype=float)
+    l = df_ly.groupby("cli")["litros"].sum() if not df_ly.empty else pd.Series(dtype=float)
+    lc = (df_ly_completo.groupby("cli")["litros"].sum()
+          if df_ly_completo is not None and not df_ly_completo.empty else l)
+    ids = set(a.index) | set(l.index) | set(lc.index)
+    if not ids:
+        return [], []
+    # El LY completo entra en la búsqueda de nombre y vendedor: el cliente PERDIDO no tiene
+    # filas en ninguno de los dos tramos MTD, y sin esto salía sin vendedor asignado — justo
+    # el dato que hace falta para ir a buscarlo.
+    nombres = _ia_nombres_clientes(df_act, df_ly, df_ly_completo)
+    vends = _ia_vendedores(df_act, df_ly, df_ly_completo)
+
+    filas = []
+    for c in ids:
+        act = float(a.get(c, 0.0))
+        ly = float(l.get(c, 0.0))
+        lyc = float(lc.get(c, 0.0))
+        proy = round(act * factor, 1) if factor else None
+        base = lyc if factor else ly
+        valor = (proy if factor else act)
+        delta = round(valor - base, 1)
+        filas.append({
+            "cliente_id": int(c),
+            "cliente": nombres.get(int(c), f"#{int(c)}"),
+            "vendedor_id": vends.get(int(c), ""),
+            "litros_actual": round(act, 1),
+            "litros_ly": round(ly, 1),
+            "litros_proyectados": proy,
+            "litros_ly_completo": round(lyc, 1),
+            "delta": delta,
+            "delta_pct": _ia_pct(valor, base),
+            "estado": _ia_estado(valor, base, _ia_pct(valor, base)),
+        })
+    caidas = sorted([f for f in filas if f["delta"] < 0], key=lambda f: f["delta"])[:limite]
+    crec = sorted([f for f in filas if f["delta"] > 0], key=lambda f: -f["delta"])[:limite]
+    return caidas, crec
+
+
+def _ia_por_canal(df_act, df_ly, factor=None, df_ly_completo=None, con_tops=True):
+    """Apertura por canal, con el agregado 'On Premise + VTK' que pide la lectura comercial
+    sin perder los tres canales por separado (que es como los abre objccc.xlsx)."""
+    claves = set(df_act["canal"].unique()) | set(df_ly["canal"].unique())
+    out = []
+    for k in sorted(claves):
+        a = df_act[df_act["canal"] == k]
+        l = df_ly[df_ly["canal"] == k]
+        lc = (df_ly_completo[df_ly_completo["canal"] == k]
+              if df_ly_completo is not None else None)
+        nodo = _ia_nodo(k, "canal", float(a["litros"].sum()), float(l["litros"].sum()),
+                        factor, float(lc["litros"].sum()) if lc is not None else None)
+        if con_tops:
+            nodo["top_caidas"], nodo["top_crecimientos"] = _ia_tops(a, l, factor, lc)
+        out.append(nodo)
+    # Agregado informativo: no reemplaza a los tres canales, se suma como fila aparte.
+    grupo = _SEMANAL_CANALES["ccc_onpremise"]
+    a = df_act[df_act["canal"].isin(grupo)]
+    l = df_ly[df_ly["canal"].isin(grupo)]
+    if len(a) or len(l):
+        lc = (df_ly_completo[df_ly_completo["canal"].isin(grupo)]
+              if df_ly_completo is not None else None)
+        nodo = _ia_nodo("On Premise + VTK", "canal_agregado",
+                        float(a["litros"].sum()), float(l["litros"].sum()),
+                        factor, float(lc["litros"].sum()) if lc is not None else None)
+        nodo["componentes"] = list(grupo)
+        if con_tops:
+            nodo["top_caidas"], nodo["top_crecimientos"] = _ia_tops(a, l, factor, lc)
+        out.append(nodo)
+    return out
+
+
+def _ia_por_categoria(df_act, df_ly, factor=None, df_ly_completo=None, niveles=_IA_NIVELES):
+    """Árbol Categoría → Segmento → Línea Comercial → Marca.
+
+    Los top 5 se adjuntan SÓLO en el primer nivel: con el árbol entero serían cientos de
+    nodos por diez clientes cada uno y el payload dejaría de entrar en una pantalla. Los
+    niveles profundos los pide el endpoint de detalle al hacer click."""
+    def _armar(a, l, lc, nivel_idx, prefijo):
+        col = niveles[nivel_idx]
+        claves = set(a[col].unique()) | set(l[col].unique())
+        nodos = []
+        for k in sorted(claves, key=lambda x: str(x)):
+            sa, sl = a[a[col] == k], l[l[col] == k]
+            slc = lc[lc[col] == k] if lc is not None else None
+            nodo = _ia_nodo(str(k), col, float(sa["litros"].sum()), float(sl["litros"].sum()),
+                            factor, float(slc["litros"].sum()) if slc is not None else None)
+            nodo["ruta"] = prefijo + [str(k)]
+            if nivel_idx == 0:
+                nodo["top_caidas"], nodo["top_crecimientos"] = _ia_tops(sa, sl, factor, slc)
+            if nivel_idx + 1 < len(niveles):
+                nodo["hijos"] = _armar(sa, sl, slc, nivel_idx + 1, nodo["ruta"])
+            nodos.append(nodo)
+        return sorted(nodos, key=lambda n: -n["litros_actual"])
+    return _armar(df_act, df_ly, df_ly_completo, 0, [])
+
+
+def _ia_diagnostico(*frames):
+    """Qué quedó sin resolver, cuantificado. Nunca se descarta una línea en silencio."""
+    lineas_sin_litros = 0
+    litros_sin_categoria = 0.0
+    skus = {}
+    for f in frames:
+        if f is None or f.empty:
+            continue
+        lineas_sin_litros += int((f["litros"] <= 0).sum())
+        sinc = f[f["categoria"] == _IA_SIN_CLASIF]
+        litros_sin_categoria += float(sinc["litros"].sum())
+        for cod, art in zip(sinc["cod"], sinc["articulo"]):
+            skus.setdefault(str(cod), str(art))
+    return {
+        "lineas_sin_litros": lineas_sin_litros,
+        "litros_sin_categoria": round(litros_sin_categoria, 1),
+        "skus_sin_maestro": [{"codigo": c, "articulo": a}
+                             for c, a in sorted(skus.items())][:40],
+        "skus_sin_maestro_total": len(skus),
+    }
+
+
+def _ia_payload():
+    """Payload completo del interanual. Cacheado por fuentes + corte + maestro."""
+    vivo = _ia_mes_vivo()
+    if vivo is None:
+        return {"error": "Dato no disponible: no hay ventas del mes en curso para comparar."}
+
+    d_vivo = _ia_leer(INPUTS / "ventas.csv")
+    corte = d_vivo.loc[d_vivo["periodo"] == vivo, "fecha"].max().date()
+    inicio = vivo.start_time.date()
+    fin_mes = vivo.end_time.date()
+
+    # Días COMERCIALES (lunes a sábado, sin feriados de feriados.csv), contados hasta el
+    # último comprobante cargado y no hasta hoy.
+    dias_tx = _dias_comerciales(inicio, corte)
+    dias_tot = _dias_comerciales(inicio, fin_mes)
+    factor = (dias_tot / dias_tx) if dias_tx else None
+
+    ly = vivo - 12
+    ini_ly = ly.start_time.date()
+    # Corte LY con la MISMA cantidad de días comerciales, no el mismo número de día: si el
+    # año pasado ese mes tuvo los feriados en otro lado, comparar por número de día mediría
+    # dos esfuerzos comerciales distintos.
+    corte_ly = _fecha_por_dias_comerciales(ini_ly, dias_tx)
+
+    a_mtd, f_act = _ia_rango(vivo, inicio, corte)
+    ly_mtd, f_ly = _ia_rango(ly, ini_ly, corte_ly)
+    ly_full, _ = _ia_rango(ly)
+
+    la, ll, llc = (float(a_mtd["litros"].sum()), float(ly_mtd["litros"].sum()),
+                   float(ly_full["litros"].sum()))
+    proy = round(la * factor, 1) if factor else None
+    actual = {
+        "periodo": str(vivo), "corte_actual": str(corte),
+        "periodo_ly": str(ly), "corte_ly_comparable": str(corte_ly),
+        "dias_transcurridos": dias_tx, "dias_totales": dias_tot,
+        "litros_actual_mtd": round(la, 1), "litros_ly_mtd": round(ll, 1),
+        "litros_proyectados": proy, "litros_ly_completo": round(llc, 1),
+        "delta_mtd": round(la - ll, 1), "delta_mtd_pct": _ia_pct(la, ll),
+        "delta_proyectado": round((proy or 0) - llc, 1),
+        "delta_proyectado_pct": _ia_pct(proy or 0, llc),
+        "estado": _ia_estado(la, ll, _ia_pct(la, ll)),
+        "por_canal": _ia_por_canal(a_mtd, ly_mtd, factor, ly_full),
+        "por_categoria": _ia_por_categoria(a_mtd, ly_mtd, factor, ly_full),
+    }
+
+    # ── Mes cerrado anterior: completo contra completo, sin proyección ──
+    cerr = vivo - 1
+    cerr_ly = cerr - 12
+    c_act, f_cact = _ia_rango(cerr)
+    c_ly, f_cly = _ia_rango(cerr_ly)
+    ca, cl = float(c_act["litros"].sum()), float(c_ly["litros"].sum())
+    cerrado = {
+        "periodo": str(cerr), "periodo_ly": str(cerr_ly),
+        "litros": round(ca, 1), "litros_ly": round(cl, 1),
+        "delta": round(ca - cl, 1), "delta_pct": _ia_pct(ca, cl),
+        "estado": _ia_estado(ca, cl, _ia_pct(ca, cl)),
+        "por_canal": _ia_por_canal(c_act, c_ly),
+        "por_categoria": _ia_por_categoria(c_act, c_ly),
+    }
+
+    return {
+        "generado_en": _now_ar(),
+        "fuente": {
+            "actual": f_act, "actual_ly": f_ly,
+            "cerrado": f_cact, "cerrado_ly": f_cly,
+        },
+        "reglas": {
+            "fecha": "FechaComprobante (nunca FechaCarga ni FechaEntrega)",
+            "litros": ("cascada única `_litros_por_linea`: maestro 04D → PesoKg → "
+                       "ml inferidos del nombre del artículo"),
+            "universo": ("empresa: toda la venta de la distribuidora, ruta + V1/V20 Depósito, "
+                         "igual que los litros de la pantalla Semanal"),
+            "excluidos": ["V2", "V5"],
+            "devoluciones": ("las líneas con ImporteNetoItem <= 0 quedan fuera; las "
+                             "devoluciones no restan litros (mismo criterio que Semanal)"),
+            "proyeccion": ("litros MTD / días comerciales transcurridos × días comerciales "
+                           "totales del mes"),
+            "dias_comerciales": "lunes a sábado, sin domingos ni los feriados de feriados.csv",
+            "corte": "última FechaComprobante cargada en ventas.csv, no la fecha del servidor",
+            "categorias": "Categoría → Segmento → Línea Comercial → Marca (maestro 04D)",
+        },
+        "actual": actual,
+        "cerrado_anterior": cerrado,
+        "diagnostico": dict(_ia_diagnostico(a_mtd, ly_mtd, c_act, c_ly),
+                            fuentes_por_periodo=[
+                                {"periodo": str(vivo), "fuente": f_act},
+                                {"periodo": str(ly), "fuente": f_ly},
+                                {"periodo": str(cerr), "fuente": f_cact},
+                                {"periodo": str(cerr_ly), "fuente": f_cly}]),
+    }
+
+
+def _ia_sig():
+    """Clave de caché: fuentes + corte + maestro + clientes + feriados."""
+    rutas = [INPUTS / "ventas.csv", BASE / "02_HISTORY" / "historial_ventas.csv"]
+    cierres = INPUTS / "cierres mes"
+    if cierres.exists():
+        rutas += sorted(cierres.glob("ventas_mes_*.csv"))
+    sig = []
+    for p in rutas:
+        try:
+            sig.append((p.name, os.path.getmtime(p) if p.exists() else 0))
+        except OSError:
+            sig.append((p.name, 0))
+    return (tuple(sig), _ia_maestro_sig())
+
+
+def _ia_cacheado():
+    key = _ia_sig()
+    cached = _IA_CACHE.get(key)
+    if cached is not None:
+        return cached
+    payload = _ia_payload()
+    _IA_CACHE.clear()          # una sola versión viva: el payload es grande
+    _IA_CACHE[key] = payload
+    return payload
+
+
+@app.route("/api/gerencia/semanal/interanual")
+def gerencia_semanal_interanual():
+    """Interanual de litros por canal y categoría. Endpoint APARTE y lazy: no infla
+    /api/gerencia/semanal ni el login."""
+    p = _ia_cacheado()
+    return (jsonify(p), 503) if p.get("error") else jsonify(p)
+
+
+@app.route("/api/gerencia/semanal/interanual/clientes")
+def gerencia_semanal_interanual_clientes():
+    """Top 5 de caídas y crecimientos de un nodo que no viaja en el payload principal
+    (segmento, línea comercial o marca). Los canales y las categorías de primer nivel ya lo
+    traen embebido para no pegarle al backend por cada fila que se dibuja."""
+    vista = (request.args.get("vista") or "actual").strip()
+    dimension = (request.args.get("dimension") or "canal").strip()
+    clave = (request.args.get("clave") or "").strip()
+    nivel = (request.args.get("nivel") or "").strip()
+    if vista not in ("actual", "cerrado"):
+        return jsonify({"error": "vista inválida (actual|cerrado)"}), 400
+    if dimension not in ("canal", "categoria"):
+        return jsonify({"error": "dimension inválida (canal|categoria)"}), 400
+    if not clave:
+        return jsonify({"error": "falta clave"}), 400
+    if dimension == "categoria" and nivel not in _IA_NIVELES:
+        return jsonify({"error": f"nivel inválido ({'|'.join(_IA_NIVELES)})"}), 400
+
+    vivo = _ia_mes_vivo()
+    if vivo is None:
+        return jsonify({"error": "Dato no disponible: no hay ventas del mes en curso."}), 503
+
+    if vista == "actual":
+        d_vivo = _ia_leer(INPUTS / "ventas.csv")
+        corte = d_vivo.loc[d_vivo["periodo"] == vivo, "fecha"].max().date()
+        inicio = vivo.start_time.date()
+        dias_tx = _dias_comerciales(inicio, corte)
+        dias_tot = _dias_comerciales(inicio, vivo.end_time.date())
+        factor = (dias_tot / dias_tx) if dias_tx else None
+        ly = vivo - 12
+        corte_ly = _fecha_por_dias_comerciales(ly.start_time.date(), dias_tx)
+        a, _ = _ia_rango(vivo, inicio, corte)
+        l, _ = _ia_rango(ly, ly.start_time.date(), corte_ly)
+        lc, _ = _ia_rango(ly)
+    else:
+        cerr = vivo - 1
+        factor, lc = None, None
+        a, _ = _ia_rango(cerr)
+        l, _ = _ia_rango(cerr - 12)
+
+    col = "canal" if dimension == "canal" else nivel
+    if dimension == "canal" and clave == "On Premise + VTK":
+        grupo = _SEMANAL_CANALES["ccc_onpremise"]
+        a, l = a[a["canal"].isin(grupo)], l[l["canal"].isin(grupo)]
+        lc = lc[lc["canal"].isin(grupo)] if lc is not None else None
+    else:
+        a, l = a[a[col] == clave], l[l[col] == clave]
+        lc = lc[lc[col] == clave] if lc is not None else None
+
+    caidas, crec = _ia_tops(a, l, factor, lc)
+    return jsonify({"vista": vista, "dimension": dimension, "clave": clave, "nivel": nivel,
+                    "top_caidas": caidas, "top_crecimientos": crec})
+
+
 @app.route("/api/gerencia/semanal")
 def gerencia_semanal():
     """Pantalla Semanal: histórico de distribución semanal + plan del mes en curso.
@@ -6600,7 +7145,7 @@ def _acc_an_ids_historial(hasta):
     return ids
 
 
-def _acc_an_dias_comerciales(desde, hasta):
+def _dias_comerciales(desde, hasta):
     """Días operativos (lunes a sábado, sin feriados) entre dos fechas, inclusive."""
     n, d = 0, desde
     while d <= hasta:
@@ -6610,7 +7155,7 @@ def _acc_an_dias_comerciales(desde, hasta):
     return n
 
 
-def _acc_an_hasta_por_dias(inicio, dias):
+def _fecha_por_dias_comerciales(inicio, dias):
     """Fecha en la que se completan `dias` días comerciales desde `inicio`. Es lo que hace
     comparable un mes parcial contra otro mes: mismo esfuerzo comercial, no mismo número de
     día. Si el mes se termina antes, devuelve el último día del mes."""
@@ -6643,11 +7188,11 @@ def _acc_an_periodos(comparacion):
     inicio = vivo.start_time.date()
     fin_mes = vivo.end_time.date()
     parcial = corte < fin_mes
-    dias = _acc_an_dias_comerciales(inicio, corte)
+    dias = _dias_comerciales(inicio, corte)
 
     per_cmp = (vivo - 1) if comparacion == "mes_anterior" else (vivo - 12)
     ini_cmp = per_cmp.start_time.date()
-    fin_cmp = (_acc_an_hasta_por_dias(ini_cmp, dias) if parcial
+    fin_cmp = (_fecha_por_dias_comerciales(ini_cmp, dias) if parcial
                else per_cmp.end_time.date())
 
     _, f_act = _acc_an_rango(inicio, corte)
@@ -6655,12 +7200,12 @@ def _acc_an_periodos(comparacion):
     actual = {"periodo": str(vivo), "desde": str(inicio), "hasta": str(corte),
               "dias_comerciales": dias,
               # Días comerciales del mes ENTERO: es el denominador de la proyección al cierre.
-              "dias_comerciales_totales": _acc_an_dias_comerciales(inicio, fin_mes),
+              "dias_comerciales_totales": _dias_comerciales(inicio, fin_mes),
               "parcial": parcial,
               "fuente": ", ".join(f_act) or "sin fuente"}
     comparado = {"tipo": comparacion, "periodo": str(per_cmp), "desde": str(ini_cmp),
                  "hasta": str(fin_cmp),
-                 "dias_comerciales": _acc_an_dias_comerciales(ini_cmp, fin_cmp),
+                 "dias_comerciales": _dias_comerciales(ini_cmp, fin_cmp),
                  "parcial": parcial, "fuente": ", ".join(f_cmp) or "sin fuente",
                  "mes_completo_hasta": str(per_cmp.end_time.date())}
     return actual, comparado

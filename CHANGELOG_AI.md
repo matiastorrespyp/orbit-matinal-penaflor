@@ -1,5 +1,137 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-18 - feat(Semanal): interanual de litros por canal, categoría y cliente
+
+**Qué se agrega:** tercera tarjeta de la pantalla Semanal, debajo del histórico y la
+planificación. Compara el volumen contra el MISMO mes del año anterior en dos vistas y baja
+hasta el cliente. Carga lazy y endpoint propio: no infla `/api/gerencia/semanal` ni el login.
+
+### Las dos comparaciones
+
+- **Mes actual en curso**: MTD contra el mismo tramo del año pasado, más la proyección al
+  cierre contra el año anterior MES COMPLETO. En agosto 2026: 01/08 al 18/08 contra 01/08/2025
+  al 16/08/2025 (mismo esfuerzo comercial), y la proyección contra todo agosto 2025.
+- **Mes cerrado anterior**: completo contra completo, SIN proyección. Julio 2026 vs julio 2025.
+
+Nada está cableado: al cambiar el mes, septiembre pasa a ser el mes en curso y agosto el
+cerrado, solo.
+
+### Reglas (heredadas de Semanal, no reinventadas)
+
+- **Fecha**: `FechaComprobante`. FechaCarga y FechaEntrega no deciden el período.
+- **Litros**: la cascada única `_litros_por_linea` (maestro 04D → PesoKg → ml inferidos del
+  nombre). No se duplica ni se simplifica.
+- **Universo**: `empresa` — toda la venta de la distribuidora, ruta + V1/V20 Depósito, sin las
+  bajas V2/V5. Es el universo con el que Semanal mide litros; medirlo sobre ruta y compararlo
+  contra ese total daría una caída sistemática que no existe. Se informa en el endpoint y en
+  la tarjeta.
+- **Devoluciones**: las líneas con `ImporteNetoItem <= 0` quedan FUERA; no restan litros. Es
+  exactamente lo que ya hace `_semanal_leer`, y tener dos criterios de litros en el mismo
+  portal sería peor que el redondeo que esto implica. Queda documentado en `reglas` del
+  payload y en la tarjeta.
+- **Canales**: se reusa `_canal_ccc_empresa` (el clasificador de objccc.xlsx). No hay un
+  clasificador paralelo. Se agrega la fila agregada "On Premise + VTK" SIN perder On Premise,
+  Vinotecas y On Premise Noche por separado.
+
+### Días comerciales y proyección
+
+Lunes a sábado, sin domingos y sin los feriados de `09_CONFIG/feriados.csv` (ninguno
+cableado). Agosto 1-18 da **14 días, no 18**: tres domingos y San Martín el 17.
+
+    proyeccion = litros_mtd / dias_comerciales_transcurridos * dias_comerciales_totales
+
+El corte es la **última FechaComprobante cargada en ventas.csv**, no la fecha del servidor: si
+el input quedó atrasado, contar los días del calendario inventaría una caída que no existe.
+El corte del año anterior se elige por la MISMA cantidad de días comerciales, no por el mismo
+número de día: si el año pasado los feriados cayeron en otro lado, comparar por día mediría
+dos esfuerzos comerciales distintos.
+
+### Fuentes por período (una sola por mes, sin concatenar)
+
+    mes en curso  -> 01_INPUTS/ventas.csv
+    mes cerrado   -> 01_INPUTS/cierres mes/ventas_mes_MMAAAA.csv
+                     y si no está, 02_HISTORY/historial_ventas.csv
+
+`_ia_fuente_de` reusa `_semanal_fuente_de` y le agrega la única regla que esa función no tiene:
+el mes en curso sale de ventas.csv aunque exista un cierre con su nombre.
+
+Verificado en la validación: agosto 2026 ← ventas.csv · julio 2026 ← ventas_mes_072026.csv ·
+agosto y julio 2025 ← historial_ventas.csv.
+
+### Jerarquía de categorías
+
+Categoría → Segmento → Línea Comercial → Marca, resuelta contra
+`09_CONFIG/maestro_04D_productos.csv`. Nada hardcodeado: la taxonomía sale del maestro, así
+que aparecen Vinos del año (con sus segmentos internos Alto / Medio Alto / Superior / Medio),
+Vinos de guarda, Espumantes, RTD, Spirits, Vermouth y el resto tal como los define el maestro.
+Un SKU que el maestro no trae NO se descarta: cae a **"Sin clasificación"**, queda visible en
+la tabla y cuantificado en el diagnóstico (hoy 728,5 L y 18 SKU).
+
+### Clientes nuevos y perdidos
+
+Los rankings usan **outer join**. Con un inner join el cliente que compraba el año pasado y
+este año no compró nada desaparecería del ranking — que es justo el que hay que ver:
+
+- compró LY y no compra ahora → actual 0, caída completa, estado **"Perdido"**;
+- compra ahora y no compraba LY → LY 0, estado **"Nuevo"** y `delta_pct = null`, sin
+  porcentajes infinitos.
+
+En el mes en curso el ranking principal es por diferencia PROYECTADA contra el LY mes
+completo; cada fila trae igual MTD, LY MTD, proyección, LY completo, delta y delta %.
+
+### Endpoints
+
+- `GET /api/gerencia/semanal/interanual` — payload completo con los dos períodos, apertura
+  por canal y el árbol de categorías. Los top 5 viajan embebidos en los canales y en las
+  categorías de primer nivel.
+- `GET /api/gerencia/semanal/interanual/clientes?vista=&dimension=&clave=&nivel=` — top 5 de
+  los niveles profundos (segmento, línea, marca), que no viajan en el payload principal para
+  no mandar cientos de nodos con diez clientes cada uno. Una consulta por click, no una por
+  fila renderizada.
+
+### Rendimiento
+
+El historial pesa 63 MB: se lee con `usecols` (13 columnas), UNA vez por proceso, cacheado por
+ruta + tamaño + mtime, y todos los períodos que salgan de él se cortan de esa copia en
+memoria. La clave de caché del payload incluye las fuentes y sus mtimes, el maestro 04D,
+clientes.xlsx y feriados.csv. Medido: **3,44 s la primera respuesta y 0,027 s la cacheada**;
+el detalle de clientes 0,13 s.
+
+### Archivos
+
+- `server_orbit.py`: sección "INTERANUAL DE LITROS" con `_ia_fuente_de`, `_ia_leer`,
+  `_ia_rango`, `_ia_tops`, `_ia_por_canal`, `_ia_por_categoria`, `_ia_diagnostico`,
+  `_ia_payload` y los dos endpoints.
+- `PAV MATINAL PE_A FLOR/portal.html`: tarjeta "📊 Interanual de litros · Canal y categoría"
+  con selector de comparación y de dimensión, KPIs, tabla con drill-down y top 5 al click.
+- `test_semanal_interanual.py` (nuevo): 51 aserciones.
+
+**Renombrado sin cambio de comportamiento:** `_acc_an_dias_comerciales` →
+`_dias_comerciales` y `_acc_an_hasta_por_dias` → `_fecha_por_dias_comerciales`. Los usan
+ahora dos features (el análisis de acciones y el interanual) y el nombre con prefijo de
+acciones invitaba a escribir una segunda implementación.
+
+### Validación (2026-08-18, datos reales, sin mocks)
+
+- `test_semanal_interanual.py`: **51 OK / 0 fallas**. Regresión: `test_acciones_analisis.py`
+  71 OK, `test_acciones_trad_nc.py` 23 OK, `test_acciones_explorador.py` 29 OK.
+- **Reconciliación**: los canales suman exactamente el total en las dos vistas
+  (15.446,5 L actual y 50.047,0 L cerrado) y las categorías también; los hijos del árbol
+  reconcilian con su padre.
+- Agosto 2026 MTD 15.446,5 L vs agosto 2025 MTD 10.229,7 L (+51,0%); proyección 27.583,0 L vs
+  34.177,4 L de agosto 2025 completo (-19,3%). Julio 2026 50.047,0 L vs julio 2025 39.446,9 L
+  (+26,9%).
+- Caso testigo de cliente perdido: MJE S.A.S. (V7) con 0 L actuales y 1.106,1 L el año
+  anterior → caída completa, estado "Perdido". Caso testigo de alta: ALVAREZ ANA LAURA (V10),
+  82,8 L MTD, sin base LY → estado "Nuevo" y delta_pct null.
+- Endpoints 200; el de detalle valida parámetros y devuelve 400 con mensaje.
+  `/api/gerencia/semanal` sigue devolviendo lo mismo y no incluye el interanual.
+- Portal sin errores de consola. En 380 px de ancho la tabla scrollea dentro de su contenedor
+  y la página no desborda; los selectores se apilan.
+
+**Pendiente de fuente:** 18 SKU sin maestro (728,5 L en el período analizado) y 54 líneas sin
+litros por ninguna de las tres vías de la cascada. Quedan listados en `diagnostico`.
+
 ## 2026-08-18 - refactor(Acciones): rediseño de la tarjeta "Análisis de la acción"
 
 **Problema:** la tarjeta anterior era una acumulación de indicadores. Mostraba doce KPI a la
