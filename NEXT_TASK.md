@@ -1,5 +1,31 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-18 - Antares lata en 0 L y maestro 04D completado
+
+### HECHO
+- [x] `_infer_litros_por_nombre` ahora tolera la unidad pegada al numero (`6 X 473ML`). Medido
+  sobre los 297 nombres reales: 8 pasan de 0 a tener litros y ninguno de los que ya
+  funcionaban cambia de valor.
+- [x] Agregados al maestro 04D los 8 SKU vigentes que faltaban (262 -> 270 filas), con
+  Categoria/Segmento del ERP y linea comercial de la `Marca` o del SKU hermano. Para 14554 y
+  80077 la linea quedo VACIA: no hay fuente y no se inventa.
+- [x] Impacto medido con el filtro real del portal: ningun SKU baja, +2.347,5 L recuperados,
+  `lineas_sin_litros` 54 -> 0, `skus_sin_maestro` 18 -> 10.
+- [x] Verificado que el interanual y la pantalla Semanal siguen dando el MISMO numero de
+  litros (15.469,18 mes en curso y 50.064,03 julio cerrado).
+
+### PROXIMA TAREA
+- [ ] Definir con comercial la **linea comercial de 14554 (EL REGRESO SEM-CHEN)** y
+  **80077 (DOLORES ESPUMANTE DULCE)**. Hoy estan clasificados por categoria y segmento pero
+  sin linea; ambos tienen stock (348 y 174 unidades) y ninguno tiene `Marca` en el ERP.
+- [ ] Los 10 SKU que siguen fuera del maestro no tienen stock ni ventas 2026 (discontinuados).
+  Solo afectan la comparacion interanual contra 2025, donde su volumen cae en "Sin
+  clasificacion". Si se quiere que la apertura por categoria del ano anterior cierre exacto,
+  habria que clasificarlos igual: 14555, 14595, 30007, 30034, 30035, 30126, 30299, 74416,
+  74701, 74702.
+- [ ] Pedir que el export de productos del mes (`RAW_PRODUCTOS`) incluya los SKU nuevos: hoy
+  no trae ninguno de los 8 que hubo que cargar a mano, asi que el hueco se va a repetir.
+
 ## Sesion 2026-08-18 - Interanual de litros en Semanal
 
 ### HECHO

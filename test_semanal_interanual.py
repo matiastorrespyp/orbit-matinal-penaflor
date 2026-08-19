@@ -248,6 +248,60 @@ chk("17b. La clave de caché incluye fuentes y maestro",
 
 
 # ═══════════════════════════════════════════════════════
+print("\n── 19-20. Cascada de litros: envase pegado al número y maestro completado ──")
+
+# El ERP escribe el tamaño con la unidad pegada ("6 X 473ML"). Sin contemplarlo, toda la
+# linea Antares en lata quedaba en 0 L pese a tener stock y ventas.
+chk("19. Se infieren litros con la unidad pegada al número",
+    S._infer_litros_por_nombre("ANTARES LATA KOLSCH 6 X 473ML") == 0.473,
+    "473ML -> 0.473")
+chk("19b. Sigue funcionando el formato clásico",
+    S._infer_litros_por_nombre("ALMA MORA MALBEC 6X750") == 0.75)
+chk("19c. Y el que ya venía sin unidad pegada",
+    S._infer_litros_por_nombre("FRIZZE ITAL LIMA LATA X473") == 0.473)
+chk("19d. Otras unidades del ERP", S._infer_litros_por_nombre("ALGO 6 X 750CC") == 0.75)
+chk("19e. Un nombre sin tamaño sigue dando 0",
+    S._infer_litros_por_nombre("PRODUCTO SIN MEDIDA") == 0.0)
+
+# Los 8 SKU vigentes que faltaban en el maestro
+NUEVOS_04D = {
+    "30268": ("Cerveza Artesanal", "Antares Especiales"),
+    "30275": ("Cerveza Artesanal", "Antares Especiales"),
+    "30329": ("Cerveza Artesanal", "Antares Clasicas"),
+    "30343": ("Cerveza Artesanal", "Antares Clasicas"),
+    "14590": ("Vinos de Mesa", "Termidor Brik"),
+    "80003": ("Vinos del año", "San Telmo"),
+    "14554": ("Vinos del año", None),      # sin línea comercial: no hay fuente para definirla
+    "80077": ("Espumantes", None),
+}
+cod2cat, _s, cod2lxu, cod2lin = S._cargar_maestro_04D()
+chk("20. Los 8 SKU vigentes están en el maestro",
+    all(c in cod2cat for c in NUEVOS_04D), str([c for c in NUEVOS_04D if c not in cod2cat]))
+chk("20b. Con la categoría que declara el ERP",
+    all(cod2cat[c] == cat for c, (cat, _l) in NUEVOS_04D.items()))
+chk("20c. Con línea comercial donde hay fuente para definirla",
+    all(cod2lin.get(c) == lin for c, (_c, lin) in NUEVOS_04D.items() if lin))
+chk("20d. Y VACÍA donde no la hay, en vez de inventarla",
+    # El loader devuelve NaN para la celda vacía; el resto del código ya trata ese caso
+    # (en el interanual cae a "Sin clasificación" sólo en el nivel de línea comercial).
+    all(pd.isna(cod2lin.get(c)) or not str(cod2lin.get(c)).strip()
+        for c, (_c, lin) in NUEVOS_04D.items() if lin is None),
+    "14554 y 80077 no tienen Marca en el ERP ni hermano en el maestro")
+chk("20e. Los Antares lata tienen el mismo envase que sus hermanos (473ml x 6)",
+    all(abs(cod2lxu[c] - 2.838 / 6) < 1e-6 for c in ("30268", "30275", "30329", "30343")),
+    f"{round(cod2lxu['30329'], 4)} L por unidad")
+
+# Ninguna línea del período analizado queda sin litros
+_p = S._ia_cacheado()
+chk("20f. Ya no quedan líneas sin litros en los períodos comparados",
+    _p["diagnostico"]["lineas_sin_litros"] == 0,
+    f"{_p['diagnostico']['lineas_sin_litros']} líneas")
+chk("20g. Bajó lo que cae en 'Sin clasificación'",
+    _p["diagnostico"]["skus_sin_maestro_total"] <= 10,
+    f"{_p['diagnostico']['skus_sin_maestro_total']} SKU, todos sin stock ni ventas 2026")
+
+
+# ═══════════════════════════════════════════════════════
 print("\n── 18. El endpoint Semanal existente no cambia ──")
 
 sem = S._semanal_actual()

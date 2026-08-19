@@ -1,5 +1,82 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-18 - fix(litros): Antares lata en 0 L + 8 SKU vigentes fuera del maestro 04D
+
+**Síntoma:** el diagnóstico del interanual mostraba 18 SKU sin maestro y 54 líneas sin litros.
+Al revisarlos, cinco Antares en lata aportaban **0 litros** pese a tener stock en dos depósitos
+y ventas en agosto 2026: eran invisibles en Sell Out, Semanal, el interanual y cualquier
+métrica de volumen.
+
+### Causa 1 — la inferencia de litros no toleraba la unidad pegada al número
+
+`_infer_litros_por_nombre` usaba `[X\s](\d{3,4})\b`. En `ANTARES LATA KOLSCH 6 X 473ML` el
+`\b` no cierra después del `473` porque le sigue `ML`, así que no matcheaba. No eran los
+espacios: `FRIZZE ITAL LIMA LATA X473` sí funcionaba. Ahora el patrón acepta un sufijo de
+unidad opcional (`ML` / `CC` / `CM3`).
+
+Medido sobre los 297 nombres de artículo de las tres fuentes: **8 nombres pasan de 0 a tener
+litros y NINGUNO de los que ya funcionaban cambia de valor**. El patrón sólo agrega casos.
+
+### Causa 2 — 8 SKU vigentes no estaban en el maestro 04D
+
+Se agregaron a `09_CONFIG/maestro_04D_productos.csv` (262 → 270 filas). **Nada inventado**,
+cada campo tiene origen:
+
+| Código | Artículo | Categoría | Segmento | Línea comercial | De dónde sale |
+|---|---|---|---|---|---|
+| 30268 | ANTARES LATA CARAVANA | Cerveza Artesanal | Cerveza Artesanal | Antares Especiales | `Marca` del ERP |
+| 30275 | ANTARES LATA IPA | Cerveza Artesanal | Cerveza Artesanal | Antares Especiales | hermano 60017 |
+| 30329 | ANTARES LATA KOLSCH | Cerveza Artesanal | Cerveza Artesanal | Antares Clasicas | `Marca` del ERP |
+| 30343 | ANTARES LATA SCOTCH | Cerveza Artesanal | Cerveza Artesanal | Antares Clasicas | `Marca` del ERP |
+| 14590 | TERMIDOR BLANCO 12X1L | Vinos de Mesa | Vinos de Mesa | Termidor Brik | `Marca` del ERP |
+| 80003 | SAN TELMO SEL CHARDONNAY | Vinos del año | Medio | San Telmo | hermanos 80002/80004 |
+| 14554 | EL REGRESO SEM-CHEN | Vinos del año | Alto | *(vacía)* | sin fuente |
+| 80077 | DOLORES ESPUMANTE DULCE | Espumantes | Champaña Alta y Premium | *(vacía)* | sin fuente |
+
+`Categoria` sale del `Rubro` del ERP y `Segmento` de su columna `Linea`, que ya usan el mismo
+vocabulario que el maestro. `Lts x caja` / `UxC` salen del envase declarado en la descripción,
+con el valor que ya usan los hermanos (473 ml × 6 = 2.838, igual que los 5 Antares lata que sí
+estaban). Para **14554 y 80077 la línea comercial quedó VACÍA a propósito**: no tienen `Marca`
+en el ERP ni hermano en el maestro, y agregar un nombre de línea nuevo es una decisión
+comercial que crearía una línea en todos los reportes. Quedan clasificados a nivel categoría y
+segmento, que es lo que sí se puede afirmar.
+
+### Impacto medido, con el filtro real del portal (`ImporteNetoItem > 0`)
+
+- **Ningún SKU baja.** Los dos cambios son estrictamente aditivos: **+2.347,5 L** recuperados
+  sobre el total de todas las fuentes (1.338.114,5 → 1.340.462,0 L).
+- `lineas_sin_litros` en los períodos comparados: **54 → 0**.
+- `skus_sin_maestro`: **18 → 10**, y los 10 restantes no tienen stock ni ventas en 2026
+  (discontinuados: 14555, 14595, 30007, 30034, 30035, 30126, 30299, 74416, 74701, 74702).
+- `litros_sin_categoria`: 728,5 → 370,7 L. "Sin clasificación" en el mes en curso: **0,0 L**.
+- Interanual: agosto MTD 15.446,5 → **15.469,2 L**; julio cerrado 50.047,0 → **50.064,0 L**.
+  Coinciden exactamente con los litros que informa la pantalla Semanal (15.469,18 y 50.064,03),
+  que es la comprobación de que las dos pantallas siguen midiendo lo mismo.
+
+**Falso positivo descartado durante la validación:** una primera medición mostraba a 60015
+(ANTARES PLAYA GRANDE) bajando 30,3 L. Son 9 líneas con `CantBase` negativa cuya inferencia
+antes daba 0 y ahora da litros negativos — pero las 9 tienen `ImporteNetoItem` negativo, así
+que el portal nunca las cuenta. Con el filtro real aplicado, ningún SKU baja.
+
+**Cómo se investigó:** se buscaron los códigos en los 66 archivos de `01_INPUTS`, `09_CONFIG` y
+`05_MASTER_DATA`. Sólo aparecen en archivos de ventas y en `01_INPUTS/Stock/*.xlsx`; los de
+stock confirman que están vigentes (96/108/42 unidades en La Francia, 6/48/60 en Villa Dolores)
+pero **no traen taxonomía**, así que no sirven para completar el maestro. Ningún archivo del
+repo tiene el maestro de estos productos, incluido `RAW_PRODUCTOS/productosjulio.xlsx`.
+
+### Archivos
+
+- `server_orbit.py`: patrón de `_infer_litros_por_nombre`.
+- `09_CONFIG/maestro_04D_productos.csv`: +8 filas. Las 262 originales quedaron byte a byte
+  idénticas y en el mismo orden; BOM y CRLF preservados; sin códigos duplicados.
+- `test_semanal_interanual.py`: 12 aserciones nuevas (63 en total).
+
+### Validación
+
+`test_semanal_interanual.py` 63 OK / 0 fallas. Regresión: `test_acciones_analisis.py` 71 OK,
+`test_acciones_trad_nc.py` 23 OK, `test_acciones_explorador.py` 29 OK. Endpoints 200; los
+canales y las categorías siguen reconciliando con el total.
+
 ## 2026-08-18 - feat(Semanal): interanual de litros por canal, categoría y cliente
 
 **Qué se agrega:** tercera tarjeta de la pantalla Semanal, debajo del histórico y la

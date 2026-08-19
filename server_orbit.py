@@ -8449,8 +8449,15 @@ def gerencia_sellout_categoria():
 import re as _re
 
 def _infer_litros_por_nombre(nombre: str) -> float:
-    """Fallback: infiere litros/unidad desde el nombre (ej: 6X750 → 0.75)."""
-    matches = _re.findall(r'[X\s](\d{3,4})\b', str(nombre).upper())
+    """Fallback: infiere litros/unidad desde el nombre (ej: 6X750 → 0.75).
+
+    El tamaño puede venir con la unidad PEGADA al número (`6 X 473ML`). Sin contemplarlo, el
+    `\\b` no cerraba después del 473 y toda la línea Antares en lata quedaba en 0 litros: 58
+    líneas de venta invisibles en Sell Out, Semanal y el interanual, con stock en dos
+    depósitos y ventas de agosto 2026. Verificado sobre los 297 nombres de artículo de las
+    tres fuentes: 8 pasan de 0 a tener litros y NINGUNO de los que ya funcionaban cambia de
+    valor — el patrón sólo agrega casos, no reinterpreta los existentes."""
+    matches = _re.findall(r'[X\s](\d{3,4})(?:\s*(?:ML|CC|CM3)\b|\b)', str(nombre).upper())
     if matches:
         ml = int(matches[-1])
         if 100 <= ml <= 9999:
