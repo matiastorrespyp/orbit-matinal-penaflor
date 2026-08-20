@@ -1,12 +1,22 @@
 ﻿cliente_id,categoria,producto,fecha,cajas
 110,escala,Smirnoff Flavours,2026-08-18,6
+172,escala,Finca Las Moras,2026-08-20,18
+172,escala,Smirnoff Flavours,2026-08-20,6
 301,escala,Frizze,2026-08-19,18
+309,escala,Finca Las Moras,2026-08-20,24
+309,escala,Elementos,2026-08-20,6
+309,escala,Smirnoff Flavours,2026-08-20,6
+390,escala,Finca Las Moras,2026-08-20,12
+390,escala,Smirnoff Flavours,2026-08-20,6
 476,escala,Smirnoff Flavours,2026-08-03,18
 476,escala,Smirnoff Flavours,2026-08-18,24
 519,escala,Finca Las Moras,2026-08-18,24
 519,escala,Smirnoff Flavours,2026-08-18,6
 538,escala,Finca Las Moras,2026-08-19,24
 538,escala,Smirnoff Flavours,2026-08-19,6
+596,escala,Finca Las Moras,2026-08-20,24
+596,escala,Elementos,2026-08-20,6
+596,escala,Smirnoff Flavours,2026-08-20,6
 769,escala,Finca Las Moras,2026-08-19,24
 769,escala,Elementos,2026-08-19,6
 769,escala,Smirnoff Flavours,2026-08-19,6
@@ -32,8 +42,12 @@
 30044,escala,Finca Las Moras,2026-08-19,24
 30044,escala,Elementos,2026-08-19,12
 30044,escala,Smirnoff Flavours,2026-08-19,6
+172,plan_frio,Six Pack Smirnoff ICE,2026-08-20,6
+309,plan_frio,Six Pack Smirnoff ICE,2026-08-20,6
+390,plan_frio,Six Pack Smirnoff ICE,2026-08-20,6
 519,plan_frio,Six Pack Smirnoff ICE,2026-08-18,6
 538,plan_frio,Six Pack Smirnoff ICE,2026-08-19,6
+596,plan_frio,Six Pack Smirnoff ICE,2026-08-20,6
 769,plan_frio,Six Pack Smirnoff ICE,2026-08-19,6
 1089,plan_frio,Six Pack Smirnoff ICE,2026-08-19,6
 2353,plan_frio,Six Pack Smirnoff ICE,2026-08-03,6
@@ -41,5 +55,6 @@
 30017,plan_frio,Six Pack Smirnoff ICE,2026-08-18,6
 30033,plan_frio,Six Pack Smirnoff ICE,2026-08-18,6
 30044,plan_frio,Six Pack Smirnoff ICE,2026-08-19,6
+172,puntera,Los Arboles,2026-08-20,18
 538,puntera,Los Arboles,2026-08-19,18
 30044,puntera,Los Arboles,2026-08-19,18
