@@ -20,7 +20,17 @@
   codigos con match sobre 228, VSB 77 sobre 125, contadores cerrando en los 6 cruces, Excel
   de 30 KB con los mismos numeros, render y botones verificados leyendo el DOM en Chrome.
 
+- [x] **Publicado en Render y verificado en vivo** (commits 7d02464, c9e7698, 260c078,
+  357b7a5). El export daba 500 en Render con pandas 3: `astype(str)` ya no convierte NaN a
+  "nan", asi que `len` recibia un float. Arreglado con `_ancho_celda()` y reusando el
+  escritor de xlsx que ya existia (`_plan_cob_escribir_xlsx` -> `_escribir_xlsx`, compartido
+  con Plan Cobertura). El xlsx de Render es identico al local hoja por hoja.
+- [x] Bitacora en `00_OBSIDIAN_ORBIT/BITACORA_2026-08-24.md`.
+
 ### PROXIMA TAREA
+- [ ] **Pinear `pandas` en `requirements.txt`.** Hoy dice `pandas>=2.0.0`: Render instala la
+  ultima en cada build y local corre 2.2.2, asi que el server puede cambiar de comportamiento
+  sin que nadie toque una linea de codigo. Este 500 fue exactamente eso.
 - [ ] **3 productos de MPA.xlsx siguen sin codigo asignado** (Alma Mora Blend 0.75L, Dada 7
   Dulce 0.75L, Suter Etiqueta Marron Blanco 0.75L) y quedan fuera del calculo: se informan al
   pie de la tarjeta y en la hoja "Sin codigo" del Excel, no se adivinan. Se resuelven

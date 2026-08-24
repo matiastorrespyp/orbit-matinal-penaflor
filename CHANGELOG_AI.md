@@ -63,6 +63,35 @@ Los dos depósitos no se suman ni se comparten stock.
   y `sem-stock` con sus 2 tarjetas y sus 3 botones.
 - `node --check` sobre el JS embebido del portal: OK.
 
+### Deploy: el export daba 200 en local y 500 en Render (`260c078` + `357b7a5`)
+
+Mismo payload en los dos lados (se bajó el JSON de Render y se comparó: idéntico), y otros
+dos exports xlsx del portal (`stock_sin_venta`, `plan_cobertura`, este último con el MISMO
+patrón multi-hoja) devolvían 200. O sea: no eran los datos ni el mecanismo.
+
+El 500 era mudo, así que primero se lo hizo hablar: `try/except` que loguea el traceback y
+devuelve `{"error","detalle"}`. El server contestó
+**`TypeError: object of type 'float' has no len()`**.
+
+**Causa raíz:** el ancho de columna se calculaba con `col.astype(str).map(len)`. En pandas 2
+(local, 2.2.2) un NaN se convierte al string `"nan"` y `len` funciona; en **pandas 3**
+(Render) `astype(str)` **preserva el nulo** y `len` recibe un float. `requirements.txt` dice
+`pandas>=2.0.0` sin pinear, así que Render instala la última en cada build. Lo dispara
+cualquier columna con un hueco: en Días de Stock, los productos que no figuran en el archivo
+del depósito dejan `Disponible` y `Días de stock` en nulo (11 de 82 en PyP, 29 de 82 en VSB).
+
+**Y había dos copias del escritor de xlsx.** `_plan_cob_escribir_xlsx` hacía exactamente lo
+mismo y sí andaba en Render; nunca tuvo nada de Plan Cobertura, era un escritor genérico con
+nombre prestado — y ese nombre fue lo que invitó a escribir la segunda copia. Se renombró a
+`_escribir_xlsx`, lo comparten Plan Cobertura y Días de Stock, y el arreglo del nulo
+(`_ancho_celda`) se aplicó ahí **y** en el export de Stock sin Venta, que tenía la misma
+bomba esperando la primera columna con un hueco.
+
+**Verificado en vivo:** `/api/gerencia/dias_stock/export` → 200, 29.974 B; el xlsx bajado de
+Render comparado hoja por hoja contra el local da `DataFrame.equals` = True en las cuatro
+(`Resumen` 6×16, `PyP` y `VSB` 176×10, `Sin código` 3×3); `portal.html` servido por Render
+idéntico al local.
+
 ## 2026-08-18 - fix(litros): Antares lata en 0 L + 8 SKU vigentes fuera del maestro 04D
 
 **Síntoma:** el diagnóstico del interanual mostraba 18 SKU sin maestro y 54 líneas sin litros.
