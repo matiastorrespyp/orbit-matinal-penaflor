@@ -5648,7 +5648,7 @@ def gerencia_stock_sin_venta_export():
         ws = xl.sheets["Stock sin venta"]
         for i, col in enumerate(df.columns, start=1):
             if len(df):
-                ancho = max(len(str(col)), int(df.iloc[:, i - 1].astype(str).map(len).max()))
+                ancho = max(len(str(col)), int(df.iloc[:, i - 1].map(_ancho_celda).max()))
             else:
                 ancho = len(str(col))
             ws.column_dimensions[chr(64 + i)].width = min(max(ancho + 2, 10), 50)
@@ -11129,6 +11129,19 @@ def _plan_cob_hojas_factura(filas):
     return det, comp
 
 
+def _ancho_celda(v):
+    """Ancho en caracteres de una celda, tolerante a nulos.
+
+    Antes se hacía `col.astype(str).map(len)`. En pandas 2 un NaN se convertía al string
+    "nan" y `len` funcionaba; en pandas 3 `astype(str)` PRESERVA el nulo, así que `len`
+    recibe un float y revienta con `TypeError: object of type 'float' has no len()`.
+    Como `requirements.txt` no pinea pandas, Render instala la última y local se queda en
+    la 2.x: el export andaba en local y daba 500 en el server. Cualquier columna con un
+    hueco lo dispara — en Días de Stock, los productos que no figuran en el archivo del
+    depósito dejan `Disponible` y `Días de stock` en nulo."""
+    return len(str(v))
+
+
 def _escribir_xlsx(hojas):
     """Escribe {nombre_hoja: DataFrame} a un xlsx en memoria, con el ancho de columna
     ajustado al contenido (mismo criterio que el export de Stock sin Venta).
@@ -11146,7 +11159,7 @@ def _escribir_xlsx(hojas):
             for i, col in enumerate(df.columns, start=1):
                 ancho = len(str(col))
                 if len(df):
-                    ancho = max(ancho, int(df.iloc[:, i - 1].astype(str).map(len).max()))
+                    ancho = max(ancho, int(df.iloc[:, i - 1].map(_ancho_celda).max()))
                 ws.column_dimensions[get_column_letter(i)].width = min(max(ancho + 2, 10), 52)
     buf.seek(0)
     return buf
