@@ -1355,6 +1355,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       <div class="gs-item" data-sc="dashboard" onclick="gSw('dashboard',this)"><span class="gs-ico">📊</span>Dashboard</div>
       <div class="gs-item" data-sc="planificacion" onclick="gSw('planificacion',this)"><span class="gs-ico">📋</span>Planificación</div>
       <div class="gs-item" data-sc="semanal" onclick="gSw('semanal',this)"><span class="gs-ico">📆</span>Semanal</div>
+      <div class="gs-item" data-sc="stock" onclick="gSw('stock',this)"><span class="gs-ico">📦</span>Stock</div>
       <div class="gs-item" data-sc="vendedores"  onclick="gSw('vendedores',this)"><span class="gs-ico">👥</span>Vendedores</div>
       <div class="gs-item" data-sc="clientes"    onclick="gSw('clientes',this)"><span class="gs-ico">🏪</span>Clientes Críticos</div>
       <div class="gs-item" data-sc="cliente"     onclick="gSw('cliente',this)"><span class="gs-ico">🔎</span>Cliente</div>
@@ -1802,7 +1803,7 @@ function gSw(id,el){
   gScreen=id;
   document.querySelectorAll('.gs-item').forEach(n=>n.classList.remove('active'));
   (el||document.querySelector(`[data-sc="${id}"]`))?.classList.add('active');
-  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',cliente:'Cliente',planificacion:'Planificación',semanal:'Semanal',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',incentivo_faro:'Incentivo FARO',plan_frizze:'Plan Frizze',incentivo_dada:'Incentivo Dada',incentivo_almamora:'Incentivo Alma Mora Malbec Low',plan_cobertura:'Plan Cobertura',stock_sin_venta:'Stock sin Venta',cierre_mes:'Cierre de Mes'};
+  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',cliente:'Cliente',planificacion:'Planificación',semanal:'Semanal',stock:'Stock',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',incentivo_faro:'Incentivo FARO',plan_frizze:'Plan Frizze',incentivo_dada:'Incentivo Dada',incentivo_almamora:'Incentivo Alma Mora Malbec Low',plan_cobertura:'Plan Cobertura',stock_sin_venta:'Stock sin Venta',cierre_mes:'Cierre de Mes'};
   document.getElementById('gTopTitle').textContent=tt[id]||'';
   gRender();
 }
@@ -1814,6 +1815,7 @@ function gRender(){
   else if(gScreen==='cliente')       gCliente(p);
   else if(gScreen==='planificacion') gPlanificacion(p);
   else if(gScreen==='semanal')       gSemanal(p);
+  else if(gScreen==='stock')         gStock(p);
   else if(gScreen==='planvsreal')    gPlanVsReal(p);
   else if(gScreen==='alertas')       gAlertas(p);
   else if(gScreen==='innovaciones')          gInnovaciones(p);
@@ -4401,7 +4403,7 @@ function gSemanal(p){
     <div id="sem-plan"></div>
     <div id="sem-inter"></div>
     <div id="sem-stock"></div>`;
-  semStockCargar();
+  stkCargar();
   semInterCargar();
   if(SEM){ semRenderAll(); return; }
   safe('/api/gerencia/semanal').then(j=>{
@@ -4952,25 +4954,51 @@ async function iaRenderTops(){
       </div></div>`;
 }
 
-/* ════ DÍAS DE STOCK (tarjeta al pie de la pantalla Semanal) ════ */
+/* ════ STOCK — pantalla propia, sólo gerencia (debajo de Semanal) ════ */
 /* Días de stock = existencia actual / venta diaria del mes anterior cerrado.
-   Fuente: /api/gerencia/dias_stock. Tres universos: 11 Titulares, Innovaciones y
-   MPA (Plan AASS Inicial/Silver). Carga lazy junto con el resto de la pantalla. */
-/* Dos depósitos, dos tarjetas: Stock PyP (V3·V4·V6·V8·V10) y VSB Cuyo (V7·V9).
-   Cada una cruza SU archivo de stock con la venta de SUS vendedores. */
+   Fuente: /api/gerencia/dias_stock.
+   UNA TARJETA POR DEPÓSITO, y dentro de cada una los 3 motivos de seguimiento se
+   conmutan con los botones del encabezado (11 Titulares · Innovaciones · MPA):
+     · PyP → Depósito La Francia    (stock.xlsx)          · V3·V4·V6·V8·V10
+     · VSB → Depósito Villa Dolores (stock_VSB_Cuyo.xlsx) · V7·V9
+   No se suman ni se comparten: cada tarjeta cruza SU archivo de stock con la venta
+   de SUS vendedores, que es la ruta que efectivamente descarga ese depósito.
+   Carga LAZY: el fetch recién sale al entrar a la pantalla, y el resultado queda
+   cacheado en STK para las siguientes visitas. */
 let STK=null, stkUni={}, stkOpen={};
 const STK_ACC={pyp:{acc:'var(--mg)',accs:'var(--mg-s)',ico:'📦'},
                vsb:{acc:'var(--info)',accs:'var(--info-s)',ico:'🏔️'}};
 
-function semStockCargar(){
-  if(STK){ semRenderStock(); return; }
-  const c=document.getElementById('sem-stock');
+function gStock(p){
+  p.innerHTML=`<div class="gph">
+      <div>
+        <div class="gph-title">Stock</div>
+        <div class="gph-sub" id="stk-sub">Días de stock por depósito · 11 Titulares · Innovaciones · MPA</div>
+      </div>
+      <div class="gph-chips" id="stk-chips">
+        <button class="g-prim" onclick="descargarDiasStockExcel()">⬇ Exportar Excel</button>
+      </div>
+    </div>
+    <div id="stk-cont"></div>`;
+  stkCargar();
+}
+
+/* La tarjeta vive en DOS pantallas: Stock (#stk-cont) y el pie de Semanal
+   (#sem-stock). Se resuelve el contenedor en vez de duplicar el render, que dejaría
+   dos versiones del mismo número. Sólo una de las dos existe a la vez en el DOM. */
+const stkCont = () => document.getElementById('stk-cont')
+                    || document.getElementById('sem-stock');
+const stkVisible = () => gScreen==='stock' || gScreen==='semanal';
+
+function stkCargar(){
+  if(STK){ stkRender(); return; }
+  const c=stkCont();
   if(c) c.innerHTML=`<div class="card"><div class="card-body"><div class="empty">
     <div class="eico" style="font-size:28px">📦</div><p>Cargando días de stock…</p></div></div></div>`;
   safe('/api/gerencia/dias_stock').then(j=>{
-    if(gScreen!=='semanal') return;
+    if(!stkVisible()) return;                   // el usuario ya cambió de pantalla
     if(!j){
-      const c2=document.getElementById('sem-stock');
+      const c2=stkCont();
       if(c2) c2.innerHTML=`<div class="card"><div class="card-body"><div class="empty">
         <div class="eico" style="font-size:28px">⚠️</div>
         <p>No se pudo cargar /api/gerencia/dias_stock.</p></div></div></div>`;
@@ -4978,16 +5006,32 @@ function semStockCargar(){
     }
     STK=j;
     (j.bloques||[]).forEach(b=>{ if(!stkUni[b.id]) stkUni[b.id]=(b.universos||[])[0]?.id||'11t'; });
-    semRenderStock();
+    stkRender();
   });
 }
 
-function semSetUni(bid,id){ stkUni[bid]=id; semRenderStock(); }
-function semStkTog(k){ stkOpen[k]=!stkOpen[k]; semRenderStock(); }
+/* Descarga server-side (.xlsx): resumen de los 6 cruces + una hoja por depósito con
+   los tres seguimientos apilados. Baja el informe completo, no sólo la pestaña
+   visible. */
+function descargarDiasStockExcel(){
+  window.location.href='/api/gerencia/dias_stock/export';
+}
 
-function semRenderStock(){
-  const cont=document.getElementById('sem-stock'); if(!cont||!STK) return;
+function stkSetUni(bid,id){ stkUni[bid]=id; stkRender(); }
+function stkTog(k){ stkOpen[k]=!stkOpen[k]; stkRender(); }
+
+function stkRender(){
+  const cont=stkCont(); if(!cont||!STK) return;
   cont.innerHTML=(STK.bloques||[]).map(_stkCard).join('');
+  const base=STK.base||{}, um=STK.umbrales||{critico:15,atencion:30};
+  const sub=document.getElementById('stk-sub');
+  if(sub&&base.label) sub.textContent=
+    `Días de stock por depósito · base ${base.label} (${base.dias_habiles} días operativos) · 11 Titulares · Innovaciones · MPA`;
+  const ch=document.getElementById('stk-chips');
+  if(ch) ch.innerHTML=`<span class="chip bd">&lt; ${um.critico} d crítico</span>
+    <span class="chip wn">${um.critico} a ${um.atencion} d atención</span>
+    <span class="chip ok">≥ ${um.atencion} d</span>
+    <button class="g-prim" onclick="descargarDiasStockExcel()">⬇ Exportar Excel</button>`;
 }
 
 function _stkCard(B){
@@ -5000,7 +5044,7 @@ function _stkCard(B){
   const nf=n=>Number(n||0).toLocaleString('es-AR');
   const dcls=d=>d==null?'':(d<um.critico?'bd':d<um.atencion?'wn':'ok');
   const tabs=(B.universos||[]).map(u=>
-    `<button class="${u.id===uid?'active':''}" onclick="semSetUni('${B.id}','${u.id}')">${u.label}</button>`).join('');
+    `<button class="${u.id===uid?'active':''}" onclick="stkSetUni('${B.id}','${u.id}')">${u.label}</button>`).join('');
 
   // Sin match contra el archivo de stock = el export cargado no es el de Peñaflor.
   // Se avisa en vez de dibujar una tabla de ceros (que se leería como "no hay stock").
@@ -5086,7 +5130,7 @@ function _stkCard(B){
       <div>
         <div class="st-title">${acc.ico} ${B.label}
           <span class="st-ruta">${(B.vendedores||[]).join(' · ')}</span></div>
-        <div class="st-sub">Días de stock · base ${base.label||''} · ${B.archivo}</div>
+        <div class="st-sub">${B.sede?B.sede+' · ':''}base ${base.label||''} · ${B.archivo}</div>
       </div>
       <div class="st-tabs">${tabs}</div>
     </div>
@@ -5119,7 +5163,7 @@ function _stkCard(B){
         </div>
       </div>
       ${resumen}
-      <button class="st-toggle" onclick="semStkTog('${k}')">
+      <button class="st-toggle" onclick="stkTog('${k}')">
         ${abierto?'▲ Ocultar el detalle':`▼ Ver los ${nf(r.productos)} productos de ${U.label}`}
       </button>
     </div>

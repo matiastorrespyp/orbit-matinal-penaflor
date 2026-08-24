@@ -1,5 +1,68 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-24 - feat(stock): pantalla Stock (gerencia) + exportacion a Excel
+
+**Pedido:** una pantalla debajo de Semanal, sólo para gerencia, con dos tarjetas —una por
+depósito— y botones para conmutar entre los tres motivos de seguimiento (11 Titulares,
+Innovaciones y MPA) dentro de cada tarjeta. Después: un botón de descarga a Excel, y **sin**
+sacarle nada a Semanal por ahora.
+
+### Qué había ya y qué se hizo
+
+El cálculo de días de stock **ya existía** (`/api/gerencia/dias_stock`, con sus dos bloques y
+sus tres universos), pero vivía sólo como una tarjeta al pie de la pantalla Semanal. No se
+reescribió el motor ni se duplicó el render: ahora **la misma tarjeta se monta en las dos
+pantallas** y el contenedor se resuelve en tiempo de render. Dos copias del render habrían
+dejado dos versiones del mismo número, que es lo que el contrato del proyecto prohíbe.
+
+- `PAV MATINAL PE_A FLOR/portal.html`
+  - Nuevo ítem de menú `Stock` (📦) **inmediatamente debajo de Semanal**, en la sección
+    Gerencia. Vive en `#appG`, así que el perfil vendedor no lo ve.
+  - `gStock(p)` nueva: encabezado con la base de cálculo (mes cerrado + días operativos), los
+    tres umbrales como chips y el botón **⬇ Exportar Excel**, más el contenedor `#stk-cont`.
+  - `stkCont()` resuelve el contenedor: `#stk-cont` (pantalla Stock) o `#sem-stock` (pie de
+    Semanal). Sólo uno de los dos existe a la vez en el DOM.
+  - `semStockCargar/semRenderStock/semSetUni/semStkTog` → `stkCargar/stkRender/stkSetUni/stkTog`.
+    El guard de la respuesta asíncrona pasó de `gScreen!=='semanal'` a `stkVisible()`
+    (`stock` o `semanal`): si no, el fetch tardío escribía sobre el `gPage` de otra vista.
+  - `gSemanal()` **sigue montando** `#sem-stock` y llamando al loader: no se le sacó nada.
+  - Carga LAZY y cacheada en `STK`. El estado de los botones (`stkUni`) es **por tarjeta**:
+    cambiar de motivo en VSB no mueve a PyP, porque son dos análisis distintos.
+- `server_orbit.py`
+  - `_STOCK_BLOQUES` lleva `sede` y el endpoint la publica: las tarjetas dicen
+    **PyP · Depósito La Francia** y **VSB · Depósito Villa Dolores**. Las etiquetas pasaron de
+    "Stock PyP"/"VSB Cuyo" a "PyP"/"VSB".
+  - `_dias_stock_payload()` extraído de la ruta: el JSON del portal y el Excel salen de la
+    MISMA función, así el archivo descargado no puede divergir de la pantalla.
+  - `/api/gerencia/dias_stock/export` nueva. Baja el informe COMPLETO (no sólo la pestaña
+    visible): hoja `Resumen` con los 6 cruces depósito × seguimiento, una hoja por depósito
+    (`PyP`, `VSB`) con los tres seguimientos apilados y una columna `Seguimiento`, y hoja
+    `Sin código` con lo que MPA.xlsx no pudo mapear al ERP. El grupo de riesgo va como texto
+    (`Crítico (menos de 15 días)`), porque fuera del portal no hay color que lo explique.
+
+### Lo que NO cambió (a propósito)
+
+La regla de cálculo queda igual: días de stock = unidades disponibles ÷ venta diaria del mes
+anterior cerrado, con la venta **sólo de los vendedores de la ruta de ese depósito**
+(PyP → V3·V4·V6·V8·V10, VSB → V7·V9) y el divisor en días operativos lun-sáb sin feriados.
+Los dos depósitos no se suman ni se comparten stock.
+
+### Validación (datos reales, no sintéticos)
+
+- `/api/gerencia/dias_stock` → 200 en 7,4 s. Base **Jul 2026** (26 días operativos, fuente
+  cierre mensual). PyP: 228 códigos de stock, 111 matchean el portfolio. VSB: 125 / 77.
+- Los contadores por grupo son excluyentes y cierran contra el total en los 6 cruces:
+  p.ej. MPA PyP 6+6+10+2+43 = 67 productos.
+- `/api/gerencia/dias_stock/export` → 200, 30 KB, `dias_stock_202607.xlsx`. Hojas
+  `Resumen` (6 filas × 16 col), `PyP` y `VSB` (176 filas = 82+27+67 cada una) y `Sin código`
+  (3 filas). Los números del Excel coinciden con los del JSON.
+- Render verificado leyendo el DOM en Chrome: 2 tarjetas con sus sedes, 3 botones cada una,
+  conmutación independiente (VSB 11T 84,7 d → Innovaciones 147,1 d deja PyP intacta), el
+  desplegable abre las 67 filas de MPA, y el botón de exportar en el encabezado.
+- Confirmado que la pantalla **Semanal sigue completa**: `sem-hist`, `sem-plan`, `sem-inter`
+  y `sem-stock` con sus 2 tarjetas y sus 3 botones.
+- `node --check` sobre el JS embebido del portal: OK.
+
 ## 2026-08-18 - fix(litros): Antares lata en 0 L + 8 SKU vigentes fuera del maestro 04D
 
 **Síntoma:** el diagnóstico del interanual mostraba 18 SKU sin maestro y 54 líneas sin litros.

@@ -3884,7 +3884,7 @@ def gerencia_semanal_plan():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# DÍAS DE STOCK — 11 Titulares · Innovaciones · MPA (tarjeta de la pantalla Semanal)
+# DÍAS DE STOCK — 11 Titulares · Innovaciones · MPA (pantalla Stock, sólo gerencia)
 # ══════════════════════════════════════════════════════════════════════════════
 # Días de stock = existencia actual / venta diaria del MES ANTERIOR (cerrado).
 #   · Venta: CantBase del mes anterior, MISMA unidad que el stock (unidades/botellas).
@@ -3898,16 +3898,16 @@ def gerencia_semanal_plan():
 # DOS DEPÓSITOS, DOS TARJETAS (definido por el usuario 2026-07-28). No se suman ni se
 # comparten: cada uno tiene su propio archivo de stock y su propia ruta de vendedores,
 # así que la venta que descuenta cada stock es SÓLO la de sus vendedores.
-#   · Stock PyP  → stock.xlsx           → V3, V4, V6, V8, V10
-#   · VSB Cuyo   → stock_VSB_Cuyo.xlsx  → V7, V9
+#   · PyP (Depósito La Francia)    → stock.xlsx          → V3, V4, V6, V8, V10
+#   · VSB (Depósito Villa Dolores) → stock_VSB_Cuyo.xlsx → V7, V9
 # V20 (Depósito) queda fuera de los dos: no pertenece a ninguna de las dos rutas.
 _DIAS_STOCK_CRITICO = 15    # días: rojo
 _DIAS_STOCK_ATENCION = 30   # días: ámbar; por encima, verde
 _STOCK_BLOQUES = [
-    {"id": "pyp", "label": "Stock PyP",  "archivo": "stock.xlsx",
-     "vendedores": [3, 4, 6, 8, 10]},
-    {"id": "vsb", "label": "VSB Cuyo",   "archivo": "stock_VSB_Cuyo.xlsx",
-     "vendedores": [7, 9]},
+    {"id": "pyp", "label": "PyP",  "sede": "Depósito La Francia",
+     "archivo": "stock.xlsx",     "vendedores": [3, 4, 6, 8, 10]},
+    {"id": "vsb", "label": "VSB",  "sede": "Depósito Villa Dolores",
+     "archivo": "stock_VSB_Cuyo.xlsx", "vendedores": [7, 9]},
 ]
 
 
@@ -4149,7 +4149,7 @@ def _dias_stock_bloque(cfg, desc_map, universos_base):
     codigos_universo = {f["codigo"] for u in universos for f in u["productos"]}
     match = len(codigos_universo & set(stock_map))
     return {
-        "id": cfg["id"], "label": cfg["label"],
+        "id": cfg["id"], "label": cfg["label"], "sede": cfg.get("sede", ""),
         "archivo": cfg["archivo"],
         "vendedores": [f"V{v}" for v in cfg["vendedores"]],
         "base": meta,
@@ -4160,10 +4160,10 @@ def _dias_stock_bloque(cfg, desc_map, universos_base):
     }
 
 
-@app.route("/api/gerencia/dias_stock")
-def gerencia_dias_stock():
-    """Días de stock de 11 Titulares, Innovaciones y MPA contra la venta del mes
-    anterior, por depósito (Stock PyP y VSB Cuyo, cada uno con su ruta)."""
+def _dias_stock_payload():
+    """Payload completo de días de stock: los dos depósitos x los tres seguimientos.
+    Lo comparten el JSON del portal y la exportación a Excel, para que el archivo que se
+    descarga sea EXACTAMENTE lo que se está mirando en pantalla."""
     desc_map = _acc_desc_articulo_map()
     # Los universos de producto son los mismos para los dos depósitos: se arman una
     # sola vez y cada bloque los cruza con SU stock y SU venta.
@@ -4179,17 +4179,127 @@ def gerencia_dias_stock():
     cod2nom, sin_codigo = _mpa_universo()
     if cod2nom or sin_codigo:
         universos_base.append(("mpa", "MPA · Plan AASS",
-                               "MPA/MPA.xlsx × 09_CONFIG/mpa_codigos.csv",
+                               "MPA/MPA.xlsx x 09_CONFIG/mpa_codigos.csv",
                                cod2nom, sin_codigo))
 
     bloques = [_dias_stock_bloque(cfg, desc_map, universos_base) for cfg in _STOCK_BLOQUES]
-    return jsonify({
+    return {
         "generado_en": _now_ar(),
         "fuente": "01_INPUTS/Stock/<depósito>.xlsx + venta del mes anterior (unidades)",
         "umbrales": {"critico": _DIAS_STOCK_CRITICO, "atencion": _DIAS_STOCK_ATENCION},
         "base": bloques[0]["base"] if bloques else {},
         "bloques": bloques,
-    })
+    }
+
+
+@app.route("/api/gerencia/dias_stock")
+def gerencia_dias_stock():
+    """Días de stock de 11 Titulares, Innovaciones y MPA contra la venta del mes anterior,
+    por depósito (PyP / La Francia y VSB / Villa Dolores, cada uno con su ruta)."""
+    return jsonify(_dias_stock_payload())
+
+
+# Etiqueta legible del grupo de riesgo. El Excel no tiene el color de fondo que en el
+# portal explica la fila, así que el estado va escrito: "sin_stock" no se entiende afuera.
+_DIAS_STOCK_ESTADOS = {
+    "sin_stock": "Sin existencia",
+    "critico":   f"Crítico (menos de {_DIAS_STOCK_CRITICO} días)",
+    "atencion":  f"Atención ({_DIAS_STOCK_CRITICO} a {_DIAS_STOCK_ATENCION} días)",
+    "sin_venta": "Sin venta en el mes base",
+    "ok":        f"OK ({_DIAS_STOCK_ATENCION} días o más)",
+}
+
+
+@app.route("/api/gerencia/dias_stock/export")
+def gerencia_dias_stock_export():
+    """Descarga Excel del análisis de días de stock: una hoja de resumen (los 6 cruces de
+    depósito x seguimiento) y una hoja por depósito con el detalle producto por producto de
+    los tres seguimientos apilados.
+
+    Se exporta el informe COMPLETO, no sólo la pestaña visible: el que abre el archivo suele
+    querer comparar los tres seguimientos, y bajarlo tres veces sólo deja tres archivos
+    parciales dando vueltas."""
+    pay = _dias_stock_payload()
+    bloques = pay.get("bloques") or []
+    if not bloques:
+        return jsonify({"error": "Días de stock no disponible (falta 01_INPUTS/Stock/)"}), 404
+
+    base = pay.get("base") or {}
+    mes = str(base.get("label", "") or "")
+    col_vendido = ("Vendido " + mes).strip()
+
+    resumen = []
+    for b in bloques:
+        for u in b.get("universos", []):
+            r = u.get("resumen", {})
+            resumen.append({
+                "Depósito": b["label"],
+                "Sede": b.get("sede", ""),
+                "Archivo de stock": b["archivo"],
+                "Ruta": " · ".join(b.get("vendedores", [])),
+                "Seguimiento": u["label"],
+                "Días de stock": r.get("dias_stock"),
+                "Productos": r.get("productos"),
+                "Con existencia": r.get("en_stock"),
+                "Sin existencia": r.get("sin_stock"),
+                f"Bajo {_DIAS_STOCK_CRITICO} días": r.get("criticos"),
+                f"De {_DIAS_STOCK_CRITICO} a {_DIAS_STOCK_ATENCION} días": r.get("atencion"),
+                "Sin venta": r.get("sin_venta"),
+                "OK": r.get("ok"),
+                "Unidades disponibles": r.get("disponible"),
+                col_vendido: r.get("vendido_mes"),
+                "Unidades/día": r.get("venta_diaria"),
+            })
+
+    hojas = [("Resumen", pd.DataFrame(resumen))]
+    for b in bloques:
+        filas = []
+        for u in b.get("universos", []):
+            for f in u.get("productos", []):
+                filas.append({
+                    "Seguimiento": u["label"],
+                    "Código": f["codigo"],
+                    "Producto": f.get("descripcion") or f.get("etiqueta", ""),
+                    "Titular / Marca": f.get("etiqueta", ""),
+                    "Disponible": f.get("disponible"),
+                    "En tránsito": f.get("transito"),
+                    col_vendido: f.get("vendido_mes"),
+                    "Unidades/día": f.get("venta_diaria"),
+                    "Días de stock": f.get("dias_stock"),
+                    "Estado": _DIAS_STOCK_ESTADOS.get(f.get("grupo"), f.get("grupo", "")),
+                })
+        # Excel admite 31 caracteres de nombre de hoja
+        hojas.append((str(b["label"])[:31] or b["id"], pd.DataFrame(filas)))
+
+    # Lo que MPA.xlsx no pudo mapear a un código del ERP se informa, no se descarta en
+    # silencio: si no está acá, el que audita el Excel no se entera de que falta.
+    sin_cod = []
+    for b in bloques[:1]:
+        for u in b.get("universos", []):
+            for n in (u.get("sin_codigo") or []):
+                sin_cod.append({"Seguimiento": u["label"], "Producto sin código": n,
+                                "Se resuelve en": "09_CONFIG/mpa_codigos.csv"})
+    if sin_cod:
+        hojas.append(("Sin código", pd.DataFrame(sin_cod)))
+
+    from openpyxl.utils import get_column_letter
+    buf = BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as xl:
+        for nombre, df in hojas:
+            df.to_excel(xl, index=False, sheet_name=nombre)
+            ws = xl.sheets[nombre]
+            ws.freeze_panes = "A2"
+            for i, col in enumerate(df.columns, start=1):
+                ancho = len(str(col))
+                if len(df):
+                    ancho = max(ancho, int(df.iloc[:, i - 1].astype(str).map(len).max()))
+                ws.column_dimensions[get_column_letter(i)].width = min(max(ancho + 2, 10), 46)
+    buf.seek(0)
+
+    per = str(base.get("periodo", "") or "").replace("-", "")
+    fname = f"dias_stock_{per}.xlsx" if per else "dias_stock.xlsx"
+    return send_file(buf, as_attachment=True, download_name=fname,
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

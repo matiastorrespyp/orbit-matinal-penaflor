@@ -1,5 +1,39 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-24 - Pantalla Stock (gerencia) + export Excel
+
+### HECHO
+- [x] Nueva pantalla **Stock** en el menu de gerencia, justo debajo de Semanal. Dos tarjetas:
+  **PyP** (Deposito La Francia, stock.xlsx, ruta V3-V4-V6-V8-V10) y **VSB** (Deposito Villa
+  Dolores, stock_VSB_Cuyo.xlsx, ruta V7-V9).
+- [x] Cada tarjeta conmuta entre los 3 motivos de seguimiento con botones: 11 Titulares,
+  Innovaciones y MPA. El estado es por tarjeta (cambiar una no mueve la otra).
+- [x] La tarjeta **sigue estando tambien al pie de Semanal**: no se le saco nada a esa
+  pantalla. El render es UNO solo y resuelve el contenedor (`stkCont()`: `#stk-cont` en Stock,
+  `#sem-stock` en Semanal); no hay dos copias del mismo numero.
+- [x] Boton **Exportar Excel** en el encabezado de la pantalla Stock ->
+  `/api/gerencia/dias_stock/export`. Baja el informe completo: hoja Resumen (6 cruces),
+  una hoja por deposito con los 3 seguimientos apilados (176 filas c/u) y hoja Sin codigo.
+- [x] `_dias_stock_payload()` extraido: el JSON del portal y el Excel salen de la misma
+  funcion, asi el archivo no puede divergir de la pantalla.
+- [x] Validado con datos reales: endpoint 200, base Jul 2026 (26 dias operativos), PyP 111
+  codigos con match sobre 228, VSB 77 sobre 125, contadores cerrando en los 6 cruces, Excel
+  de 30 KB con los mismos numeros, render y botones verificados leyendo el DOM en Chrome.
+
+### PROXIMA TAREA
+- [ ] **3 productos de MPA.xlsx siguen sin codigo asignado** (Alma Mora Blend 0.75L, Dada 7
+  Dulce 0.75L, Suter Etiqueta Marron Blanco 0.75L) y quedan fuera del calculo: se informan al
+  pie de la tarjeta y en la hoja "Sin codigo" del Excel, no se adivinan. Se resuelven
+  agregando la fila en `09_CONFIG/mpa_codigos.csv`.
+- [ ] Revisar con deposito los **29 SKU de 11 Titulares sin existencia en VSB** (de 82) y los
+  **20 de 27 Innovaciones**: hoy la mayoria figura como "no esta en el archivo de stock", que
+  no es lo mismo que "existencia 0". Confirmar si Villa Dolores realmente no los tiene o si el
+  export sale incompleto.
+- [ ] Definir si la tarjeta de dias de stock **se queda en las dos pantallas** o termina
+  viviendo solo en Stock. Hoy esta duplicada a pedido ("no saques de semanal nada por el
+  momento"); si se decide sacarla de Semanal, es borrar `#sem-stock` y la llamada a
+  `stkCargar()` en `gSemanal()`, nada mas.
+
 ## Sesion 2026-08-18 - Antares lata en 0 L y maestro 04D completado
 
 ### HECHO
