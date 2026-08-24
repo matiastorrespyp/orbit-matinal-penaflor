@@ -4,6 +4,7 @@ ORBIT Server v3 — Flask API con diagnóstico, CCC real, 11T real, sin mock
 from flask import Flask, jsonify, request, send_from_directory, make_response, send_file
 import json, sqlite3, pandas as pd, math
 from io import BytesIO
+import traceback
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 
@@ -4282,19 +4283,16 @@ def gerencia_dias_stock_export():
     if sin_cod:
         hojas.append(("Sin código", pd.DataFrame(sin_cod)))
 
-    from openpyxl.utils import get_column_letter
-    buf = BytesIO()
-    with pd.ExcelWriter(buf, engine="openpyxl") as xl:
-        for nombre, df in hojas:
-            df.to_excel(xl, index=False, sheet_name=nombre)
-            ws = xl.sheets[nombre]
-            ws.freeze_panes = "A2"
-            for i, col in enumerate(df.columns, start=1):
-                ancho = len(str(col))
-                if len(df):
-                    ancho = max(ancho, int(df.iloc[:, i - 1].astype(str).map(len).max()))
-                ws.column_dimensions[get_column_letter(i)].width = min(max(ancho + 2, 10), 46)
-    buf.seek(0)
+    # Se reusa el escritor de xlsx que ya existe (mismo ancho de columna y panel fijo).
+    # Un 500 mudo en un endpoint de descarga no le dice nada a nadie: el navegador se
+    # queda con una pestaña en blanco. Se loguea el traceback del servidor y se devuelve
+    # el motivo, para no tener que adivinar contra el server de producción.
+    try:
+        buf = _escribir_xlsx(dict(hojas))
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": "No se pudo generar el Excel de días de stock",
+                        "detalle": f"{type(e).__name__}: {e}"}), 500
 
     per = str(base.get("periodo", "") or "").replace("-", "")
     fname = f"dias_stock_{per}.xlsx" if per else "dias_stock.xlsx"
@@ -11131,9 +11129,13 @@ def _plan_cob_hojas_factura(filas):
     return det, comp
 
 
-def _plan_cob_escribir_xlsx(hojas):
+def _escribir_xlsx(hojas):
     """Escribe {nombre_hoja: DataFrame} a un xlsx en memoria, con el ancho de columna
-    ajustado al contenido (mismo criterio que el export de Stock sin Venta)."""
+    ajustado al contenido (mismo criterio que el export de Stock sin Venta).
+
+    Lo comparten Plan Cobertura y Días de Stock. Se llamaba `_plan_cob_escribir_xlsx`,
+    pero nunca tuvo nada de Plan Cobertura: era un escritor genérico con nombre prestado,
+    y el nombre invitaba a escribir una segunda copia en vez de reusarlo."""
     from openpyxl.utils import get_column_letter
     buf = BytesIO()
     with pd.ExcelWriter(buf, engine="openpyxl") as xl:
@@ -11175,7 +11177,7 @@ def gerencia_plan_cobertura_export():
             hojas["Comprobantes"] = comp
         if not det.empty:
             hojas["Detalle"] = det
-    buf = _plan_cob_escribir_xlsx(hojas)
+    buf = _escribir_xlsx(hojas)
     slug = meta["label"].lower().replace(" ", "_")
     fecha = datetime.now(_ARG_TZ).strftime("%Y-%m-%d")
     return send_file(buf, as_attachment=True,
