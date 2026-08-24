@@ -235,6 +235,9 @@ _MATRIZ_CACHE = {"mtime": None, "data": None}
 _NORM_TITULAR = {"SMF ICE": "SMIRNOFF ICE"}
 
 
+import motor_codigos   # equivalencias codigo catalogo -> codigo ERP
+
+
 def cargar_matriz_11t(path=None) -> pd.DataFrame:
     """Matriz oficial SKU -> titular. Cacheada por mtime.
 
@@ -261,6 +264,11 @@ def cargar_matriz_11t(path=None) -> pd.DataFrame:
     })
     out = out[out["codigo_articulo"].notna() & out["titular"].ne("") & out["titular"].ne("NAN")]
     out["codigo_articulo"] = out["codigo_articulo"].astype(int)
+    # El código de la matriz es el del CATÁLOGO DEL PROVEEDOR, que no siempre coincide con
+    # el que usa nuestro ERP para el mismo producto. Sin esto, la venta de ese SKU no le
+    # suma al titular y en la pantalla Stock figura como "no está en el archivo de stock",
+    # que se lee como "no tenemos" en vez de "estamos mirando el código equivocado".
+    out["codigo_articulo"] = motor_codigos.canonizar_serie(out["codigo_articulo"])
     out = out.drop_duplicates(subset=["codigo_articulo"], keep="first").reset_index(drop=True)
     _MATRIZ_CACHE.update({"mtime": mt, "data": out})
     return out.copy()

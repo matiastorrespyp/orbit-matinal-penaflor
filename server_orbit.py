@@ -17,6 +17,7 @@ import os, shutil, csv as _csv, threading
 
 import motor_11t          # motor autoritativo de cobertura 11T (única fuente de la regla)
 import motor_padron       # regla única de pertenencia de cartera (duplicados del padrón)
+import motor_codigos      # equivalencias código catálogo proveedor -> código ERP
 import motor_acciones_analisis as motor_acc_an   # lógica pura del análisis de una acción
 
 # M1 (mount embebido en Orbit Home): con PENAFLOR_SKIP_BOOT=1, importar este módulo NO ejecuta
@@ -3994,7 +3995,10 @@ def _mpa_universo():
             sin_codigo.append(n)
             continue
         for c in cods:
-            cod2nom.setdefault(c, n)   # un código puede venir de un SKU y de una agrupación
+            # mpa_codigos.csv trae el código del catálogo del proveedor; se lleva al del ERP
+            # (ver motor_codigos) o el producto queda midiendo contra un SKU que no existe
+            # en nuestras ventas ni en nuestro stock.
+            cod2nom.setdefault(motor_codigos.canonizar(c), n)
     data = (cod2nom, sin_codigo)
     _MPA_CACHE.update({"key": key, "data": data})
     return data
@@ -4165,7 +4169,17 @@ def _dias_stock_payload():
     """Payload completo de días de stock: los dos depósitos x los tres seguimientos.
     Lo comparten el JSON del portal y la exportación a Excel, para que el archivo que se
     descarga sea EXACTAMENTE lo que se está mirando en pantalla."""
-    desc_map = _acc_desc_articulo_map()
+    desc_map = dict(_acc_desc_articulo_map())
+    # El catálogo del proveedor no conoce los códigos que usa NUESTRO ERP (ver
+    # motor_codigos), así que un producto que sólo existe en un depósito se quedaba sin
+    # nombre en el otro y la fila salía con el titular pelado ("ANTARES"). El nombre se
+    # completa con el de cualquier depósito que sí lo tenga: es el mismo producto.
+    for _cfg in _STOCK_BLOQUES:
+        _st = _stock_disponible(_cfg["archivo"])
+        if _st.empty:
+            continue
+        for _c, _d in zip(_st["codigo"], _st["descripcion"]):
+            desc_map.setdefault(str(int(_c)), {}).setdefault("descripcion", str(_d))
     # Los universos de producto son los mismos para los dos depósitos: se arman una
     # sola vez y cada bloque los cruza con SU stock y SU venta.
     universos_base = []

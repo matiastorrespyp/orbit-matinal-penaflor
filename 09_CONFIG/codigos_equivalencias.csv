@@ -1,0 +1,4 @@
+codigo_catalogo,codigo_erp,producto,verificado_en,nota
+60001,30329,ANTARES LATA KOLSCH 6 X 473ML,2026-08-24,El catalogo del proveedor (Cluster 25) factura Kolsch como 60001; nuestro ERP usa 30329. 60001 no tiene una sola linea de venta ni una unidad de stock.
+60002,30343,ANTARES LATA SCOTCH 6 X 473ML,2026-08-24,Idem Kolsch. 30343 tiene stock en los dos depositos y ventas en agosto 2026.
+60007,30268,ANTARES LATA CARAVANA 6 X 473ML,2026-08-24,Idem Kolsch. 30268 tiene 96 unidades en La Francia y ventas en agosto 2026.

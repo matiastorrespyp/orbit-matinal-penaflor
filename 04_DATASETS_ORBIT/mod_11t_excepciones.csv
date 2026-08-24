@@ -36,9 +36,6 @@ SKU_SIN_MATCH_EN_MATRIZ,30129,BAILEYS SALTED CARAMEL 12X750 — no pertenece a n
 SKU_SIN_MATCH_EN_MATRIZ,30130,TANQUERAY DRY GIN X700 — no pertenece a ningun titular oficial,5,10.0
 SKU_SIN_MATCH_EN_MATRIZ,30138,JW GOLD RESERVE 6x750 — no pertenece a ningun titular oficial,4,11.0
 SKU_SIN_MATCH_EN_MATRIZ,30140,TANQUERAY BOSSA NOVA 6X700 — no pertenece a ningun titular oficial,4,6.0
-SKU_SIN_MATCH_EN_MATRIZ,30268,ANTARES LATA CARAVANA 6 X 473ML — no pertenece a ningun titular oficial,3,24.0
-SKU_SIN_MATCH_EN_MATRIZ,30329,ANTARES LATA KOLSCH 6 X 473ML — no pertenece a ningun titular oficial,8,48.0
-SKU_SIN_MATCH_EN_MATRIZ,30343,ANTARES LATA SCOTCH 6 X 473ML — no pertenece a ningun titular oficial,2,18.0
 SKU_SIN_MATCH_EN_MATRIZ,35093,SMIRNOFF BC GRAPEF.&LIME 6X700 — no pertenece a ningun titular oficial,15,294.0
 SKU_SIN_MATCH_EN_MATRIZ,35101,SMIRNOFF BC ORANGE & LIME 6X700 — no pertenece a ningun titular oficial,13,258.0
 SKU_SIN_MATCH_EN_MATRIZ,35102,SMIRNOFF BC TANGE&LEMONGRASS 6X700 — no pertenece a ningun titular oficial,1,6.0
@@ -134,4 +131,4 @@ CLIENTE_SIN_PADRON,,cliente no esta en clientes.xlsx: sin segmento ni cartera,3,
 CLIENTE_DUPLICADO_EN_PADRON,"272,320,1065,1257,1336,1366,1392,1414,1424,4758",cargado mas de una vez en clientes.xlsx; resuelto por motor_padron (V3/V8 -> V8). Corregir la cartera en el ERP,10,0.0
 DEPOSITO,"1,20","deposito/venta directa (V1/V20): SUMA al total de empresa, sin cartera ni ranking ni cumplimiento individual. Es una decision comercial, no hay nada que corregir",24,120.0
 CLIENTE_SIN_CARTERA,"786,20008,20010","cliente sin codven o sin asignacion valida en el padron: SUMA al total de empresa, fuera de rankings y objetivos individuales. NO es deposito — asignar cartera en el ERP",43,3463.0
-SEGMENTO_FUERA_DE_SUPERFICIE,,On Premise/Vinoteca/Mayorista/Proximity/resto: el 11T mide solo Autoservicio + Almacen + Kiosco,96,13867.0
+SEGMENTO_FUERA_DE_SUPERFICIE,,On Premise/Vinoteca/Mayorista/Proximity/resto: el 11T mide solo Autoservicio + Almacen + Kiosco,96,13891.0
