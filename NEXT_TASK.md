@@ -1,5 +1,39 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-08-24 (2) - Codigos del catalogo vs codigos del ERP
+
+### HECHO
+- [x] **Corregidos los 3 Antares** que se median contra el codigo del catalogo del proveedor
+  (60001/60002/60007) en vez del de nuestro ERP (30329/30343/30268). Tenian 150, 102 y 96
+  unidades en deposito y figuraban como "no esta en el archivo de stock".
+- [x] **Auditados los 3 universos completos**, no solo Antares: de 176 codigos, 14 huerfanos,
+  de los cuales SOLO 3 eran codigos equivocados. Los otros 6 son productos que no trabajamos
+  y siguen como "sin existencia" a proposito. Innovaciones: 27 de 27 bien.
+- [x] `09_CONFIG/codigos_equivalencias.csv` + `motor_codigos.py` (unico lector) +
+  `test_motor_codigos.py` (13/13). Canonizan `motor_11t.cargar_matriz_11t()` y `_mpa_universo()`.
+- [x] Maestro 04D xlsx sincronizado (256 -> 259 filas); el CSV del runtime ya los tenia.
+- [x] Datasets 11T regenerados (solo los del 11T: main() appendea a 02_HISTORY).
+- [x] `tools/auditar_codigos_universos.py` para repetir el control cada vez que llega
+  catalogo nuevo. Sugiere, no corrige.
+- [x] Publicado y verificado en vivo en Render (commit b57aec7).
+- [x] Impacto: 11T ANTARES 146 -> 147 clientes, 1128 -> 1194 botellas. Los otros 10 titulares
+  sin cambio.
+
+### PROXIMA TAREA
+- [ ] **PREGUNTAR A DEPOSITO: `30275 ANTARES LATA IPA` tiene 6 unidades en VSB y no esta en
+  ningun universo.** NO se agrego porque no es un reemplazo: `60017 ANTARES IPA LATA (New)`
+  esta vivo con 288 unidades y 630 vendidas. Son dos codigos de IPA conviviendo en el ERP.
+  Si 30275 es residuo, que lo den de baja.
+- [ ] **Confirmar con el negocio los 6 productos sin equivalente** (Antares Honey y Playa
+  Grande, D.David Tannat, Trapiche Reserva Syrah/Merlot, Trapiche Dulce Cosecha Rose). Si
+  alguno se compra bajo otro codigo, va como fila nueva en `codigos_equivalencias.csv`.
+- [ ] **Correr `tools/auditar_codigos_universos.py` cada vez que llega catalogo nuevo del
+  proveedor.** Es el unico control que detecta este tipo de error, que no se ve como error.
+- [ ] **OJO: el allowlist del cierre no publica `09_CONFIG/`** -- ni `codigos_equivalencias.csv`
+  ni `mpa_codigos.csv` ni `maestro_04D_productos.csv`. Al agregar una equivalencia hay que
+  commitearla a mano: el cierre diario no la sube y da verde igual (patron ERR-014).
+- [ ] **Pinear `pandas` en `requirements.txt`** (viene de la parte 1 de la sesion).
+
 ## Sesion 2026-08-24 - Pantalla Stock (gerencia) + export Excel
 
 ### HECHO

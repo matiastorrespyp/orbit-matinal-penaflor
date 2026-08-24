@@ -1,5 +1,73 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-08-24 (2) - fix(codigos): 3 Antares medidos contra el codigo del catalogo, no el del ERP
+
+**Reportado por el usuario** mirando la pantalla Stock nueva: *"hay 3 Antares que sí tenemos
+stock (Kolsch, Scotch y Caravana) y estás tomando códigos viejos"*. Confirmado.
+
+### Causa raíz: dos sistemas, dos códigos para el mismo producto
+
+La matriz 11T, `mpa_codigos.csv` y el maestro 04D se arman con el **catálogo del proveedor**
+(`RAW_PRODUCTOS/productos<mes>.xlsx`, hoja `Cluster 25`), que factura esos tres como
+**60001 / 60002 / 60007**. **Nuestro ERP los factura como 30329 / 30343 / 30268.** Los códigos
+del catálogo no tienen ni una línea de venta ni una unidad de stock en ninguna de nuestras
+fuentes.
+
+**No se ve como un error: se ve como un producto sin stock.** La pantalla decía "no está en el
+archivo de stock" mientras había 150, 102 y 96 unidades en depósito.
+
+### Auditoría de los 3 universos (no sólo Antares)
+
+De los 176 códigos (82 del 11T + 27 de Innovaciones + 67 de MPA), **14 no figuraban ni en stock
+ni en ventas**. Pero un código sin stock ni ventas **no es automáticamente un código viejo**:
+
+- **3 códigos equivocados** — los reportados: existe el mismo producto y presentación vivo bajo
+  otro código.
+- **6 productos que no trabajamos** — Antares Honey y Playa Grande, D.David Tannat, Trapiche
+  Reserva Syrah y Merlot, Trapiche Dulce Cosecha Rosé. **No tienen equivalente vivo y tienen
+  que seguir figurando como "sin existencia", porque es la verdad.**
+- **Innovaciones: 27 de 27 correctos.**
+
+### Solución
+
+- **`09_CONFIG/codigos_equivalencias.csv`** (nuevo): puente catálogo → ERP **revisado a mano**,
+  mismo patrón que `mpa_codigos.csv`. Una fila sólo cuando se verificó que el código del
+  catálogo no tiene ventas ni stock y el del ERP sí, mismo producto y presentación.
+  **NO se adivina por texto**: el `contains` sobre la descripción es lo que metió GORDON'S GIN
+  y TONIC dentro de Gordon's Flavours (CLAUDE.md).
+- **`motor_codigos.py`** (nuevo): único lector, cacheado por mtime. Sin archivo devuelve `{}` y
+  no cambia nada — el cambio es seguro por construcción.
+- `motor_11t.cargar_matriz_11t()` y `_mpa_universo()` canonizan. Un punto por consumidor.
+- **Maestro 04D**: el CSV del runtime YA tenía los 3 códigos (del 18/08); el **xlsx fuente**
+  estaba atrasado y se sincronizó (256 → 259 filas, categoría y litros **copiados del gemelo**).
+- **Datasets 11T regenerados**: el dataset congelado tenía los códigos viejos y las dos
+  pantallas de gerencia dejaron de coincidir — lo cazó
+  `test_dashboard_vivo_y_11t_empresa_coinciden_en_el_total` (148 vivo vs 147 dataset). Se
+  regeneraron **sólo los del 11T**: `main()` además appendea a `02_HISTORY` y correrlo hoy
+  pisaría el snapshot del último cierre.
+- **Descripción vacía**: Caravana no está en VSB y el catálogo no conoce el código, así que la
+  fila salía con el titular pelado ("ANTARES"). Ahora el nombre se completa con el de cualquier
+  depósito que tenga el producto.
+- **`tools/auditar_codigos_universos.py`** (nuevo): deja el control repetible. El catálogo se
+  re-dropea cada mes y nada garantiza que el próximo no traiga otro código que no usemos.
+  **Sugiere, no corrige**: la fila la agrega una persona.
+
+### Impacto medido
+
+| | Antes | Después |
+|---|---|---|
+| Stock · Kolsch / Scotch / Caravana | "no figura" | PyP 102 / 42 / 96 u · VSB 48 / 60 / – |
+| 11T ANTARES · clientes que cubren | 146 | **147** |
+| 11T ANTARES · botellas netas | 1.128 | **1.194** |
+| 11T · otros 10 titulares | — | **sin cambio** (medido uno por uno) |
+
+### Validación
+
+`test_motor_11t.py` **73/73 OK** (antes de regenerar el dataset fallaba 1) ·
+`test_motor_padron.py` OK · **`test_motor_codigos.py` nuevo 13/13 OK** · smoke de 9 endpoints
+con `json.dumps` completo · auditoría re-corrida: **0 códigos con reemplazo pendiente** ·
+en vivo en Render: `dias_stock` → `30268:96 | 30329:102 | 30343:42`, `11t_empresa` → ANTARES 148.
+
 ## 2026-08-24 - feat(stock): pantalla Stock (gerencia) + exportacion a Excel
 
 **Pedido:** una pantalla debajo de Semanal, sólo para gerencia, con dos tarjetas —una por
