@@ -3772,9 +3772,15 @@ function accxAnPesos(n){
    dentro de acciones_mes; la lista de clientes se pide aparte y sólo si el usuario la abre,
    porque en gerencia son ~1.500 filas y no tienen por qué viajar en cada login. */
 function accxElegHTML(scope,el){
-  const kpi=(n,t,c)=>`<div style="flex:1 1 92px;min-width:92px;">
-      <div style="font-size:19px;font-weight:800;color:${c||'var(--text)'};">${n==null?'—':n}</div>
-      <div style="font-size:10px;color:var(--text3);line-height:1.35;">${accxEsc(t)}</div></div>`;
+  // Bloque grande: el número al que apunta la acción, con oración completa (nada de
+  // etiquetas sueltas que obliguen a adivinar de qué universo salen).
+  const hero=(n,label,color)=>`<div style="flex:1 1 220px;min-width:220px;">
+      <div style="font-size:26px;font-weight:800;color:${color||'var(--text)'};line-height:1.15;">${n==null?'—':n}</div>
+      <div style="font-size:11.5px;color:var(--text2);line-height:1.4;max-width:280px;">${label}</div></div>`;
+  // Bloque chico: para sub-totales que se apoyan en el hero de arriba.
+  const sub=(n,label)=>`<div style="flex:1 1 150px;min-width:150px;">
+      <div style="font-size:16px;font-weight:700;">${n==null?'—':n}</div>
+      <div style="font-size:10.5px;color:var(--text3);line-height:1.35;">${label}</div></div>`;
   let h=`<div style="margin-top:12px;border-top:1px solid var(--b);padding-top:11px;">
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;">
       🎯 Clientes elegibles${el.mes?' · '+accxEsc(el.mes):''}</div>`;
@@ -3784,12 +3790,20 @@ function accxElegHTML(scope,el){
     h+=`<div style="font-size:11px;color:var(--wn);">⚠️ ${accxEsc(el.nota)}</div></div>`;
     return h;
   }
-  h+=`<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:9px;">
-      ${kpi(el.elegibles,'elegibles','var(--ok)')}
-      ${kpi(el.cartera_tradicional,'cartera Tradicional')}
-      ${kpi(el.sin_compras_penaflor,'sin compras Peñaflor')}
-      ${kpi(el.compro_otros,'compraron otros productos')}
-      ${kpi(el.no_elegibles,'ya compraron una marca','var(--text3)')}
+  // 1) El objetivo de la acción: a quién le aplica.
+  h+=`<div style="display:flex;flex-wrap:wrap;margin-bottom:10px;">
+      ${hero(el.elegibles,'clientes Tradicionales que no compraron ninguna de las 10 marcas de la acción este mes — son el objetivo de la acción','var(--ok)')}
+    </div>`;
+  // 2) De ESE grupo (no de la cartera total), el desglose: con qué se lo encuentra hoy.
+  h+=`<div style="display:flex;flex-wrap:wrap;gap:14px;margin:0 0 12px 3px;padding:9px 0 2px 12px;border-left:2px solid var(--bd3);">
+      ${sub(el.sin_compras_penaflor,'de esos elegibles, no le compraron nada a Peñaflor en el mes')}
+      ${sub(el.compro_otros,'de esos elegibles, sí compraron Peñaflor pero de otra marca/línea')}
+    </div>`;
+  // 3) El grupo OPUESTO (no suma con el de arriba: es el complemento sobre la cartera total).
+  //    Va aparte y en caja propia para que no se lea como una categoría más del desglose.
+  h+=`<div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;padding:10px 12px;background:var(--surf2);border:1px solid var(--b);border-radius:10px;">
+      ${sub(el.no_elegibles,'fuera de la acción: ya compraron alguna de las 10 marcas este mes')}
+      ${sub(el.cartera_tradicional,'cartera Tradicional total (elegibles + fuera de la acción)')}
     </div>
     <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:9px;">${accxEsc(el.criterio||'')}</div>`;
   // Desglose por vendedor: sólo tiene sentido cuando se está mirando más de una cartera.
