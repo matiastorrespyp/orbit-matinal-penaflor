@@ -3645,6 +3645,11 @@ function accxAnRender(scope){
         ? chip(accxAnNum(r.cumplimiento_pct)+'% objetivo','var(--ok)')
         : `<span style="font-size:11px;color:var(--wn);">Objetivo comercial no configurado</span>`}
       ${varTxt?sep+chip(varTxt+' comparable',varCol):''}
+    </div>
+    <div style="font-size:10.5px;color:var(--text3);line-height:1.4;margin:-6px 0 11px;max-width:520px;">
+      Clientes que en el período hicieron una compra de ${accxEsc(d.accion.categoria||'')} · ${accxEsc(d.accion.subcategoria||'')}
+      que cumplió las condiciones de esta acción (producto, segmento y descuento) — no es una lista de a quién le aplica,
+      es quién ya la usó.
     </div>`;
 
   // Barras: cumplimiento (hecho) y proyección (estimación). Son cosas distintas y se
