@@ -3777,6 +3777,10 @@ function accxAnPesos(n){
    dentro de acciones_mes; la lista de clientes se pide aparte y sólo si el usuario la abre,
    porque en gerencia son ~1.500 filas y no tienen por qué viajar en cada login. */
 function accxElegHTML(scope,el){
+  // El backend ya filtra por vendedor cuando scope==='v' (_trad_nc_elegibles recibe vid):
+  // "cartera_tradicional" ahí es SU cartera, no la de la empresa. La etiqueta lo tiene que
+  // decir, o un vendedor lee "total" como "toda Peñaflor".
+  const posesivo=scope==='v'?'tu ':'';
   // Bloque grande: el número al que apunta la acción, con oración completa (nada de
   // etiquetas sueltas que obliguen a adivinar de qué universo salen).
   const hero=(n,label,color)=>`<div style="flex:1 1 220px;min-width:220px;">
@@ -3808,7 +3812,7 @@ function accxElegHTML(scope,el){
   //    Va aparte y en caja propia para que no se lea como una categoría más del desglose.
   h+=`<div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;padding:10px 12px;background:var(--surf2);border:1px solid var(--b);border-radius:10px;">
       ${sub(el.no_elegibles,'fuera de la acción: ya compraron alguna de las 10 marcas este mes')}
-      ${sub(el.cartera_tradicional,'cartera Tradicional total (elegibles + fuera de la acción)')}
+      ${sub(el.cartera_tradicional,posesivo+'cartera Tradicional total (elegibles + fuera de la acción)')}
     </div>
     <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:9px;">${accxEsc(el.criterio||'')}</div>`;
   // Desglose por vendedor: sólo tiene sentido cuando se está mirando más de una cartera.
