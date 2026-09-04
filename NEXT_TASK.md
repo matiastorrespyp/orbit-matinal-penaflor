@@ -1,5 +1,37 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-09-04 - Acciones Comerciales: libro de septiembre (esquema nuevo) no se leia
+
+### HECHO
+- [x] Diagnosticado: `ORBIT_Acciones_Comerciales_Septiembre_2026.xlsx` viene con esquema nuevo
+  (tabla unica `ACCIONES_ORBIT` + `VISTA_VENDEDOR` + `SKU_POR_ACCION`) en vez del viejo
+  (ACCIONES+ESCALAS+PRODUCTOS_Y_LINEAS+EXCLUSIONES). El generador solo sabia leer el viejo.
+- [x] `generar_datasets_acum.py::generar_acciones_explorador()` ahora detecta el esquema y lee
+  los dos (el viejo intacto). Deduplica filas repetidas y las multiples filas por marca del
+  libro nuevo sin perder informacion (marcas quedan en `sub["marcas"]`).
+- [x] Corregido un falso conflicto de solapamiento causado por una nota ("sin stock") que
+  variaba por marca dentro de un mismo tramo de descuento (caso SEP26-022 / Medalla).
+- [x] Sumado `por_marca` / `por_canal` al JSON del explorador (pedido del usuario) + dos modos
+  nuevos en el portal ("Por marca" / "Por tipo de negocio") junto al de Categoria. Comparten
+  codigo entre gerencia y vendedor.
+- [x] `mod_acciones_explorador.json` regenerado: 12 categorias, 37 acciones, sin conflictos
+  falsos, para septiembre 2026.
+- [x] Validado: `test_acciones_explorador.py` (29 tests, sin regresiones), `node --check` del
+  JS del portal, inspeccion manual del JSON.
+- [x] Commiteado y pusheado a `master` para que Render redeploye (branch con autoDeploy).
+
+### PROXIMA TAREA
+- [ ] Abrir el portal en Render/local y probar visualmente el selector "Por marca" / "Por tipo
+  de negocio" del Explorador de Acciones -- no se pudo verificar en el navegador desde este
+  entorno (sin Flask instalado ahi), solo se valido el JSON y la sintaxis del JS.
+- [ ] Si se va a seguir tocando este parser, sumar tests unitarios para el esquema nuevo en
+  `test_acciones_explorador.py` (hoy solo cubre el esquema viejo + smoke test del libro real).
+- [ ] Definir si "RTD" y "RTD (S)" son la misma categoria o no (la fuente no lo aclara; hoy
+  quedan separadas).
+- [ ] Habia un `.git/index.lock` residual bloqueando git; se borro para poder commitear. Si
+  vuelve a aparecer, revisar que no haya un proceso git colgado (bat de cierre corriendo en
+  paralelo, por ejemplo).
+
 ## Sesion 2026-08-24 (2) - Codigos del catalogo vs codigos del ERP
 
 ### HECHO

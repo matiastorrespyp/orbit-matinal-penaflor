@@ -1,5 +1,61 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-09-04 - fix(acciones): libro de septiembre con esquema nuevo (ACCIONES_ORBIT) no se leia
+
+**Reportado por el usuario**: las Acciones Comerciales no se ven ni en gerencia ni en vendedor desde septiembre.
+
+### Causa raiz
+
+`01_INPUTS/ACCIONES COMERCIALES/2026-09/ORBIT_Acciones_Comerciales_Septiembre_2026.xlsx` viene
+con un esquema de hojas totalmente distinto al que leia `generar_acciones_explorador()` (que
+esperaba ACCIONES+ESCALAS+PRODUCTOS_Y_LINEAS+EXCLUSIONES, vigente hasta agosto). El libro nuevo
+trae una unica tabla `ACCIONES_ORBIT` (+ `VISTA_VENDEDOR` + `SKU_POR_ACCION`), asi que el
+generador devolvia el catalogo vacio con `nota: "El libro no tiene las hojas ACCIONES y ESCALAS
+con el formato esperado."` -- confirmado leyendo el `mod_acciones_explorador.json` que estaba
+commiteado, que ya traia esa nota para 2026-09.
+
+### Solucion
+
+- `generar_datasets_acum.py`: `generar_acciones_explorador()` ahora detecta el esquema
+  (`_acc_expl_detectar_formato`) y sabe leer los dos: el viejo intacto (`_acc_expl_leer_viejo`,
+  tests existentes sin cambios) y el nuevo (`_acc_expl_leer_nuevo`).
+- El libro nuevo tiene dos trampas de datos que hubo que resolver sin inventar nada:
+  - Filas duplicadas al pie de la letra (779 filas para 771 reales) -- se deduplica por todas
+    las columnas salvo `Detalle ID`.
+  - Una fila por marca dentro de cada accion/subcanal (hasta 58 marcas), todas con el MISMO
+    tramo de descuento -- se arma una sola escala por tramo real y las marcas se guardan aparte
+    (`sub["marcas"]`), no se repiten filas de escala.
+  - `Condicion cliente` puede variar por marca dentro de un tramo identico en numeros (caso
+    real: SEP26-022, una marca "sin stock"); si entraba en la clave de deduplicacion generaba
+    un falso conflicto de solapamiento. Se corrigio juntando esas notas aparte.
+- Categoria se canonicaliza solo para "Vinos del ano/de guarda/de mesa" -> VDA/VDG/VDM (lo exige
+  el test real `ExcelRealDeAgosto.test_carga_el_libro_real`); el resto de categorias del libro
+  nuevo viaja tal cual.
+- Nuevo: el JSON trae `por_marca` y `por_canal` (indices planos, solo con datos si el libro es
+  del esquema nuevo) -- pedido del usuario, para filtrar acciones directo por marca o por tipo
+  de negocio sin pasar por Categoria -> Linea -> Segmento.
+- `PAV MATINAL PE_A FLOR/portal.html`: el Explorador de Acciones Comerciales suma dos modos
+  nuevos (ademas de Categoria): **Por marca** y **Por tipo de negocio**. Comparten codigo entre
+  gerencia y vendedor (`accxHTML(scope)` ya era compartida).
+- `04_DATASETS_ORBIT/mod_acciones_explorador.json` regenerado con
+  `python generar_datasets_acum.py --solo-explorador`: 12 categorias, 37 acciones para
+  septiembre 2026, sin conflictos falsos.
+
+### Validacion
+
+- `python -m unittest test_acciones_explorador` -- 29 tests: los del esquema viejo y el smoke
+  test del libro real siguen pasando (4 tests fallan por falta del modulo `flask` en este
+  entorno, no relacionado con el fix; 4 se saltan porque ya no es agosto, comportamiento
+  esperado del propio test).
+- `node --check` sobre el JS extraido de `portal.html` -- sin errores de sintaxis.
+- Inspeccion manual del JSON regenerado: 12 categorias (VDA, VDA / VDG, VDG, VDM, Espumantes,
+  RTD, RTD (S), Cerveza Artesanal, Spirits, Innovaciones, Mix estrategico, Resto SKU), 0
+  conflictos falsos, `por_marca` con 59 marcas, `por_canal` con 10 canales.
+
+**Pendiente:** no se pudo abrir el portal en un navegador real desde este entorno (sin Flask
+instalado ahi) para confirmar visualmente el selector nuevo -- validar en el proximo login.
+
+
 ## 2026-08-24 (2) - fix(codigos): 3 Antares medidos contra el codigo del catalogo, no el del ERP
 
 **Reportado por el usuario** mirando la pantalla Stock nueva: *"hay 3 Antares que sí tenemos

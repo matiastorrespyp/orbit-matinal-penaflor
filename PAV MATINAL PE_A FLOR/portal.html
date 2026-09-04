@@ -3365,7 +3365,10 @@ function accxSeg(scope){
   return (s.segmentos||[]).find(g=>g.canal===st.seg)||null;
 }
 
-/* Shell del explorador: cabecera + 3 selectores + panel vacío. Se pinta una sola vez. */
+/* Shell del explorador: cabecera + modo (categoría / marca / tipo de negocio) + cuerpo.
+   Se pinta una sola vez por carga de pestaña; el cambio de modo repinta la tarjeta entera
+   (accxSetModo) porque es un click de botón, no un <select> abierto, así que no hay foco que
+   perder. Dentro de cada modo, los cambios sí son quirúrgicos (ver accxSet / accxSetBusq). */
 function accxHTML(scope){
   const dat=accxDat(scope);
   const cats=dat.categorias||[];
@@ -3378,18 +3381,32 @@ function accxHTML(scope){
         <p>${accxEsc(dat.nota||'No se cargaron las Acciones Comerciales del mes.')}</p>
       </div></div></div>`;
   }
-  if(!ACCX[scope]) ACCX[scope]={cat:'',sub:'',seg:''};
+  if(!ACCX[scope]) ACCX[scope]={cat:'',sub:'',seg:'',modo:'cat',marca:'',canal:''};
+  const st=ACCX[scope];
   const labSty='display:block;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:4px;';
-  const opts=cats.map(c=>`<option value="${accxEsc(c.categoria)}">${accxEsc(c.categoria)}</option>`).join('');
   const avisos=(dat.avisos||[]).filter(a=>String(a.severidad||'').toUpperCase()==='ALTA');
-  return `<div class="card" style="margin-bottom:14px;">
-    <div class="card-hd">
-      <span class="card-title">🧭 Explorador de Acciones Comerciales</span>
-      <span class="chip mg" style="font-size:10px;">${accxEsc(mesNom)}</span>
-    </div>
-    <div class="card-body">
-      ${dat.vigencia?`<div style="font-size:11px;color:var(--text3);margin-bottom:10px;">📅 Vigencia: ${accxEsc(dat.vigencia)}</div>`:''}
-      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+
+  // Los índices por_marca/por_canal sólo los trae el libro nuevo (desde septiembre 2026): el
+  // buscador se ofrece nada más cuando hay datos, así un mes con el libro viejo no muestra
+  // un modo que no puede responder nada.
+  const porMarca=dat.por_marca||{}, porCanal=dat.por_canal||{};
+  const marcasList=Object.keys(porMarca).sort();
+  const canalesList=Object.keys(porCanal).sort();
+  const tieneBuscador=marcasList.length>0||canalesList.length>0;
+  const modoBt=(v,txt)=>`<button type="button" onclick="accxSetModo('${scope}','${v}')"
+      style="cursor:pointer;border:1px solid var(--b);background:${st.modo===v?'rgba(226,20,122,.15)':'transparent'};color:var(--text2);border-radius:6px;padding:5px 11px;font-size:11px;font-weight:${st.modo===v?'700':'400'};">${txt}</button>`;
+  const modoBar=tieneBuscador?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
+      ${modoBt('cat','🗂️ Por categoría')}
+      ${marcasList.length?modoBt('marca','🍷 Por marca'):''}
+      ${canalesList.length?modoBt('canal','🏬 Por tipo de negocio'):''}
+    </div>`:'';
+
+  let cuerpo;
+  if(st.modo==='marca'||st.modo==='canal'){
+    cuerpo=accxBuscarShellHTML(scope,st.modo,st.modo==='marca'?marcasList:canalesList);
+  }else{
+    const opts=cats.map(c=>`<option value="${accxEsc(c.categoria)}">${accxEsc(c.categoria)}</option>`).join('');
+    cuerpo=`<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
         <div style="flex:1 1 190px;min-width:150px;">
           <label style="${labSty}" for="accx-cat-${scope}">Categoría</label>
           <select id="accx-cat-${scope}" class="accx-sel" onchange="accxSet('${scope}','cat',this.value)">
@@ -3405,7 +3422,18 @@ function accxHTML(scope){
           <select id="accx-seg-${scope}" class="accx-sel" onchange="accxSet('${scope}','seg',this.value)"></select>
         </div>
       </div>
-      <div id="accx-panel-${scope}"></div>
+      <div id="accx-panel-${scope}"></div>`;
+  }
+
+  return `<div class="card" id="accx-card-${scope}" style="margin-bottom:14px;">
+    <div class="card-hd">
+      <span class="card-title">🧭 Explorador de Acciones Comerciales</span>
+      <span class="chip mg" style="font-size:10px;">${accxEsc(mesNom)}</span>
+    </div>
+    <div class="card-body">
+      ${modoBar}
+      ${dat.vigencia?`<div style="font-size:11px;color:var(--text3);margin-bottom:10px;">📅 Vigencia: ${accxEsc(dat.vigencia)}</div>`:''}
+      ${cuerpo}
       ${avisos.length?`<details style="margin-top:12px;">
         <summary style="cursor:pointer;font-size:11px;color:var(--wn);">⚠️ ${avisos.length} punto${avisos.length>1?'s':''} pendiente${avisos.length>1?'s':''} de confirmación comercial</summary>
         <div style="margin-top:8px;font-size:11px;color:var(--text2);line-height:1.6;">
@@ -3413,6 +3441,89 @@ function accxHTML(scope){
         </div></details>`:''}
     </div>
   </div>`;
+}
+
+/* Cambiar de modo (categoría / marca / tipo de negocio) repinta la tarjeta entera: es un
+   click de botón, no un <select> abierto, así que no hay foco ni desplegable que perder. */
+function accxSetModo(scope,modo){
+  const st=ACCX[scope]||(ACCX[scope]={cat:'',sub:'',seg:'',modo:'cat',marca:'',canal:''});
+  if(st.modo===modo) return;
+  st.modo=modo;
+  const card=document.getElementById('accx-card-'+scope);
+  if(!card) return;
+  card.outerHTML=accxHTML(scope);
+  if(modo==='cat'){ accxSyncSelects(scope); accxPanel(scope); }
+  else accxBusqRender(scope);
+}
+
+/* Shell de un selector único (marca o tipo de negocio) + contenedor de resultados. El select
+   no se repinta al elegir un valor: sólo se repinta accx-busqres, igual que el panel del
+   modo Categoría. */
+function accxBuscarShellHTML(scope,tipo,lista){
+  const st=ACCX[scope];
+  const labSty='display:block;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:4px;';
+  const label=tipo==='marca'?'Marca':'Tipo de negocio / canal';
+  const val=st[tipo]||'';
+  const opts=lista.map(v=>`<option value="${accxEsc(v)}"${v===val?' selected':''}>${accxEsc(v)}</option>`).join('');
+  return `<div style="max-width:280px;margin-bottom:12px;">
+      <label style="${labSty}" for="accx-busq-${scope}">${label}</label>
+      <select id="accx-busq-${scope}" class="accx-sel" onchange="accxSetBusq('${scope}','${tipo}',this.value)">
+        <option value="">${tipo==='marca'?'Elegí una marca…':'Elegí un tipo de negocio…'}</option>${opts}
+      </select>
+    </div>
+    <div id="accx-busqres-${scope}"></div>`;
+}
+
+function accxSetBusq(scope,tipo,val){
+  const st=ACCX[scope]||(ACCX[scope]={cat:'',sub:'',seg:'',modo:tipo,marca:'',canal:''});
+  st[tipo]=val;
+  accxBusqRender(scope);
+}
+
+/* Resultado del buscador por marca / tipo de negocio: una tarjeta por cada segmento donde
+   la marca (o el canal) elegido tiene una acción vigente — mismo detalle (canal, escalas,
+   tope) que el panel del modo Categoría, para que el vendedor no tenga que cruzarlo a mano. */
+function accxBusqRender(scope){
+  const box=document.getElementById('accx-busqres-'+scope); if(!box) return;
+  const st=ACCX[scope]||{}, dat=accxDat(scope);
+  const tipo=st.modo, val=st[tipo];
+  const vacio=(txt,ico)=>`<div class="empty" style="padding:18px 10px;"><div class="eico">${ico||'🔎'}</div><p>${txt}</p></div>`;
+  if(!val){
+    box.innerHTML=vacio(tipo==='marca'
+      ?'Elegí una marca para ver dónde tiene descuento hoy.'
+      :'Elegí un tipo de negocio para ver qué acciones aplican.');
+    return;
+  }
+  const idx=tipo==='marca'?(dat.por_marca||{}):(dat.por_canal||{});
+  const filas=idx[val]||[];
+  if(!filas.length){ box.innerHTML=vacio('No hay acciones cargadas para esta selección.','🚫'); return; }
+  const chip=(t,cl)=>`<span class="chip ${cl||''}" style="font-size:10px;">${accxEsc(t)}</span>`;
+  let h='';
+  filas.forEach(f=>{
+    const escalas=f.escalas||[];
+    h+=`<div style="border:1px solid var(--b);border-radius:10px;overflow:hidden;margin-bottom:10px;">
+      <div style="padding:10px 12px;background:rgba(226,20,122,.07);border-bottom:1px solid var(--b);">
+        <div style="font-size:13px;font-weight:700;line-height:1.35;">${accxEsc(f.categoria)} · ${accxEsc(f.subcategoria)}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;">
+          ${chip(f.canal,'mg')}${f.mecanica?chip(f.mecanica):''}${f.estado?chip(f.estado,'ok'):''}
+        </div>
+        ${f.resumen?`<div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.5;">${accxEsc(f.resumen)}</div>`:''}
+      </div>
+      <div style="padding:10px 12px;">
+        <table class="tbl" style="font-size:12px;"><tbody>`;
+    escalas.forEach(e=>{
+      const ben=(e.tipo&&e.tipo.toLowerCase().includes('descuento'))?(accxPct(e.descuento)||'—'):accxEsc(e.tipo||'');
+      h+=`<tr><td style="line-height:1.4;">${accxEsc(e.texto||'')}</td>
+        <td style="text-align:right;white-space:nowrap;"><span class="chip ok" style="font-size:11px;font-weight:800;">${accxEsc(ben)}</span></td></tr>`;
+    });
+    h+='</tbody></table>';
+    const topes=[...new Set(escalas.map(e=>e.tope).filter(Boolean))];
+    const obs=[...new Set(escalas.map(e=>e.observacion).filter(Boolean))];
+    if(topes.length) h+=`<div style="margin-top:8px;font-size:11px;color:var(--text2);">🎚 <b>Tope:</b> ${topes.map(accxEsc).join(' · ')}</div>`;
+    if(obs.length) h+=`<div style="margin-top:6px;font-size:11px;color:var(--text3);line-height:1.5;">📝 ${obs.map(accxEsc).join('<br>')}</div>`;
+    h+='</div></div>';
+  });
+  box.innerHTML=h;
 }
 
 /* Cambio de selector: sólo se reconstruyen los selects que dependen del que se tocó. */

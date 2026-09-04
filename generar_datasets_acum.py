@@ -1897,25 +1897,51 @@ def _acc_expl_solapamientos(escalas):
     return conflictos
 
 
-def generar_acciones_explorador():
-    """Arma el catálogo de reglas del mes -> 04_DATASETS_ORBIT/mod_acciones_explorador.json.
+def _acc_expl_categoria_canon(txt):
+    """'Vinos del año/de guarda/de mesa' -> tokens cortos (VDA/VDG/VDM), como venía usando
+    el libro de reglas hasta agosto 2026. El resto de categorías del libro nuevo (Espumantes,
+    RTD, Cerveza Artesanal, Spirits, Innovaciones, Resto SKU, Mix estratégico, "VDA / VDG"
+    cuando la fuente ya mezcla ambas líneas) llegan legibles y se dejan tal cual: no hay
+    ambigüedad que resolver inventando una equivalencia."""
+    if not txt:
+        return txt
+    u = txt.strip().lower().replace("año", "ano")
+    if "vinos del ano" in u:
+        return "VDA"
+    if "vinos de guarda" in u:
+        return "VDG"
+    if "vinos de mesa" in u:
+        return "VDM"
+    return txt.strip()
 
-    Estructura: categorias[] -> subcategorias[] -> segmentos[] -> escalas[], más productos,
-    exclusiones y avisos por acción. Es exactamente el árbol que recorren los tres selectores
-    del portal, así el frontend no tiene que saber nada de reglas comerciales.
 
-    Si falta la carpeta, el Excel o una hoja, devuelve un catálogo vacío con `nota` explicando
-    qué pasó: la pantalla muestra un estado controlado y el resto del cierre sigue."""
-    mdir = _acc_expl_mes_dir()
-    if mdir is None:
-        return {"mes": None, "fuente": None, "categorias": [],
-                "nota": "No existe la carpeta 01_INPUTS/ACCIONES COMERCIALES."}
-    xls = sorted(p for p in mdir.glob("*.xlsx") if not p.name.startswith("~$"))
-    if not xls:
-        return {"mes": mdir.name, "fuente": None, "categorias": [],
-                "nota": f"No hay libro .xlsx de acciones en {mdir.name}."}
-    fuente = xls[0]
+def _acc_expl_detectar_formato(fuente):
+    """Qué esquema de hojas trae el libro del mes.
 
+    - 'viejo': ACCIONES + ESCALAS (formato hasta agosto 2026: una fila conceptual por acción
+      en ACCIONES, sus tramos en ESCALAS).
+    - 'nuevo': ACCIONES_ORBIT (formato desde septiembre 2026: una única tabla detalle, una
+      fila por acción × marca × subcanal × tramo).
+    - None: no calza con ninguno de los dos -> catálogo ausente, no una excepción."""
+    try:
+        hojas = set(pd.ExcelFile(fuente).sheet_names)
+    except Exception:
+        return None
+    if "ACCIONES_ORBIT" in hojas:
+        return "nuevo"
+    if {"ACCIONES", "ESCALAS"} <= hojas:
+        return "viejo"
+    return None
+
+
+def _acc_expl_leer_viejo(fuente):
+    """Esquema vigente hasta agosto 2026 (hojas ACCIONES/ESCALAS/PRODUCTOS_Y_LINEAS/
+    EXCLUSIONES/VALIDACIONES/LEEME). Devuelve (acciones_df, escalas_por_accion,
+    prods_por_accion, excl_por_accion, avisos, vigencia, marcas_por_accion): el formato
+    intermedio común que consume el agregador único de generar_acciones_explorador(), sea
+    cual sea el libro leído. marcas_por_accion viaja vacío: este esquema no declara marca por
+    escala (las marcas de cada acción quedan en PRODUCTOS_Y_LINEAS como texto libre, no como
+    dato estructurado)."""
     acciones = _acc_expl_hoja(fuente, "ACCIONES", "action_id")
     escalas  = _acc_expl_hoja(fuente, "ESCALAS", "action_id")
     prods    = _acc_expl_hoja(fuente, "PRODUCTOS_Y_LINEAS", "action_id")
@@ -1924,8 +1950,7 @@ def generar_acciones_explorador():
     leeme    = _acc_expl_hoja(fuente, "LEEME", "Tema")
 
     if acciones.empty or escalas.empty:
-        return {"mes": mdir.name, "fuente": fuente.name, "categorias": [],
-                "nota": "El libro no tiene las hojas ACCIONES y ESCALAS con el formato esperado."}
+        return None
 
     # Vigencia: sale de la fila "Vigencia" del LEEME, no cableada al mes.
     vigencia = None
@@ -1995,6 +2020,183 @@ def generar_acciones_explorador():
             "solapa":      False,
         })
 
+    return acciones, escalas_por_accion, prods_por_accion, excl_por_accion, avisos, vigencia, {}
+
+
+def _acc_expl_leer_nuevo(fuente):
+    """Esquema vigente desde septiembre 2026: una única tabla ACCIONES_ORBIT (acción × marca
+    × subcanal × tramo), más VISTA_VENDEDOR (estado/resumen por acción, una fila por acción)
+    y SKU_POR_ACCION (SKUs elegibles). Este esquema todavía no trae una hoja de exclusiones.
+
+    Dos cuidados que exige la fuente y que no son opcionales:
+
+    1. FILAS DUPLICADAS AL PIE DE LA LETRA: el libro de septiembre trae filas repetidas (779
+       filas para 771 realmente distintas). Se deduplica por todas las columnas salvo
+       'Detalle ID' (que es sólo un correlativo de fila, no un dato) antes de usar la tabla
+       para cualquier otra cosa.
+    2. UNA FILA POR MARCA: dentro de una misma acción y subcanal, cada marca alcanzada tiene
+       su propia fila con los MISMOS tramos y descuentos (se verificó sobre el libro real:
+       ninguna trae números distintos por marca). Mostrar una fila de escala por marca
+       repetiría el tramo tantas veces como marcas tenga la acción (hasta 58 en este libro),
+       así que las escalas del explorador salen de la tabla deduplicada también por tramo
+       (sin la marca en la clave); la lista completa de marcas de la acción se conserva
+       aparte, en marcas_por_accion, para el buscador por marca del portal."""
+    det = _acc_expl_hoja(fuente, "ACCIONES_ORBIT", "Acción ID")
+    if det.empty:
+        return None
+    det = det.rename(columns=lambda c: str(c).strip())
+    if "Acción ID" not in det.columns:
+        return None
+
+    cols_dedupe_full = [c for c in det.columns if c != "Detalle ID"]
+    det = det.drop_duplicates(subset=cols_dedupe_full).reset_index(drop=True)
+
+    vista = _acc_expl_hoja(fuente, "VISTA_VENDEDOR", "Acción ID")
+    vista = vista.rename(columns=lambda c: str(c).strip())
+    estado_por_accion = {}
+    if not vista.empty and "Acción ID" in vista.columns:
+        for _, r in vista.iterrows():
+            aid = _acc_expl_txt(r.get("Acción ID"))
+            if aid and aid not in estado_por_accion:
+                estado_por_accion[aid] = _acc_expl_txt(r.get("Estado"))
+
+    sku = _acc_expl_hoja(fuente, "SKU_POR_ACCION", "Acción ID")
+    sku = sku.rename(columns=lambda c: str(c).strip())
+    prods_por_accion = {}
+    if not sku.empty and "Acción ID" in sku.columns and "Código artículo" in sku.columns:
+        sku = sku.drop_duplicates(subset=["Acción ID", "Código artículo"])
+        for _, r in sku.iterrows():
+            aid = _acc_expl_txt(r.get("Acción ID"))
+            if not aid:
+                continue
+            cod, desc = _acc_expl_txt(r.get("Código artículo")), _acc_expl_txt(r.get("Descripción artículo"))
+            nombre = f"{desc} ({cod})" if desc and cod else (desc or cod)
+            if not nombre:
+                continue
+            prods_por_accion.setdefault(aid, []).append({
+                "tipo":        "sku",
+                "nombre":      nombre,
+                "regla":       _acc_expl_txt(r.get("Marca")),
+                "observacion": _acc_expl_txt(r.get("Línea comercial")),
+            })
+
+    # Tramos sin la marca en la clave: colapsa las filas repetidas por marca a un tramo único
+    # por (acción, subcanal). Es una vista aparte de 'det', no un reemplazo: 'det' completo
+    # sigue siendo la fuente de marcas_por_accion, más abajo.
+    #
+    # 'Condición cliente' queda FUERA de esta clave a propósito: es una nota que puede variar
+    # por marca dentro del MISMO tramo (caso real: SEP26-022 trae las 8 marcas de
+    # "Innovaciones 3 unidades" con la nota "SKU de innovación indicado", salvo Medalla, que
+    # trae "Producto confirmado; actualmente sin stock" con el mismo 3-9 unidades al 18%). Si
+    # entrara en la clave, ese único tramo se partiría en dos "escalas" idénticas en números
+    # y el detector de solapamientos las marcaría como pisándose entre sí — un falso conflicto
+    # de precio por lo que en realidad es una salvedad de stock de una sola marca. Las notas
+    # se juntan aparte, en obs_por_tramo, y viajan todas en el campo 'observacion' del tramo.
+    cols_tramo = [c for c in ["Acción ID", "Canal", "Subcanal", "Unidad drop", "Drop desde",
+                               "Drop hasta", "Descuento", "Escala", "Tope", "Mecánica"]
+                  if c in det.columns]
+    tramos = det.drop_duplicates(subset=cols_tramo)
+
+    obs_por_tramo = {}
+    if "Condición cliente" in det.columns:
+        for _, r in det.iterrows():
+            nota = _acc_expl_txt(r.get("Condición cliente"))
+            if nota:
+                clave = tuple(r.get(c) for c in cols_tramo)
+                obs_por_tramo.setdefault(clave, set()).add(nota)
+
+    acciones_rows = {}
+    escalas_por_accion = {}
+    for _, r in tramos.iterrows():
+        aid = _acc_expl_txt(r.get("Acción ID"))
+        if not aid:
+            continue
+        if aid not in acciones_rows:
+            acciones_rows[aid] = {
+                "action_id":       aid,
+                "categoria_ui":    _acc_expl_categoria_canon(_acc_expl_txt(r.get("Categoría"))) or "Sin categoría",
+                "subcategoria_ui": _acc_expl_txt(r.get("Segmento producto")) or "General",
+                "mecanica":        _acc_expl_txt(r.get("Mecánica")),
+                "grupo_ui":        None,
+                "estado":          estado_por_accion.get(aid) or _acc_expl_txt(r.get("Estado cruce")),
+                "resumen":         _acc_expl_txt(r.get("Composición")) or _acc_expl_txt(r.get("Acción")),
+            }
+        canal_regla = _acc_expl_txt(r.get("Subcanal")) or _acc_expl_txt(r.get("Canal")) or "General"
+        notas = obs_por_tramo.get(tuple(r.get(c) for c in cols_tramo))
+        escalas_por_accion.setdefault(aid, []).append({
+            "canal_regla": canal_regla,
+            "segmentos":   [canal_regla],
+            "unidad":      _acc_expl_txt(r.get("Unidad drop")),
+            "min":         _acc_expl_int(r.get("Drop desde")),
+            "max":         _acc_expl_int(r.get("Drop hasta")),
+            "descuento":   _acc_expl_num(r.get("Descuento")),
+            "tipo":        _acc_expl_txt(r.get("Mecánica")),
+            "texto":       _acc_expl_txt(r.get("Explicación para vendedor")) or _acc_expl_txt(r.get("Escala")),
+            "observacion": " · ".join(sorted(notas)) if notas else None,
+            "tope":        _acc_expl_txt(r.get("Tope")),
+            "solapa":      False,
+        })
+
+    marcas_por_accion = {}
+    if "Marca" in det.columns:
+        for aid_raw, grp in det.groupby("Acción ID"):
+            aid = _acc_expl_txt(aid_raw)
+            if not aid:
+                continue
+            marcas = sorted({m for m in grp["Marca"].dropna().astype(str).str.strip() if m})
+            if marcas:
+                marcas_por_accion[aid] = marcas
+
+    vigencia = None
+    if "Vigencia" in det.columns:
+        vig = [v for v in det["Vigencia"].dropna().astype(str).str.strip().unique().tolist() if v]
+        vigencia = vig[0] if vig else None
+
+    return (pd.DataFrame(acciones_rows.values()), escalas_por_accion, prods_por_accion, {},
+            [], vigencia, marcas_por_accion)
+
+
+def generar_acciones_explorador():
+    """Arma el catálogo de reglas del mes -> 04_DATASETS_ORBIT/mod_acciones_explorador.json.
+
+    Estructura: categorias[] -> subcategorias[] -> segmentos[] -> escalas[], más productos,
+    marcas, exclusiones y avisos por acción; y dos índices planos (por_marca / por_canal)
+    para el buscador del portal que no pasa por el árbol Categoría→Subcategoría→Segmento
+    (filtrar directo por marca o por tipo de negocio/canal). Es exactamente lo que recorre el
+    frontend, así no tiene que saber nada de reglas comerciales.
+
+    Soporta DOS esquemas de libro (ver _acc_expl_detectar_formato): el vigente hasta agosto
+    2026 (hojas ACCIONES + ESCALAS) y el vigente desde septiembre 2026 (hoja única
+    ACCIONES_ORBIT). Si falta la carpeta, el Excel, o el libro no calza con ninguno de los
+    dos esquemas, devuelve un catálogo vacío con `nota` explicando qué pasó: la pantalla
+    muestra un estado controlado y el resto del cierre sigue."""
+    mdir = _acc_expl_mes_dir()
+    if mdir is None:
+        return {"mes": None, "fuente": None, "categorias": [],
+                "nota": "No existe la carpeta 01_INPUTS/ACCIONES COMERCIALES."}
+    xls = sorted(p for p in mdir.glob("*.xlsx") if not p.name.startswith("~$"))
+    if not xls:
+        return {"mes": mdir.name, "fuente": None, "categorias": [],
+                "nota": f"No hay libro .xlsx de acciones en {mdir.name}."}
+    fuente = xls[0]
+
+    formato = _acc_expl_detectar_formato(fuente)
+    leido = None
+    if formato == "nuevo":
+        leido = _acc_expl_leer_nuevo(fuente)
+    elif formato == "viejo":
+        leido = _acc_expl_leer_viejo(fuente)
+    if leido is None:
+        return {"mes": mdir.name, "fuente": fuente.name, "categorias": [],
+                "nota": "El libro no tiene las hojas ACCIONES y ESCALAS (formato hasta "
+                        "agosto 2026) ni ACCIONES_ORBIT (formato desde septiembre 2026) con "
+                        "el formato esperado."}
+    (acciones, escalas_por_accion, prods_por_accion, excl_por_accion,
+     avisos, vigencia, marcas_por_accion) = leido
+    if acciones.empty:
+        return {"mes": mdir.name, "fuente": fuente.name, "categorias": [],
+                "nota": "El libro no declara ninguna acción con action_id / Acción ID válido."}
+
     conflictos_total = []
     cats = {}
     for _, a in acciones.iterrows():
@@ -2022,6 +2224,7 @@ def generar_acciones_explorador():
             "grupo":       _acc_expl_txt(a.get("grupo_ui")),
             "estado":      _acc_expl_txt(a.get("estado")),
             "resumen":     _acc_expl_txt(a.get("resumen")),
+            "marcas":      marcas_por_accion.get(aid, []),
             "segmentos":   sorted(segs.values(), key=lambda s: s["canal"]),
             "productos":   prods_por_accion.get(aid, []),
             "exclusiones": excl_por_accion.get(aid, []),
@@ -2030,6 +2233,45 @@ def generar_acciones_explorador():
         cats.setdefault(cat, []).append(sub)
 
     categorias = [{"categoria": c, "subcategorias": subs} for c, subs in sorted(cats.items())]
+
+    # Índices planos para el buscador por marca / por tipo de negocio del portal: así el
+    # vendedor puede partir de "qué tiene Alma Mora" o "qué hay para Autoservicio" sin pasar
+    # por Categoría → Línea → Segmento. Sólo tienen datos en el esquema nuevo (el viejo no
+    # declara marca por escala): con el esquema viejo quedan {} y el portal no debe ofrecer
+    # el buscador.
+    por_marca, por_canal = {}, {}
+    for cat in categorias:
+        for sub in cat["subcategorias"]:
+            for seg in sub["segmentos"]:
+                por_canal.setdefault(seg["canal"], []).append({
+                    "action_id":         sub["action_id"],
+                    "categoria":         cat["categoria"],
+                    "subcategoria":      sub["subcategoria"],
+                    "canal":             seg["canal"],
+                    "segmentos_cliente": seg["segmentos_cliente"],
+                    "marcas":            sub["marcas"],
+                    "mecanica":          sub["mecanica"],
+                    "estado":            sub["estado"],
+                    "resumen":           sub["resumen"],
+                    "escalas":           seg["escalas"],
+                })
+            for m in sub["marcas"]:
+                # Misma forma que por_canal (una entrada por segmento, con sus escalas): el
+                # vendedor que busca por marca necesita el mismo detalle completo (tipo de
+                # negocio, descuento, tope) que el que busca por canal, no sólo un resumen.
+                for seg in sub["segmentos"]:
+                    por_marca.setdefault(m, []).append({
+                        "action_id":         sub["action_id"],
+                        "categoria":         cat["categoria"],
+                        "subcategoria":      sub["subcategoria"],
+                        "canal":             seg["canal"],
+                        "segmentos_cliente": seg["segmentos_cliente"],
+                        "mecanica":          sub["mecanica"],
+                        "estado":            sub["estado"],
+                        "resumen":           sub["resumen"],
+                        "escalas":           seg["escalas"],
+                    })
+
     return {
         "mes":         mdir.name,
         "fuente":      fuente.name,
@@ -2037,6 +2279,8 @@ def generar_acciones_explorador():
         "categorias":  categorias,
         "avisos":      avisos,
         "conflictos":  sorted(set(conflictos_total)),
+        "por_marca":   dict(sorted(por_marca.items())),
+        "por_canal":   dict(sorted(por_canal.items())),
         "nota":        None,
     }
 
