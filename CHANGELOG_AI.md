@@ -1,5 +1,137 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-09-09 (b) - fix(faro): periodo del Excel, union de marcas, ponderacion y clientes del supervisor
+
+Correcciones de la auditoria del Incentivo FARO, sobre lo entregado esta misma manana. La
+campana vigente sigue siendo septiembre-octubre; mayo-junio se usa SOLO como escenario de
+regresion (sus datos ya no estan en `ventas_acumulada.csv`, que hoy arranca el 01/07).
+
+### Defectos corregidos (server_orbit.py)
+
+1. **Periodo con fallback silencioso.** `_faro_config()` buscaba los meses solo en el titulo y,
+   si no los encontraba, se caia al *bimestre en curso*. La hoja de mayo-junio no declara el
+   periodo en el titulo (solo en la regla: "en el periodo de mayo y junio"), asi que se leia
+   como si fuera el bimestre de hoy y el incentivo se medía contra los meses equivocados.
+   Ahora se busca en el titulo Y en las celdas que describen el periodo; si no aparece ningun
+   mes, `cfg['periodo_error']` queda cargado y los dos endpoints devuelven el diagnostico sin
+   publicar numeros. No hay mes por defecto.
+
+2. **Nombre de categoria con dos marcas.** `cat_terms` era una bolsa de palabras en AND: con
+   "alaris + finca las moras" se exigia que el articulo nombrara las dos marcas a la vez y la
+   categoria quedaba vacia. Ahora `_faro_grupos()` parte el nombre por `+` / `y` / `e` y la
+   categoria es la UNION de los grupos. Ademas el match es por frase y tolera la abreviatura
+   del ERP en la primera palabra (`FINCA` -> `F.`), que es como viene "F.LAS MORAS MALBEC".
+   Efecto colateral del arreglo: `las` / `los` / `la` / `el` ya no se descartan al partir el
+   NOMBRE (son parte de la marca); se siguen descartando al enumerar variedades excluidas.
+
+3. **Ponderacion.** La hoja puede decir que algunos SKUs valen doble ("XPA y Lager botella
+   suman doble") y eso no se leia. `cat_pesos` sale de la hoja y `_faro_ventas()` marca `_peso`
+   por fila; `_faro_detalle_vendedor()` suma pesos en vez de contar SKUs. "botella" se
+   interpreta como "no lata" (es como la hoja opone los envases), asi que Lager 330 y 660
+   ponderan doble y Lager lata no.
+
+4. **Tope escrito de otra forma.** Se agrego "Cada PDV contabiliza N CCC" a las formas que ya
+   se reconocian. Ojo: "cada SKU suma 1 CCC" NO es tope y se sigue tratando como tal.
+
+5. **Presentacion exigida.** `cat_incl` lee "solo en botella 700 cc" y obliga a que el articulo
+   diga 700. Los numeros van sin borde de palabra a la izquierda porque el ERP los pega al
+   bulto ("12X700"); las exclusiones por variedad ("no entran BC y 21") siguen con borde de
+   palabra para no morder el bulto.
+
+6. **Supervisores sin clientes.** `gerencia_incentivo_faro()` sumaba solo `logrado` al armar la
+   fila del supervisor, asi que `clientes_cubiertos` caia al default 0 aunque el equipo tuviera
+   coberturas. Ahora se agrega, uniendo los IDs de cliente de cada vendedor para no contar dos
+   veces el PDV que aparece en dos carteras.
+
+### portal.html
+
+- `gIncentivoFaro` (gerencia) todavia tenia la regla vieja hardcodeada "Familia Gordons tope
+  3/cliente" y no mostraba el tope. Ahora el tope sale de `categorias_meta[cat].tope`, tanto en
+  el encabezado de cada columna como en el pie. Vendedor y gerencia muestran el mismo texto de
+  regla. Los drill-downs no se tocaron.
+
+### Pruebas (test_faro.py, nuevo)
+
+62 checks con hojas y ventas sinteticas, sin leer ni escribir ningun archivo real:
+
+- **septiembre-octubre (vigente)**: periodo del titulo, umbrales, topes, exclusiones BC/21/lata,
+  V9 Frizze 4 coberturas / 4 clientes, Blancos Dulces sin tope, V2 y V5 fuera, todo pondera 1.
+- **mayo-junio (regresion)**: periodo leido de la regla y NO del bimestre en curso; caso de
+  control V4 Antares = 6 coberturas / 2 clientes unicos; XPA y Lager 330/660 doble, Lager lata
+  e IPA lata simples; Alaris + Finca Las Moras como union en Almacen, Despensa y Kiosco;
+  Smirnoff 700 cc con tope 1 por cliente, sin Ice.
+- **hoja sin periodo**: diagnostico explicito y endpoints sin numeros.
+- **endpoints**: roster exacto V3 V4 V6 V7 V8 V9 V10, ausencia de V2 y V5, V3 sin categorias de
+  Autoservicio, tope expuesto en gerencia y vendedor, supervisor agregando clientes.
+
+### Validacion contra datos reales
+
+`ventas_acumulada.csv` al 09/09, septiembre-octubre: resultado **identico** al de antes del
+cambio en las 21 celdas (7 vendedores x 3 categorias) — V9 Frizze sigue en 4/4. Los
+supervisores pasaron de `clientes_cubiertos` 0 a Esteban 13/14/7 y Raul 8/3/4, que reconcilian
+con la suma de sus vendedores. `/api/gerencia/incentivo_faro` 200 en 805 ms (11.6 KB),
+`/api/vendedor/V9/incentivo_faro` 200 en 46 ms; ambos serializan a JSON sin numpy.
+
+## 2026-09-09 - fix(faro): Familia Smirnoff mostraba 0 logrado (la hoja no trae codigos de SKU)
+
+**Reportado por el usuario**: la pantalla de Incentivo FARO no muestra bien el real logrado,
+por ejemplo Smirnoff.
+
+### Causa raiz
+
+El bimestre septiembre-octubre 26 cambio la letra de la regla. La hoja
+`01_INPUTS/incentivo_club_faro .xlsx` define "Familia Smirnoff" **sin lista de codigos**
+("suma 1 CCC por cualquier SKU participante (no entran BC y 21) ... Es solo en botella"),
+mientras que Blancos Dulces y Familia Frizze si traen los codigos entre parentesis.
+`_faro_config()` arma la categoria SOLO con los numeros de 4+ digitos de esa linea, asi que
+`cat_skus['familia_smirnoff']` quedaba vacio -> ninguna venta se etiquetaba con esa categoria
+-> logrado 0 para los 7 vendedores (objetivo 86 en V3 y 36/40 en el resto).
+
+Segundo defecto en el mismo parser: el tope de coberturas por cliente solo se detectaba
+escrito como "maximo N". La hoja de este bimestre lo escribe "por cada pdv suma solo 1
+cobertura" (Frizze) y "no puede acumular un cliente mas de una cobertura" (Smirnoff), asi que
+Frizze contaba de mas (un PDV con dos variedades sumaba 2 coberturas; V9 daba 5 con 4 clientes).
+
+### Solucion (server_orbit.py, sin tocar la hoja)
+
+- `_faro_config()`: si la categoria no trae codigos, se arma `cat_terms` con las palabras
+  propias del nombre de la categoria (Familia Smirnoff -> `smirnoff`) y `cat_excl` con lo que
+  la hoja excluye: `no entran BC y 21` -> {bc, 21}, y "solo en botella" -> {lata}.
+- `_faro_config()`: el tope ahora tambien entiende "solo N cobertura" / "mas de una cobertura"
+  / "unicamente 1 CCC", ademas del "maximo N" que ya leia.
+- `_faro_ventas()`: la asignacion de categoria por CODIGO sigue mandando; solo lo que quedo sin
+  categoria se completa por NOMBRE de articulo con `cat_terms` menos `cat_excl`.
+- Endpoints gerencia/vendedor: se expone `tope` por categoria (`categorias_meta` y cada
+  categoria del vendedor).
+- `portal.html`: la pantalla del vendedor mostraba una regla vieja hardcodeada
+  ("Familia Gordons tope 3/cliente"); ahora el tope sale del dato de cada categoria.
+
+### Validacion (real, con `ventas_acumulada.csv` al 08/09)
+
+Familia Smirnoff (Tradicional, min 3 bot, tope 1): SKUs que entran 30020 / 30022 / 30065 /
+30131; quedan afuera 30019 (21), 35093-35101-35102 (BC) y 35103 (ICE LATA).
+
+| Vendedor | Smirnoff antes | Smirnoff ahora | obj |
+|---|---|---|---|
+| V3 | 0 | 1 | 86 |
+| V4 | 0 | 1 | 40 |
+| V6 | 0 | 2 | 40 |
+| V7 | 0 | 1 | 40 |
+| V8 | 0 | 2 | 36 |
+| V9 | 0 | 7 | 40 |
+| V10 | 0 | 6 | 40 |
+
+Total 20 clientes cubiertos, verificado uno por uno contra el CSV crudo (mismo resultado
+midiendo por SKU o por total de la familia: hoy todas las compras son de 3, 6, 12 o 18 bot).
+Frizze corregido por el tope: V9 5 -> 4 (4 clientes). Blancos Dulces sin cambios (10/31 en V8).
+Endpoints probados en local (8502): `/api/gerencia/incentivo_faro` y
+`/api/vendedor/V9/incentivo_faro`, ambos 200.
+
+### Pendiente para el usuario
+
+- La hoja da como objetivo de Smirnoff para el supervisor Raul 76, pero V7+V9 = 80 (el portal
+  suma los objetivos de los vendedores). Los otros cinco totales de supervisor cierran exacto.
+
 ## 2026-09-04 - fix(acciones): libro de septiembre con esquema nuevo (ACCIONES_ORBIT) no se leia
 
 **Reportado por el usuario**: las Acciones Comerciales no se ven ni en gerencia ni en vendedor desde septiembre.

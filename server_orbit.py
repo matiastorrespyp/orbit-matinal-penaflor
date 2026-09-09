@@ -9523,12 +9523,85 @@ def _faro_slug(s):
     return _re.sub(r"[^a-z0-9]+", "_", _faro_norm(s)).strip("_")
 
 
+# Conectores a descartar cuando la hoja enumera variedades ("no entran BC y 21").
+_FARO_STOP = {"familia", "vinos", "vino", "y", "e", "o", "de", "del", "la", "el", "los", "las"}
+# Al partir el NOMBRE de la categoría en marcas solo se descarta el prefijo genérico: los
+# artículos SÍ son parte de la marca ("Finca **Las** Moras") y sacarlos rompía el match.
+_FARO_STOP_NOMBRE = {"familia", "vinos", "vino"}
+# Presentación: la hoja dice "botella" para oponerlo a "lata" (así escribe "Es solo en botella"
+# y "Lager botella suman doble"). No es una palabra del nombre del artículo: en el ERP la
+# botella aparece como PORRON 330 / BOTELLA 660 / DO 700 y la lata dice LATA.
+_FARO_PRESENTACION = {"botella": "lata", "botellas": "lata"}
+
+
+def _faro_grupos(txt):
+    """Nombre de marca(s) de la hoja → lista de grupos de tokens en OR.
+
+    "alaris + finca las moras" → [["alaris"], ["finca","las","moras"]]: la categoría es la UNIÓN
+    de las dos marcas, no los artículos que nombren a las dos a la vez (antes se exigían todos
+    los tokens juntos y la categoría quedaba vacía). "familia smirnoff" → [["smirnoff"]].
+    """
+    import re as _re
+    grupos = []
+    for parte in _re.split(r"\s*\+\s*|\s+y\s+|\s+e\s+|\s*,\s*", _faro_norm(txt)):
+        toks = [w for w in parte.split() if w and w not in _FARO_STOP_NOMBRE]
+        if toks:
+            grupos.append(toks)
+    return grupos
+
+
+def _faro_rx_grupo(toks):
+    """Grupo de tokens → (regex que debe matchear, regex que NO debe matchear) sobre el nombre
+    del artículo en MAYÚSCULAS.
+
+    - Frase, no bolsa de palabras: los tokens van en orden y pegados ("F. LAS MORAS").
+    - El ERP abrevia la primera palabra de la marca por su inicial ("FINCA" → "F."), así que en
+      grupos de 2+ tokens el primero puede venir abreviado.
+    - Un token de presentación ("botella") no se busca en el nombre: se traduce a "que NO diga
+      lata", que es como el ERP distingue el envase.
+    - Un token numérico ("700") es medida y no tiene borde de palabra a la izquierda: en el ERP
+      viene pegado al bulto ("12X700"), por eso no se usa \\b sino un anti-dígito.
+    """
+    import re as _re
+    prohibido, partes = None, []
+    for t in toks:
+        if t in _FARO_PRESENTACION:
+            prohibido = r"\b" + _FARO_PRESENTACION[t].upper() + r"\b"
+            continue
+        partes.append(t)
+    if not partes:
+        return (None, prohibido)
+    rx = []
+    for i, t in enumerate(partes):
+        T = t.upper()
+        if T.isdigit():
+            rx.append(r"(?<!\d)" + _re.escape(T) + r"(?!\d)")
+        elif i == 0 and len(partes) > 1 and len(T) > 3:
+            rx.append(_re.escape(T[0]) + r"(?:" + _re.escape(T[1:]) + r")?")   # FINCA → F. / FINCA
+        else:
+            rx.append(r"\b" + _re.escape(T) + r"\b")
+    return (r"[\s.]*".join(rx), prohibido)
+
+
+def _faro_match_grupos(au, grupos):
+    """Serie booleana: el artículo matchea AL MENOS UNO de los grupos (unión de marcas)."""
+    import pandas as _pd
+    m = _pd.Series(False, index=au.index)
+    for toks in (grupos or []):
+        rx, prohibido = _faro_rx_grupo(toks)
+        g = au.str.contains(rx, regex=True, na=False) if rx else _pd.Series(True, index=au.index)
+        if prohibido:
+            g &= ~au.str.contains(prohibido, regex=True, na=False)
+        m |= g
+    return m
+
+
 _FARO_CFG_CACHE = {}
 def _faro_config():
     """Lee toda la definición del incentivo desde el xlsx (cacheada por mtime).
     Devuelve dict con: cats (orden), cat_nombre/seg/umbral/skus/cap, objetivos{cod:{cat}},
     premios{cat}, meses (tuple), periodo, sup_map. None si no se puede leer lo esencial."""
-    import re as _re, datetime as _dt
+    import re as _re
     p = _faro_xlsx_path()
     if not p:
         return None
@@ -9598,17 +9671,52 @@ def _faro_config():
     if not objetivos:
         return None
 
-    # Reglas en texto libre (col0): SKUs, umbral y tope por categoría
+    # Reglas en texto libre (col0): SKUs, umbral, inclusiones/exclusiones, peso y tope por categoría
+    _STOP = _FARO_STOP
     text_rows = [_faro_norm(cell(r, 0)) for r in range(nrows)]
-    cat_skus, cat_umbral, cat_cap = {}, {}, {}
+    cat_skus, cat_umbral, cat_cap, cat_terms, cat_excl = {}, {}, {}, {}, {}
+    cat_incl, cat_pesos, cat_linea = {}, {}, {}
     for k in cats:
         nom_n = _faro_norm(cat_nombre[k])
         linea = next((t for t in text_rows if nom_n and nom_n in t), "")
+        cat_linea[k] = linea
         cat_skus[k] = set(_re.findall(r"\b(\d{4,})\b", linea))     # códigos de SKU (>=4 dígitos)
+        # Sin códigos en la hoja (sept-oct 26: "Familia Smirnoff … cualquier SKU participante")
+        # el match es por NOMBRE de artículo con las palabras de la categoría; sin esto la
+        # categoría quedaba sin ventas y el logrado daba 0. Los nombres con "+" son la UNIÓN de
+        # las marcas ("alaris + finca las moras"), no la intersección.
+        cat_terms[k] = [] if cat_skus[k] else _faro_grupos(nom_n)
+        excl = set()
+        me = _re.search(r"no entran?\s+([^.);]+)", linea)          # "(no entran BC y 21)" / "no entra Ice"
+        if me:
+            excl |= {w for w in _re.split(r"[\s,]+", me.group(1)) if w and w not in _STOP}
+        if _re.search(r"solo\s+en\s+botella", linea):              # "Es solo en botella" → sin latas
+            excl.add("lata")
+        cat_excl[k] = excl
+        # Inclusión de presentación: "solo en botella 700 cc" → el artículo TIENE que decir 700.
+        # Sale de la hoja, no de una lista de SKUs por mes.
+        incl = set()
+        mi = _re.search(r"(?:solo|solamente|unicamente)[^.;]{0,40}?(\d{3,4})\s*(?:cc|ml)\b", linea)
+        if mi:
+            incl.add(mi.group(1))
+        cat_incl[k] = incl
         m = _re.search(r"(\d+)\s*(?:botell|lata)", linea)          # umbral explícito o default por segmento
         cat_umbral[k] = int(m.group(1)) if m else (6 if cat_seg[k] == "AUTOSERVICIO" else 3)
-        mc = _re.search(r"(\d+)\s*maxim|maxim\w*\s*(\d+)", linea)  # tope de coberturas por cliente
-        cat_cap[k] = int(next(g for g in mc.groups() if g)) if mc else None
+        # Ponderación: "XPA y Lager botella suman doble" → esos SKUs valen 2 coberturas.
+        pesos = []
+        mp = _re.search(r"([^,.;:]+?)\s+suman?\s+doble", linea)
+        if mp:
+            txt = _re.sub(r"^\s*(?:pero|que|y|e|ademas)\s+", "", mp.group(1).strip())
+            for g in _faro_grupos(txt):
+                pesos.append((g, 2))
+        cat_pesos[k] = pesos
+        # Tope de coberturas por cliente: "máximo N", "suma solo 1 cobertura", "no puede acumular
+        # … más de una cobertura", "Cada PDV contabiliza 1 CCC" (así lo escribe la hoja).
+        # Ojo: "cada SKU suma 1 CCC" NO es tope — ahí cada SKU suma aparte.
+        mc = (_re.search(r"(?:maxim\w*|mas de|solo|unicamente)\s*(un|una|\d+)\s*(?:cobertura|ccc)", linea)
+              or _re.search(r"cada\s+pdv\s+\w+\s+(\d+)\s*(?:cobertura|ccc)", linea)
+              or _re.search(r"(\d+)\s*maxim", linea))
+        cat_cap[k] = (1 if mc.group(1) in ("un", "una") else int(mc.group(1))) if mc else None
 
     # Premios (fila con "MILLAS") → categoría por coincidencia de tokens del nombre
     premios = {}
@@ -9624,18 +9732,30 @@ def _faro_config():
         if best:
             premios[best] = millas
 
-    # Período (meses) desde el título; fallback al bimestre en curso
-    meses = tuple(v for m, v in _FARO_MESES_ES.items()
-                  if _re.search(r"\b" + m + r"\b", _faro_norm(cell(0, 0))))
-    meses = tuple(sorted(set(meses)))
-    if not meses:
-        mm = _dt.date.today().month
-        st = mm - ((mm - 1) % 2)
-        meses = (st, st + 1)
+    # Período (meses): del título y, si el título no lo dice, de las celdas que describen la
+    # regla del período. NO se cae al bimestre en curso: ese fallback silencioso leía cualquier
+    # hoja sin período en el título (p.ej. la de mayo-junio, que solo lo dice en la regla) como
+    # si fuera el bimestre de hoy, y medía el incentivo contra los meses equivocados.
+    def _meses_en(txt):
+        return {v for m, v in _FARO_MESES_ES.items() if _re.search(r"\b" + m + r"\b", txt)}
+
+    meses_set = _meses_en(_faro_norm(cell(0, 0)))
+    if not meses_set:
+        for t in text_rows:
+            if "periodo" in t:
+                meses_set |= _meses_en(t)
+    meses = tuple(sorted(meses_set))
     _inv = {}
     for m, v in _FARO_MESES_ES.items():
         _inv.setdefault(v, m)
-    periodo = "-".join(_inv[v] for v in meses if v in _inv) or "período"
+    periodo_error = None
+    if not meses:
+        periodo_error = ("La hoja no declara el período: no se encontró ningún mes ni en el "
+                         "título ni en la regla del período. Escribir el bimestre en el título "
+                         f"(ej. \"incentivo Club FARO (septiembre-octubre)\") en {p.name}.")
+        periodo = "período no declarado"
+    else:
+        periodo = "-".join(_inv[v] for v in meses if v in _inv)
 
     # Supervisores (línea "Esteban ... Raul ...")
     sup_map = {}
@@ -9652,8 +9772,10 @@ def _faro_config():
         sup_map = dict(_FARO_SUP_MAP_DEFAULT)
 
     cfg = dict(cats=cats, cat_nombre=cat_nombre, cat_seg=cat_seg, cat_umbral=cat_umbral,
-               cat_skus=cat_skus, cat_cap=cat_cap, objetivos=objetivos, premios=premios,
-               meses=meses, periodo=periodo, sup_map=sup_map,
+               cat_skus=cat_skus, cat_cap=cat_cap, cat_terms=cat_terms, cat_excl=cat_excl,
+               cat_incl=cat_incl, cat_pesos=cat_pesos, cat_linea=cat_linea,
+               objetivos=objetivos, premios=premios,
+               meses=meses, periodo=periodo, periodo_error=periodo_error, sup_map=sup_map,
                fuente=(p.name if p else None))
     _FARO_CFG_CACHE.clear()
     _FARO_CFG_CACHE[mt] = cfg
@@ -9694,7 +9816,33 @@ def _faro_ventas(cfg):
     for _c, _skus in cfg["cat_skus"].items():
         if _skus:
             cat[cod.isin(_skus)] = _c
+    # Fallback por NOMBRE de artículo para las categorías que la hoja define sin lista de
+    # códigos (cfg['cat_terms'] = grupos de marca en OR), aplicando lo que la hoja exige
+    # (cfg['cat_incl'], p.ej. "solo en botella 700 cc") y lo que excluye (cfg['cat_excl']).
+    # El código siempre manda: solo se completa lo que quedó sin categoría.
+    import re as _re
+    for _c in cfg["cats"]:
+        _terms = (cfg.get("cat_terms") or {}).get(_c) or []
+        if not _terms:
+            continue
+        m = cat.isna() & _faro_match_grupos(au, _terms)
+        for _i in (cfg.get("cat_incl") or {}).get(_c, ()):
+            _rx = ((r"(?<!\d)" + _re.escape(_i) + r"(?!\d)") if _i.isdigit()
+                   else (r"\b" + _re.escape(_i.upper()) + r"\b"))
+            m &= au.str.contains(_rx, regex=True, na=False)
+        # La exclusión nombra una variedad suelta ("no entran BC y 21"), no una medida: va con
+        # borde de palabra, para no morder el bulto ("12X700", "4X6X473").
+        for _x in (cfg.get("cat_excl") or {}).get(_c, ()):
+            m &= ~au.str.contains(r"\b" + _re.escape(_x.upper()) + r"\b", regex=True, na=False)
+        cat[m] = _c
     df["_cat"] = cat
+    # Peso del SKU dentro de su categoría: la hoja puede decir que algunos ponderan doble
+    # ("XPA y Lager botella suman doble"). Por defecto 1.
+    peso = pd.Series(1, index=df.index, dtype=int)
+    for _c, _grupos in (cfg.get("cat_pesos") or {}).items():
+        for _g, _pv in (_grupos or []):
+            peso[(cat == _c) & _faro_match_grupos(au, [_g])] = _pv
+    df["_peso"] = peso
     df["_art"] = au    # nombre de artículo (para drill-down de SKU)
     df["_clinom"] = (df["RazonSocial"].astype(str) if "RazonSocial" in df.columns else df["Cliente"].astype(str))
     df["_loc"] = (df["Localidad"].astype(str) if "Localidad" in df.columns else pd.Series([""] * len(df), index=df.index))
@@ -9717,10 +9865,14 @@ def _faro_detalle_vendedor(df, cod, cfg):
         canal = dv[dv["_seg"] == seg]
         canal_ids = set(canal["_cli"].dropna().astype(int))
         marca = canal[canal["_cat"] == cat]
-        # Cobertura POR SKU: un SKU cuenta 1 si el PDV compró ≥ umbral botellas de ESE SKU en el bimestre.
-        per_sku = marca.groupby(["_cli", "_cod"])["_cant"].sum().reset_index()
+        # Cobertura POR SKU: un SKU cuenta su peso (1, o 2 si la hoja dice que pondera doble)
+        # si el PDV compró ≥ umbral botellas de ESE SKU en el bimestre.
+        per_sku = (marca.groupby(["_cli", "_cod"])
+                        .agg(_cant=("_cant", "sum"), _peso=("_peso", "max")).reset_index()
+                   if not marca.empty else
+                   pd.DataFrame(columns=["_cli", "_cod", "_cant", "_peso"]))
         qual = per_sku[per_sku["_cant"] >= um]
-        cob_cli = qual.groupby("_cli")["_cod"].nunique()        # coberturas (SKUs que califican) por cliente
+        cob_cli = qual.groupby("_cli")["_peso"].sum()           # coberturas ponderadas por cliente
         if cap:
             cob_cli = cob_cli.clip(upper=cap)                   # tope de coberturas por cliente
         cob_map = cob_cli.to_dict()
@@ -9745,6 +9897,9 @@ def _faro_detalle_vendedor(df, cod, cfg):
         out[cat] = {
             "logrado": logrado,
             "clientes_cubiertos": int(len(cubiertos)),
+            # IDs para que el supervisor sume clientes sin contar dos veces al PDV que dos
+            # vendedores tocan; no se serializa al portal, lo usa la agregación de gerencia.
+            "clientes_ids": sorted(cubiertos),
             "compradores": compradores,
             "no_compradores": no_comp,
         }
@@ -9771,6 +9926,10 @@ def gerencia_incentivo_faro():
     if not cfg:
         return jsonify({"error": "No se pudo leer incentivo_club_faro.xlsx", "vendedores": [],
                         "supervisores": [], "categorias": {}, "categorias_orden": []}), 200
+    if cfg.get("periodo_error"):   # sin período no se mide contra ningún mes: se informa, no se adivina
+        return jsonify({"error": cfg["periodo_error"], "vendedores": [], "supervisores": [],
+                        "categorias": {}, "categorias_orden": [], "periodo": cfg["periodo"],
+                        "objetivo_fuente": cfg.get("fuente")}), 200
     cats = cfg["cats"]; obj = cfg["objetivos"]; premios = cfg["premios"]
     df = _faro_ventas(cfg)
     nombres = _faro_nombres_vendedores()
@@ -9807,7 +9966,16 @@ def gerencia_incentivo_faro():
     supervisores = []
     for nom, vends in cfg["sup_map"].items():
         o_sum = {cat: sum(obj.get(v, {}).get(cat, 0) for v in vends) for cat in cats}
-        l_sum = {cat: {"logrado": sum(logr.get(v, {}).get(cat, {}).get("logrado", 0) for v in vends)} for cat in cats}
+        # El supervisor agrega coberturas Y clientes cubiertos: los clientes se unen por ID para
+        # no contar dos veces el PDV que aparece en dos carteras (antes clientes_cubiertos ni se
+        # sumaba y el supervisor mostraba 0 aunque su equipo tuviera coberturas).
+        l_sum = {}
+        for cat in cats:
+            ids = set()
+            for v in vends:
+                ids |= set(logr.get(v, {}).get(cat, {}).get("clientes_ids", []))
+            l_sum[cat] = {"logrado": sum(logr.get(v, {}).get(cat, {}).get("logrado", 0) for v in vends),
+                          "clientes_cubiertos": len(ids)}
         row = {"nombre": nom, "tipo": "supervisor", "vendedores": [f"V{v}" for v in vends]}
         supervisores.append(_finalize(row, _cat_block(o_sum, l_sum)))
 
@@ -9817,7 +9985,8 @@ def gerencia_incentivo_faro():
         "categorias_orden": list(cats),
         "categorias_meta": {c: {"nombre": cfg["cat_nombre"][c],
                                 "segmento": "Tradicional" if cfg["cat_seg"][c] == "TRADICIONAL" else "Autoservicio",
-                                "umbral": cfg["cat_umbral"][c], "premio_millas": premios.get(c, 0)}
+                                "umbral": cfg["cat_umbral"][c], "tope": cfg["cat_cap"].get(c),
+                                "premio_millas": premios.get(c, 0)}
                             for c in cats},
         "premios": premios, "fuente": "ventas_acumulada.csv",
         "periodo": cfg["periodo"], "objetivo_fuente": cfg.get("fuente"),
@@ -9833,6 +10002,9 @@ def vendedor_incentivo_faro(vid):
     if not cfg:
         return jsonify({"error": "No se pudo leer incentivo_club_faro.xlsx",
                         "vendedor": vid, "codigo": cod, "categorias": []}), 200
+    if cfg.get("periodo_error"):   # sin período no se mide contra ningún mes: se informa, no se adivina
+        return jsonify({"error": cfg["periodo_error"], "vendedor": vid, "codigo": cod,
+                        "categorias": [], "periodo": cfg["periodo"]}), 200
     cats = cfg["cats"]; premios = cfg["premios"]
     obj = cfg["objetivos"].get(cod, {c: 0 for c in cats})
     df = _faro_ventas(cfg)
@@ -9856,7 +10028,7 @@ def vendedor_incentivo_faro(vid):
         categorias.append({
             "cat": cat, "nombre": cfg["cat_nombre"][cat],
             "segmento": "Tradicional" if cfg["cat_seg"][cat] == "TRADICIONAL" else "Autoservicio",
-            "umbral": cfg["cat_umbral"][cat],
+            "umbral": cfg["cat_umbral"][cat], "tope": cfg["cat_cap"].get(cat),
             "objetivo": o, "logrado": l, "pct": round(l / o * 100, 1) if o else None,
             "premio_millas": millas, "alcanzado": alcanzado,
             "clientes_cubiertos": det.get(cat, {}).get("clientes_cubiertos", 0),

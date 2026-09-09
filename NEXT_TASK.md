@@ -1,5 +1,81 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-09-09 (b) - Incentivo FARO: correcciones de auditoria + pruebas
+
+### HECHO
+- [x] `server_orbit.py::_faro_config()`: el periodo sale del titulo Y de las celdas de regla; se
+  elimino el fallback silencioso al bimestre en curso (la hoja de mayo-junio no lo declara en el
+  titulo y se leia como septiembre-octubre). Sin periodo -> `periodo_error` y los dos endpoints
+  devuelven diagnostico sin publicar numeros.
+- [x] `_faro_grupos()` / `_faro_rx_grupo()` / `_faro_match_grupos()`: el nombre de categoria con
+  dos marcas ("alaris + finca las moras") es la UNION, no la interseccion; match por frase con
+  tolerancia a la abreviatura del ERP ("F.LAS MORAS").
+- [x] `cat_pesos`: ponderacion doble leida de la hoja ("XPA y Lager botella suman doble");
+  "botella" = "no lata", asi Lager 330 y 660 ponderan doble y Lager lata no.
+- [x] `cat_incl`: "solo en botella 700 cc" exige la presentacion; tope tambien detecta
+  "Cada PDV contabiliza N CCC".
+- [x] `gerencia_incentivo_faro()`: el supervisor agrega `clientes_cubiertos` uniendo IDs de
+  cliente (antes quedaba en 0 aunque el equipo tuviera coberturas).
+- [x] `portal.html::gIncentivoFaro`: tope dinamico en encabezado y pie; se saco el texto fijo
+  "Familia Gordons tope 3/cliente". Vendedor y gerencia muestran la misma regla.
+- [x] `test_faro.py` (nuevo): 62 checks sinteticos, septiembre-octubre + regresion mayo-junio +
+  hoja sin periodo + endpoints (roster V3 V4 V6 V7 V8 V9 V10, sin V2/V5, V3 sin Autoservicio).
+- [x] Validado contra datos reales: septiembre-octubre da EXACTAMENTE lo mismo que antes en las
+  21 celdas; V9 Frizze sigue 4 coberturas / 4 clientes.
+
+### PENDIENTE DE COMMIT (nada esta staged)
+- [ ] Commit exclusivo de FARO con: `server_orbit.py`, `PAV MATINAL PE_A FLOR/portal.html`,
+  `test_faro.py`, `CHANGELOG_AI.md`, `NEXT_TASK.md`. **No incluir** los inputs modificados
+  (`ventas.csv`, `ventas_acumulada.csv`, `resultado.xlsx`, `ventas-clubfaro.csv`, los dos
+  `Stock/*.xlsx`) ni las carpetas nuevas `01_INPUTS/Club Faro incentivo/` y `01_INPUTS/incentivo/`:
+  esos los publica el cierre diario por su allowlist.
+- [ ] **Causa del error al actualizar la matinal**: `CIERRE_DIA_ORBIT.bat` stagea SOLO datos
+  (allowlist), nunca `server_orbit.py` ni `portal.html`. El fix de FARO de la manana quedo
+  local, el cierre publico datasets nuevos contra codigo viejo y Render siguio con la version
+  sin el arreglo. Hay que commitear el codigo aparte ANTES del proximo cierre.
+
+### PROXIMA TAREA
+- [ ] Confirmar con el usuario el objetivo de Smirnoff del supervisor Raul: la hoja dice 76 y la
+  suma de V7+V9 da 80 (el portal muestra la suma). Los otros cinco totales cierran exacto.
+- [ ] Confirmar la lectura del minimo de Smirnoff: hoy se mide POR SKU (3 botellas de un mismo
+  SKU). Con los datos de hoy da igual que medir el total de la familia, pero un cliente con 2+2
+  botellas de dos variedades separa los criterios.
+- [ ] Abrir la pantalla en el portal y mirar el drill-down de Smirnoff (validado por API y por
+  test, no a ojo en la UI).
+- [ ] `01_INPUTS/Club Faro incentivo/septiembre/` (PDF + jpeg del incentivo) esta sin trackear y
+  fuera de la allowlist del cierre: definir si se versiona o queda solo local.
+
+## Sesion 2026-09-09 - Incentivo FARO: Smirnoff mostraba 0 logrado
+
+### HECHO
+- [x] Diagnosticado: la hoja `incentivo_club_faro .xlsx` de septiembre-octubre define
+  "Familia Smirnoff" sin codigos de SKU (dice "cualquier SKU participante (no entran BC y 21)
+  ... Es solo en botella"), y `_faro_config()` solo sabia armar la categoria con codigos ->
+  cat_skus vacio -> logrado 0 para los 7 vendedores.
+- [x] `server_orbit.py::_faro_config()`: fallback por NOMBRE de articulo (`cat_terms`) cuando
+  la hoja no da codigos, con exclusiones leidas de la misma hoja (`cat_excl`: "no entran BC y
+  21" -> bc/21, "solo en botella" -> lata). Sigue todo Excel-driven, nada hardcodeado.
+- [x] `server_orbit.py::_faro_config()`: el tope por cliente ahora tambien entiende "suma solo
+  1 cobertura" y "mas de una cobertura" (antes solo "maximo N") -> Frizze dejo de contar dos
+  coberturas al PDV que compra dos variedades.
+- [x] `server_orbit.py::_faro_ventas()`: el match por codigo sigue teniendo prioridad; el
+  fallback por nombre solo completa lo que quedo sin categoria.
+- [x] Endpoints gerencia/vendedor exponen `tope`; `portal.html` dejo de mostrar la regla vieja
+  hardcodeada ("Familia Gordons tope 3/cliente").
+- [x] Validado con datos reales (ventas_acumulada.csv al 08/09): Smirnoff 1/1/2/1/2/7/6 para
+  V3/V4/V6/V7/V8/V9/V10 (20 clientes, verificados uno por uno contra el CSV crudo), Frizze V9
+  5 -> 4, Blancos Dulces sin cambios. Endpoints `/api/gerencia/incentivo_faro` y
+  `/api/vendedor/V9/incentivo_faro` probados en local (8502), 200 OK.
+
+### PROXIMA TAREA
+- [ ] Confirmar con el usuario el objetivo de Smirnoff del supervisor Raul: la hoja dice 76 y
+  la suma de V7+V9 da 80 (el portal muestra la suma). Los otros cinco totales cierran exacto.
+- [ ] Confirmar la lectura del minimo de Smirnoff: hoy se mide POR SKU (3 botellas de un mismo
+  SKU) igual que los bimestres anteriores. Con los datos de hoy da lo mismo que medir el total
+  de la familia, pero si aparece un cliente con 2+2 botellas de dos variedades los criterios se
+  separan.
+- [ ] Abrir la pantalla en el portal y mirar el drill-down de Smirnoff (solo se valido por API).
+
 ## Sesion 2026-09-04 - Acciones Comerciales: libro de septiembre (esquema nuevo) no se leia
 
 ### HECHO
