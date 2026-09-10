@@ -6274,7 +6274,9 @@ def _acc_catalogo_mes():
     import csv as _csvm
     mdir = _acc_mes_dir()
     if mdir is None:
-        return None, None, []
+        # Sin carpeta de inputs del mes (caso tipico en Render, donde el .xlsx del libro puede
+        # no publicarse): el catalogo igual sale del explorador, que es un dataset y si viaja.
+        return _acc_catalogo_desde_explorador()
     fuente = None
     for c in sorted(mdir.glob("*.csv")):
         low = str(c).lower()

@@ -87,6 +87,15 @@ una vez por canal (37 marcas tienen ids repetidos), asi que el contenedor lleva 
 tercera parte con el indice de fila (`g:SEP26-037:3`). Sin eso dos filas compartian el id del
 div y el analisis se pintaba siempre en la primera.
 
+### Robustez en Render - el catalogo no depende de la carpeta de inputs
+
+`_acc_catalogo_mes()` cortaba con `[]` si no existia `01_INPUTS/ACCIONES COMERCIALES/`, ANTES
+de llegar al derivado del explorador. Hoy el .xlsx del mes esta trackeado y la carpeta existe
+en Render, pero el dia que no se publique la medicion se apagaba entera teniendo el dataset
+`mod_acciones_explorador.json` al lado. Ahora ese caso tambien cae al derivado. Verificado
+forzando `_acc_mes_dir()` a None: las mismas 37 reglas, los mismos ids y las mismas 178
+alertas de descuento.
+
 ### Validacion (datos reales, septiembre 2026)
 
 - `/api/gerencia/acciones_mes`: 37 acciones con numeros. Totales deduplicados: $1.859.405 de
