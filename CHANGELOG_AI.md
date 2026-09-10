@@ -1,5 +1,91 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-09-10 - fix(acciones): la pantalla volvio a medir cada accion (dos meses en cero)
+
+La pantalla de Acciones Comerciales no mostraba ninguna estadistica: ni clientes, ni litros,
+ni comparacion contra el mes anterior. No era un problema de diseno; eran DOS fuentes cortadas
+al mismo tiempo, las dos desde que en agosto cambio el formato del libro del proveedor.
+
+### Defecto 1 - Sin catalogo de medicion desde agosto (bloque de medicion entero en cero)
+
+Hasta julio el mes traia DOS archivos: el libro `.xlsx` (las reglas: que ofrece cada accion) y
+un CSV armado a mano (la medicion: contra que se mide el uso). Desde agosto llega solo el
+libro nuevo, que ya trae la hoja `SKU_POR_ACCION` con el alcance exacto — asi que el CSV dejo
+de armarse. `_acc_catalogo_mes()` devolvia `[]` y con eso se apagaba TODA la medicion:
+
+- los 4 totales de la pantalla (inversion, litros, clientes alcanzados, clientes nuevos),
+- las 37 tarjetas por accion con sus numeros,
+- el detalle de clientes por accion,
+- y `_alertas_descuento_mes()`, que quedo devolviendo `[]` (0 alertas de descuento en agosto
+  y septiembre; ahora son 178: 63 sin accion aplicable y 115 que exceden el tramo).
+
+**Fix.** `_acc_catalogo_desde_explorador()` (server_orbit.py) deriva el catalogo de medicion
+del mismo libro ya parseado en `mod_acciones_explorador.json`, con el esquema que tenia el CSV.
+No hay segunda logica de acciones: el motor de medicion no se toco. El alcance de producto
+viaja como CODIGOS de SKU, que `_acc_product_pred` trata como match exacto — no se infiere nada
+por texto cuando el libro ya dice que SKU entra. El CSV del mes, si existe, sigue mandando.
+
+### Defecto 2 - La tarjeta "Analisis de la accion" no resolvia un solo producto
+
+`resolver_alcance()` solo sabia leer el codigo de SKU al PRINCIPIO del nombre
+("74608 — Alma Mora ..."), que es como lo escribian los libros viejos. El libro de septiembre
+lo pone al final y entre parentesis ("ALMA MORA SEL RVE MALBEC 6X750 (74608)"), ademas
+duplicado por un bug del generador. Resultado: el alcance se "resolvia" como texto, ese texto
+no aparece nunca en la descripcion del ERP, no matcheaba una sola linea de venta y las 37
+acciones respondian *"Dato no disponible: no se pudo resolver contra el maestro que productos
+entran en esta accion"*. Cero clientes, cero litros, cero comparacion.
+
+**Fix.**
+- `motor_acciones_analisis.codigo_de()` / `partir_productos()`: el codigo sale del campo
+  `codigo`, y si no esta, del parentesis del nombre o del principio. Las dos lecturas del
+  nombre existen para que el JSON ya publicado en Render se resuelva sin re-correr el cierre.
+- `resolver_alcance(..., codigos_explicitos=)`: los SKU declarados entran directo al alcance.
+- `generar_datasets_acum._acc_expl_leer_nuevo()`: emite `codigo` como CAMPO y deja de duplicar
+  el codigo dentro del nombre.
+- El corte "no se pudo resolver" ahora exige que el alcance NO se haya resuelto. Un alcance
+  resuelto sin ventas es un CERO legitimo y sale como cero medido, no como dato faltante.
+
+### Defecto 3 - "Almacen" caia en el comodin de todos los canales
+
+`_acc_seg_canon()` reconocia "Tradicional"/"Kiosco" pero no los subcanales sueltos que nombra
+el libro nuevo ("Almacen", "Bar", "Tienda de bebidas"). Sin token reconocido caia al comodin
+del final y la accion se media contra TODOS los canales, autoservicios y mayoristas incluidos.
+Se agregaron ALMACEN/DESPENSA a TRADICIONAL y TIENDA DE BEBIDAS / BAR a ON_PREMISE_VTK, y se
+normalizan los acentos antes de comparar.
+
+### Defecto 4 - Dos motores, dos numeros para la misma accion
+
+La medicion del mes y el analisis de una accion tenian cada uno su filtro de canal. El del
+analisis no aplicaba el sub-filtro de subramo: SEP26-037 (Almacen+Kiosco) daba 29 clientes en
+la grilla y 30 en la tarjeta. Ahora hay UNA sola implementacion, `_acc_mask_segmento()`, que
+usan los dos (incluye la regla de mayoristas y la de subramo). Se borro la copia
+`motor_acciones_analisis.mask_segmento()`.
+
+### Portal - el analisis, desde cada accion
+
+La tarjeta de analisis existia pero solo se llegaba a ella por el Explorador
+(Categoria -> Subcategoria -> Segmento). Ahora cada tarjeta de la grilla — gerencia y
+vendedor — tiene un boton **Ver analisis** que abre la MISMA tarjeta para esa accion
+(`accxAnBotonHTML` / `accxAnToggle`; el scope pasa a ser `g:SEP26-001`). Se pide solo al
+abrirla. El boton solo aparece para acciones que estan en el catalogo de reglas del mes: un mes
+servido por el CSV viejo trae ids que el analisis no sabe resolver.
+
+### Validacion (datos reales, septiembre 2026)
+
+- `/api/gerencia/acciones_mes`: 37 acciones con numeros. Totales deduplicados: $1.859.405 de
+  inversion, 2.286,8 L, 103 clientes alcanzados, 41 nuevos.
+- **Las 37 acciones cruzadas contra `/api/gerencia/acciones_analisis/<id>`: 0 discordancias**
+  en clientes y litros, y ninguna devuelve la nota de alcance sin resolver. Son dos caminos de
+  codigo independientes dando el mismo numero.
+- Portal verificado leyendo el DOM: 4 KPI, 37 tarjetas, 37 botones de analisis; el analisis de
+  SEP26-003 abre con 28 clientes / 513 L / +68,3% vs agosto (938,2 L -> 1.579,5 L) y +100% vs
+  septiembre 2025 (789,8 L -> 1.579,5 L, desde `historial_ventas.csv`). Vista vendedor V9 sobre
+  la misma accion: 10 clientes / 105,8 L / -33,5%. Sin errores de consola.
+- `test_acciones_explorador.py`: 29 OK. `test_acciones_analisis.py`: mismos checks OK que antes
+  del cambio (0 fallas, diff vacio). Smoke de endpoints: dashboard, alertas, 11T, planes AS,
+  cobertura, FARO, acciones_ranking -> 200.
+
+
 ## 2026-09-09 (b) - fix(faro): periodo del Excel, union de marcas, ponderacion y clientes del supervisor
 
 Correcciones de la auditoria del Incentivo FARO, sobre lo entregado esta misma manana. La

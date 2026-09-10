@@ -3267,6 +3267,7 @@ function vAlertas(){
           <span onclick="accShowDetalle('v','${a.id_accion}','clientes')" style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">👥 ${a.clientes_alcanzados} cli.</span>
           <span onclick="accShowDetalle('v','${a.id_accion}','nuevos')" style="color:var(--ok);cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">🆕 ${a.clientes_nuevos} nuevos</span>
         </div>
+        ${accxAnBotonHTML('v',a.id_accion)}
       </div>`;
     });
     h+=`<div id="acc-v-detalle" style="margin:0 12px 12px;"></div></div>`;
@@ -3665,17 +3666,28 @@ function accxAnEstado(scope){
   return ACCAN[scope];
 }
 
+/* Un scope de esta tarjeta es 'g'/'v' —el del Explorador, que sigue a los selectores— o
+   'g:SEP26-001' —una tarjeta de la grilla de acciones, clavada a esa acción—. Todo lo demás
+   (estado, shell, render) es idéntico en los dos casos: sólo cambia de dónde sale el id. */
+function accxAnBase(scope){ return String(scope).split(':')[0]; }
+function accxAnId(scope){
+  const p=String(scope).split(':');
+  if(p.length>1) return p[1];
+  const sub=accxSub(scope);
+  return (sub&&sub.action_id)||'';
+}
+
 async function accxAnLoad(scope){
   const cont=document.getElementById('accx-an-'+scope); if(!cont) return;
-  const sub=accxSub(scope); if(!sub||!sub.action_id){ cont.innerHTML=''; return; }
+  const aid=accxAnId(scope); if(!aid){ cont.innerHTML=''; return; }
   const st=accxAnEstado(scope);
   st.cargando=true; st.error=null; st.data=null;
-  cont.innerHTML=accxAnShell(scope,sub);
-  const base=scope==='v'
+  cont.innerHTML=accxAnShell(scope);
+  const base=accxAnBase(scope)==='v'
     ? '/api/vendedor/'+encodeURIComponent((userData||{}).vendedor_id||'')+'/acciones_analisis/'
     : '/api/gerencia/acciones_analisis/';
-  const url=base+encodeURIComponent(sub.action_id)+'?comparacion='+encodeURIComponent(st.comp);
-  const pedido=sub.action_id+'|'+st.comp;
+  const url=base+encodeURIComponent(aid)+'?comparacion='+encodeURIComponent(st.comp);
+  const pedido=aid+'|'+st.comp;
   st.pedido=pedido;
   try{
     const r=await fetch(url);
@@ -3692,11 +3704,44 @@ async function accxAnLoad(scope){
 }
 
 function accxAnSetComp(scope,val){ accxAnEstado(scope).comp=val; accxAnLoad(scope); }
+
+/* ── Análisis desde la tarjeta de una acción de la grilla ──
+   La grilla dice cuánto se invirtió y a cuántos alcanzó; para decidir si la acción funciona
+   hace falta lo otro: contra qué mes se compara, si los clientes son nuevos o los de siempre
+   y quién queda por trabajar. Es la MISMA tarjeta del Explorador, pedida por id: no se
+   duplica ni el cálculo ni el render.
+
+   Se pide sólo al abrirla (una consulta por acción, y puede tocar el historial), y el toggle
+   la cierra sin perder lo ya cargado. */
+function accxAnIds(scope){
+  const out=new Set();
+  for(const c of accxCats(accxAnBase(scope))) for(const sb of (c.subcategorias||[]))
+    if(sb.action_id) out.add(sb.action_id);
+  return out;
+}
+function accxAnBotonHTML(scope,id){
+  // Sólo para acciones que están en el catálogo de reglas del mes: un mes servido por el CSV
+  // viejo trae ids que el análisis no sabe resolver, y el botón daría un 404 en la cara.
+  if(!accxAnIds(scope).has(id)) return '';
+  const sc=accxAnBase(scope)+':'+id;
+  return `<div style="margin-top:9px;">
+      <button type="button" onclick="accxAnToggle('${sc}',this)"
+        style="cursor:pointer;border:1px solid var(--b);background:transparent;color:var(--text2);border-radius:6px;padding:4px 10px;font-size:11px;">
+        📈 Ver análisis</button>
+      <div id="accx-an-${sc}"></div>
+    </div>`;
+}
+function accxAnToggle(scope,btn){
+  const cont=document.getElementById('accx-an-'+scope); if(!cont) return;
+  if(cont.innerHTML){ cont.innerHTML=''; if(btn) btn.textContent='📈 Ver análisis'; return; }
+  if(btn) btn.textContent='📈 Ocultar análisis';
+  accxAnLoad(scope);
+}
 /* Cambiar de pestaña NO vuelve a pedir datos: los dos tops ya vienen en el payload. */
 function accxAnSetTab(scope,val){ accxAnEstado(scope).tab=val; accxAnRender(scope); }
 
 /* Cabecera + selector de comparación + cuerpo vacío. Se pinta una vez por carga. */
-function accxAnShell(scope,sub){
+function accxAnShell(scope){
   const st=accxAnEstado(scope);
   const opt=(v,t)=>`<option value="${v}"${st.comp===v?' selected':''}>${t}</option>`;
   return `<div class="card" style="margin-top:12px;">
@@ -6600,6 +6645,7 @@ function gAccionesComerciales(p){
           <span onclick="accShowDetalle('g','${a.id_accion}','clientes')" style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">👥 ${a.clientes_alcanzados} clientes</span>
           <span onclick="accShowDetalle('g','${a.id_accion}','nuevos')" style="color:var(--ok);cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">🆕 ${a.clientes_nuevos} nuevos</span>
         </div>
+        ${accxAnBotonHTML('g',a.id_accion)}
       </div>
     </div>`;
   }).join('');

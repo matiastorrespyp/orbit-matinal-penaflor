@@ -141,6 +141,54 @@ def marcas_de(sub) -> list:
     return out
 
 
+#: Código de SKU embebido en el nombre del producto del catálogo. El libro de septiembre 2026
+#: escribe la descripción con el código entre paréntesis al final ("ALMA MORA ... 6X750
+#: (74608)"), mientras que los libros anteriores lo ponían al principio ("74608 — Alma Mora").
+#: Se aceptan las dos formas: el código es el dato preciso y no depende de cómo escriba el ERP
+#: la descripción, que es lo único que puede matchear el camino por texto.
+_RE_COD_PAREN = re.compile(r"\((\d{3,})\)")
+
+
+def codigo_de(prod) -> str | None:
+    """Código de SKU de un producto del catálogo, o None si no declara uno.
+
+    Precedencia: el campo `codigo` (lo que emite el generador desde la hoja SKU_POR_ACCION),
+    después el código entre paréntesis del nombre, después un código al principio del nombre.
+    Las dos lecturas del nombre existen para que un `mod_acciones_explorador.json` ya generado
+    —el que está publicado en Render— se resuelva sin volver a correr el cierre."""
+    if not isinstance(prod, dict):
+        return None
+    cod = str(prod.get("codigo") or "").strip()
+    if cod.isdigit():
+        return cod
+    nombre = str(prod.get("nombre") or "").strip()
+    en_paren = _RE_COD_PAREN.findall(nombre)
+    if en_paren:
+        return en_paren[-1]
+    primero = nombre.split()[0] if nombre.split() else ""
+    return primero if primero.isdigit() else None
+
+
+def partir_productos(sub) -> tuple:
+    """(códigos exactos, nombres sin código) de los productos que declara la acción.
+
+    El que trae código se resuelve por código y NO vuelve a entrar por el camino de texto: su
+    descripción completa ("ALMA MORA SEL RVE MALBEC 6X750 (74608)") no aparece nunca dentro de
+    la descripción del ERP, así que como texto daría un alcance "resuelto" que no matchea una
+    sola línea de venta — que es peor que no resolverlo, porque no se distingue de un cero
+    real. El resto (categorías y marcas del esquema viejo) sigue por texto."""
+    codigos, nombres = set(), []
+    for p in sub.get("productos") or []:
+        cod = codigo_de(p)
+        if cod:
+            codigos.add(cod)
+            continue
+        n = str(p.get("nombre") or "").strip()
+        if n:
+            nombres.append(n)
+    return codigos, nombres
+
+
 def segmentos_de(sub) -> list:
     """Segmentos de cliente que declara la acción (texto del Excel, sin canonizar)."""
     out = []
@@ -239,13 +287,17 @@ def _palabras(t):
     return set(t.split())
 
 
-def resolver_alcance(nombres, maestro, canon_cat, segmentos_hermanos=None):
+def resolver_alcance(nombres, maestro, canon_cat, segmentos_hermanos=None,
+                     codigos_explicitos=None):
     """Resuelve los nombres del catálogo a un alcance de producto.
 
     `maestro` es una lista de dicts {cod, cat, seg} del 04D (cat/seg tal como vienen).
     `canon_cat` canoniza la categoría del maestro (VDA, VDG, ESPUMANTES, ...).
     `segmentos_hermanos` son los segmentos que ya reclama otra acción de la misma categoría:
     es lo que le da sentido a "Resto segmentos" sin inventar nada.
+    `codigos_explicitos` son los SKU que el catálogo ya declara por código (hoja
+    SKU_POR_ACCION del libro nuevo): entran directo al alcance sin pasar por el maestro,
+    porque son la definición de la acción y no una inferencia.
 
     Devuelve {resuelto, codigos, marcas, envase, detalle}."""
     segmentos_hermanos = {norm(s) for s in (segmentos_hermanos or set())}
@@ -258,8 +310,11 @@ def resolver_alcance(nombres, maestro, canon_cat, segmentos_hermanos=None):
             continue
         por_cat.setdefault(norm(c), {}).setdefault(norm(m.get("seg")), set()).add(str(m.get("cod")).strip())
 
-    codigos, items, detalle = set(), [], []
-    resuelto = False
+    codigos = {str(c).strip() for c in (codigos_explicitos or set()) if str(c).strip()}
+    items, detalle = [], []
+    resuelto = bool(codigos)
+    if codigos:
+        detalle.append(f"SKU declarados por el catálogo: {len(codigos)}")
 
     # "Espumante / Sidra" son DOS alcances en una celda: se parten antes de resolver, si no
     # el texto junto no matchea ninguna categoría y la acción queda sin alcance.
@@ -376,13 +431,10 @@ def mask_descuento(df, tramos) -> pd.Series:
     return m
 
 
-def mask_segmento(df, segs_canon) -> pd.Series:
-    """La línea pertenece a un cliente del canal de la acción. Sin canal declarado, no filtra."""
-    if not len(df):
-        return pd.Series(dtype=bool, index=df.index)
-    if not segs_canon:
-        return pd.Series(True, index=df.index)
-    return df["_seg"].isin(list(segs_canon))
+# El filtro de CANAL no vive acá: es `server_orbit._acc_mask_segmento`, compartido con la
+# medición del mes. Necesita `_es_mayorista` y `_subseg`, dos columnas que arma la preparación
+# de ventas del server, y tener una segunda versión "pura" acá era justamente lo que hacía que
+# la misma acción diera dos números distintos según qué pantalla la pidiera.
 
 
 def mask_productos(df, pred) -> pd.Series:

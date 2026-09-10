@@ -14,6 +14,7 @@ def _now_ar():
     return datetime.now(_ARG_TZ).strftime("%Y-%m-%d %H:%M:%S")
 
 import os, shutil, csv as _csv, threading
+import unicodedata as _unicodedata
 
 import motor_11t          # motor autoritativo de cobertura 11T (única fuente de la regla)
 import motor_padron       # regla única de pertenencia de cartera (duplicados del padrón)
@@ -6282,13 +6283,120 @@ def _acc_catalogo_mes():
             continue
         fuente = c; break
     if fuente is None:
-        return mdir.name, None, []
+        # Sin CSV del mes: se deriva del libro del mes ya parseado en el explorador. Es el
+        # caso normal desde agosto 2026 (ver _acc_catalogo_desde_explorador).
+        return _acc_catalogo_desde_explorador()
     try:
         with open(fuente, encoding="utf-8-sig", newline="") as f:
             reglas = list(_csvm.DictReader(f, delimiter=";"))
     except Exception:
         return mdir.name, fuente.name, []
+    if not reglas:
+        return _acc_catalogo_desde_explorador()
     return mdir.name, fuente.name, reglas
+
+
+#: Frases del libro que describen el alcance en prosa en vez de nombrar un producto. Como
+#: "marca" no matchean nada, y dejarlas pasar convierte el alcance en un token basura que
+#: corta el match por categoría (mismo problema que resuelve `_ACC_PROD_GENERICOS`).
+_ACC_EXPL_MARCA_GENERICA = ("APLICACION GENERAL", "SEGUN MAESTRO", "SEGUN MARCA",
+                            "SEGUN LINEA", "TODOS", "RESTO")
+
+
+def _acc_catalogo_desde_explorador():
+    """Catálogo de MEDICIÓN derivado del catálogo de REGLAS del explorador.
+
+    Por qué existe. Hasta julio 2026 el mes traía dos archivos: el libro .xlsx (reglas, lo que
+    ofrece cada acción) y un CSV armado a mano (medición, contra qué se mide el uso). Desde
+    agosto el proveedor manda sólo el libro nuevo, que ya trae la hoja SKU_POR_ACCION con el
+    alcance exacto de cada acción — así que el CSV dejó de armarse. Sin ese CSV
+    `_acc_catalogo_mes()` devolvía [] y con eso se apagaba TODA la medición: los 4 totales de
+    la pantalla, las tarjetas por acción (inversión, litros, clientes, nuevos), el detalle de
+    clientes y las alertas de descuento del mes. Dos meses sin números.
+
+    Qué hace. Traduce cada acción del explorador a una fila con el mismo esquema que tenía el
+    CSV, para no tocar el motor de medición ni tener una segunda lógica de acciones. El
+    alcance de producto viaja como CÓDIGOS de SKU, que es lo que `_acc_product_pred` trata
+    como match exacto: no se infiere nada por texto cuando el libro ya dice qué SKU entra.
+
+    El CSV del mes, si existe, sigue mandando: un mes armado a mano no lo pisa el derivado."""
+    expl = _acc_explorador()
+    cats = expl.get("categorias") or []
+    if not cats:
+        return None, None, []
+    reglas, orden = [], 0
+    for cat in cats:
+        cat_ui = str(cat.get("categoria") or "").strip()
+        for sub in cat.get("subcategorias") or []:
+            aid = str(sub.get("action_id") or "").strip()
+            if not aid:
+                continue
+            orden += 1
+            codigos, _nombres = motor_acc_an.partir_productos(sub)
+            marcas = [m for m in (sub.get("marcas") or [])
+                      if not any(g in _acc_norm(m) for g in _ACC_EXPL_MARCA_GENERICA)]
+            # Canal: se listan el canal de la regla y sus segmentos de cliente tal cual los
+            # escribe el libro; `_acc_seg_canon` los lleva al canon del portal.
+            canales, escalas_txt, topes, obs, tramos = [], [], [], [], []
+            minimo, unidad_min = None, ""
+            for seg in sub.get("segmentos") or []:
+                for x in [seg.get("canal")] + list(seg.get("segmentos_cliente") or []):
+                    if x and x not in canales:
+                        canales.append(str(x))
+                for e in seg.get("escalas") or []:
+                    t = str(e.get("texto") or "").strip()
+                    if t and t not in escalas_txt:
+                        escalas_txt.append(t)
+                    tp = str(e.get("tope") or "").strip()
+                    if tp and tp.lower() != "nan" and tp not in topes:
+                        topes.append(tp)
+                    ob = str(e.get("observacion") or "").strip()
+                    if ob and ob not in obs:
+                        obs.append(ob)
+                    d = e.get("descuento")
+                    if d is not None:
+                        try:
+                            tramos.append(round(float(d) * 100, 2))
+                        except (TypeError, ValueError):
+                            pass
+                    mn = e.get("min")
+                    if isinstance(mn, (int, float)) and (minimo is None or mn < minimo):
+                        minimo, unidad_min = mn, str(e.get("unidad") or "")
+            resumen = str(sub.get("resumen") or "").strip()
+            reglas.append({
+                "id_accion":               aid,
+                "mes":                     str(expl.get("mes") or ""),
+                "fuente":                  str(expl.get("fuente") or ""),
+                "tipo_regla":              str(sub.get("mecanica") or ""),
+                "categoria":               cat_ui,
+                "subcategoria":            str(sub.get("subcategoria") or ""),
+                "segmento_cliente_aplica": "; ".join(canales),
+                "canal_aplica":            "; ".join(canales),
+                # El libro nuevo no declara vendedores por acción: aplican todos los activos,
+                # que es lo que hacía la columna TODOS_ACTIVOS del CSV.
+                "vendedores_aplica":       "TODOS_ACTIVOS",
+                # La línea comercial va SÓLO cuando el libro no dio códigos. Con códigos
+                # exactos, agregarla ensancharía el alcance a la categoría entera: la acción
+                # de VDA Superior pasaría a contar cualquier VDA, no sus 27 SKU (medía 9
+                # clientes donde la definición de la acción da 3).
+                "lineas_comerciales":      "" if codigos else cat_ui,
+                # Códigos exactos cuando el libro los da (hoja SKU_POR_ACCION); si no, las
+                # marcas declaradas, que es todo lo que hay para acotar el alcance.
+                "productos_marcas":        ";".join(sorted(codigos)) if codigos else "; ".join(marcas),
+                "condicion_compra":        "; ".join(escalas_txt),
+                "minimo":                  "" if minimo is None else str(minimo),
+                "unidad_minimo":           unidad_min,
+                "descuento_pct":           "|".join(str(t) for t in sorted(set(tramos))),
+                "tope":                    "; ".join(topes),
+                "observaciones":           "; ".join([x for x in [resumen] + obs if x]),
+                "estado_validacion":       str(sub.get("estado") or ""),
+                "bloque_pptx":             "",
+                "categoria_tarjeta":       cat_ui,
+                "detalle_click_ref":       "",
+                "mostrar_detalle_click":   "NO",
+                "orden_visual":            str(orden),
+            })
+    return expl.get("mes"), expl.get("fuente"), reglas
 
 
 def _acc_explorador():
@@ -6338,13 +6446,24 @@ def _acc_explorador():
 
 
 def _acc_seg_canon(seg_text, canal_text):
+    # El texto llega de DOS fuentes con vocabularios distintos y las dos tienen que caer en el
+    # mismo canon: el catalogo de medicion nombra el canal entero ("Tradicional; Kiosco; On
+    # Premise") y el libro nuevo del explorador nombra el SUBCANAL suelto ("Almacen", "Bar",
+    # "Tienda de bebidas"). Sin los subcanales sueltos, "Almacen" no matcheaba ningun token y
+    # caia al comodin del final: la accion se media contra TODOS los canales, autoservicios y
+    # mayoristas incluidos.
     t = (str(seg_text or "") + " | " + str(canal_text or "")).upper()
+    t = "".join(c for c in _unicodedata.normalize("NFD", t)
+                if _unicodedata.category(c) != "Mn")
     out = set()
-    if "TRADICIONAL" in t or "TRAD" in t or "KIOSCO" in t:
+    if ("TRADICIONAL" in t or "TRAD" in t or "KIOSCO" in t
+            or "ALMACEN" in t or "DESPENSA" in t):
         out.add("TRADICIONAL")
     if "AUTOSERVICIO" in t or _re.search(r"\bAS\b", t):
         out.add("AUTOSERVICIO")
-    if "ON PREMISE" in t or "ON_PREMISE" in t or "VTK" in t or "TDB" in t or "VINOTECA" in t:
+    if ("ON PREMISE" in t or "ON_PREMISE" in t or "VTK" in t or "TDB" in t
+            or "VINOTECA" in t or "TIENDA DE BEBIDAS" in t
+            or _re.search(r"\bBAR(?:ES)?\b", t)):
         out.add("ON_PREMISE_VTK")
     # MAYORISTA es su propio canon: una acción de Petit Mayoristas NO debe caer sobre
     # autoservicios (el cliente mayorista se detecta aparte por Ramo/Subramo, _es_mayorista).
@@ -6385,6 +6504,33 @@ def _acc_subseg_filtro(seg_text, canal_text):
         return None
     allowed = {tok for kw, tok in _ACC_SUBSEG_TRAD.items() if kw in t}
     return allowed or None
+
+
+def _acc_mask_segmento(df, seg_canon, sub_allowed, wants_may=None):
+    """¿La línea pertenece a un cliente del canal de la acción?
+
+    ÚNICA implementación del filtro de canal: la usan la medición del mes y el análisis de
+    una acción. Cuando cada motor tenía la suya, la misma acción daba dos números distintos
+    (SEP26-037, Almacén+Kiosco: 29 clientes en la grilla y 30 en la tarjeta, porque el
+    análisis no aplicaba el sub-filtro de subramo y le sumaba un tradicional que no es ni
+    almacén ni kiosco).
+
+    Dos reglas que no son obvias y por eso viven acá una sola vez:
+      * MAYORISTA no es un valor de `_seg` sino una marca aparte (`_es_mayorista`): un cliente
+        mayorista entra SÓLO si la acción apunta a mayoristas, y nunca por su segmento.
+      * El sub-filtro almacén/kiosco restringe SÓLO al canon TRADICIONAL. Autoservicio y On
+        Premise no se filtran por subramo: ahí la acción es de canal completo."""
+    if not len(df):
+        return pd.Series(dtype=bool, index=df.index)
+    if wants_may is None:
+        wants_may = "MAYORISTA" in (seg_canon or set())
+    es_may = df["_es_mayorista"] if "_es_mayorista" in df.columns else pd.Series(False, index=df.index)
+    m = (~es_may & df["_seg"].isin(list(seg_canon or []))) | (es_may & bool(wants_may))
+    if sub_allowed:
+        is_trad = df["_seg"].astype(str).str.upper().eq("TRADICIONAL")
+        sub_ok = df["_subseg"].apply(lambda x: any(tok in x for tok in sub_allowed))
+        m = m & (~is_trad | sub_ok)
+    return m
 
 
 def _acc_norm(s):
@@ -7350,6 +7496,14 @@ def _acc_an_segs_canon(sub):
     return out
 
 
+def _acc_an_subseg(sub):
+    """Sub-filtro almacén/kiosco de la acción, si su canal es un subcanal del Tradicional.
+    Mismo criterio que la medición del mes: la acción de Almacén+Kiosco no alcanza a todo
+    el canal tradicional."""
+    txt = " | ".join(sorted(set(motor_acc_an.segmentos_de(sub))))
+    return _acc_subseg_filtro(txt, "")
+
+
 def _acc_an_marca_trad_nc(marca, articulo, cod=None):
     """Marca participante de AGO26-TRAD-NC a la que pertenece la línea, o None.
 
@@ -7398,10 +7552,12 @@ def _acc_an_segmentos_hermanos(sub):
 
 
 def _acc_an_alcance(sub):
-    """Alcance de producto de la acción, resuelto contra el maestro 04D."""
+    """Alcance de producto de la acción: los SKU que el catálogo declara por código, más lo
+    que haya que resolver por texto contra el maestro 04D."""
+    codigos, nombres = motor_acc_an.partir_productos(sub)
     return motor_acc_an.resolver_alcance(
-        motor_acc_an.marcas_de(sub), _acc_an_maestro_filas(), _acc_canon_cat,
-        _acc_an_segmentos_hermanos(sub))
+        nombres, _acc_an_maestro_filas(), _acc_canon_cat,
+        _acc_an_segmentos_hermanos(sub), codigos_explicitos=codigos)
 
 
 def _acc_an_pred(sub, all_lineas, alcance=None):
@@ -7696,11 +7852,16 @@ def _acciones_analisis(action_id, comparacion="mes_anterior", vid=None):
         motor_acc_an.buscar_tag_accion(d_act, action_id))
 
     # ── Líneas de la acción en el período actual ──
-    m_seg = motor_acc_an.mask_segmento(d_act, segs)
+    sub_allowed = _acc_an_subseg(sub)
+    m_seg = _acc_mask_segmento(d_act, segs, sub_allowed)
     m_prod = motor_acc_an.mask_productos(d_act, pred) if not d_act.empty else m_seg
     # Alcance sin resolver = no sé qué productos mirar. Publicar 0 litros acá sería afirmar
     # que no hubo ventas, que es otra cosa: se corta con una nota y sin números inventados.
-    if not d_act.empty and int(m_prod.sum()) == 0 and motor_acc_an.marcas_de(sub):
+    # Ojo con la condición: sólo se corta cuando el alcance NO se pudo resolver. Que un
+    # alcance resuelto no matchee ninguna línea es un cero legítimo (nadie compró todavía) y
+    # tiene que salir como cero medido, no como dato faltante.
+    if (not d_act.empty and int(m_prod.sum()) == 0
+            and not alcance.get("resuelto") and motor_acc_an.marcas_de(sub)):
         return {
             "accion": {"id": action_id, "nombre": f"{cat_ui} · {sub.get('subcategoria')}",
                        "categoria": cat_ui, "subcategoria": sub.get("subcategoria"),
@@ -7752,7 +7913,7 @@ def _acciones_analisis(action_id, comparacion="mes_anterior", vid=None):
         ids_cmp_marca = set()
         litros_marca_cmp = 0.0
     else:
-        m_seg_c = motor_acc_an.mask_segmento(d_cmp, segs)
+        m_seg_c = _acc_mask_segmento(d_cmp, segs, sub_allowed)
         m_prod_c = motor_acc_an.mask_productos(d_cmp, pred)
         ids_cmp_marca = set(d_cmp.loc[m_prod_c & m_seg_c, "_cli"].dropna().astype(int))
         litros_marca_cmp = float(d_cmp.loc[m_prod_c & m_seg_c, "_litros"].sum())
@@ -8008,17 +8169,7 @@ def _acciones_mes_payload_uncached(vid_filtro=None):
         def _match(df, sub_allowed=sub_allowed, wants_may=wants_may):
             if df.empty:
                 return df
-            # Segmento: clientes NO mayoristas matchean por su segmento clasificado;
-            # los mayoristas SOLO si la regla apunta a MAYORISTA (evita el cruce con AS).
-            es_may = df["_es_mayorista"] if "_es_mayorista" in df.columns else False
-            seg_ok = (~es_may & df["_seg"].isin(seg_use)) | (es_may & wants_may)
-            m = df["_vend"].isin(codes) & seg_ok
-            if sub_allowed is not None:
-                # el sub-filtro almacén/kiosco SOLO restringe el canon TRADICIONAL;
-                # Autoservicio / On Premise no se filtran por subramo (acción multicanal).
-                is_trad = df["_seg"].astype(str).str.upper().eq("TRADICIONAL")
-                sub_ok = df["_subseg"].apply(lambda s: any(tok in s for tok in sub_allowed))
-                m = m & (~is_trad | sub_ok)
+            m = df["_vend"].isin(codes) & _acc_mask_segmento(df, seg_use, sub_allowed, wants_may)
             if not m.any():
                 return df.iloc[0:0]
             sub = df[m]

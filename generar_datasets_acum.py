@@ -2070,11 +2070,19 @@ def _acc_expl_leer_nuevo(fuente):
             if not aid:
                 continue
             cod, desc = _acc_expl_txt(r.get("Código artículo")), _acc_expl_txt(r.get("Descripción artículo"))
-            nombre = f"{desc} ({cod})" if desc and cod else (desc or cod)
+            # La descripción del libro YA suele venir con el código entre paréntesis
+            # ("ANTARES KOLSCH LATA 6X473 (60001)"): agregarlo de nuevo lo duplicaba.
+            nombre = desc or cod
+            if cod and desc and f"({cod})" not in desc:
+                nombre = f"{desc} ({cod})"
             if not nombre:
                 continue
             prods_por_accion.setdefault(aid, []).append({
                 "tipo":        "sku",
+                # El código va como CAMPO, no sólo dentro del texto: es el alcance de producto
+                # de la acción y el análisis lo necesita exacto. Leerlo del nombre obliga a
+                # adivinar dónde lo puso el libro de este mes.
+                "codigo":      cod,
                 "nombre":      nombre,
                 "regla":       _acc_expl_txt(r.get("Marca")),
                 "observacion": _acc_expl_txt(r.get("Línea comercial")),

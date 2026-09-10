@@ -1,5 +1,62 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-09-10 - Acciones Comerciales: la pantalla volvio a medir
+
+### HECHO
+- [x] `server_orbit.py::_acc_catalogo_desde_explorador()`: el catalogo de MEDICION se deriva del
+  libro del mes ya parseado (`mod_acciones_explorador.json`) cuando no hay CSV en la carpeta del
+  mes. Sin esto, desde agosto no habia catalogo y toda la medicion daba cero (totales, tarjetas,
+  detalle de clientes y las alertas de descuento).
+- [x] `motor_acciones_analisis.codigo_de()` / `partir_productos()` + `resolver_alcance(...,
+  codigos_explicitos=)`: el SKU se lee del campo `codigo` o del parentesis del nombre. Antes solo
+  se leia al principio del nombre y las 37 acciones respondian "no se pudo resolver el alcance".
+- [x] `generar_datasets_acum._acc_expl_leer_nuevo()`: emite `codigo` como campo y deja de
+  duplicar el codigo dentro del nombre del producto.
+- [x] `_acc_seg_canon()`: reconoce los subcanales sueltos del libro nuevo (Almacen, Despensa,
+  Bar, Tienda de bebidas) y normaliza acentos. Antes "Almacen" caia al comodin de TODOS los
+  canales.
+- [x] `_acc_mask_segmento()`: UNICA implementacion del filtro de canal, compartida por la
+  medicion del mes y el analisis de una accion. Se borro `motor_acciones_analisis.mask_segmento`.
+- [x] `portal.html`: boton **Ver analisis** en cada tarjeta de accion (gerencia y vendedor), que
+  abre la misma tarjeta del Explorador para esa accion (`accxAnBotonHTML`/`accxAnToggle`).
+- [x] Validado: 37/37 acciones cruzadas entre los dos motores sin discordancia; portal verificado
+  leyendo el DOM; `test_acciones_explorador.py` 29 OK.
+
+### PENDIENTE DE COMMIT (nada esta staged)
+- [ ] Commit de acciones con: `server_orbit.py`, `motor_acciones_analisis.py`,
+  `generar_datasets_acum.py`, `PAV MATINAL PE_A FLOR/portal.html`, `CHANGELOG_AI.md`,
+  `NEXT_TASK.md`. **No incluir** los inputs modificados (`ventas.csv`, `ventas_acumulada.csv`,
+  `resultado.xlsx`, `ventas-clubfaro.csv`, `Stock/*.xlsx`) ni `01_INPUTS/Club Faro incentivo/` ni
+  `01_INPUTS/incentivo/`: los publica el cierre diario por su allowlist.
+- [ ] El cierre diario NO publica codigo (stagea datos por allowlist). Mientras este commit no
+  se pushee, Render sigue con el server viejo y la pantalla de acciones sigue en cero alla
+  aunque aca este arreglada. FARO ya quedo publicado en 9800749.
+
+### PENDIENTE / A REVISAR
+- [ ] **`test_acciones_analisis.py` y `test_acciones_trad_nc.py` estan clavados a agosto.**
+  Cortan con `KeyError: 'top_oportunidades'` y `TypeError: 'NoneType' object is not subscriptable`
+  porque piden `AGO26-VDA-SUP` / `AGO26-TRAD-NC`, que ya no estan en el catalogo del mes. Falla
+  PREEXISTENTE (verificado con `git stash`: identica antes del cambio), pero deja sin correr los
+  checks 17 y 18. Hay que tomar el id del catalogo vigente en vez de cablearlo.
+- [ ] **178 alertas de descuento aparecieron de golpe** al revivir el catalogo (63 "sin accion
+  aplicable" + 115 que exceden el tramo, sobre 990 lineas con descuento). Es la lectura honesta
+  del libro, pero conviene que Comercial mire las 63 "sin accion": pueden ser SKU que faltan en
+  la hoja `SKU_POR_ACCION` en vez de descuentos indebidos.
+- [ ] **`penetracion_pct` de la tarjeta de analisis usa el canal completo como denominador.**
+  Para una accion de Almacen+Kiosco el universo se calcula sobre todo el canal Tradicional
+  (`_acc_an_universo_potencial` sale del maestro de clientes, que no tiene la columna de subramo
+  ya canonizada). Subestima la penetracion de esas acciones. No afecta clientes ni litros.
+- [ ] **`/api/gerencia/acciones_ranking` + `mod_acciones_ranking.csv` / `mod_acciones_analisis.csv`
+  son la version vieja y estan mal.** El portal no los usa (solo el endpoint de cierre de mes
+  toma `ranking` para su resumen), pero `mod_acciones_analisis.csv` trae `litros_mes_anterior=0`
+  y `clientes_cat_mes_ant=0` en las 14 filas, o sea `delta_litros_pct` = 1.404.000%. O se arregla
+  el generador o se da de baja el dataset; hoy es una fuente de verdad paralela y rota.
+- [ ] `SEP26-024` (Bonificacion 5+1) se mide con la regla de "sin cargo": sin tramos de descuento
+  que comparar, cuenta toda linea con descuento de esos SKU en Bar/On Premise Noche. Da $684.697
+  sobre 5 clientes. Es el fallback documentado en `_acc_mask_usa_accion`, no una regresion, pero
+  para un 5+1 la medicion correcta es por comprobante (como la caja mixta de `TRAD_NC_ACTION_ID`).
+
+
 ## Sesion 2026-09-09 (b) - Incentivo FARO: correcciones de auditoria + pruebas
 
 ### HECHO
