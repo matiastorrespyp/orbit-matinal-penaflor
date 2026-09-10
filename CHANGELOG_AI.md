@@ -70,6 +70,23 @@ vendedor — tiene un boton **Ver analisis** que abre la MISMA tarjeta para esa 
 abrirla. El boton solo aparece para acciones que estan en el catalogo de reglas del mes: un mes
 servido por el CSV viejo trae ids que el analisis no sabe resolver.
 
+### Seguimiento - el buscador tampoco mostraba numeros
+
+Reportado despues del primer arreglo: entrando por **Por tipo de negocio -> Almacen** salian
+las 14 acciones que aplican pero ninguna con estadisticas. Ese modo del Explorador
+(`accxBusqRender`, tambien el de **Por marca**) respondia solo "que te ofrece la accion":
+canal, escalas, tope y observaciones. El analisis se cargaba unicamente en el modo Categoria.
+
+Ahora cada fila del buscador trae el resultado medido del mes (clientes que la usaron, litros,
+inversion y nuevos) y el boton **Ver analisis** que abre la misma tarjeta. Se distingue
+"todavia nadie la uso este mes" de "sin medicion para esta accion": mostrar 0 en el segundo
+caso seria afirmar algo que no sabemos.
+
+Detalle que obligo a cambiar el scope de la tarjeta: en **Por marca** la MISMA accion aparece
+una vez por canal (37 marcas tienen ids repetidos), asi que el contenedor lleva ahora una
+tercera parte con el indice de fila (`g:SEP26-037:3`). Sin eso dos filas compartian el id del
+div y el analisis se pintaba siempre en la primera.
+
 ### Validacion (datos reales, septiembre 2026)
 
 - `/api/gerencia/acciones_mes`: 37 acciones con numeros. Totales deduplicados: $1.859.405 de
@@ -81,6 +98,11 @@ servido por el CSV viejo trae ids que el analisis no sabe resolver.
   SEP26-003 abre con 28 clientes / 513 L / +68,3% vs agosto (938,2 L -> 1.579,5 L) y +100% vs
   septiembre 2025 (789,8 L -> 1.579,5 L, desde `historial_ventas.csv`). Vista vendedor V9 sobre
   la misma accion: 10 clientes / 105,8 L / -33,5%. Sin errores de consola.
+- Buscador **Por tipo de negocio -> Almacen**: 14 filas, 14 con numeros y boton; la primera
+  (SEP26-019, sin uso) dice "Todavia nadie la uso este mes" en vez de 0. **Por marca ->
+  Alaris**: 14 filas, 0 ids de contenedor duplicados, y las dos filas de SEP26-037 abren su
+  analisis por separado. Vista vendedor V9: mismos 14, con SUS numeros (2 clientes / 7 L /
+  $4.178, no los de la empresa). Sin errores de consola.
 - `test_acciones_explorador.py`: 29 OK. `test_acciones_analisis.py`: mismos checks OK que antes
   del cambio (0 fallas, diff vacio). Smoke de endpoints: dashboard, alertas, 11T, planes AS,
   cobertura, FARO, acciones_ranking -> 200.

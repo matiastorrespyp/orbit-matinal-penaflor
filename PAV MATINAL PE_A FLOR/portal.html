@@ -3500,7 +3500,7 @@ function accxBusqRender(scope){
   if(!filas.length){ box.innerHTML=vacio('No hay acciones cargadas para esta selección.','🚫'); return; }
   const chip=(t,cl)=>`<span class="chip ${cl||''}" style="font-size:10px;">${accxEsc(t)}</span>`;
   let h='';
-  filas.forEach(f=>{
+  filas.forEach((f,i)=>{
     const escalas=f.escalas||[];
     h+=`<div style="border:1px solid var(--b);border-radius:10px;overflow:hidden;margin-bottom:10px;">
       <div style="padding:10px 12px;background:rgba(226,20,122,.07);border-bottom:1px solid var(--b);">
@@ -3522,6 +3522,15 @@ function accxBusqRender(scope){
     const obs=[...new Set(escalas.map(e=>e.observacion).filter(Boolean))];
     if(topes.length) h+=`<div style="margin-top:8px;font-size:11px;color:var(--text2);">🎚 <b>Tope:</b> ${topes.map(accxEsc).join(' · ')}</div>`;
     if(obs.length) h+=`<div style="margin-top:6px;font-size:11px;color:var(--text3);line-height:1.5;">📝 ${obs.map(accxEsc).join('<br>')}</div>`;
+    // Este buscador respondía sólo "qué te ofrece la acción". Le falta la otra mitad de la
+    // pregunta —si está funcionando—, así que cada fila trae ahora el resultado medido del mes
+    // y abre la misma tarjeta de análisis que el modo Categoría.
+    if(f.action_id){
+      h+=`<div style="margin-top:10px;border-top:1px solid var(--bs);padding-top:9px;">
+          ${accxMedLineaHTML(scope,f.action_id)}
+          ${accxAnBotonHTML(scope,f.action_id,i)}
+        </div>`;
+    }
     h+='</div></div>';
   });
   box.innerHTML=h;
@@ -3667,14 +3676,43 @@ function accxAnEstado(scope){
 }
 
 /* Un scope de esta tarjeta es 'g'/'v' —el del Explorador, que sigue a los selectores— o
-   'g:SEP26-001' —una tarjeta de la grilla de acciones, clavada a esa acción—. Todo lo demás
-   (estado, shell, render) es idéntico en los dos casos: sólo cambia de dónde sale el id. */
+   'g:SEP26-001[:fila]' —una acción concreta, clavada a ese id—. Todo lo demás (estado, shell,
+   render) es idéntico en los dos casos: sólo cambia de dónde sale el id.
+
+   La tercera parte desambigua el contenedor: en el buscador por marca la MISMA acción aparece
+   una vez por canal, y sin eso dos filas compartirían el id del div y el análisis se pintaría
+   siempre en la primera. */
 function accxAnBase(scope){ return String(scope).split(':')[0]; }
 function accxAnId(scope){
   const p=String(scope).split(':');
   if(p.length>1) return p[1];
   const sub=accxSub(scope);
   return (sub&&sub.action_id)||'';
+}
+
+/* Medición del mes para una acción: la misma que alimenta la grilla de tarjetas. Devuelve
+   undefined si la acción no está en el payload medido (que NO es lo mismo que estar en cero). */
+function accxMed(scope,id){
+  const dat=(accxAnBase(scope)==='v'?(D.acc_mes_v||{}):(D.acc_mes||{}));
+  return (dat.acciones||[]).find(a=>a.id_accion===id);
+}
+
+/* Línea compacta de resultado para una acción, con el mismo criterio que la grilla: clientes
+   que la usaron, litros e inversión en descuento. Se distingue "todavía nadie la usó" de "esta
+   acción no se está midiendo": son dos cosas distintas y mostrar 0 en el segundo caso sería
+   afirmar algo que no sabemos. */
+function accxMedLineaHTML(scope,id){
+  const m=accxMed(scope,id);
+  if(!m) return `<div style="font-size:11px;color:var(--text3);margin-top:9px;">Sin medición para esta acción en el mes en curso.</div>`;
+  const n=v=>Number(v||0).toLocaleString('es-AR',{maximumFractionDigits:0});
+  const sinUso=!m.clientes_alcanzados;
+  return `<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:9px;font-size:11px;color:var(--text2);">
+      ${sinUso?`<span style="color:var(--text3);">Todavía nadie la usó este mes.</span>`:`
+        <span>👥 <b>${n(m.clientes_alcanzados)}</b> clientes</span>
+        <span>📦 <b>${n(m.litros)}</b> L</span>
+        <span>💰 <b>$${n(m.inversion_pesos)}</b> invertidos</span>
+        ${m.clientes_nuevos?`<span style="color:var(--ok);">🆕 ${n(m.clientes_nuevos)} nuevos</span>`:''}`}
+    </div>`;
 }
 
 async function accxAnLoad(scope){
@@ -3719,11 +3757,11 @@ function accxAnIds(scope){
     if(sb.action_id) out.add(sb.action_id);
   return out;
 }
-function accxAnBotonHTML(scope,id){
+function accxAnBotonHTML(scope,id,fila){
   // Sólo para acciones que están en el catálogo de reglas del mes: un mes servido por el CSV
   // viejo trae ids que el análisis no sabe resolver, y el botón daría un 404 en la cara.
   if(!accxAnIds(scope).has(id)) return '';
-  const sc=accxAnBase(scope)+':'+id;
+  const sc=accxAnBase(scope)+':'+id+(fila!=null?':'+fila:'');
   return `<div style="margin-top:9px;">
       <button type="button" onclick="accxAnToggle('${sc}',this)"
         style="cursor:pointer;border:1px solid var(--b);background:transparent;color:var(--text2);border-radius:6px;padding:4px 10px;font-size:11px;">

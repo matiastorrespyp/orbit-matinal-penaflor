@@ -19,6 +19,11 @@
   medicion del mes y el analisis de una accion. Se borro `motor_acciones_analisis.mask_segmento`.
 - [x] `portal.html`: boton **Ver analisis** en cada tarjeta de accion (gerencia y vendedor), que
   abre la misma tarjeta del Explorador para esa accion (`accxAnBotonHTML`/`accxAnToggle`).
+- [x] `portal.html::accxBusqRender()`: los modos **Por marca** y **Por tipo de negocio** del
+  Explorador listaban las acciones sin una sola estadistica (solo reglas). Ahora cada fila trae
+  el resultado medido del mes (`accxMedLineaHTML`) y el boton de analisis. El scope de la
+  tarjeta pasa a `base:accion:fila` porque en Por marca la misma accion aparece una vez por
+  canal y los contenedores chocaban de id.
 - [x] Validado: 37/37 acciones cruzadas entre los dos motores sin discordancia; portal verificado
   leyendo el DOM; `test_acciones_explorador.py` 29 OK.
 
