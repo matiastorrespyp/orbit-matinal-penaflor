@@ -1,6 +1,6 @@
 ﻿tipo,clave,detalle,filas,botellas
 LINEA_SIN_CARGO_NETO_CERO,,neto=0 (bonificacion/sin cargo): no computa cobertura,363,4008.0
-SKU_SIN_MATCH_EN_MATRIZ,14507,EL BAUTISMO MALBEC 6X750  — no pertenece a ningun titular oficial,68,252.0
+SKU_SIN_MATCH_EN_MATRIZ,14507,EL BAUTISMO MALBEC 6X750  — no pertenece a ningun titular oficial,70,261.0
 SKU_SIN_MATCH_EN_MATRIZ,14508,EL BAUTISMO BLEND TINTAS 6X750  — no pertenece a ningun titular oficial,2,9.0
 SKU_SIN_MATCH_EN_MATRIZ,14509,EL BAUTISMO BLEND B. DLCE 6X750  — no pertenece a ningun titular oficial,1,6.0
 SKU_SIN_MATCH_EN_MATRIZ,14510,EL BAUTISMO ROSADO 6X750  — no pertenece a ningun titular oficial,2,66.0
@@ -11,7 +11,7 @@ SKU_SIN_MATCH_EN_MATRIZ,14583,FRIZZE EVOL BLUE NEW X1000 — no pertenece a ning
 SKU_SIN_MATCH_EN_MATRIZ,14590,TERMIDOR BLANCO 12X1L  — no pertenece a ningun titular oficial,4,96.0
 SKU_SIN_MATCH_EN_MATRIZ,14594,FRIZZE BLUE LATA X473 — no pertenece a ningun titular oficial,53,702.0
 SKU_SIN_MATCH_EN_MATRIZ,14605,TERMIDOR 2021 TINTO  12X1L  — no pertenece a ningun titular oficial,39,726.0
-SKU_SIN_MATCH_EN_MATRIZ,14619,FRIZZE BUBBLE MOOD 6X1000 — no pertenece a ningun titular oficial,72,858.0
+SKU_SIN_MATCH_EN_MATRIZ,14619,FRIZZE BUBBLE MOOD 6X1000 — no pertenece a ningun titular oficial,73,870.0
 SKU_SIN_MATCH_EN_MATRIZ,14620,FRIZZE MANXANA POP 6X1000 — no pertenece a ningun titular oficial,41,612.0
 SKU_SIN_MATCH_EN_MATRIZ,20250,SUTER VARIETAL CABERNET 6X750 — no pertenece a ningun titular oficial,4,21.0
 SKU_SIN_MATCH_EN_MATRIZ,20251,SUTER VARIETAL MALBEC 6X750 — no pertenece a ningun titular oficial,39,210.0
@@ -27,7 +27,7 @@ SKU_SIN_MATCH_EN_MATRIZ,30004,JW BLACK LABEL 12x1000 — no pertenece a ningun t
 SKU_SIN_MATCH_EN_MATRIZ,30005,JW DOUBLE BLACK 6x750 — no pertenece a ningun titular oficial,11,29.0
 SKU_SIN_MATCH_EN_MATRIZ,30009,J WALKER BLUE LABEL 18 6x750 — no pertenece a ningun titular oficial,3,8.0
 SKU_SIN_MATCH_EN_MATRIZ,30010,J&B RARE 6X750 — no pertenece a ningun titular oficial,27,305.0
-SKU_SIN_MATCH_EN_MATRIZ,30012,BAILEYS NUEVA BOTELLA 12x750 — no pertenece a ningun titular oficial,95,628.0
+SKU_SIN_MATCH_EN_MATRIZ,30012,BAILEYS NUEVA BOTELLA 12x750 — no pertenece a ningun titular oficial,96,631.0
 SKU_SIN_MATCH_EN_MATRIZ,30019,SMIRNOFF 21 DO 12X700 — no pertenece a ningun titular oficial,44,423.0
 SKU_SIN_MATCH_EN_MATRIZ,30023,WHITE HORSE DO 12X750 — no pertenece a ningun titular oficial,148,2773.0
 SKU_SIN_MATCH_EN_MATRIZ,30029,J WALKER GREEN 6X750 — no pertenece a ningun titular oficial,2,7.0
@@ -35,22 +35,22 @@ SKU_SIN_MATCH_EN_MATRIZ,30048,OLD PARR 12YO 12x750 — no pertenece a ningun tit
 SKU_SIN_MATCH_EN_MATRIZ,30066,J WALKER 18 6x750 — no pertenece a ningun titular oficial,2,2.0
 SKU_SIN_MATCH_EN_MATRIZ,30075,GORDON´S GIN 6x700 — no pertenece a ningun titular oficial,46,259.0
 SKU_SIN_MATCH_EN_MATRIZ,30128,TANQUERAY SEVILLA GIN X750 — no pertenece a ningun titular oficial,4,17.0
-SKU_SIN_MATCH_EN_MATRIZ,30129,BAILEYS SALTED CARAMEL 12X750 — no pertenece a ningun titular oficial,21,58.0
+SKU_SIN_MATCH_EN_MATRIZ,30129,BAILEYS SALTED CARAMEL 12X750 — no pertenece a ningun titular oficial,22,60.0
 SKU_SIN_MATCH_EN_MATRIZ,30130,TANQUERAY DRY GIN X700 — no pertenece a ningun titular oficial,7,14.0
 SKU_SIN_MATCH_EN_MATRIZ,30138,JW GOLD RESERVE 6x750 — no pertenece a ningun titular oficial,6,13.0
 SKU_SIN_MATCH_EN_MATRIZ,30140,TANQUERAY BOSSA NOVA 6X700 — no pertenece a ningun titular oficial,6,11.0
 SKU_SIN_MATCH_EN_MATRIZ,35093,SMIRNOFF BC GRAPEF.&LIME 6X700 — no pertenece a ningun titular oficial,25,387.0
 SKU_SIN_MATCH_EN_MATRIZ,35101,SMIRNOFF BC ORANGE & LIME 6X700 — no pertenece a ningun titular oficial,48,447.0
 SKU_SIN_MATCH_EN_MATRIZ,35102,SMIRNOFF BC TANGE&LEMONGRASS 6X700 — no pertenece a ningun titular oficial,3,18.0
-SKU_SIN_MATCH_EN_MATRIZ,35107,GORDON´S TONIC 4X6X473 — no pertenece a ningun titular oficial,45,324.0
-SKU_SIN_MATCH_EN_MATRIZ,35108,SMF BC RUBYORANGE&LIME LATA 4X6X473 — no pertenece a ningun titular oficial,24,162.0
-SKU_SIN_MATCH_EN_MATRIZ,35109,SMF  BC GRAPEF&LIME  LATA 4X6X473 — no pertenece a ningun titular oficial,26,270.0
+SKU_SIN_MATCH_EN_MATRIZ,35107,GORDON´S TONIC 4X6X473 — no pertenece a ningun titular oficial,47,354.0
+SKU_SIN_MATCH_EN_MATRIZ,35108,SMF BC RUBYORANGE&LIME LATA 4X6X473 — no pertenece a ningun titular oficial,25,186.0
+SKU_SIN_MATCH_EN_MATRIZ,35109,SMF  BC GRAPEF&LIME  LATA 4X6X473 — no pertenece a ningun titular oficial,27,294.0
 SKU_SIN_MATCH_EN_MATRIZ,41082,FINCA NOTABLES MALBEC .6X750  — no pertenece a ningun titular oficial,2,9.0
 SKU_SIN_MATCH_EN_MATRIZ,42101,ELEMENTOS CABSAUV 6X750  — no pertenece a ningun titular oficial,37,615.0
-SKU_SIN_MATCH_EN_MATRIZ,42102,ELEMENTOS MALBEC 6X750  — no pertenece a ningun titular oficial,277,3696.0
+SKU_SIN_MATCH_EN_MATRIZ,42102,ELEMENTOS MALBEC 6X750  — no pertenece a ningun titular oficial,279,3879.0
 SKU_SIN_MATCH_EN_MATRIZ,42103,ELEMENTOS SYRAH 6X750  — no pertenece a ningun titular oficial,8,282.0
 SKU_SIN_MATCH_EN_MATRIZ,42104,ELEMENTOS TANNAT 6X750  — no pertenece a ningun titular oficial,10,330.0
-SKU_SIN_MATCH_EN_MATRIZ,42105,ELEMENTOS TORRONTES 6X750  — no pertenece a ningun titular oficial,38,942.0
+SKU_SIN_MATCH_EN_MATRIZ,42105,ELEMENTOS TORRONTES 6X750  — no pertenece a ningun titular oficial,39,1062.0
 SKU_SIN_MATCH_EN_MATRIZ,42107,ELEMENTOS CHARDONNAY 6X750 — no pertenece a ningun titular oficial,24,405.0
 SKU_SIN_MATCH_EN_MATRIZ,42113,ELEMENTOS TORRONTES DLCE6X750  — no pertenece a ningun titular oficial,16,108.0
 SKU_SIN_MATCH_EN_MATRIZ,44288,EL ESTECO MALBEC 6X750 — no pertenece a ningun titular oficial,5,48.0
@@ -80,12 +80,12 @@ SKU_SIN_MATCH_EN_MATRIZ,74377,PAZ DE FLM CAB FRANC 6X750 — no pertenece a ning
 SKU_SIN_MATCH_EN_MATRIZ,74402,PAZ DE FLM SAUV BLANC 6X750 — no pertenece a ningun titular oficial,3,6.0
 SKU_SIN_MATCH_EN_MATRIZ,74410,ISCAY MALBEC - CABERNET FRANC — no pertenece a ningun titular oficial,1,6.0
 SKU_SIN_MATCH_EN_MATRIZ,74411,ISCAY MALBEC/CAB.FRANC 6X1X750 — no pertenece a ningun titular oficial,1,6.0
-SKU_SIN_MATCH_EN_MATRIZ,74446,DADA 7 SWEET  6X750 — no pertenece a ningun titular oficial,163,1344.0
-SKU_SIN_MATCH_EN_MATRIZ,74473,DADA ESPUMANTE ROS6X750  — no pertenece a ningun titular oficial,31,534.0
+SKU_SIN_MATCH_EN_MATRIZ,74446,DADA 7 SWEET  6X750 — no pertenece a ningun titular oficial,164,1350.0
+SKU_SIN_MATCH_EN_MATRIZ,74473,DADA ESPUMANTE ROS6X750  — no pertenece a ningun titular oficial,32,552.0
 SKU_SIN_MATCH_EN_MATRIZ,74555,TRAPICHE PURO MALBEC — no pertenece a ningun titular oficial,13,45.0
 SKU_SIN_MATCH_EN_MATRIZ,74556,TRAPICHE IMPURO MALBEC X750 — no pertenece a ningun titular oficial,7,21.0
-SKU_SIN_MATCH_EN_MATRIZ,74567,DADA ESPUMANTE MARACUYA 6X750 — no pertenece a ningun titular oficial,163,1923.0
-SKU_SIN_MATCH_EN_MATRIZ,74570,LOS INTOCABLES MALBEC 6X750 — no pertenece a ningun titular oficial,42,183.0
+SKU_SIN_MATCH_EN_MATRIZ,74567,DADA ESPUMANTE MARACUYA 6X750 — no pertenece a ningun titular oficial,164,1965.0
+SKU_SIN_MATCH_EN_MATRIZ,74570,LOS INTOCABLES MALBEC 6X750 — no pertenece a ningun titular oficial,44,189.0
 SKU_SIN_MATCH_EN_MATRIZ,74583,LOS INTOCABLES CAB.SAUV 6X750 — no pertenece a ningun titular oficial,15,81.0
 SKU_SIN_MATCH_EN_MATRIZ,74608,ALMA MORA SEL RVE MALBEC 6X750 — no pertenece a ningun titular oficial,62,402.0
 SKU_SIN_MATCH_EN_MATRIZ,74609,ALMA MORA SEL RVE CABER 6X750 — no pertenece a ningun titular oficial,14,120.0
@@ -109,10 +109,10 @@ SKU_SIN_MATCH_EN_MATRIZ,74728,DADA 7 ORANGE BITTER 6X750 — no pertenece a ning
 SKU_SIN_MATCH_EN_MATRIZ,74749,INTOCABLES DOUBLE OAK 6 X 750 — no pertenece a ningun titular oficial,22,87.0
 SKU_SIN_MATCH_EN_MATRIZ,74786,EL BAUTISMO CABERNET 6X750 — no pertenece a ningun titular oficial,37,153.0
 SKU_SIN_MATCH_EN_MATRIZ,74813,DADA EXTRA BRUT 6X750 — no pertenece a ningun titular oficial,11,60.0
-SKU_SIN_MATCH_EN_MATRIZ,74814,CAZADOR MALBEC 6X750 — no pertenece a ningun titular oficial,282,1356.0
+SKU_SIN_MATCH_EN_MATRIZ,74814,CAZADOR MALBEC 6X750 — no pertenece a ningun titular oficial,284,1368.0
 SKU_SIN_MATCH_EN_MATRIZ,74815,CAZADOR CAB. SAU 6X750 — no pertenece a ningun titular oficial,36,210.0
 SKU_SIN_MATCH_EN_MATRIZ,74816,CAZADOR BLANCO DULCE 6X750 — no pertenece a ningun titular oficial,62,444.0
-SKU_SIN_MATCH_EN_MATRIZ,74830,DADA SIDRA 6X750 — no pertenece a ningun titular oficial,49,678.0
+SKU_SIN_MATCH_EN_MATRIZ,74830,DADA SIDRA 6X750 — no pertenece a ningun titular oficial,50,681.0
 SKU_SIN_MATCH_EN_MATRIZ,74832,CAZADOR ROSADO 6X750 — no pertenece a ningun titular oficial,17,96.0
 SKU_SIN_MATCH_EN_MATRIZ,74884,DADA LATA TINTO VERANO 4X6X355 — no pertenece a ningun titular oficial,42,224.0
 SKU_SIN_MATCH_EN_MATRIZ,74888,SANTA ANA MALBEC 6X750 — no pertenece a ningun titular oficial,18,99.0
@@ -137,11 +137,11 @@ SKU_SIN_MATCH_EN_MATRIZ,80088,J DE DIOS NC BLEND — no pertenece a ningun titul
 SKU_SIN_MATCH_EN_MATRIZ,80092,SAN TELMO SPARK DULCE 6X750 — no pertenece a ningun titular oficial,7,150.0
 SKU_SIN_MATCH_EN_MATRIZ,80093,SAN TELMO SPARK E.BRUT 6X750 — no pertenece a ningun titular oficial,7,51.0
 SKU_SIN_MATCH_EN_MATRIZ,80094,NC S E.BRUT4X6X355 — no pertenece a ningun titular oficial,19,126.0
-SKU_SIN_MATCH_EN_MATRIZ,90105,Cinz. VTH RSO 12X1000 — no pertenece a ningun titular oficial,128,7147.0
+SKU_SIN_MATCH_EN_MATRIZ,90105,Cinz. VTH RSO 12X1000 — no pertenece a ningun titular oficial,129,7153.0
 SKU_SIN_MATCH_EN_MATRIZ,90106,Cinz. VTH BI AM 12X1000 — no pertenece a ningun titular oficial,18,156.0
 SKU_SIN_MATCH_EN_MATRIZ,90110,Cinz. VTH SEGUNDO 6X750 — no pertenece a ningun titular oficial,9,60.0
-CLIENTE_SIN_PADRON,,cliente no esta en clientes.xlsx: sin segmento ni cartera,24,468.0
+CLIENTE_SIN_PADRON,,cliente no esta en clientes.xlsx: sin segmento ni cartera,27,480.0
 CLIENTE_DUPLICADO_EN_PADRON,"272,320,1065,1257,1336,1366,1392,1414,1424,4758",cargado mas de una vez en clientes.xlsx; resuelto por motor_padron (V3/V8 -> V8). Corregir la cartera en el ERP,10,0.0
 DEPOSITO,"1,20","deposito/venta directa (V1/V20): SUMA al total de empresa, sin cartera ni ranking ni cumplimiento individual. Es una decision comercial, no hay nada que corregir",35,172.0
 CLIENTE_SIN_CARTERA,"786,20008,20010","cliente sin codven o sin asignacion valida en el padron: SUMA al total de empresa, fuera de rankings y objetivos individuales. NO es deposito — asignar cartera en el ERP",44,3469.0
-SEGMENTO_FUERA_DE_SUPERFICIE,,On Premise/Vinoteca/Mayorista/Proximity/resto: el 11T mide solo Autoservicio + Almacen + Kiosco,113,27658.0
+SEGMENTO_FUERA_DE_SUPERFICIE,,On Premise/Vinoteca/Mayorista/Proximity/resto: el 11T mide solo Autoservicio + Almacen + Kiosco,113,27754.0
