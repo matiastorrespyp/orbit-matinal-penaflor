@@ -1,19 +1,21 @@
 ﻿Categoria,Segmento,litros,cajas,importe,clientes,fecha_calculo
-Cerveza Artesanal,Cerveza Artesanal,3003.7,1062,2239808,160,2026-09-23
-Espumantes,Champaña Alta y Premium,4007.7,837,3638442,31,2026-09-23
-Espumantes,Champaña Medio,3024.0,672,1604747,9,2026-09-23
-RTD,RTD,7964.1,1146,2110525,73,2026-09-23
-RTD (S),RTD (S),38517.3,3393,6942870,209,2026-09-23
-Sidra,Premium,2700.0,600,2285483,21,2026-09-23
-Spirits,Nacional,82435.2,17154,123129624,362,2026-09-23
-Spirits,Importados,406.2,47,1675258,15,2026-09-23
-Vermouth,Vermouth,15732.0,1311,6209989,19,2026-09-23
-Vinos de Mesa,Vinos de Mesa,9540.0,795,936242,19,2026-09-23
-Vinos de guarda,Premium,1647.0,366,2360445,47,2026-09-23
-Vinos de guarda,Super Premium,216.0,48,569604,5,2026-09-23
-Vinos de guarda,Ultra Premium,13.5,3,65135,1,2026-09-23
-Vinos del año,Alto,52870.5,11749,41316083,637,2026-09-23
-Vinos del año,Medio Alto,20470.5,4549,12699283,456,2026-09-23
-Vinos del año,Superior,8019.0,1782,8762569,221,2026-09-23
-Vinos del año,Medio,1606.5,357,773381,42,2026-09-23
-Vodka,Standard (S),718.2,171,1049382,13,2026-09-23
+Cerveza Artesanal,Cerveza Artesanal,3020.7,1068,2251792,161,2026-09-24
+Espumantes,Champaña Alta y Premium,4166.8,867,3800565,35,2026-09-24
+Espumantes,Champaña Medio,3024.0,672,1604747,9,2026-09-24
+Gin,Premium (S),4.2,1,26219,1,2026-09-24
+RTD,RTD,8280.3,1188,2188060,77,2026-09-24
+RTD (S),RTD (S),39811.5,3507,7182970,213,2026-09-24
+Sidra,Premium,2700.0,600,2285483,21,2026-09-24
+Spirits,Nacional,82833.0,17226,123697348,366,2026-09-24
+Spirits,Importados,446.4,52,1815628,16,2026-09-24
+Vermouth,Vermouth,15732.0,1311,6209989,19,2026-09-24
+Vinos de Mesa,Vinos de Mesa,9540.0,795,936242,19,2026-09-24
+Vinos de guarda,Premium,1660.5,369,2378468,47,2026-09-24
+Vinos de guarda,Super Premium,216.0,48,569604,5,2026-09-24
+Vinos de guarda,Ultra Premium,13.5,3,65135,1,2026-09-24
+Vinos del año,Alto,53518.5,11893,41841456,641,2026-09-24
+Vinos del año,Medio Alto,21105.0,4690,13110433,463,2026-09-24
+Vinos del año,Superior,8154.0,1812,8915929,224,2026-09-24
+Vinos del año,Medio,1647.0,366,792882,42,2026-09-24
+Vodka,Standard (S),718.2,171,1049382,13,2026-09-24
+Whisky,Standard (S),4.5,1,19278,1,2026-09-24
