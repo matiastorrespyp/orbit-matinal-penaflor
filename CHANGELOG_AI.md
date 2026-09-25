@@ -1,5 +1,49 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-09-25 - fix(planes as): el portal mostraba los sin cargos de agosto teniendo los de septiembre
+
+La planilla `01_INPUTS/Planes AASS/sincargosseptiembre.xlsx` estaba subida (23/09) y el
+autodetector por mes la elegia PRIMERO, pero los dos lectores fallaban al abrirla y caian
+en silencio al archivo del mes anterior. Sintoma: sin cargos y escala de agosto en la
+pantalla Planes AS, con la planilla nueva ya en la carpeta.
+
+### Defecto 1 - Hoja buscada por nombre literal
+
+`_cargar_sincargos_mes()` y `_bbdd_desde_sincargos()` hacian
+`pd.read_excel(..., sheet_name="Planes AASS")`. El proveedor arma el libro cada mes y
+septiembre vino con la hoja en minuscula (`planes aass`), asi que openpyxl tiraba
+"Worksheet named 'Planes AASS' not found", el `except` lo degradaba a AVISO y el bucle
+seguia con `sincargosagosto.xlsx`. 18 de los 30 clientes tenian asignacion distinta.
+
+**Fix.** `_hoja_planes_aass(path)` resuelve el nombre real de la hoja normalizando a ASCII
+en minusculas (mismo criterio que ya usaban `_cargar_planfrio_mes` y `_cargar_puntera_mes`,
+que por eso ya leian septiembre bien).
+
+### Defecto 2 - Encabezados de escala por igualdad exacta
+
+`_cargar_escala_df()` buscaba las columnas con `h == "GOLD"`. Septiembre las titula
+`Gold 10%` / `Silver 8%` / `Inicial 6%`, no matcheaba ninguna, `continue`, y la escala salia
+de `escalasagosto.xlsx` (precios viejos: escala 1 a $16.029 en vez de $16.840).
+
+**Fix.** `_find()` busca exacto y, si no encuentra, por prefijo.
+
+### Validacion
+
+- `_cargar_sincargos_mes()` / `_cargar_planfrio_mes()` / `_cargar_puntera_mes()` /
+  `_cargar_escala_df()`: los cuatro reportan `...septiembre.xlsx`.
+- `python generar_datasets_acum.py --solo-planes-as` -> `mod_planes_as.csv` (33 clientes) +
+  `mod_sincargos_envios.csv`; 18 clientes con `sc_total_ganado` corregido.
+- `python test_planes_as.py` (fija agosto explicitamente): 3 tests OK - el lector tolerante
+  no rompe el formato viejo.
+- Smoke: `/api/gerencia/planes_as` 200 (33 clientes) y `/api/vendedor/V4/planes_as` 200.
+
+### Nota operativa
+
+Los dos eran fallos SILENCIOSOS: el portal mostraba numeros plausibles del mes anterior en
+vez de quedarse vacio. Si vuelve a pasar, el rastro esta en la salida del cierre
+(`Sin cargos del mes desde: <archivo>` / `Escala Plan AS desde: <archivo>`): si nombra un mes
+que no es el corriente, el libro del mes cambio de formato otra vez.
+
 ## 2026-09-10 - fix(acciones): la pantalla volvio a medir cada accion (dos meses en cero)
 
 La pantalla de Acciones Comerciales no mostraba ninguna estadistica: ni clientes, ni litros,

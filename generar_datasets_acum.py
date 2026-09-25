@@ -416,6 +416,16 @@ def _candidatos_sincargos(path=None):
     return _ordenar_por_mes(pdir.glob("sincargos*.xlsx")) if pdir.exists() else []
 
 
+def _hoja_planes_aass(path):
+    """Nombre real de la hoja de Planes AASS en un sincargos*.xlsx.
+    El archivo lo arma el proveedor cada mes y el nombre de la hoja cambia de mayúsculas
+    (agosto: 'Planes AASS'; septiembre: 'planes aass'), así que se resuelve normalizando
+    a ASCII en minúsculas. Devuelve None si el libro no trae esa hoja."""
+    xl = pd.ExcelFile(path)
+    return next((s for s in xl.sheet_names
+                 if _texto_ascii(s).replace(" ", "") == "planesaass"), None)
+
+
 def _ordenar_por_mes(candidatos, mes_idx=None):
     """Ordena Paths cuyo nombre incluye el mes en español (escalajulio.xlsx,
     sincargosjunio.xlsx, ...) poniendo PRIMERO el del mes ACTUAL y el resto por mtime
@@ -470,7 +480,11 @@ def _cargar_escala_df():
                 continue
             hdr = [str(x).strip().upper() for x in raw.iloc[hdr_idx].tolist()]
             def _find(name):
-                return next((j for j, h in enumerate(hdr) if h == name), None)
+                # Exacto primero; si no, por prefijo: el proveedor cambia el encabezado de
+                # mes a mes (agosto 'Gold' -> septiembre 'Gold 10%') y exigir igualdad
+                # descartaba el archivo del mes en curso cayendo al del mes anterior.
+                return next((j for j, h in enumerate(hdr) if h == name),
+                            next((j for j, h in enumerate(hdr) if h.startswith(name)), None))
             c_esc, c_gold, c_silver, c_inic = _find("ESCALA"), _find("GOLD"), _find("SILVER"), _find("INICIAL")
             if None in (c_esc, c_gold, c_silver, c_inic):
                 continue
@@ -517,7 +531,11 @@ def _cargar_sincargos_mes(path=None):
     cand = _candidatos_sincargos(path)
     for path in cand:
         try:
-            df = pd.read_excel(path, sheet_name="Planes AASS", header=0)
+            hoja = _hoja_planes_aass(path)
+            if hoja is None:
+                print(f"  [AVISO] sincargos {path.name}: sin hoja Planes AASS")
+                continue
+            df = pd.read_excel(path, sheet_name=hoja, header=0)
             df.columns = [str(c).strip() for c in df.columns]
             ccol = next((c for c in df.columns
                          if c.lower().replace("í", "i").replace("�", "")
@@ -721,7 +739,11 @@ def _bbdd_desde_sincargos():
     cand = _ordenar_por_mes(pdir.glob("sincargos*.xlsx")) if pdir.exists() else []
     for path in cand:
         try:
-            df = pd.read_excel(path, sheet_name="Planes AASS", header=0)
+            hoja = _hoja_planes_aass(path)
+            if hoja is None:
+                print(f"  [AVISO] sincargos {path.name}: sin hoja Planes AASS")
+                continue
+            df = pd.read_excel(path, sheet_name=hoja, header=0)
             df.columns = [str(c).strip() for c in df.columns]
             ccol = next((c for c in df.columns if c.lower().replace("í", "i").replace("�", "")
                          .strip() in ("codigo", "cdigo", "código", "cod", "cliente")), None)

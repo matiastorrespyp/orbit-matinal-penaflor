@@ -1,5 +1,25 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-09-25 - Planes AS: sin cargos y escala de septiembre
+
+### HECHO
+- [x] `generar_datasets_acum._hoja_planes_aass()`: resuelve el nombre de la hoja de
+  Planes AASS sin depender de mayusculas/acentos. Usado por `_cargar_sincargos_mes()` y
+  `_bbdd_desde_sincargos()`, que exigian el literal `"Planes AASS"` y caian a agosto.
+- [x] `generar_datasets_acum._cargar_escala_df()::_find()`: encabezado exacto o por prefijo
+  (`Gold 10%`). Antes la escala de septiembre se descartaba entera.
+- [x] Regenerado `mod_planes_as.csv` + `mod_sincargos_envios.csv` con septiembre.
+
+### PENDIENTE
+- [x] Publicado a Render a mano (no se espero al cierre): `mod_planes_as.csv` +
+  `generar_datasets_acum.py`.
+- [x] `01_INPUTS/Planes AASS/*.xlsx` SI se publica: los 8 libros (incluido
+  `sincargosseptiembre.xlsx`) estan tracked en el repo, el calculo es reproducible en el
+  server.
+- [ ] Al llegar el libro de octubre, mirar la salida del cierre: `Sin cargos del mes desde:`
+  y `Escala Plan AS desde:` deben nombrar octubre. Si nombran septiembre, el formato cambio
+  de nuevo (es un fallo silencioso, no rompe nada visible).
+
 ## Sesion 2026-09-10 - Acciones Comerciales: la pantalla volvio a medir
 
 ### HECHO
