@@ -9,10 +9,15 @@
 370,escala,Finca Las Moras,2026-09-25,6
 390,escala,Finca Las Moras,2026-09-24,12
 476,escala,Smirnoff Flavours,2026-09-23,60
+519,escala,Finca Las Moras,2026-09-29,24
+519,escala,Smirnoff Flavours,2026-09-29,6
 538,escala,Finca Las Moras,2026-09-23,18
+538,escala,Smirnoff Flavours,2026-09-29,1
 689,escala,Smirnoff Flavours,2026-09-17,6
 805,escala,Smirnoff Flavours,2026-09-01,6
 997,escala,Finca Las Moras,2026-09-25,18
+1006,escala,Finca Las Moras,2026-09-29,18
+1006,escala,Smirnoff Flavours,2026-09-29,6
 1013,escala,Smirnoff Flavours,2026-09-23,60
 1178,escala,Finca Las Moras,2026-09-25,24
 1178,escala,Elementos,2026-09-25,6
@@ -28,24 +33,60 @@
 1443,escala,Frizze,2026-09-16,6
 1478,escala,Smirnoff Flavours,2026-09-07,24
 1478,escala,Smirnoff Flavours,2026-09-14,24
+1478,escala,Smirnoff Flavours,2026-09-29,42
 1479,escala,Smirnoff Flavours,2026-09-08,18
 1484,escala,Smirnoff Flavours,2026-09-07,12
+2083,escala,Smirnoff Flavours,2026-09-29,6
 2211,escala,Finca Las Moras,2026-09-24,24
 2211,escala,Elementos,2026-09-24,6
+2353,escala,Finca Las Moras,2026-09-29,24
+2353,escala,Elementos,2026-09-29,24
+2353,escala,Frizze,2026-09-29,6
+2353,escala,Smirnoff Flavours,2026-09-29,6
 2357,escala,Finca Las Moras,2026-09-24,24
 2357,escala,Elementos,2026-09-24,24
 2410,escala,Finca Las Moras,2026-09-25,36
 2410,escala,Elementos,2026-09-25,6
 2410,escala,Smirnoff Flavours,2026-09-25,6
 30006,escala,Finca Las Moras,2026-09-25,24
+30011,escala,Finca Las Moras,2026-09-29,24
+30011,escala,Elementos,2026-09-29,6
+30011,escala,Smirnoff Flavours,2026-09-29,6
+30013,escala,Finca Las Moras,2026-09-29,24
+30013,escala,Elementos,2026-09-29,6
+30013,escala,Smirnoff Flavours,2026-09-29,6
 30014,escala,Finca Las Moras,2026-09-23,24
 30014,escala,Elementos,2026-09-23,6
+30014,escala,Smirnoff Flavours,2026-09-29,6
+30017,escala,Finca Las Moras,2026-09-29,24
+30017,escala,Elementos,2026-09-29,12
+30017,escala,Smirnoff Flavours,2026-09-29,6
+30033,escala,Finca Las Moras,2026-09-29,24
+30033,escala,Elementos,2026-09-29,12
+30033,escala,Smirnoff Flavours,2026-09-29,6
 30044,escala,Finca Las Moras,2026-09-23,18
+30044,escala,Smirnoff Flavours,2026-09-29,6
 30058,escala,Smirnoff Flavours,2026-09-23,60
+30063,escala,Finca Las Moras,2026-09-29,24
+30063,escala,Smirnoff Flavours,2026-09-29,6
 172,plan_frio,Six Pack Smirnoff ICE,2026-09-24,6
+519,plan_frio,Six Pack Smirnoff ICE,2026-09-29,6
+538,plan_frio,Six Pack Smirnoff ICE,2026-09-29,1
+1006,plan_frio,Six Pack Smirnoff ICE,2026-09-29,6
 1178,plan_frio,Six Pack Smirnoff ICE,2026-09-25,6
+2083,plan_frio,Six Pack Smirnoff ICE,2026-09-29,6
+2353,plan_frio,Six Pack Smirnoff ICE,2026-09-29,6
 2410,plan_frio,Six Pack Smirnoff ICE,2026-09-25,6
+30011,plan_frio,Six Pack Smirnoff ICE,2026-09-29,6
+30013,plan_frio,Six Pack Smirnoff ICE,2026-09-29,6
+30014,plan_frio,Six Pack Smirnoff ICE,2026-09-29,6
+30017,plan_frio,Six Pack Smirnoff ICE,2026-09-29,6
+30033,plan_frio,Six Pack Smirnoff ICE,2026-09-29,6
+30044,plan_frio,Six Pack Smirnoff ICE,2026-09-29,6
+30063,plan_frio,Six Pack Smirnoff ICE,2026-09-29,6
 172,puntera,Los Arboles,2026-09-24,12
 309,puntera,Los Arboles,2026-09-24,18
 538,puntera,Los Arboles,2026-09-23,18
+30011,puntera,Los Arboles,2026-09-29,18
+30017,puntera,Los Arboles,2026-09-29,18
 30044,puntera,Los Arboles,2026-09-23,18
