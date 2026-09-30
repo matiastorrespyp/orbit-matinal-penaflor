@@ -1,5 +1,43 @@
 # NEXT TASK - ORBIT MATINAL PEÑAFLOR
 
+## Sesion 2026-09-30 (b) - Innovaciones: lector unico
+
+### HECHO
+- [x] `motor_innovaciones.py` + 5 accesos migrados; 6 altas de septiembre leidas y con `x` Plan AS.
+
+### PENDIENTE
+- [ ] Publicar a Render: `motor_innovaciones.py` (NUEVO: sin el, server_orbit no arranca),
+  `server_orbit.py`, `generar_datasets_acum.py`, `tools/generar_cierre_mensual.py`,
+  `01_INPUTS/INNOVACIONES/Innovaciones.xlsx`, los 2 `mod_innovaciones_*.csv`, mas lo de la
+  sesion anterior (`portal.html`, `maestro_04D_productos.csv`).
+- [x] Cierre de Mes septiembre: NO requiere re-correr. El portal (`cierres_historicos` ->
+  `_cierre_extras_versionado`) calcula innovaciones en vivo con el trio versionado +
+  Innovaciones.xlsx; nunca estuvo en 0 (usaba 27, sin las altas). Simulado con el codigo
+  nuevo: 29 productos con venta, Frizze Man-Go 50, El Ultimo Tramo 13/12. Septiembre se ve
+  en el selector desde el 01/10 (el mes en curso se oculta a proposito).
+- [ ] Si hubo facturacion el 30/09 despues de las 15:55: el 01/10 re-versionar septiembre
+  (`CIERRE_MES_ORBIT.bat 092026 --force`) con el ventas_mes.csv del mes completo.
+- [ ] Tests preexistentes rotos: `test_acciones_analisis.py` (payload sin
+  `top_oportunidades`) y `test_acciones_trad_nc.py` (accion de agosto).
+
+## Sesion 2026-09-30 - Consultas: bebidas por segmento
+
+### HECHO
+- [x] Pantalla "Cliente" renombrada a "Consultas" (gerencia y vendedor).
+- [x] Tarjetas por segmento de bebida con despliegue de bebidas y sub-segmentos
+  (`/api/productos/segmentos`).
+
+### PENDIENTE
+- [ ] Publicar a Render (`server_orbit.py` + `portal.html`).
+- [x] Codigos sin descripcion en el maestro del mes toman el nombre de ventas (8 de 10).
+- [ ] 20505 y 30275 no tienen nombre ni en maestro ni en ventas: se resuelven al cargar un
+  `productos<mes>.xlsx` actualizado en `01_INPUTS/RAW_PRODUCTOS/` (hoy el ultimo es julio).
+- [x] El Ultimo Tramo (74901/74902/74903) cargado como Vinos de guarda / Premium en el maestro.
+- [ ] Definir categoria/segmento de 14621 Frizze Man-Go Party, 14553 La Gran Nacha y 30034
+  Gordon's Gin (vendidos, sin maestro) o cargar productos<mes>.xlsx actualizado.
+- [ ] Revisar si Gin/Vodka/Whisky (vienen como categoria propia del maestro del mes) deben
+  ir dentro de Spirits como en el 04D.
+
 ## Sesion 2026-09-25 - Planes AS: sin cargos y escala de septiembre
 
 ### HECHO

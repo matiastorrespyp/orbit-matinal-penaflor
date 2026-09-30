@@ -20,6 +20,7 @@ import motor_11t          # motor autoritativo de cobertura 11T (única fuente d
 import motor_padron       # regla única de pertenencia de cartera (duplicados del padrón)
 import motor_codigos      # equivalencias código catálogo proveedor -> código ERP
 import motor_acciones_analisis as motor_acc_an   # lógica pura del análisis de una acción
+import motor_innovaciones  # lector único de Innovaciones.xlsx (acepta "cod - nombre" y cod | nombre)
 
 # M1 (mount embebido en Orbit Home): con PENAFLOR_SKIP_BOOT=1, importar este módulo NO ejecuta
 # el bloque STARTUP (backup/init/restore/export) ni lanza el hilo de warmup: sólo deja el objeto
@@ -1497,6 +1498,60 @@ def clientes_buscar():
         df = df[nom.str.contains(q, na=False) | cid.str.contains(q, na=False) | loc.str.contains(q, na=False)]
     df = df.sort_values(["Razon_Social", "_cliente_id"], na_position="last").head(limit)
     return jsonify(_to_native([_cliente_row_to_dict(r) for _, r in df.iterrows()]))
+
+
+@app.route("/api/productos/segmentos")
+def productos_segmentos():
+    """Pantalla Consultas: bebidas agrupadas Categoría (segmento) → Segmento (sub-segmento).
+    Fuente: maestro 04D completado con el maestro del mes (_cargar_maestro_04D); el nombre sale
+    de 'Descripción Art.' del productos<mes>.xlsx. Si una categoría no tiene sub-segmento propio
+    (Segmento vacío o igual a la Categoría) sus bebidas van directo en `productos`."""
+    cod2cat, cod2seg, _lxu, cod2linea = _cargar_maestro_04D()
+    desc = _acc_desc_articulo_map()
+
+    def _txt(v):
+        s = str(v if v is not None else "").strip()
+        return "" if s.lower() in ("", "nan", "none") else s
+
+    # Código que el maestro del mes no describe: se toma el Articulo de su venta más reciente
+    # (ventas_acumulada.csv + ventas.csv, misma base que la ficha de cliente).
+    nom_ventas = {}
+    ventas = _cliente_ventas_base()
+    if not ventas.empty:
+        v = ventas[ventas["_articulo"] != ""].sort_values("_fecha")
+        cods = v["_codigo"].str.upper().str.replace(r"\.0$", "", regex=True)
+        nom_ventas = dict(zip(cods, v["_articulo"]))
+
+    # 04D y maestro del mes escriben distinto la misma categoría ("Vinos de guarda" / "Vinos de
+    # Guarda"): se agrupa sin distinguir mayúsculas, mostrando la primera grafía vista.
+    arbol, grafia = {}, {}
+    def _canon(v):
+        return grafia.setdefault(v.lower(), v)
+    for cod, cat in cod2cat.items():
+        cat = _txt(cat)
+        if not cat:
+            continue
+        cat = _canon(cat)
+        seg = _txt(cod2seg.get(cod))
+        seg = "" if seg.lower() == cat.lower() else (_canon(seg) if seg else "")
+        linea = _txt(cod2linea.get(cod)) or _txt((desc.get(cod) or {}).get("linea"))
+        nombre = _txt((desc.get(cod) or {}).get("descripcion")) or _txt(nom_ventas.get(cod))
+        arbol.setdefault(cat, {}).setdefault(seg, []).append(
+            {"codigo": cod, "producto": nombre or linea or f"Código {cod}", "linea": linea,
+             "sin_descripcion": not nombre})
+
+    orden = lambda p: (p["linea"].upper(), p["producto"].upper())
+    out = []
+    for cat in sorted(arbol, key=str.upper):
+        segs = arbol[cat]
+        sin_sub = sorted(segs.pop("", []), key=orden)
+        subs = [{"segmento": s, "total": len(segs[s]), "productos": sorted(segs[s], key=orden)}
+                for s in sorted(segs, key=str.upper)]
+        out.append({"categoria": cat, "total": len(sin_sub) + sum(x["total"] for x in subs),
+                    "subsegmentos": subs, "productos": sin_sub})
+    return jsonify({"categorias": out,
+                    "fuente": "maestro_04D_productos.csv + " + (_acc_desc_articulo_file().name
+                                                             if _acc_desc_articulo_file() else "sin maestro del mes")})
 
 
 @app.route("/api/clientes/<int:cliente_id>/ficha")
@@ -3921,23 +3976,12 @@ def _innovaciones_codigos_todas():
     p = INPUTS / "INNOVACIONES" / "Innovaciones.xlsx"
     if not p.exists():
         return []
-    out, vistos = [], set()
     try:
-        df = pd.read_excel(p, sheet_name=0, header=None, dtype=str)
-        for _, fila in df.iterrows():
-            for celda in [str(v).strip() for v in fila.tolist() if pd.notna(v)]:
-                m = _re.match(r"^0*(\d{4,6})\s*-\s*(.+)$", celda)
-                if m:
-                    cod = int(m.group(1))
-                    if cod not in vistos:
-                        vistos.add(cod)
-                        out.append({"codigo": cod,
-                                    "nombre": _re.sub(r"\s+", " ", m.group(2).replace("\xa0", " ")).strip()})
-                    break
+        return [{"codigo": r["codigo"], "nombre": r["nombre"]}
+                for r in motor_innovaciones.leer_innovaciones(p)]
     except Exception as e:
         print(f"[WARN] innovaciones (días de stock): {e}")
         return []
-    return out
 
 
 _MPA_CACHE = {"key": None, "data": None}
@@ -5713,19 +5757,9 @@ def _inov_plan_as_productos():
     cached = _INOV_PLAN_AS_CACHE.get(key)
     if cached is not None:
         return cached
-    out = []
     try:
-        df = pd.read_excel(p, sheet_name=0, header=None, dtype=str)
-        for _, fila in df.iterrows():
-            celdas = [str(v).strip() for v in fila.tolist() if pd.notna(v)]
-            if not any(c.lower() == "x" for c in celdas):
-                continue
-            for c in celdas:
-                m = _re.match(r"^0*(\d{4,6})\s*-\s*(.+)$", c)
-                if m:
-                    nombre = _re.sub(r"\s+", " ", m.group(2).replace("\xa0", " ")).strip()
-                    out.append({"codigo": int(m.group(1)), "nombre": nombre})
-                    break
+        out = [{"codigo": r["codigo"], "nombre": r["nombre"]}
+               for r in motor_innovaciones.leer_innovaciones(p) if r["plan_as"]]
     except Exception as e:
         print(f"[WARN] innovaciones plan AS: {e}")
         out = []
@@ -6602,10 +6636,7 @@ def _acc_innovaciones_codigos():
     p = INPUTS / "INNOVACIONES" / "Innovaciones.xlsx"
     if p.exists():
         try:
-            df = pd.read_excel(p, sheet_name=0, header=None, dtype=str)
-            for val in df.stack().dropna().astype(str):
-                for m in _re.finditer(r"(?:0{3,})?(\d{5})\s*-", val):
-                    out.add(m.group(1).lstrip("0"))
+            out = {str(r["codigo"]) for r in motor_innovaciones.leer_innovaciones(p)}
         except Exception:
             out = set()
     _ACC_INNOV_CACHE = out

@@ -1279,6 +1279,19 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
 @keyframes isoFill { 0%{height:0%} 18%{height:32%} 45%{height:62%} 75%{height:83%} 100%{height:92%} }
 .ln-loader-iso.loading .ln-loader-fill { animation:isoFill 3.5s ease forwards; }
 .ln-loader-fill.done { animation:none !important; height:100%; background:var(--ok); transition:height .25s,background .25s; }
+/* Consultas: bebidas por segmento */
+.seg-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+.seg-card { background:var(--surf2); border:1px solid var(--bs); border-radius:10px; padding:11px 12px; cursor:pointer; transition:border-color .14s; }
+.seg-card:hover { border-color:var(--mg); }
+.seg-card.on { border-color:var(--mg); box-shadow:0 0 0 1px var(--mg) inset; }
+.seg-card b { display:block; font-size:13px; }
+.seg-card span { font-size:10.5px; color:var(--text3); }
+.seg-det { margin-top:10px; border:1px solid var(--mg); border-radius:10px; overflow:hidden; }
+.seg-sub { border-top:1px solid var(--b); }
+.seg-sub:first-child { border-top:0; }
+.seg-sub-hd { display:flex; align-items:center; gap:8px; padding:9px 12px; background:var(--surf2); cursor:pointer; }
+.seg-prod { display:flex; gap:8px; align-items:baseline; padding:7px 12px; border-top:1px solid var(--b); font-size:12px; }
+.seg-prod .ln { color:var(--text3); font-size:10.5px; margin-left:auto; text-align:right; }
 </style>
 </head>
 <body>
@@ -1358,7 +1371,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       <div class="gs-item" data-sc="stock" onclick="gSw('stock',this)"><span class="gs-ico">📦</span>Stock</div>
       <div class="gs-item" data-sc="vendedores"  onclick="gSw('vendedores',this)"><span class="gs-ico">👥</span>Vendedores</div>
       <div class="gs-item" data-sc="clientes"    onclick="gSw('clientes',this)"><span class="gs-ico">🏪</span>Clientes Críticos</div>
-      <div class="gs-item" data-sc="cliente"     onclick="gSw('cliente',this)"><span class="gs-ico">🔎</span>Cliente</div>
+      <div class="gs-item" data-sc="cliente"     onclick="gSw('cliente',this)"><span class="gs-ico">🔎</span>Consultas</div>
       <div class="gs-item" data-sc="alertas"    onclick="gSw('alertas',this)">
         <span class="gs-ico">⚡</span>Alertas
         <span class="gs-badge" id="gAlertBadge" style="display:none">0</span>
@@ -1453,7 +1466,7 @@ input, select, textarea { font-family:inherit; color:inherit; font-variant-numer
       <span class="vtab-ico">⚡</span><span>Alertas</span>
       <div class="vtab-badge" id="vBadge"></div>
     </div>
-    <div class="vtab" onclick="vSw('cliente',this)"><span class="vtab-ico">🔎</span><span>Cliente</span></div>
+    <div class="vtab" onclick="vSw('cliente',this)"><span class="vtab-ico">🔎</span><span>Consultas</span></div>
     <div class="vtab" id="vtab-planesas" onclick="vSw('planes_as',this)"><span class="vtab-ico">🏆</span><span>Plan AS</span></div>
     <div class="vtab" onclick="vSw('faro',this)"><span class="vtab-ico">🌟</span><span>FARO</span></div>
     <div class="vtab" id="vtab-planfrizze" onclick="vSw('plan_frizze',this)"><span class="vtab-ico">🥂</span><span>Frizze</span></div>
@@ -1803,7 +1816,7 @@ function gSw(id,el){
   gScreen=id;
   document.querySelectorAll('.gs-item').forEach(n=>n.classList.remove('active'));
   (el||document.querySelector(`[data-sc="${id}"]`))?.classList.add('active');
-  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',cliente:'Cliente',planificacion:'Planificación',semanal:'Semanal',stock:'Stock',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',incentivo_faro:'Incentivo FARO',plan_frizze:'Plan Frizze',incentivo_dada:'Incentivo Dada',incentivo_almamora:'Incentivo Alma Mora Malbec Low',plan_cobertura:'Plan Cobertura',stock_sin_venta:'Stock sin Venta',cierre_mes:'Cierre de Mes'};
+  const tt={dashboard:'Dashboard Matinal',vendedores:'Vendedores',clientes:'Clientes Críticos',cliente:'Consultas',planificacion:'Planificación',semanal:'Semanal',stock:'Stock',planvsreal:'Plan vs Real',alertas:'Alertas Comerciales',innovaciones:'Innovaciones',planes_as:'Planes Autoservicio',acciones_comerciales:'Acciones Comerciales',incentivo_faro:'Incentivo FARO',plan_frizze:'Plan Frizze',incentivo_dada:'Incentivo Dada',incentivo_almamora:'Incentivo Alma Mora Malbec Low',plan_cobertura:'Plan Cobertura',stock_sin_venta:'Stock sin Venta',cierre_mes:'Cierre de Mes'};
   document.getElementById('gTopTitle').textContent=tt[id]||'';
   gRender();
 }
@@ -2477,7 +2490,7 @@ const clienteEsc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;'
 
 function renderClienteBuscador(cont,scope){
   const vend=scope==='v'?(userData?.vendedor_id||''):'';
-  cont.innerHTML=`<div class="${scope==='v'?'vsh':'gph'}">${scope==='v'?'Cliente':'<div><div class="gph-title">Cliente</div><div class="gph-sub">Busqueda y ficha comercial</div></div>'}</div>
+  cont.innerHTML=`<div class="${scope==='v'?'vsh':'gph'}">${scope==='v'?'Consultas':'<div><div class="gph-title">Consultas</div><div class="gph-sub">Busqueda de clientes y bebidas por segmento</div></div>'}</div>
     <div class="card"><div class="card-body">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <input id="cli-q-${scope}" placeholder="Buscar por nombre, codigo o localidad" onkeydown="if(event.key==='Enter')clienteBuscar('${scope}')" style="flex:1;min-width:220px;padding:11px 12px;border-radius:8px;border:1px solid var(--bs);background:var(--surf2);color:var(--text);">
@@ -2486,7 +2499,51 @@ function renderClienteBuscador(cont,scope){
       <div class="xs" style="color:var(--text3);margin-top:8px;">${vend?'Solo cartera '+vend:'Cartera completa + Depósito (V1), sin V2/V5'}.</div>
     </div></div>
     <div id="cli-res-${scope}" style="margin-top:12px;"></div>
-    <div id="cli-card-${scope}" style="margin-top:12px;"></div>`;
+    <div id="cli-card-${scope}" style="margin-top:12px;"></div>
+    <div class="card" style="margin-top:12px;"><div class="card-hd"><span class="card-title">Bebidas por segmento</span><span class="chip" id="seg-n-${scope}"></span></div>
+      <div class="card-body"><div class="xs" style="color:var(--text3);margin-bottom:8px;">Tocá un segmento para ver sus bebidas; si tiene sub-segmentos, tocá cada uno para desplegarlo.</div>
+        <div id="seg-grid-${scope}" class="seg-grid"><div class="xs" style="color:var(--text3);">Cargando...</div></div>
+        <div id="seg-det-${scope}"></div>
+        <div id="seg-src-${scope}" class="xs" style="color:var(--text3);margin-top:8px;"></div>
+      </div></div>`;
+  segmentosCargar(scope);
+}
+
+/* — Consultas: bebidas por segmento (Categoría 04D) y sub-segmento (Segmento 04D) — */
+let SEG_DATA=null; const SEG_SEL={};
+async function segmentosCargar(scope){
+  if(!SEG_DATA){ const d=await safe('/api/productos/segmentos'); if(d&&Array.isArray(d.categorias)) SEG_DATA=d; }
+  const grid=document.getElementById('seg-grid-'+scope); if(!grid) return;
+  if(!SEG_DATA||!SEG_DATA.categorias.length){ grid.innerHTML=`<div class="xs" style="color:var(--text3);">Sin maestro de productos disponible.</div>`; return; }
+  document.getElementById('seg-n-'+scope).textContent=SEG_DATA.categorias.length+' segmentos';
+  document.getElementById('seg-src-'+scope).textContent='Fuente: '+(SEG_DATA.fuente||'maestro 04D');
+  SEG_SEL[scope]=null;
+  grid.innerHTML=SEG_DATA.categorias.map((c,i)=>`<div class="seg-card" id="seg-c-${scope}-${i}" onclick="segmentoToggle('${scope}',${i})">
+    <b>${clienteEsc(c.categoria)}</b><span>${c.total} bebida${c.total!==1?'s':''}${c.subsegmentos.length?` · ${c.subsegmentos.length} sub-segmento${c.subsegmentos.length!==1?'s':''}`:''}</span></div>`).join('');
+  document.getElementById('seg-det-'+scope).innerHTML='';
+}
+function segProdsHtml(list){
+  return list.map(p=>`<div class="seg-prod"><span>${clienteEsc(p.producto)}<span class="xs mono" style="color:var(--text3);margin-left:6px;">#${clienteEsc(p.codigo)}</span></span><span class="ln">${clienteEsc(p.linea||'')}</span></div>`).join('');
+}
+function segmentoToggle(scope,i){
+  const det=document.getElementById('seg-det-'+scope); if(!det||!SEG_DATA) return;
+  document.querySelectorAll(`[id^="seg-c-${scope}-"]`).forEach(e=>e.classList.remove('on'));
+  if(SEG_SEL[scope]===i){ SEG_SEL[scope]=null; det.innerHTML=''; return; }
+  SEG_SEL[scope]=i;
+  document.getElementById(`seg-c-${scope}-${i}`)?.classList.add('on');
+  const c=SEG_DATA.categorias[i];
+  det.innerHTML=`<div class="seg-det">
+    <div style="padding:9px 12px;font-weight:700;">${clienteEsc(c.categoria)} <span class="chip">${c.total}</span></div>
+    ${c.subsegmentos.map((s,j)=>`<div class="seg-sub">
+      <div class="seg-sub-hd" onclick="segSubToggle('${scope}',${j})"><span id="seg-car-${scope}-${j}" style="color:var(--text3);font-size:11px;">▸</span><b style="flex:1;">${clienteEsc(s.segmento)}</b><span class="chip">${s.total}</span></div>
+      <div id="seg-sp-${scope}-${j}" style="display:none;">${segProdsHtml(s.productos)}</div>
+    </div>`).join('')}
+    ${c.productos.length?`<div class="seg-sub">${c.subsegmentos.length?`<div class="seg-sub-hd" style="cursor:default;"><b style="flex:1;">Sin sub-segmento</b><span class="chip">${c.productos.length}</span></div>`:''}${segProdsHtml(c.productos)}</div>`:''}
+  </div>`;
+}
+function segSubToggle(scope,j){
+  const b=document.getElementById(`seg-sp-${scope}-${j}`), car=document.getElementById(`seg-car-${scope}-${j}`); if(!b) return;
+  const abrir=b.style.display==='none'; b.style.display=abrir?'':'none'; if(car) car.textContent=abrir?'▾':'▸';
 }
 
 async function clienteBuscar(scope){

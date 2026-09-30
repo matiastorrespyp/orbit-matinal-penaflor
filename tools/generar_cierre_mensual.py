@@ -195,26 +195,16 @@ def _leer_04d(src):
 
 
 def _leer_innovaciones(src):
-    codigos = set()
+    # Lector único (motor_innovaciones). El anterior buscaba códigos "000000..." en las primeras
+    # 10 filas, formato que el Excel ya no usa: devolvía 0 innovaciones sin avisar.
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    import motor_innovaciones
     try:
-        import openpyxl
-        wb = openpyxl.load_workbook(src, read_only=True, data_only=True)
-        ws = wb.active
-        for row in ws.iter_rows(min_row=1, max_row=10, values_only=True):
-            if any(isinstance(v, str) and str(v).strip().startswith("000000") for v in row):
-                for cell in row:
-                    if isinstance(cell, str) and cell.strip().startswith("000000"):
-                        cs = cell.strip().split(" ")[0].lstrip("0")
-                        if cs:
-                            try:
-                                codigos.add(int(cs))
-                            except ValueError:
-                                pass
-                break
-        wb.close()
+        return {r["codigo"] for r in motor_innovaciones.leer_innovaciones(src)}
     except Exception as e:
         print("WARN innovaciones: " + str(e))
-    return codigos
+        return set()
 
 
 def _leer_vendedores(src):

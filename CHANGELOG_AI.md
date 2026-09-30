@@ -1,5 +1,68 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-09-30 - fix(innovaciones): las altas de septiembre no se leian (lector unico)
+
+Las 6 innovaciones nuevas de `Innovaciones.xlsx` (74901/74902/74903 El Ultimo Tramo, 14621
+Frizze Man-Go Party, 74909/74910 Edmundo) se cargaron con el codigo en la columna A y el
+nombre en la B. Los 4 lectores del Excel exigian "codigo - nombre" en una celda y las
+ignoraban en silencio (leian 27 de 33). El del Cierre de Mes buscaba el formato viejo
+"000000..." y no leia NINGUNA: afecta solo la salida standalone de
+generar_cierre_mensual.py; la pantalla Cierre de Mes usa el loader de generar_datasets_acum
+(leia 27, sin las altas) y no requiere re-correr el cierre.
+
+- `motor_innovaciones.py` (nuevo): `leer_innovaciones(path)` -> [{codigo, nombre, plan_as}].
+  Acepta ambos formatos, ceros a la izquierda y `.0`; `plan_as` = fila con `x`.
+- Consumidores migrados: `server_orbit._innovaciones_codigos_todas`,
+  `_inov_plan_as_productos`, `_acc_innovaciones_codigos`;
+  `generar_datasets_acum._cargar_inov_productos`; `tools/generar_cierre_mensual._leer_innovaciones`.
+- `Innovaciones.xlsx`: marcada la `x` de "AASS c/plan" en las 6 altas (indicado por el
+  negocio). Copia previa en el scratchpad de la sesion.
+- Regenerados SOLO `mod_innovaciones_segmento.csv` y `mod_innovaciones_plan_as.csv`
+  (no se corrio `main()` para no regrabar el snapshot del acumulado).
+
+### Validacion
+- Sintetico (ambos formatos, ceros, `.0`, duplicado, fila sin codigo): OK.
+- Los 5 accesos leen 33 innovaciones (Plan AS 32: Termidor sin `x`); las 6 altas en todos.
+- Clientes con compra en el mes: Frizze Man-Go 48, El Ultimo Tramo 12/13/2, Edmundo 0 (sin ventas).
+- Endpoints 200 y con las altas: gerencia/vendedor innovaciones_segmento, innovaciones_total,
+  planes_as.
+- `test_acciones_analisis.py` (KeyError top_oportunidades) y `test_acciones_trad_nc.py`
+  (accion de agosto ausente en el explorador de septiembre) fallan IGUAL con el codigo de
+  HEAD: preexistentes, no relacionados.
+
+## 2026-09-30 - feat(consultas): pantalla Cliente -> Consultas + bebidas por segmento
+
+Pedido: en la pantalla de clientes (gerencia y vendedor) agregar tarjetas por segmento de
+bebida que al tocarlas desplieguen debajo sus bebidas, con sub-segmentos desplegables, y
+renombrar la pantalla a "Consultas".
+
+- `server_orbit.py`: endpoint nuevo `GET /api/productos/segmentos`. Arbol
+  Categoria (segmento) -> Segmento (sub-segmento) -> bebidas, desde `_cargar_maestro_04D()`
+  (04D completado con el maestro del mes) + descripcion de `productos<mes>.xlsx`
+  (`_acc_desc_articulo_map`). Categorias/segmentos se agrupan sin distinguir mayusculas
+  ("Vinos de guarda" / "Vinos de Guarda" venian partidos). Si el Segmento es igual a la
+  Categoria (RTD, Vermouth, Cerveza Artesanal, Vinos de Mesa) no hay sub-segmento.
+- `PAV MATINAL PE_A FLOR/portal.html`: menu lateral, tab inferior, titulo y encabezado
+  "Cliente" -> "Consultas"; card "Bebidas por segmento" en `renderClienteBuscador` (compartida
+  por ambos perfiles) con `segmentosCargar` / `segmentoToggle` / `segSubToggle` y CSS `.seg-*`.
+  El id de pantalla sigue siendo `cliente` (no se rompen referencias).
+
+### Validacion
+- Endpoint con datos reales: 200, 14 segmentos, 348 de 349 codigos (1 sin categoria en ningun
+  maestro); JSON serializable.
+- Portal local (8502): gerencia y vendedor muestran "Consultas", 14 tarjetas, despliegue de
+  "Vinos del año" (Alto/Medio/Medio Alto/Superior) y de sub-segmento verificado por DOM.
+- Nombre de respaldo: si el maestro del mes no describe el codigo, se usa el `Articulo` de su
+  venta mas reciente (`_cliente_ventas_base()`: ventas_acumulada.csv + ventas.csv). De 10
+  codigos sin nombre quedan 2 (20505 Champaña Suter, 30275 Antares Especiales) que no tienen
+  ninguna venta: se muestran con su Linea Comercial.
+- `09_CONFIG/maestro_04D_productos.csv`: alta de El Ultimo Tramo (74901 Malbec, 74902 Cabernet
+  Sauv., 74903 Torrontes Naranjo) como Vinos de guarda / Premium, 4.5 L x caja / 6 u. Segmento
+  informado por el negocio (2026-09-30); no estaba en el 04D ni en productosjulio.xlsx. Efecto
+  colateral buscado: ahora suma en Sell Out Vinos de guarda y en acciones por categoria.
+- Siguen sin categoria (vendidos, fuera de ambos maestros): 14621 Frizze Man-Go Party,
+  14553 La Gran Nacha, 30034 Gordon's Gin.
+
 ## 2026-09-25 - fix(planes as): el portal mostraba los sin cargos de agosto teniendo los de septiembre
 
 La planilla `01_INPUTS/Planes AASS/sincargosseptiembre.xlsx` estaba subida (23/09) y el

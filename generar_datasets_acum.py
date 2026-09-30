@@ -16,6 +16,7 @@ import numpy as np
 
 import motor_11t          # motor autoritativo de cobertura 11T (única fuente de la regla)
 import motor_padron       # regla única de pertenencia de cartera (duplicados del padrón)
+import motor_innovaciones  # lector único de Innovaciones.xlsx
 
 BASE = Path(__file__).parent
 OUT  = BASE / "04_DATASETS_ORBIT"
@@ -151,13 +152,7 @@ def _cargar_inov_productos():
     if not p.exists():
         return dict(_INOV_PRODUCTOS_DEFAULT)
     try:
-        df = pd.read_excel(p, sheet_name=0, header=None, dtype=str)
-        out = {}
-        for val in df.stack().dropna().astype(str):
-            cod_part, sep, nombre = val.partition("-")
-            cod = cod_part.strip().lstrip("0")
-            if sep and cod.isdigit():
-                out[int(cod)] = nombre.strip()
+        out = {r["codigo"]: r["nombre"] for r in motor_innovaciones.leer_innovaciones(p)}
         if out:
             print(f"  Innovaciones desde: {p.name} ({len(out)} productos)")
             return out
