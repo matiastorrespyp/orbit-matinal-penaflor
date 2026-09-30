@@ -6,7 +6,7 @@
 - [x] `motor_innovaciones.py` + 5 accesos migrados; 6 altas de septiembre leidas y con `x` Plan AS.
 
 ### PENDIENTE
-- [ ] Publicar a Render: `motor_innovaciones.py` (NUEVO: sin el, server_orbit no arranca),
+- [x] Publicado a Render (4cd0b5d, verificado en produccion): `motor_innovaciones.py`,
   `server_orbit.py`, `generar_datasets_acum.py`, `tools/generar_cierre_mensual.py`,
   `01_INPUTS/INNOVACIONES/Innovaciones.xlsx`, los 2 `mod_innovaciones_*.csv`, mas lo de la
   sesion anterior (`portal.html`, `maestro_04D_productos.csv`).
@@ -28,7 +28,7 @@
   (`/api/productos/segmentos`).
 
 ### PENDIENTE
-- [ ] Publicar a Render (`server_orbit.py` + `portal.html`).
+- [x] Publicado a Render (4cd0b5d).
 - [x] Codigos sin descripcion en el maestro del mes toman el nombre de ventas (8 de 10).
 - [ ] 20505 y 30275 no tienen nombre ni en maestro ni en ventas: se resuelven al cargar un
   `productos<mes>.xlsx` actualizado en `01_INPUTS/RAW_PRODUCTOS/` (hoy el ultimo es julio).
