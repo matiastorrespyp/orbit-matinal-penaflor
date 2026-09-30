@@ -1,5 +1,15 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-09-30 - data(maestro): Frizze Man-Go Party en RTD con los otros Frizze
+
+- `09_CONFIG/maestro_04D_productos.csv`: alta 14621 FRIZZE MAN-GO PARTY 6X1000 como RTD / RTD,
+  Linea Comercial Frizze, 6 L x caja / 6 u. (igual que 14619/14620/14583). Indicado por el negocio.
+- Efecto: aparece en Consultas > RTD; Sell Out RTD del mes 10.856,3 -> 11.264,3 L (+408 L que
+  antes sumaban 0); cuenta en acciones comerciales de la familia Frizze. FARO no cambia (matchea
+  Frizze por nombre del articulo, no por maestro).
+- Validacion: `/api/productos/segmentos`, `/api/gerencia/sellout_litros` y
+  `/api/gerencia/acciones_mes` 200.
+
 ## 2026-09-30 - fix(innovaciones): las altas de septiembre no se leian (lector unico)
 
 Las 6 innovaciones nuevas de `Innovaciones.xlsx` (74901/74902/74903 El Ultimo Tramo, 14621
