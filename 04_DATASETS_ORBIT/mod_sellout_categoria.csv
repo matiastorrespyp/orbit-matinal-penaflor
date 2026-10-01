@@ -1,21 +1,15 @@
 ﻿Categoria,Segmento,litros,cajas,importe,clientes,fecha_calculo
-Cerveza Artesanal,Cerveza Artesanal,3929.9,1392,2943950,194,2026-09-30
-Espumantes,Champaña Alta y Premium,4490.8,939,4208252,43,2026-09-30
-Espumantes,Champaña Medio,3105.0,690,1672036,10,2026-09-30
-Gin,Premium (S),4.2,1,26219,1,2026-09-30
-RTD,RTD,10047.3,1440,2650063,93,2026-09-30
-RTD (S),RTD (S),202258.6,17817,32655124,495,2026-09-30
-Sidra,Premium,2727.0,606,2310866,22,2026-09-30
-Spirits,Nacional,98323.8,20856,145688940,552,2026-09-30
-Spirits,Importados,580.8,69,2375837,19,2026-09-30
-Vermouth,Vermouth,21492.0,1791,8667354,32,2026-09-30
-Vinos de Mesa,Vinos de Mesa,9972.0,831,981960,20,2026-09-30
-Vinos de guarda,Premium,2146.5,477,3075318,54,2026-09-30
-Vinos de guarda,Super Premium,378.0,84,994347,6,2026-09-30
-Vinos de guarda,Ultra Premium,13.5,3,65135,1,2026-09-30
-Vinos del año,Alto,60880.5,13529,47999870,930,2026-09-30
-Vinos del año,Medio Alto,28557.0,6346,17835639,706,2026-09-30
-Vinos del año,Superior,9396.0,2088,10303221,267,2026-09-30
-Vinos del año,Medio,1822.5,405,877729,45,2026-09-30
-Vodka,Standard (S),768.6,183,1127538,15,2026-09-30
-Whisky,Standard (S),4.5,1,19278,1,2026-09-30
+Cerveza Artesanal,Cerveza Artesanal,170.3,60,133229,3,2026-10-01
+Espumantes,Champaña Alta y Premium,108.0,24,132474,2,2026-10-01
+Espumantes,Champaña Medio,27.0,6,22349,1,2026-10-01
+RTD,RTD,1574.4,252,504486,11,2026-10-01
+RTD (S),RTD (S),4018.6,354,728798,17,2026-10-01
+Spirits,Nacional,478.8,99,792165,7,2026-10-01
+Spirits,Importados,108.0,12,263222,1,2026-10-01
+Vermouth,Vermouth,504.0,42,225446,4,2026-10-01
+Vinos de guarda,Premium,54.0,12,75927,3,2026-10-01
+Vinos de guarda,Super Premium,13.5,3,30041,1,2026-10-01
+Vinos del año,Alto,958.5,213,786414,16,2026-10-01
+Vinos del año,Medio Alto,486.0,108,302340,13,2026-10-01
+Vinos del año,Medio,162.0,36,79637,5,2026-10-01
+Vinos del año,Superior,135.0,30,145968,6,2026-10-01
