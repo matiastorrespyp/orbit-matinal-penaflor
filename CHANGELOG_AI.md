@@ -1,5 +1,15 @@
 # CHANGELOG AI - ORBIT MATINAL PEÑAFLOR
 
+## 2026-09-30 - data(maestro): Gordon's Gin 30034 con el resto de los Gordon's
+
+- `09_CONFIG/maestro_04D_productos.csv`: alta 30034 GORDON S GIN 6X700 como Spirits / Nacional,
+  Linea Comercial `Gordon´s` (misma fila que 30075 Gordon's Gin), 4,2 L x caja / 6 u.
+  NO va en `Gordon's Flavors` (Pink/Tropical): mezclar el gin clasico con los saborizados ya
+  causo errores (ver motor_codigos.py). Indicado por el negocio.
+- 14553 La Gran Nacha queda SIN segmento a proposito: vino discontinuado (decision del negocio).
+- Validacion: `/api/productos/segmentos` (Spirits/Nacional 14), `sellout_litros` y
+  `acciones_mes` 200.
+
 ## 2026-09-30 - data(maestro): Frizze Man-Go Party en RTD con los otros Frizze
 
 - `09_CONFIG/maestro_04D_productos.csv`: alta 14621 FRIZZE MAN-GO PARTY 6X1000 como RTD / RTD,

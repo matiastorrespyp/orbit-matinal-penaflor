@@ -34,8 +34,8 @@
   `productos<mes>.xlsx` actualizado en `01_INPUTS/RAW_PRODUCTOS/` (hoy el ultimo es julio).
 - [x] El Ultimo Tramo (74901/74902/74903) cargado como Vinos de guarda / Premium en el maestro.
 - [x] 14621 Frizze Man-Go Party cargado como RTD / Frizze.
-- [ ] Definir categoria/segmento de 14553 La Gran Nacha y 30034 Gordon's Gin (vendidos, sin
-  maestro) o cargar productos<mes>.xlsx actualizado.
+- [x] 30034 Gordon's Gin cargado como Spirits / Nacional / Gordon´s.
+- [x] 14553 La Gran Nacha: sin segmento a proposito (discontinuado). No es pendiente.
 - [ ] Revisar si Gin/Vodka/Whisky (vienen como categoria propia del maestro del mes) deben
   ir dentro de Spirits como en el 04D.
 
